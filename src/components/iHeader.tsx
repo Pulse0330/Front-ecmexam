@@ -5,7 +5,6 @@ import { useEffect, useState, useRef } from "react";
 import {
   NavigationMenu,
   NavigationMenuItem,
-  NavigationMenuLink,
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
 import {
@@ -14,6 +13,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+
 // Simple logo component for the navbar
 const Logo = (props: React.SVGAttributes<SVGElement>) => {
   return (
@@ -46,6 +46,7 @@ const Logo = (props: React.SVGAttributes<SVGElement>) => {
     </svg>
   );
 };
+
 // Hamburger icon component
 const HamburgerIcon = ({
   className,
@@ -66,7 +67,7 @@ const HamburgerIcon = ({
   >
     <path
       d="M4 12L20 12"
-      className="origin-center -translate-y-[7px] transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-x-0 group-aria-expanded:translate-y-0 group-aria-expanded:rotate-[315deg]"
+      className="origin-center -translate-y-[7px] transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-x-0 group-aria-expanded:translate-y-0 group-aria-expanded:rotate-315"
     />
     <path
       d="M4 12H20"
@@ -74,16 +75,18 @@ const HamburgerIcon = ({
     />
     <path
       d="M4 12H20"
-      className="origin-center translate-y-[7px] transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-y-0 group-aria-expanded:rotate-[135deg]"
+      className="origin-center translate-y-[7px] transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-y-0 group-aria-expanded:rotate-135"
     />
   </svg>
 );
+
 // Types
 export interface Navbar01NavLink {
   href: string;
   label: string;
   active?: boolean;
 }
+
 export interface Navbar01Props extends React.HTMLAttributes<HTMLElement> {
   logo?: React.ReactNode;
   logoHref?: string;
@@ -95,6 +98,7 @@ export interface Navbar01Props extends React.HTMLAttributes<HTMLElement> {
   onSignInClick?: () => void;
   onCtaClick?: () => void;
 }
+
 // Default navigation links
 const defaultNavigationLinks: Navbar01NavLink[] = [
   { href: "#", label: "Home", active: true },
@@ -102,17 +106,15 @@ const defaultNavigationLinks: Navbar01NavLink[] = [
   { href: "#pricing", label: "Pricing" },
   { href: "#about", label: "About" },
 ];
+
 export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
   (
     {
       className,
       logo = <Logo />,
-      logoHref = "#",
       navigationLinks = defaultNavigationLinks,
       signInText = "Sign In",
-      signInHref = "#signin",
       ctaText = "Get Started",
-      ctaHref = "#get-started",
       onSignInClick,
       onCtaClick,
       ...props
@@ -121,6 +123,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
   ) => {
     const [isMobile, setIsMobile] = useState(false);
     const containerRef = useRef<HTMLElement>(null);
+
     useEffect(() => {
       const checkWidth = () => {
         if (containerRef.current) {
@@ -128,15 +131,18 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
           setIsMobile(width < 768); // 768px is md breakpoint
         }
       };
+
       checkWidth();
       const resizeObserver = new ResizeObserver(checkWidth);
       if (containerRef.current) {
         resizeObserver.observe(containerRef.current);
       }
+
       return () => {
         resizeObserver.disconnect();
       };
     }, []);
+
     // Combine refs
     const combinedRef = React.useCallback(
       (node: HTMLElement | null) => {
@@ -149,11 +155,12 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
       },
       [ref]
     );
+
     return (
       <header
         ref={combinedRef}
         className={cn(
-          "sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 md:px-6 [&_*]:no-underline",
+          "sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 px-4 md:px-6 **:no-underline",
           className
         )}
         {...props}
@@ -196,6 +203,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
                 </PopoverContent>
               </Popover>
             )}
+
             {/* Main nav */}
             <div className="flex items-center gap-6">
               <button
@@ -207,6 +215,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
                   shadcn.io
                 </span>
               </button>
+
               {/* Navigation menu */}
               {!isMobile && (
                 <NavigationMenu className="flex">
@@ -231,6 +240,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
               )}
             </div>
           </div>
+
           {/* Right side */}
           <div className="flex items-center gap-3">
             <Button
@@ -260,5 +270,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
     );
   }
 );
+
 Navbar01.displayName = "Navbar01";
+
 export { Logo, HamburgerIcon };
