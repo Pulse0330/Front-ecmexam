@@ -3,7 +3,11 @@ import api from "./axios";
 import { LoginResponseType } from "@/types/login";
 import { HomeResponseType } from "@/types/home";
 import { UserProfileResponseType } from "@/types/user";
-
+import { ApiExamlistsResponse } from "@/types/exam/examlist";
+import {ExamresultListResponseType} from "@/types/exam/examresiltlist";
+import { ApiSorillistsResponse } from "@/types/soril/sorillists";
+import {SorilresultListResponseType} from "@/types/soril/sorilresultlists";
+import {GetTestGroupResponse} from "@/types/exercise/testgroup";
 export const loginRequest = async (
   username: string,
   password: string
@@ -26,7 +30,7 @@ export const getHomeScreen = async (
   });
   return data;
 };
-// ===== UserProfile request =====
+// ===== Get UserProfile =====
 export const getUserProfile = async (
   userId: number
 ): Promise<UserProfileResponseType> => {
@@ -35,3 +39,64 @@ export const getUserProfile = async (
   });
   return data;
 };
+// ===== Get Examlists  =====
+export const getExamlists = async (
+  userId: number
+): Promise<ApiExamlistsResponse> => {
+  const { data } = await api.post<ApiExamlistsResponse>("/getexamlists", {
+    user_id: userId,
+    optype: 0,
+  });
+  return data;
+};
+
+//===== Get Examresultlists =====
+export const getexamresultlists = async (
+  userId: number
+): Promise<ExamresultListResponseType> => {
+  const { data } = await api.post<ExamresultListResponseType>("/getexamresultlists", {
+    exam_type:2,
+    user_id: userId,
+    
+  });
+  return data;
+};
+// ===== Get Sorillists  =====
+export const getSorillists = async (
+  userId: number
+): Promise<ApiSorillistsResponse> => {
+  const { data } = await api.post<ApiSorillistsResponse>("/getexamlists", {
+    user_id: userId,
+    optype: 1,
+  });
+  return data;
+};
+
+//===== Get Sorilresultlists =====
+export const getSorilresultlists = async (
+  userId: number
+): Promise<SorilresultListResponseType> => {
+  const { data } = await api.post<SorilresultListResponseType>("/getexamresultlists", {
+    exam_type:3,
+    user_id: userId,
+    
+  });
+  return data;
+};
+
+// ===== Get testgroup =====
+export const gettestgroup = async (
+  userId: number
+): Promise<GetTestGroupResponse> => {
+  const { data } = await api.post<GetTestGroupResponse>("/gettestgroup", {
+    user_id: userId,
+  });
+  return data;
+};
+
+// ===== Get Date =====
+export const getServerDate = async (): Promise<string> => {
+  const { data } = await api.post("/getdate", {});
+  return data?.RetData?.[0]?.systemdate ?? "";
+};
+

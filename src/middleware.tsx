@@ -3,24 +3,24 @@ import { NextRequest, NextResponse } from "next/server";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const token = request.cookies.get("auth-token")?.value;
+  // const token = request.cookies.get("auth-token")?.value;
 
-  const publicRoutes = ["/login", "/sign", "/forgot", "/not-found"];
-  const isPublicRoute = publicRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
+  // const publicRoutes = ["/login", "/sign", "/forgot", "/not-found"];
+  // const isPublicRoute = publicRoutes.some((route) =>
+  //   pathname.startsWith(route)
+  // );
 
-  if (!token && !isPublicRoute) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
+  // if (!token && !isPublicRoute) {
+  //   const loginUrl = new URL("/login", request.url);
+  //   loginUrl.searchParams.set("redirect", pathname);
+  //   return NextResponse.redirect(loginUrl);
+  // }
 
-  if (token && isPublicRoute) {
-    return NextResponse.redirect(new URL("/home", request.url));
-  }
+  // if (token && isPublicRoute) {
+  //   return NextResponse.redirect(new URL("/home", request.url));
+  // }
 
-  return NextResponse.next();
+  // return NextResponse.next();
 }
 
 export const config = {

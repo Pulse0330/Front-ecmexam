@@ -1,5 +1,6 @@
 import FixedScrollButton from "@/components/FixedScrollButton";
 import { Navbar01 } from "@/components/iHeader";
+import ServerDate from "@/components/serverDate";
 import { ReactNode } from "react";
 
 interface MainLayoutProps {
@@ -8,13 +9,16 @@ interface MainLayoutProps {
 
 export default function MainLayout({ children }: MainLayoutProps) {
   return (
-    <div className="">
-      <div>
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+      <div className="sticky top-0 z-50 px-4 md:px-6 lg:px-8 pt-4">
         <Navbar01 />
       </div>
-      <main>
+      <main className="relative">
         <FixedScrollButton />
         {children}
+        <div className="fixed bottom-4 right-4 z-50">
+          <ServerDate />
+        </div>
       </main>
     </div>
   );

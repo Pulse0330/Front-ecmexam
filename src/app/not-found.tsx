@@ -27,7 +27,7 @@ export default function NotFound() {
       {/* Buttons */}
       <div className="flex flex-col sm:flex-row gap-4 mt-6">
         <Link
-          href="/"
+          href="/home"
           className="group inline-flex items-center gap-2 px-8 py-4 bg-linear-to-r hover:to--700 dark:from-blue-500 dark:to-blue-500 dark:hover:from-blue-600 dark:hover:to-blue-600 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
         >
           <Home className="w-5 h-5 group-hover:rotate-12 transition-transform" />
