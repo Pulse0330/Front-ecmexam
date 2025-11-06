@@ -12,40 +12,31 @@ export default function ServerDate() {
     staleTime: 0,
   });
 
-  // Серверээс ирсэн огноог Date болгож хадгалах
   const serverDate = useMemo(
     () => (serverDateString ? new Date(serverDateString) : null),
     [serverDateString]
   );
 
-  // Серверийн огнооны timestamp-г хадгалах ref
   const serverDateRef = useRef<number | null>(null);
-
-  // Tick тоолуур
   const [tickCount, setTickCount] = useState(0);
 
   useEffect(() => {
     if (serverDate) {
       if (serverDate.getTime() !== serverDateRef.current) {
         serverDateRef.current = serverDate.getTime();
-        // Tick reset-ийг deferred state update-аар хийх
         setTimeout(() => setTickCount(0), 0);
       }
     }
   }, [serverDate]);
 
-  // Секунд тутам tick нэмэх
   useEffect(() => {
     if (!serverDate) return;
-
     const interval = setInterval(() => {
       setTickCount((prev) => prev + 1);
     }, 1000);
-
     return () => clearInterval(interval);
   }, [serverDate]);
 
-  // Одоогийн цаг = серверийн цаг + tick count
   const currentTime = useMemo(() => {
     if (!serverDate) return null;
     return new Date(serverDate.getTime() + tickCount * 1000);
@@ -54,8 +45,8 @@ export default function ServerDate() {
   if (isLoading || !currentTime) {
     return (
       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg">
-        <Clock className="w-4 h-4 animate-spin " />
-        <span className="font-mono text-sm ">--:--:--</span>
+        <Clock className="w-4 h-4 animate-spin" />
+        <span className="font-mono text-sm">--:--:--</span>
       </div>
     );
   }
@@ -68,15 +59,30 @@ export default function ServerDate() {
   const seconds = String(currentTime.getUTCSeconds()).padStart(2, "0");
 
   return (
-    <div className="inline-flex items-center gap-3 px-4 py-2  bg-gray-700 rounded-2xl">
-      <div className="flex items-center gap-2">
-        <Calendar className="w-4 h-4" />
-        <span className="text-sm font-semibold tabular-nums">
-          {year}.{month}.{day}
-        </span>
+    <div
+      className=" fixed bottom-6 left-6 z-40  p-2 shadow-mdg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60
+       shadow-lg  transition-all duration-300 hover:scale-110
+       inline-flex items-center gap-3 px-4 py-2 bg-secondary rounded-2xl "
+    >
+      {/* 🖥️ Desktop / Tablet view */}
+      <div className="hidden sm:flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4" />
+          <span className="text-sm font-semibold tabular-nums">
+            {year}.{month}.{day}
+          </span>
+        </div>
+        <div className="w-px h-5 bg-gray-400 dark:bg-gray-600"></div>
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 animate-pulse" />
+          <div className="font-mono text-sm font-semibold tabular-nums">
+            {hours}:{minutes}:{seconds}
+          </div>
+        </div>
       </div>
-      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600"></div>
-      <div className="flex items-center gap-2">
+
+      {/* 📱 Mobile view — зөвхөн цаг */}
+      <div className="flex sm:hidden items-center gap-2">
         <Clock className="w-4 h-4 animate-pulse" />
         <div className="font-mono text-sm font-semibold tabular-nums">
           {hours}:{minutes}:{seconds}

@@ -8,6 +8,10 @@ import {ExamresultListResponseType} from "@/types/exam/examresiltlist";
 import { ApiSorillistsResponse } from "@/types/soril/sorillists";
 import {SorilresultListResponseType} from "@/types/soril/sorilresultlists";
 import {GetTestGroupResponse} from "@/types/exercise/testgroup";
+import {ApiExamResponse} from "@/types/exam/exam";
+import {ExamAnswerResponse} from "@/types/exam/examchoosed";
+import { FinishExamRequest, FinishExamResponse } from "@/types/exam/examfinish";
+import {ExamResultsResponse } from "@/types/exam/examresult";
 export const loginRequest = async (
   username: string,
   password: string
@@ -39,6 +43,13 @@ export const getUserProfile = async (
   });
   return data;
 };
+// ===== Get Date =====
+export const getServerDate = async (): Promise<string> => {
+  const { data } = await api.post("/getdate", {});
+  return data?.RetData?.[0]?.systemdate ?? "";
+};
+
+//-------------------------------Exam---------------------------------//
 // ===== Get Examlists  =====
 export const getExamlists = async (
   userId: number
@@ -61,6 +72,55 @@ export const getexamresultlists = async (
   });
   return data;
 };
+// ===== Exam request =====
+export const getExamById = async (
+  userId: number,
+  examId: number
+): Promise<ApiExamResponse> => {
+  const { data } = await api.post<ApiExamResponse>("/getexamfill", {
+    user_id: userId,
+    exam_id: examId,
+  });
+  return data;
+};
+// ===== Exam choosed  =====
+export const saveExamAnswer = async (
+  userId: number,
+  examId: number,
+  questionId: number,
+  answerId: number,
+  queTypeId: number,
+  answer: string = "",
+  rowNum: number 
+): Promise<ExamAnswerResponse> => {
+  const { data } = await api.post<ExamAnswerResponse>("/examchoosedanswer", {
+    que_type_id: queTypeId,
+    question_id: questionId,
+    answer_id: answerId,
+    answer: answer,
+    row_num: rowNum,
+    exam_id: examId,
+    user_id: userId,
+  });
+  return data;
+};
+// ===== Exam finish   =====
+export const finishExam = async (data: FinishExamRequest): Promise<FinishExamResponse> => {
+  const { data: response } = await api.post<FinishExamResponse>("/examfinish", data);
+  console.log("Exam finish response:", response);
+  return response;
+};
+// =====
+// ===== Get Exam Results =====
+export const getExamResults = async (
+  testId: number
+): Promise<ExamResultsResponse> => {
+  const { data } = await api.post<ExamResultsResponse>("/getexamresults", {
+    test_id: testId,
+  });
+  return data;
+};
+//-------------------------------Soril---------------------------------//
 // ===== Get Sorillists  =====
 export const getSorillists = async (
   userId: number
@@ -94,9 +154,4 @@ export const gettestgroup = async (
   return data;
 };
 
-// ===== Get Date =====
-export const getServerDate = async (): Promise<string> => {
-  const { data } = await api.post("/getdate", {});
-  return data?.RetData?.[0]?.systemdate ?? "";
-};
 

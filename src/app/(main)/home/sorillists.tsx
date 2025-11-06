@@ -15,7 +15,6 @@ export default function HomeSorilLists({ pastExams }: PastExamListProps) {
           key={exam.exam_id}
           className="border rounded-xl shadow overflow-hidden bg-white dark:bg-gray-800 hover:shadow-lg transition-shadow duration-300"
         >
-          {/* Зураг эхэнд */}
           <div className="relative w-full h-40 bg-gray-200">
             {exam.filename && (
               <Image

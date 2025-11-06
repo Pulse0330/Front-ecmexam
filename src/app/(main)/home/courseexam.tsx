@@ -1,4 +1,3 @@
-// src/app/(main)/home/paymentexam.tsx
 "use client";
 
 import React from "react";

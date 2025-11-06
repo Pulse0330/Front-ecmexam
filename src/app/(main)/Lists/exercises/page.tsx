@@ -11,7 +11,6 @@ export default function TestGroupPage() {
   const { data, isLoading, isError, error } = useQuery<GetTestGroupResponse>({
     queryKey: ["testGroup", userId],
     queryFn: () => gettestgroup(userId!),
-    enabled: !!userId,
   });
 
   if (!userId)
@@ -46,7 +45,6 @@ export default function TestGroupPage() {
         <div className="text-red-600 font-semibold">❌ Холболт амжилтгүй!</div>
       )}
 
-      {/* Хүсвэл RetData-г жагсааж харуулж болно */}
       <div className="mt-4">
         {data?.RetData?.length ? (
           <ul className="space-y-2">

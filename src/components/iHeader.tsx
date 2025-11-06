@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState, useRef } from "react";
 import { User, LogOut, UserCircle } from "lucide-react";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import UseAnimations from "react-useanimations";
+import menu3 from "react-useanimations/lib/menu3";
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -66,41 +68,6 @@ const NavbarAction = ({
 };
 
 // -----------------------------------------------------------------------------
-// HamburgerIcon
-// -----------------------------------------------------------------------------
-const HamburgerIcon = ({
-  className,
-  ...props
-}: React.SVGAttributes<SVGElement>) => (
-  <svg
-    className={cn("pointer-events-none", className)}
-    width={16}
-    height={16}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    xmlns="http://www.w3.org/2000/svg"
-    {...props}
-  >
-    <path
-      d="M4 12L20 12"
-      className="origin-center -translate-y-[7px] transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-y-0 group-aria-expanded:rotate-315"
-    />
-    <path
-      d="M4 12H20"
-      className="origin-center transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.8)] group-aria-expanded:rotate-45"
-    />
-    <path
-      d="M4 12H20"
-      className="origin-center translate-y-[7px] transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-y-0 group-aria-expanded:rotate-135"
-    />
-  </svg>
-);
-
-// -----------------------------------------------------------------------------
 // Types
 // -----------------------------------------------------------------------------
 export interface Navbar01NavLink {
@@ -121,9 +88,9 @@ export interface Navbar01Props extends React.HTMLAttributes<HTMLElement> {
 // -----------------------------------------------------------------------------
 const defaultNavigationLinks: Navbar01NavLink[] = [
   { href: "/home", label: "Үндсэн хуудас" },
-  { href: "/Lists/exam", label: "Шалгалт" },
+  { href: "/Lists/exam-list", label: "Шалгалт" },
   { href: "/Lists/exam-result", label: "Шалгалтын үр дүн" },
-  { href: "/Lists/soril", label: "Сорил" },
+  { href: "/Lists/soril-list", label: "Сорил" },
   { href: "/Lists/soril-result", label: "Сорилын үр дүн" },
   { href: "/Lists/exercises", label: "Дасгал ажил" },
 ];
@@ -144,6 +111,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
   ) => {
     const [isMobile, setIsMobile] = useState(false);
     const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const containerRef = useRef<HTMLElement>(null);
     const pathname = usePathname();
     const router = useRouter();
@@ -172,20 +140,15 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
       [ref]
     );
 
-    // Handle logout confirmation
     const handleLogoutClick = () => {
       setShowLogoutDialog(true);
     };
 
-    // Confirm logout
     const confirmLogout = () => {
-      // Delete auth cookie
       document.cookie = "auth-token=; Max-Age=0; path=/";
-      // Redirect to login
       router.push("/login");
     };
 
-    // Handle profile click
     const handleProfileClick = () => {
       router.push("/userProfile");
     };
@@ -195,7 +158,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
         <header
           ref={combinedRef}
           className={cn(
-            "sticky top-0 z-50 mx-4 md:mx-6 lg:mx-8 mt-4 rounded-2xl border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 shadow-lg",
+            "rounded-2xl border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 shadow-lg",
             className
           )}
           {...props}
@@ -231,12 +194,14 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
                           <Link
                             href={link.href}
                             className={cn(
-                              "group inline-flex h-9 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                              "group inline-flex h-9 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-all duration-300",
+                              "hover:bg-accent hover:text-accent-foreground hover:scale-105",
                               isActive
                                 ? "bg-accent text-accent-foreground"
                                 : "text-foreground/80 hover:text-foreground"
                             )}
                           >
+                            {/* Hover animation effect */}
                             {link.label}
                           </Link>
                         </NavigationMenuItem>
@@ -249,11 +214,26 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 
             {/* Right side - Actions */}
             <div className="flex items-center gap-3">
-              {/* Mobile menu */}
+              {/* Mobile menu with animated icon */}
               {isMobile && (
-                <Popover>
+                <Popover open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                   <PopoverTrigger asChild>
-                    <NavbarAction icon={<HamburgerIcon />} />
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "p-2 rounded-full backdrop-blur-sm border transition-all duration-300",
+                        "bg-white/80 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700",
+                        "text-gray-900 dark:text-yellow-400 hover:bg-white dark:hover:bg-gray-700/50",
+                        "hover:scale-110 shadow-sm h-auto w-auto"
+                      )}
+                    >
+                      <UseAnimations
+                        animation={menu3}
+                        size={28}
+                        reverse={isMenuOpen}
+                        strokeColor="currentColor"
+                      />
+                    </Button>
                   </PopoverTrigger>
                   <PopoverContent align="end" className="w-48 p-2">
                     <NavigationMenu className="max-w-none">
@@ -264,8 +244,10 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
                             <NavigationMenuItem key={index} className="w-full">
                               <Link
                                 href={link.href}
+                                onClick={() => setIsMenuOpen(false)}
                                 className={cn(
-                                  "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                                  "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                                  "hover:bg-accent hover:text-accent-foreground",
                                   isActive
                                     ? "bg-accent text-accent-foreground"
                                     : "text-foreground/80"
@@ -310,7 +292,6 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
                     <UserCircle className="mr-2 h-4 w-4" />
                     <span>Профайл</span>
                   </DropdownMenuItem>
-
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleLogoutClick}
@@ -362,4 +343,3 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 );
 
 Navbar01.displayName = "Navbar01";
-export { HamburgerIcon };

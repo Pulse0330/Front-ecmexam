@@ -5,7 +5,7 @@ export interface ExamlistsResponseTye {
   ResponseType: boolean;
 }
 
-export interface ExamData {
+export interface ExamlistsData {
   exam_id: number;
   title: string;
   ognoo: string;
@@ -30,5 +30,5 @@ export interface ExamData {
 
 export interface ApiExamlistsResponse {
   RetResponse: ExamlistsResponseTye;
-  RetData: ExamData[];
+  RetData: ExamlistsData[];
 }

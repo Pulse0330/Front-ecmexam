@@ -1,7 +1,4 @@
-// src/components/ExamList.tsx
 "use client";
-
-import React from "react";
 import { Exam } from "@/types/home";
 
 interface ExamListProps {

@@ -1,4 +1,4 @@
-// src/types/exam/exam.ts
+// types/exam.ts
 
 export interface Question {
   row_num: string;
@@ -16,7 +16,7 @@ export interface Question {
 }
 
 export interface Answer {
-  question_id: number | null;
+  question_id: number;
   answer_id: number;
   answer_name: string;
   answer_name_html: string;
@@ -34,12 +34,13 @@ export interface ExamInfo {
   descr: string;
   help: string;
   is_date: number;
-  end_time: string;
+  end_time: string; // ISO date string
   minut: number;
   que_cnt: number;
   exam_type_name: string;
   exam_type: number;
   start_eid: number;
+  test_id?: number
 }
 
 export interface ChoosedAnswer {
@@ -50,55 +51,48 @@ export interface ChoosedAnswer {
   PageNum: number | null;
 }
 
+export interface ChoosedFile {
+  fileName: string;
+  fileUrl: string;
+  fileType?: string;
+}
+
 export interface RetDataItem {
   exam_id: number;
   flag_name: string;
   flag: number;
 }
 
-// --- 🟢 Энд зассан хэсэг ---
-export interface ChoosedFile {
-  file_id: number;
-  file_name: string;
-  file_url: string;
+export interface RetResponse {
+  ResponseMessage: string;
+  StatusCode: string;
+  ResponseCode: string;
+  ResponseType: boolean;
 }
 
-// --- API Response ---
 export interface ApiExamResponse {
-  RetResponse: {
-    ResponseMessage: string;
-    StatusCode: string;
-    ResponseCode: string;
-    ResponseType: boolean;
-  };
+  RetResponse: RetResponse;
   ExamInfo: ExamInfo[];
   Questions: Question[];
   Answers: Answer[];
   ChoosedAnswer: ChoosedAnswer[];
-  ChoosedFiles: ChoosedFile[]; 
+  ChoosedFiles: ChoosedFile[];
   RetData: RetDataItem[];
 }
-
 
 export interface SaveAnswerRequest {
   userId: number;
   examId: number;
   questionId: number;
   queTypeId: number;
-  answerValue:
-    | number
-    | number[]
-    | string
-    | Record<string, string>
-    | null;
+  answerValue: number | number[] | string | Record<string, string> | null;
 }
 
 export interface SaveAnswerResponse {
-  RetResponse: {
-    ResponseMessage: string;
-    StatusCode: string;
-    ResponseCode: string;
-    ResponseType: boolean;
+  RetResponse: RetResponse;
+  RetData?: {
+    saved: boolean;
+    questionId?: number;
+    answerId?: number;
   };
-  RetData?: Record<string, unknown>; 
 }
