@@ -1,4 +1,5 @@
 "use client";
+import Cookies from "js-cookie";
 import { LogOut, User, UserCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -39,9 +40,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-// -----------------------------------------------------------------------------
-// NavbarAction
-// -----------------------------------------------------------------------------
+// NavbarAction Component
 const NavbarAction = ({
 	icon,
 	className,
@@ -49,27 +48,23 @@ const NavbarAction = ({
 }: {
 	icon: React.ReactNode;
 	className?: string;
-}) => {
-	return (
-		<Button
-			variant="ghost"
-			className={cn(
-				"p-2 md:p-3 rounded-full backdrop-blur-sm border transition-all duration-300",
-				"bg-white/80 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700",
-				"text-gray-900 dark:text-yellow-400 hover:bg-white dark:hover:bg-gray-700/50",
-				"hover:scale-110 shadow-sm h-auto w-auto",
-				className,
-			)}
-			{...props}
-		>
-			{icon}
-		</Button>
-	);
-};
+}) => (
+	<Button
+		variant="ghost"
+		className={cn(
+			"p-2 md:p-3 rounded-full backdrop-blur-sm border transition-all duration-300",
+			"bg-white/80 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700",
+			"text-gray-900 dark:text-yellow-400 hover:bg-white dark:hover:bg-gray-700/50",
+			"hover:scale-110 shadow-sm h-auto w-auto",
+			className,
+		)}
+		{...props}
+	>
+		{icon}
+	</Button>
+);
 
-// -----------------------------------------------------------------------------
 // Types
-// -----------------------------------------------------------------------------
 export interface Navbar01NavLink {
 	href: string;
 	label: string;
@@ -83,9 +78,7 @@ export interface Navbar01Props extends React.HTMLAttributes<HTMLElement> {
 	userEmail?: string;
 }
 
-// -----------------------------------------------------------------------------
 // Default Navigation Links
-// -----------------------------------------------------------------------------
 const defaultNavigationLinks: Navbar01NavLink[] = [
 	{ href: "/home", label: "Үндсэн хуудас" },
 	{ href: "/Lists/exam-list", label: "Шалгалт" },
@@ -95,9 +88,7 @@ const defaultNavigationLinks: Navbar01NavLink[] = [
 	{ href: "/Lists/exercises", label: "Дасгал ажил" },
 ];
 
-// -----------------------------------------------------------------------------
 // Navbar01 Component
-// -----------------------------------------------------------------------------
 export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 	(
 		{
@@ -140,18 +131,15 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 			[ref],
 		);
 
-		const handleLogoutClick = () => {
-			setShowLogoutDialog(true);
-		};
+		const handleLogoutClick = () => setShowLogoutDialog(true);
 
+		// ✅ js-cookie ашигласан logout
 		const confirmLogout = () => {
-			document.cookie = "auth-token=; Max-Age=0; path=/";
+			Cookies.remove("auth-token", { path: "/" });
 			router.push("/login");
 		};
 
-		const handleProfileClick = () => {
-			router.push("/userProfile");
-		};
+		const handleProfileClick = () => router.push("/userProfile");
 
 		return (
 			<>
@@ -187,10 +175,10 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 							<div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
 								<NavigationMenu>
 									<NavigationMenuList className="gap-1">
-										{navigationLinks.map((link, index) => {
+										{navigationLinks.map((link) => {
 											const isActive = pathname === link.href;
 											return (
-												<NavigationMenuItem key={index}>
+												<NavigationMenuItem key={link.href}>
 													<Link
 														href={link.href}
 														className={cn(
@@ -201,7 +189,6 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 																: "text-foreground/80 hover:text-foreground",
 														)}
 													>
-														{/* Hover animation effect */}
 														{link.label}
 													</Link>
 												</NavigationMenuItem>
@@ -214,7 +201,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 
 						{/* Right side - Actions */}
 						<div className="flex items-center gap-3">
-							{/* Mobile menu with animated icon */}
+							{/* Mobile menu */}
 							{isMobile && (
 								<Popover open={isMenuOpen} onOpenChange={setIsMenuOpen}>
 									<PopoverTrigger asChild>
@@ -238,10 +225,13 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 									<PopoverContent align="end" className="w-48 p-2">
 										<NavigationMenu className="max-w-none">
 											<NavigationMenuList className="flex-col items-start gap-1">
-												{navigationLinks.map((link, index) => {
+												{navigationLinks.map((link) => {
 													const isActive = pathname === link.href;
 													return (
-														<NavigationMenuItem key={index} className="w-full">
+														<NavigationMenuItem
+															key={link.href}
+															className="w-full"
+														>
 															<Link
 																href={link.href}
 																onClick={() => setIsMenuOpen(false)}

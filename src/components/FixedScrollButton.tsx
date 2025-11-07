@@ -1,20 +1,17 @@
 "use client";
 
 import { ArrowDown, ArrowUp } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 type Props = {
 	scrollThreshold?: number;
-	bottomOffset?: number;
 };
 
 export default function FixedScrollButton({
 	scrollThreshold: scrollThresholdProp,
-	bottomOffset: bottomOffsetProp,
 }: Props) {
 	const scrollThreshold = scrollThresholdProp ?? 300;
-	const bottomOffset = bottomOffsetProp ?? 100;
 
 	const [showButton, setShowButton] = useState(false);
 	const [isAtTop, setIsAtTop] = useState(true);
@@ -54,7 +51,7 @@ export default function FixedScrollButton({
 			window.removeEventListener("scroll", handleScroll);
 			window.removeEventListener("resize", handleResize);
 		};
-	}, [scrollThreshold, bottomOffset]);
+	}, [scrollThreshold]);
 
 	const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 	const scrollToBottom = () =>

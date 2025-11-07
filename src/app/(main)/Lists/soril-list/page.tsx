@@ -14,7 +14,7 @@ export default function ExamListPage() {
 		error,
 	} = useQuery<ApiSorillistsResponse>({
 		queryKey: ["examlists", userId],
-		queryFn: () => getSorillists(userId!),
+		queryFn: () => getSorillists(userId || 0),
 		enabled: !!userId,
 	});
 

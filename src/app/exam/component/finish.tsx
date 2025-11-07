@@ -9,7 +9,7 @@ import {
 	XCircle,
 	Zap,
 } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -125,7 +125,12 @@ export default function FinishExamResultDialog({
 		useQuery<ExamResultsResponse>({
 			queryKey: ["examResults", finishedTestId],
 			// 🚨 finishedTestId-ийг Test ID болгон дамжуулсан
-			queryFn: () => getExamResults(finishedTestId!),
+			queryFn: () => {
+				if (finishedTestId !== null) {
+					return getExamResults(finishedTestId);
+				}
+				return Promise.reject("finishedTestId alga baina"); // эсвэл null буцааж болно
+			},
 			enabled: !!finishedTestId, // Зөвхөн Test ID утгатай үед ажиллана
 		});
 

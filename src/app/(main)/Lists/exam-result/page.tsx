@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import React from "react";
 import { getexamresultlists } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { ExamresultListResponseType } from "@/types/exam/examresiltlist";
@@ -13,7 +12,7 @@ export default function ExamResultList() {
 	const { data, isLoading, isError, error } =
 		useQuery<ExamresultListResponseType>({
 			queryKey: ["examResults", userId],
-			queryFn: () => getexamresultlists(userId!),
+			queryFn: () => getexamresultlists(userId || 0),
 			enabled: !!userId,
 		});
 

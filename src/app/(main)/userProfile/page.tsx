@@ -11,7 +11,7 @@ export default function UserProfilePage() {
 	const { data, isLoading, isError, error } = useQuery<UserProfileResponseType>(
 		{
 			queryKey: ["userProfilePage", userId],
-			queryFn: () => getUserProfile(userId!),
+			queryFn: () => getUserProfile(userId || 0),
 			enabled: !!userId,
 		},
 	);

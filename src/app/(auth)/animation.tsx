@@ -151,7 +151,7 @@ export default function LoginAnimation() {
 						},
 					].map((item, i) => (
 						<div
-							key={i}
+							key={item.text}
 							className="group relative flex items-center gap-2 px-6 py-3 rounded-2xl backdrop-blur-md bg-white/70 dark:bg-white/10 border-2 border-white/80 dark:border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer"
 							style={{ animation: `slideUp 0.6s ease-out ${i * 0.15}s both` }}
 						>

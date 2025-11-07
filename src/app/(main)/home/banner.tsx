@@ -7,13 +7,9 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-
-interface Banner {
-	title: string;
-	filename: string;
-	url: string;
-	descr: string;
-}
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { Banner } from "@/types/home";
 
 interface BannerProps {
 	banners: Banner[];
@@ -49,14 +45,15 @@ export function BannerCarousel({ banners }: BannerProps) {
 				>
 					{banners.map((banner, idx) =>
 						closedBanners[idx] ? null : (
-							<SwiperSlide key={idx}>
+							<SwiperSlide key={banner?.url}>
 								<div className="relative">
-									<button
+									<Button
 										onClick={() => closeBanner(idx)}
-										className="absolute top-2 right-2 z-10 bg-black/40 text-white rounded-full w-6 h-6 flex items-center justify-center"
+										size={"icon"}
+										variant={"secondary"}
 									>
-										×
-									</button>
+										<X />
+									</Button>
 									<a
 										href={banner.url}
 										target="_blank"
@@ -83,13 +80,13 @@ export function BannerCarousel({ banners }: BannerProps) {
 				<div className="flex gap-4 overflow-x-auto py-2">
 					{banners.map((banner, idx) =>
 						closedBanners[idx] ? null : (
-							<div key={idx} className="relative shrink-0 w-64 md:w-72">
-								<button
+							<div key={banner.url} className="relative shrink-0 w-64 md:w-72">
+								<Button
 									onClick={() => closeBanner(idx)}
 									className="absolute top-2 right-2 z-10 bg-black/40 text-white rounded-full w-6 h-6 flex items-center justify-center"
 								>
-									×
-								</button>
+									<X />
+								</Button>
 								<a
 									href={banner.url}
 									target="_blank"

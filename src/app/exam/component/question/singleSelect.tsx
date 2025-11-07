@@ -1,8 +1,9 @@
 "use client";
 
+import parse from "html-react-parser";
 import { CheckCircle2, XCircle } from "lucide-react";
 import Image from "next/image";
-import React, { memo, useCallback } from "react";
+import { memo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 
 interface AnswerData {
@@ -107,12 +108,9 @@ function SingleSelectQuestion({
 								</div>
 							)}
 
-							<span
-								className="flex-1 min-w-0 text-left text-sm sm:text-base wrap-break-words leading-relaxed whitespace-pre-wrap"
-								dangerouslySetInnerHTML={{
-									__html: option.answer_name_html || "",
-								}}
-							/>
+							<span className="flex-1 min-w-0 text-left text-sm sm:text-base wrap-break-words leading-relaxed whitespace-pre-wrap">
+								{option.answer_name_html ? parse(option.answer_name_html) : ""}
+							</span>
 						</Button>
 					);
 				})}

@@ -23,7 +23,7 @@ export default function HomePage() {
 		error: homeError,
 	} = useQuery<HomeResponseType>({
 		queryKey: ["homeScreen", userId],
-		queryFn: () => getHomeScreen(userId!),
+		queryFn: () => getHomeScreen(userId || 0),
 		enabled: !!userId,
 	});
 
@@ -34,7 +34,7 @@ export default function HomePage() {
 		error: profileError,
 	} = useQuery<UserProfileResponseType>({
 		queryKey: ["userProfile", userId],
-		queryFn: () => getUserProfile(userId!),
+		queryFn: () => getUserProfile(userId || 0),
 		enabled: !!userId,
 	});
 
