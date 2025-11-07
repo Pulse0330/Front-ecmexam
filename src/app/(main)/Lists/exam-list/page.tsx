@@ -106,7 +106,7 @@ export default function ExamListPage() {
 
 	return (
 		<div className="min-h-screen h-screen flex flex-col py-6 px-4 overflow-hidden">
-			<div className="max-w-7xl mx-auto w-full flex flex-col h-full overflow-hidden">
+			<div className="max-w-7xl mx-auto w-full flex flex-col h-full">
 				{/* Header */}
 				<header className="mb-6 text-center space-y-2 shrink-0">
 					<h1 className="text-4xl font-extrabold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">

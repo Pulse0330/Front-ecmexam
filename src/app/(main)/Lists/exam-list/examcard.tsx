@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { ExamlistsData } from "@/types/exam/examlist";
 import ExamRulesDialog from "./dialog";
@@ -95,7 +96,7 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, now }) => {
 
 	return (
 		<>
-			<Button
+			<Card
 				className={cn(
 					"group relative overflow-hidden rounded-2xl border-2 transition-all duration-300",
 					status.borderColor,
@@ -230,7 +231,7 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, now }) => {
 						)}
 					</Button>
 				</div>
-			</Button>
+			</Card>
 
 			{/* Dialog */}
 			<ExamRulesDialog

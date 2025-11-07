@@ -1,25 +1,24 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { CalendarIcon, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import FinishExamResultDialog from "@/app/exam/component/finish";
-// Компонентууд
+import ExamMinimap from "@/app/exam/component/minimap";
 import SingleSelectQuestion from "@/app/exam/component/question/singleSelect";
-import { Calendar } from "@/components/ui/calendar";
-// shadcn/ui компонентууд
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { useFormattedServerTime } from "@/hooks/useServerTime";
 import { getExamById, saveExamAnswer } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
+import ExamTimer from "../component/Itime";
 
 export default function ExamPage() {
 	const { userId } = useAuthStore();
 	const { id } = useParams();
+	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
-	// --- Шалгалтын мэдээлэл татах ---
 	const { data: examData, isLoading } = useQuery({
 		queryKey: ["exam", userId, id],
 		queryFn: () => getExamById(userId || 0, Number(id)),
@@ -27,28 +26,6 @@ export default function ExamPage() {
 		staleTime: 5 * 60 * 1000,
 	});
 
-	// --- Серверийн цаг авах ---
-	const { currentTime, isLoading: serverTimeLoading } =
-		useFormattedServerTime();
-
-	// --- Хуудсанд орсон цагийг хадгалах ---
-	const enteredAtRef = useRef<Date | null>(null);
-	const [displayTime, setDisplayTime] = useState<Date | null>(null);
-
-	// --- Анх нээх үед серверийн цагийг авах ---
-	useEffect(() => {
-		if (currentTime && enteredAtRef.current === null) {
-			enteredAtRef.current = currentTime;
-			const timeout = setTimeout(() => {
-				setDisplayTime(currentTime);
-				console.log("📅 Шалгалт эхэлсэн цаг:", currentTime.toISOString());
-			}, 0);
-
-			return () => clearTimeout(timeout);
-		}
-	}, [currentTime]);
-
-	// --- Single Select төрлийн асуултууд ---
 	const singleSelectQuestions = useMemo(() => {
 		if (!examData) return [];
 		return examData.Questions.filter((q) => q.que_type_id === 1).map((q) => {
@@ -64,12 +41,10 @@ export default function ExamPage() {
 		});
 	}, [examData]);
 
-	// --- Хэрэглэгчийн сонгосон хариултууд ---
 	const [selectedAnswers, setSelectedAnswers] = useState<
 		Record<number, number | null>
 	>({});
 
-	// --- Progress тооцоолол ---
 	const totalCount = singleSelectQuestions.length;
 	const answeredCount = useMemo(
 		() =>
@@ -79,7 +54,6 @@ export default function ExamPage() {
 	const progressPercentage =
 		totalCount > 0 ? Math.round((answeredCount / totalCount) * 100) : 0;
 
-	// --- Хариулт хадгалах мутаци ---
 	const saveAnswerMutation = useMutation({
 		mutationFn: ({
 			questionId,
@@ -110,7 +84,6 @@ export default function ExamPage() {
 		onError: (err) => console.error("Failed to save answer", err),
 	});
 
-	// --- Хариулт өөрчлөгдөх үед ---
 	const handleAnswerChange = (questionId: number, answerId: number | null) => {
 		setSelectedAnswers((prev) => ({ ...prev, [questionId]: answerId }));
 		if (!examData || answerId === null) return;
@@ -127,7 +100,31 @@ export default function ExamPage() {
 		});
 	};
 
-	// --- Loading / Error төлөв ---
+	const goToQuestion = (index: number) => {
+		setCurrentQuestionIndex(index);
+		// Desktop дээр тухайн асуулт руу scroll хийх
+		if (window.innerWidth >= 1024) {
+			const element = document.getElementById(`question-${index}`);
+			if (element) {
+				element.scrollIntoView({ behavior: "smooth", block: "center" });
+			}
+		}
+	};
+
+	const goToPrevious = () => {
+		if (currentQuestionIndex > 0) {
+			setCurrentQuestionIndex(currentQuestionIndex - 1);
+		}
+	};
+
+	const goToNext = () => {
+		if (currentQuestionIndex < totalCount - 1) {
+			setCurrentQuestionIndex(currentQuestionIndex + 1);
+		}
+	};
+
+	const currentQuestion = singleSelectQuestions[currentQuestionIndex];
+
 	if (isLoading)
 		return (
 			<div className="flex justify-center items-center h-screen text-lg font-medium">
@@ -142,115 +139,165 @@ export default function ExamPage() {
 			</div>
 		);
 
-	// --- Render ---
 	return (
-		<div className="space-y-8 p-4 md:p-8 max-w-4xl mx-auto">
-			{/* Progress хэсэг */}
-			<Card className="shadow-lg border-t-4 border-blue-500 sticky top-0 z-10 bg-white">
-				<CardHeader className="p-4 md:p-6 pb-0">
-					<CardTitle className="text-xl font-bold flex justify-between items-center">
-						Шалгалтын явц
-						<span className="text-blue-600">
-							{answeredCount} / {totalCount}
-						</span>
-					</CardTitle>
-				</CardHeader>
-				<CardContent className="p-4 md:p-6 pt-2">
-					<div className="text-sm text-gray-500 mb-2">
-						{progressPercentage}%-ийг бөглөсөн
-					</div>
-					<Progress value={progressPercentage} className="h-2" />
-				</CardContent>
-			</Card>
+		<div className="p-4 md:p-8">
+			{/* Desktop Grid Layout: 1-3-1 */}
+			<div className="hidden lg:grid grid-cols-5 gap-6 max-w-7xl mx-auto">
+				{/* Зүүн тал - Minimap + Timer */}
+				<aside className="col-span-1">
+					<ExamMinimap
+						totalCount={totalCount}
+						answeredCount={answeredCount}
+						currentQuestionIndex={currentQuestionIndex}
+						selectedAnswers={selectedAnswers}
+						questions={singleSelectQuestions}
+						onQuestionClick={goToQuestion}
+						timerComponent={<ExamTimer initialSeconds={300} />}
+					/>
+				</aside>
 
-			{/* Асуултууд */}
-			<div className="space-y-6">
-				{singleSelectQuestions.map((q, index) => (
-					<div
-						key={q.question_id}
-						className={`border rounded-xl p-5 shadow-sm transition-all duration-300 ${
-							selectedAnswers[q.question_id] !== null
-								? "border-green-400 bg-green-50/50"
-								: "hover:shadow-md"
-						}`}
-					>
-						<h2 className="font-bold mb-4 text-lg">
-							<span className="text-blue-600 mr-2">{index + 1}.</span>{" "}
-							{q.question_name}
-						</h2>
-						<SingleSelectQuestion
-							questionId={q.question_id}
-							questionText={q.question_name}
-							answers={q.answers}
-							mode="exam"
-							selectedAnswer={selectedAnswers[q.question_id] ?? null}
-							onAnswerChange={handleAnswerChange}
-						/>
-					</div>
-				))}
-			</div>
-
-			{/* Шалгалт эхэлсэн цагийн мэдээлэл */}
-			<Card className="bg-linear-to-br from-blue-50 to-indigo-50 border-blue-200 shadow-md">
-				<CardHeader>
-					<CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-						<CalendarIcon className="w-5 h-5 text-blue-600" />
-						Шалгалт эхэлсэн цаг
-					</CardTitle>
-				</CardHeader>
-				<CardContent className="space-y-4">
-					<div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
-						<div className="flex items-center gap-3">
-							<Clock className="w-5 h-5 text-blue-600" />
-							<div>
-								<p className="text-xs text-gray-500 font-medium">Эхэлсэн цаг</p>
-								<p className="text-lg font-mono font-bold text-blue-700">
-									{serverTimeLoading
-										? "⏳ Ачааллаж байна..."
-										: displayTime
-											? displayTime.toLocaleString("mn-MN", {
-													year: "numeric",
-													month: "2-digit",
-													day: "2-digit",
-													hour: "2-digit",
-													minute: "2-digit",
-													second: "2-digit",
-													hour12: false,
-												})
-											: "---"}
-								</p>
-							</div>
+				{/* Төв хэсэг - Бүх асуултууд */}
+				<main className="col-span-3 space-y-6">
+					{singleSelectQuestions.map((q, index) => (
+						<div
+							key={q.question_id}
+							id={`question-${index}`}
+							className={`border rounded-xl p-5 shadow-sm transition-all duration-300 ${
+								selectedAnswers[q.question_id] !== null
+									? "border-green-400 bg-green-50/50"
+									: "hover:shadow-md"
+							}`}
+						>
+							<h2 className="font-bold mb-4 text-lg">
+								<span className="text-blue-600 mr-2">{index + 1}.</span>
+								{q.question_name}
+							</h2>
+							<SingleSelectQuestion
+								questionId={q.question_id}
+								questionText={q.question_name}
+								answers={q.answers}
+								mode="exam"
+								selectedAnswer={selectedAnswers[q.question_id] ?? null}
+								onAnswerChange={handleAnswerChange}
+							/>
 						</div>
-					</div>
+					))}
 
-					{displayTime && (
-						<div className="flex justify-center">
-							<Calendar
-								mode="single"
-								selected={displayTime}
-								className="rounded-md border shadow-sm bg-white"
-								disabled={(date) =>
-									date > new Date() || date < new Date("1900-01-01")
-								}
+					{examData && examData.ExamInfo.length > 0 && (
+						<div className="mt-8 pt-4 border-t flex justify-end">
+							<FinishExamResultDialog
+								examId={examData.ExamInfo[0].id}
+								examType={examData.ExamInfo[0].exam_type}
+								startEid={examData.ExamInfo[0].start_eid}
+								examTime={examData.ExamInfo[0].minut}
+								answeredCount={answeredCount}
+								totalCount={totalCount}
 							/>
 						</div>
 					)}
-				</CardContent>
-			</Card>
+				</main>
 
-			{/* Шалгалт дуусгах товч */}
-			{examData && examData.ExamInfo.length > 0 && (
-				<div className="mt-8 pt-4 border-t flex justify-end">
-					<FinishExamResultDialog
-						examId={examData.ExamInfo[0].id}
-						examType={examData.ExamInfo[0].exam_type}
-						startEid={examData.ExamInfo[0].start_eid}
-						examTime={examData.ExamInfo[0].minut}
-						answeredCount={answeredCount}
-						totalCount={totalCount}
-					/>
+				{/* Баруун тал - Timer */}
+				<aside className="col-span-1">
+					<div className="sticky top-4">
+						<ExamTimer initialSeconds={300} />
+					</div>
+				</aside>
+			</div>
+
+			{/* Mobile View - Нэг асуулт харуулах */}
+			<div className="lg:hidden">
+				{/* Progress + Timer дээд хэсэгт */}
+				<div className="sticky top-0 z-10 bg-white pb-4 space-y-3">
+					<Card className="shadow-lg border-t-4 border-blue-500">
+						<CardContent className="p-4">
+							<div className="flex justify-between items-center mb-2">
+								<span className="text-sm font-medium">
+									Асуулт {currentQuestionIndex + 1} / {totalCount}
+								</span>
+								<span className="text-sm text-blue-600 font-bold">
+									{progressPercentage}%
+								</span>
+							</div>
+							<Progress value={progressPercentage} className="h-2" />
+						</CardContent>
+					</Card>
+					<ExamTimer initialSeconds={300} />
 				</div>
-			)}
+
+				{/* Одоогийн асуулт */}
+				{currentQuestion && (
+					<div className="my-6">
+						<div
+							className={`border rounded-xl p-5 shadow-md min-h-[60vh] ${
+								selectedAnswers[currentQuestion.question_id] !== null
+									? "border-green-400 bg-green-50/50"
+									: ""
+							}`}
+						>
+							<h2 className="font-bold mb-4 text-lg">
+								<span className="text-blue-600 mr-2">
+									{currentQuestionIndex + 1}.
+								</span>
+								{currentQuestion.question_name}
+							</h2>
+							<SingleSelectQuestion
+								questionId={currentQuestion.question_id}
+								questionText={currentQuestion.question_name}
+								answers={currentQuestion.answers}
+								mode="exam"
+								selectedAnswer={
+									selectedAnswers[currentQuestion.question_id] ?? null
+								}
+								onAnswerChange={handleAnswerChange}
+							/>
+						</div>
+					</div>
+				)}
+
+				{/* Навигацын товчууд */}
+				<div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4">
+					<div className="flex justify-between items-center gap-4 max-w-lg mx-auto">
+						<Button
+							onClick={goToPrevious}
+							disabled={currentQuestionIndex === 0}
+							variant="outline"
+							size="lg"
+							className="flex-1"
+						>
+							<ChevronLeft className="w-5 h-5 mr-1" />
+							Өмнөх
+						</Button>
+
+						{currentQuestionIndex === totalCount - 1 ? (
+							examData &&
+							examData.ExamInfo.length > 0 && (
+								<FinishExamResultDialog
+									examId={examData.ExamInfo[0].id}
+									examType={examData.ExamInfo[0].exam_type}
+									startEid={examData.ExamInfo[0].start_eid}
+									examTime={examData.ExamInfo[0].minut}
+									answeredCount={answeredCount}
+									totalCount={totalCount}
+								/>
+							)
+						) : (
+							<Button
+								onClick={goToNext}
+								disabled={currentQuestionIndex === totalCount - 1}
+								size="lg"
+								className="flex-1"
+							>
+								Дараах
+								<ChevronRight className="w-5 h-5 ml-1" />
+							</Button>
+						)}
+					</div>
+				</div>
+
+				{/* Доод зайг нөхөх (fixed button-ы хувьд) */}
+				<div className="h-24" />
+			</div>
 		</div>
 	);
 }
