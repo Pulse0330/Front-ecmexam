@@ -129,7 +129,6 @@ export const getExamResults = async (
 	});
 	return data;
 };
-
 // ===== Get Exam Result More =====
 export const getExamResultMore = async (
 	testId: number,
@@ -146,7 +145,6 @@ export const getExamResultMore = async (
 	);
 	return data;
 };
-
 //-------------------------------Soril---------------------------------//
 // ===== Get Sorillists  =====
 export const getSorillists = async (

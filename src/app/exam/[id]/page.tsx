@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Bookmark, BookmarkCheck } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import FinishExamResultDialog from "@/app/exam/component/finish";
 import ExamMinimap from "@/app/exam/component/minimap";
 import FillInTheBlankQuestion from "@/app/exam/component/question/fillblank";
@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getExamById, saveExamAnswer } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
+import type { AnswerValue } from "@/types/exam/exam";
 import ExamTimer from "../component/Itime";
 
 export default function ExamPage() {
@@ -26,7 +27,7 @@ export default function ExamPage() {
 		new Set(),
 	);
 	const [selectedAnswers, setSelectedAnswers] = useState<
-		Record<number, number | number[] | string | Record<number, number> | null>
+		Record<number, AnswerValue>
 	>({});
 
 	const { data: examData } = useQuery({
@@ -36,15 +37,36 @@ export default function ExamPage() {
 		staleTime: 5 * 60 * 1000,
 	});
 
+	// Load previous answers
+	useEffect(() => {
+		if (!examData?.ChoosedAnswer) return;
+
+		const answersMap: Record<number, AnswerValue> = {};
+		examData.ChoosedAnswer.forEach((item) => {
+			const { QueID, QueType, Answer, AnsID } = item;
+			if (QueID == null) return;
+
+			if (QueType === 1) {
+				answersMap[QueID] = AnsID ?? 0;
+			} else if (QueType === 2 || QueType === 5) {
+				if (!answersMap[QueID]) answersMap[QueID] = [];
+				if (AnsID != null) (answersMap[QueID] as number[]).push(AnsID);
+			} else if (QueType === 4) {
+				answersMap[QueID] = Answer ?? "";
+			} else if (QueType === 6) {
+				if (!answersMap[QueID]) answersMap[QueID] = {};
+				if (AnsID != null && Answer != null)
+					(answersMap[QueID] as Record<number, number>)[AnsID] = Number(Answer);
+			}
+		});
+
+		setSelectedAnswers(answersMap);
+	}, [examData]);
+
 	const allQuestions = useMemo(() => {
 		if (!examData) return [];
-		return examData.Questions.filter(
-			(q) =>
-				q.que_type_id === 1 ||
-				q.que_type_id === 2 ||
-				q.que_type_id === 4 ||
-				q.que_type_id === 5 ||
-				q.que_type_id === 6,
+		return examData.Questions.filter((q) =>
+			[1, 2, 4, 5, 6].includes(q.que_type_id),
 		).map((q) => ({
 			...q,
 			question_img: q.question_img || "",
@@ -53,10 +75,7 @@ export default function ExamPage() {
 					a.question_id === q.question_id && a.answer_type === q.que_type_id,
 			).map((a) => ({
 				...a,
-				answer_id: a.answer_id,
-				answer_name_html: a.answer_name_html,
 				answer_img: a.answer_img || undefined,
-				answer_type: a.answer_type,
 				is_true: false,
 			})),
 		}));
@@ -70,7 +89,7 @@ export default function ExamPage() {
 				if (typeof ans === "string") return ans.trim() !== "";
 				if (typeof ans === "object" && ans !== null)
 					return Object.keys(ans).length > 0;
-				return ans !== null;
+				return typeof ans === "number" && !Number.isNaN(ans);
 			}).length,
 		[selectedAnswers],
 	);
@@ -78,7 +97,7 @@ export default function ExamPage() {
 	const saveAnswerMutation = useMutation({
 		mutationFn: (params: {
 			questionId: number;
-			answerId: number | null;
+			answerId: number;
 			queTypeId: number;
 			answerText: string;
 			rowNum: number;
@@ -101,10 +120,8 @@ export default function ExamPage() {
 		onError: (err) => console.error("❌ Хадгалахад алдаа гарлаа:", err),
 	});
 
-	const handleAnswerChange = (
-		questionId: number,
-		answer: number | number[] | string | Record<number, number> | null,
-	) => {
+	// Unified handler
+	const handleAnswerChange = (questionId: number, answer: AnswerValue) => {
 		const question = examData?.Questions.find(
 			(q) => q.question_id === questionId,
 		);
@@ -112,82 +129,19 @@ export default function ExamPage() {
 
 		const rowNum = Number(question.row_num);
 		const queTypeId = question.que_type_id;
-
 		setSelectedAnswers((prev) => ({ ...prev, [questionId]: answer }));
 
-		console.log("📝 handleAnswerChange called:", {
-			questionId,
-			queTypeId,
-			rowNum,
-			answer,
-			type:
-				queTypeId === 1
-					? "Single-select"
-					: queTypeId === 2
-						? "Multi-select"
-						: queTypeId === 4
-							? "Fill-in-the-blank"
-							: queTypeId === 5
-								? "Drag-and-Drop"
-								: queTypeId === 6
-									? "Matching"
-									: "Unknown",
-		});
-
-		if (queTypeId === 1) {
-			// Single-select
-			console.log("📌 Single-select хадгалж байна:", answer);
+		// Save answer immediately
+		if (queTypeId === 1 && typeof answer === "number") {
 			saveAnswerMutation.mutate({
 				questionId,
-				answerId: typeof answer === "number" ? answer : null,
+				answerId: answer,
 				queTypeId,
 				answerText: "",
 				rowNum,
 			});
-		}
-
-		if (queTypeId === 2) {
-			// Multi-select
-			console.log("📌 Multi-select хадгалж байна:", answer);
-			if (Array.isArray(answer) && answer.length === 0) {
-				saveAnswerMutation.mutate({
-					questionId,
-					answerId: null,
-					queTypeId,
-					answerText: "",
-					rowNum,
-				});
-			} else if (Array.isArray(answer)) {
-				answer.forEach((ansId, idx) => {
-					console.log(`  └─ [${idx + 1}/${answer.length}] answerId: ${ansId}`);
-					saveAnswerMutation.mutate({
-						questionId,
-						answerId: ansId,
-						queTypeId,
-						answerText: "",
-						rowNum,
-					});
-				});
-			}
-		}
-
-		if (queTypeId === 4 && typeof answer === "string") {
-			// Fill-in-the-blank
-			console.log("✍️ Fill-in-the-blank хадгалж байна:", answer);
-			saveAnswerMutation.mutate({
-				questionId,
-				answerId: null,
-				queTypeId,
-				answerText: answer,
-				rowNum,
-			});
-		}
-
-		if (queTypeId === 5 && Array.isArray(answer)) {
-			// Drag-and-Drop
-			console.log("↕️ Drag-and-Drop дараалал хадгалж байна:", answer);
-			answer.forEach((ansId, idx) => {
-				console.log(`  └─ [${idx + 1}/${answer.length}] answerId: ${ansId}`);
+		} else if ((queTypeId === 2 || queTypeId === 5) && Array.isArray(answer)) {
+			answer.forEach((ansId) => {
 				saveAnswerMutation.mutate({
 					questionId,
 					answerId: ansId,
@@ -196,25 +150,25 @@ export default function ExamPage() {
 					rowNum,
 				});
 			});
-		}
-
-		if (
+		} else if (queTypeId === 4 && typeof answer === "string") {
+			saveAnswerMutation.mutate({
+				questionId,
+				answerId: 0,
+				queTypeId,
+				answerText: answer,
+				rowNum,
+			});
+		} else if (
 			queTypeId === 6 &&
 			typeof answer === "object" &&
-			answer !== null &&
-			!Array.isArray(answer)
+			answer !== null
 		) {
-			console.log("🔗 Matching холболтууд хадгалж байна:", answer);
-
-			Object.entries(answer).forEach(([questionAnswerId, answerAnswerId]) => {
-				console.log(
-					`  └─ Question ${questionAnswerId} → Answer ${answerAnswerId}`,
-				);
+			Object.entries(answer).forEach(([qAnsId, aAnsId]) => {
 				saveAnswerMutation.mutate({
 					questionId,
-					answerId: Number(answerAnswerId),
+					answerId: Number(aAnsId),
 					queTypeId,
-					answerText: String(questionAnswerId),
+					answerText: String(qAnsId),
 					rowNum,
 				});
 			});
@@ -234,27 +188,22 @@ export default function ExamPage() {
 	const goToQuestion = (index: number) => {
 		setCurrentQuestionIndex(index);
 		if (window.innerWidth >= 1024) {
-			document.getElementById(`question-${index}`)?.scrollIntoView({
-				behavior: "smooth",
-				block: "center",
-			});
+			document
+				.getElementById(`question-${index}`)
+				?.scrollIntoView({ behavior: "smooth", block: "center" });
 		}
 	};
 
 	const getCardBorderClass = (questionId: number) => {
 		const answer = selectedAnswers[questionId];
-
 		const isAnswered =
 			(Array.isArray(answer) && answer.length > 0) ||
 			(typeof answer === "string" && answer.trim() !== "") ||
 			(typeof answer === "number" && !Number.isNaN(answer)) ||
 			(typeof answer === "object" &&
 				answer !== null &&
-				!Array.isArray(answer) &&
 				Object.keys(answer).length > 0);
-
 		const isBookmarked = bookmarkedQuestions.has(questionId);
-
 		if (isAnswered && isBookmarked) return " border-amber-500 shadow-sm";
 		if (isAnswered) return " border-blue-600 shadow-sm";
 		if (isBookmarked) return " border-amber-400 shadow-sm";
@@ -301,16 +250,12 @@ export default function ExamPage() {
 						</div>
 					</aside>
 
-					{/* Main Content - Questions */}
 					<main className="col-span-4 space-y-5">
 						{allQuestions.map((q, index) => (
 							<div key={q.question_id} id={`question-${index}`}>
 								<Card className={getCardBorderClass(q.question_id)}>
 									<CardContent className="p-6 flex gap-4">
-										{/* Question number */}
 										<div className=" w-12 h-12 ">{index + 1}.</div>
-
-										{/* Question content */}
 										<div className="flex-1 min-w-0">
 											<div className="flex items-start justify-between gap-2 mb-4">
 												<h2 className="font-semibold text-lg flex-1">
@@ -335,21 +280,21 @@ export default function ExamPage() {
 												</Button>
 											</div>
 
-											{/* Question type components */}
-											{q.que_type_id === 1 ? (
+											{q.que_type_id === 1 && (
 												<SingleSelectQuestion
 													questionId={q.question_id}
 													questionText={q.question_name}
 													answers={q.answers}
 													mode="exam"
 													selectedAnswer={
-														(selectedAnswers[q.question_id] as number) ?? null
+														selectedAnswers[q.question_id] as number
 													}
-													onAnswerChange={(qId, ans) =>
-														handleAnswerChange(qId, ans)
+													onAnswerChange={(qid, ans) =>
+														handleAnswerChange(qid, ans)
 													}
 												/>
-											) : q.que_type_id === 2 ? (
+											)}
+											{q.que_type_id === 2 && (
 												<MultiSelectQuestion
 													questionId={q.question_id}
 													questionText={q.question_name}
@@ -357,47 +302,56 @@ export default function ExamPage() {
 													answers={q.answers}
 													mode="exam"
 													selectedAnswers={
-														(selectedAnswers[q.question_id] as number[]) ?? []
+														(selectedAnswers[q.question_id] as number[]) || []
 													}
-													onAnswerChange={(qId, ans) =>
-														handleAnswerChange(qId, ans)
+													onAnswerChange={(qid, ans) =>
+														handleAnswerChange(qid, ans)
 													}
 												/>
-											) : q.que_type_id === 4 ? (
+											)}
+											{q.que_type_id === 4 && (
 												<FillInTheBlankQuestion
 													questionId={q.question_id}
 													questionText={q.question_name}
 													mode="exam"
 													value={
-														(selectedAnswers[q.question_id] as string) ?? ""
+														(selectedAnswers[q.question_id] as string) || ""
 													}
-													onAnswerChange={(qId, ans) =>
-														handleAnswerChange(qId, ans)
+													onAnswerChange={(qid, val) =>
+														handleAnswerChange(qid, val)
 													}
 												/>
-											) : q.que_type_id === 5 ? (
+											)}
+											{q.que_type_id === 5 && (
 												<DragAndDropWrapper
 													questionId={q.question_id}
 													answers={q.answers}
 													mode="exam"
 													userAnswers={
-														(selectedAnswers[q.question_id] as number[]) ?? []
+														(selectedAnswers[q.question_id] as number[]) || []
 													}
 													onOrderChange={(orderedIds) =>
 														handleAnswerChange(q.question_id, orderedIds)
 													}
 												/>
-											) : q.que_type_id === 6 ? (
+											)}
+											{q.que_type_id === 6 && (
 												<MatchingByLine
 													answers={q.answers.map((a) => ({
 														...a,
 														answer_img: a.answer_img || null,
 													}))}
-													onMatchChange={(matches: Record<number, number>) =>
+													onMatchChange={(matches) =>
 														handleAnswerChange(q.question_id, matches)
 													}
+													initialMatches={
+														(selectedAnswers[q.question_id] as Record<
+															number,
+															number
+														>) || {}
+													}
 												/>
-											) : null}
+											)}
 										</div>
 									</CardContent>
 								</Card>
@@ -418,9 +372,8 @@ export default function ExamPage() {
 					</aside>
 				</div>
 			</div>
-			<div>
-				<FixedScrollButton />
-			</div>
+
+			<FixedScrollButton />
 		</div>
 	);
 }

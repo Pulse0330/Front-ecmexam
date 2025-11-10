@@ -22,6 +22,7 @@ interface SingleSelectQuestionProps {
 	selectedAnswer?: number | null;
 	correctAnswerId?: number | null;
 	onAnswerChange?: (questionId: number, answerId: number | null) => void;
+	initialMatches?: Record<number, number>;
 }
 
 function SingleSelectQuestion({

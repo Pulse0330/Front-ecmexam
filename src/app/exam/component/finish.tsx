@@ -4,11 +4,13 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
 	CheckCircle,
 	Clock,
+	FileText,
 	Loader2,
 	Trophy,
 	XCircle,
 	Zap,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -25,7 +27,6 @@ import { Progress } from "@/components/ui/progress";
 import { finishExam, getExamResults } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 
-// --- Finish Exam Request (API-тай тохирсон) ---
 interface FinishExamRequest {
 	exam_id: number;
 	exam_type: number;
@@ -34,7 +35,6 @@ interface FinishExamRequest {
 	user_id: number;
 }
 
-// --- Finish Exam Response ---
 interface FinishExamResponse {
 	RetResponse: {
 		ResponseMessage: string;
@@ -45,7 +45,6 @@ interface FinishExamResponse {
 	RetData: number; // Test ID
 }
 
-// --- Exam Results Төрлүүд ---
 interface ExamResultData {
 	test_id: number;
 	title: string;
@@ -71,7 +70,6 @@ interface ExamResultsResponse {
 	RetData: ExamResultData[];
 }
 
-// --- Props ---
 interface FinishExamResultDialogProps {
 	examId: number;
 	examType: number;
@@ -90,57 +88,39 @@ export default function FinishExamResultDialog({
 	totalCount,
 }: FinishExamResultDialogProps) {
 	const { userId } = useAuthStore();
+	const router = useRouter();
 	const [open, setOpen] = useState(false);
 	const [finishedTestId, setFinishedTestId] = useState<number | null>(null);
 
-	// --- 1. Шалгалт Дуусгах Mutation ---
+	// Finish Exam Mutation
 	const finishMutation = useMutation<
 		FinishExamResponse,
 		Error,
 		FinishExamRequest
 	>({
-		mutationFn: async (payload) => {
-			console.log("📤 Sending finish exam request:", payload);
-			return finishExam(payload);
-		},
-		onSuccess: (response) => {
-			console.log("✅ Finish exam response:", response);
-
-			if (response.RetResponse.ResponseCode === "10") {
-				toast.success("Шалгалт амжилттай дуусгалаа. Үр дүнг татаж байна...");
-
-				const newTestId = response.RetData;
-				if (newTestId) {
-					console.log("🆔 Test ID:", newTestId);
-					setFinishedTestId(newTestId);
-				} else {
-					toast.warning("Шалгалтын ID олдсонгүй.");
-					setOpen(false);
-				}
+		mutationFn: (payload) => finishExam(payload),
+		onSuccess: (res) => {
+			if (res.RetResponse.ResponseCode === "10") {
+				toast.success("Шалгалт амжилттай дуусгалаа");
+				const testId = res.RetData;
+				if (testId) setFinishedTestId(testId);
 			} else {
-				toast.warning(
-					response.RetResponse.ResponseMessage ||
-						"Шалгалт дуусгах хүсэлт амжилтгүй боллоо.",
-				);
+				toast.error(res.RetResponse.ResponseMessage);
 				setOpen(false);
 			}
 		},
-		onError: (error) => {
-			console.error("❌ Finish exam error:", error);
-			toast.error("Шалгалт дуусгах үед алдаа гарлаа.");
+		onError: () => {
+			toast.error("Шалгалт дуусгах үед алдаа гарлаа");
 			setOpen(false);
 		},
 	});
 
-	// --- 2. Үр Дүн Татаж Авах Query ---
+	// Fetch Results
 	const { data: resultsData, isLoading: isLoadingResults } =
 		useQuery<ExamResultsResponse>({
 			queryKey: ["examResults", finishedTestId],
 			queryFn: () => {
-				if (finishedTestId !== null) {
-					console.log("📊 Fetching results for test ID:", finishedTestId);
-					return getExamResults(finishedTestId);
-				}
+				if (finishedTestId !== null) return getExamResults(finishedTestId);
 				return Promise.reject("finishedTestId олдсонгүй");
 			},
 			enabled: !!finishedTestId,
@@ -150,73 +130,71 @@ export default function FinishExamResultDialog({
 
 	const handleFinish = () => {
 		if (!userId) {
-			toast.error("Хэрэглэгчийн мэдээлэл олдсонгүй.");
+			toast.error("Хэрэглэгчийн мэдээлэл олдсонгүй");
 			return;
 		}
 
-		// Хоёр минут хөрвүүлэх (examTime is in minutes)
-		const examTimeInMinutes = examTime;
-
-		const payload: FinishExamRequest = {
+		finishMutation.mutate({
 			exam_id: examId,
 			exam_type: examType,
 			start_eid: startEid,
-			exam_time: examTimeInMinutes,
+			exam_time: examTime,
 			user_id: userId,
-		};
-
-		console.log("🚀 Finishing exam with payload:", payload);
-		finishMutation.mutate(payload);
+		});
 	};
 
-	// Явцын тооцоолол
+	const handleViewDetails = () => {
+		// finishedTestId болон examId-г Number() болгон хөрвүүлэх
+		const finishIdNum = Number(finishedTestId);
+		const examIdNum = Number(examId);
+
+		if (!Number.isNaN(finishIdNum) && !Number.isNaN(examIdNum)) {
+			router.push(`/exam/resultDetail/${finishIdNum}?examId=${examIdNum}`);
+			setOpen(false);
+		} else {
+			console.error(
+				"finishedTestId эсвэл examId буруу байна:",
+				finishedTestId,
+				examId,
+			);
+			toast.error("ID буруу байна, дэлгэрэнгүй харах боломжгүй байна.");
+		}
+	};
+
 	const progressPercentage =
 		totalCount > 0 ? Math.round((answeredCount / totalCount) * 100) : 0;
 	const unansweredCount = totalCount - answeredCount;
-
 	const resultInfo = resultsData?.RetData?.[0];
 
-	// --- RESULT VIEW РЕНДЕРЛЭХ ---
+	// Result Dialog
 	if (finishedTestId) {
 		const handleCloseResults = () => {
 			setFinishedTestId(null);
 			setOpen(false);
-			// Redirect to results page if needed
-			// router.push(`/exam/results/${finishedTestId}`);
 		};
 
-		// A. Loading View
 		if (isLoadingResults) {
 			return (
 				<Dialog open={true} onOpenChange={handleCloseResults}>
 					<DialogContent className="sm:max-w-[425px]">
 						<DialogHeader className="text-center">
 							<Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin text-blue-500" />
-							<DialogTitle className="text-xl font-bold">
-								Үр Дүнг Татаж Байна...
-							</DialogTitle>
-							<DialogDescription>
-								Түр хүлээнэ үү. Энэ нь хэдхэн секунд үргэлжилнэ.
-							</DialogDescription>
+							<DialogTitle>Үр Дүнг Татаж Байна...</DialogTitle>
+							<DialogDescription>Түр хүлээнэ үү.</DialogDescription>
 						</DialogHeader>
 					</DialogContent>
 				</Dialog>
 			);
 		}
 
-		// B. Error View
 		if (!resultInfo) {
 			return (
 				<Dialog open={true} onOpenChange={handleCloseResults}>
 					<DialogContent className="sm:max-w-[425px]">
 						<DialogHeader className="text-center">
 							<XCircle className="w-8 h-8 mx-auto mb-2 text-red-500" />
-							<DialogTitle className="text-xl font-bold">
-								Үр Дүн Олдсонгүй
-							</DialogTitle>
-							<DialogDescription>
-								Үр дүнг татах явцад алдаа гарлаа эсвэл мэдээлэл хоосон байна.
-							</DialogDescription>
+							<DialogTitle>Үр Дүн Олдсонгүй</DialogTitle>
+							<DialogDescription>Мэдээлэл хоосон байна.</DialogDescription>
 						</DialogHeader>
 						<DialogFooter>
 							<Button onClick={handleCloseResults} className="w-full">
@@ -228,7 +206,6 @@ export default function FinishExamResultDialog({
 			);
 		}
 
-		// C. Success Result View
 		const isPassed = resultInfo.point_perc >= 60;
 
 		return (
@@ -236,12 +213,10 @@ export default function FinishExamResultDialog({
 				<DialogContent className="sm:max-w-[450px] border-t-4">
 					<DialogHeader className="text-center">
 						<Trophy
-							className={`w-12 h-12 mx-auto mb-2 ${
-								isPassed ? "text-yellow-500" : "text-gray-400"
-							}`}
+							className={`w-12 h-12 mx-auto mb-2 ${isPassed ? "text-yellow-500" : "text-gray-400"}`}
 						/>
 						<DialogTitle className="text-2xl font-extrabold text-blue-700">
-							🎉 Шалгалтын Үр Дүн: {resultInfo.title}
+							🎉 Шалгалтын Үр Дүн
 						</DialogTitle>
 						<DialogDescription className="pt-2 text-md font-semibold text-gray-700">
 							{isPassed
@@ -251,42 +226,65 @@ export default function FinishExamResultDialog({
 					</DialogHeader>
 
 					<div className="py-4 space-y-3">
-						<div className="flex justify-between font-bold text-xl p-3 rounded-lg ">
-							<span>Нийт Оноо (%):</span>
-							<span>{resultInfo.point_perc}%</span>
-						</div>
-
-						<div className="grid grid-cols-2 gap-4 text-sm">
-							<div className="bg-green-50 p-3 rounded-md flex items-center justify-between">
-								<CheckCircle className="w-4 h-4 mr-2 text-green-600" />
-								<span className="font-medium text-green-700">Зөв хариулт:</span>
-								<span className="font-bold">{resultInfo.correct_ttl}</span>
-							</div>
-							<div className="bg-red-50 p-3 rounded-md flex items-center justify-between">
-								<XCircle className="w-4 h-4 mr-2 text-red-600" />
-								<span className="font-medium text-red-700">Буруу хариулт:</span>
-								<span className="font-bold">{resultInfo.wrong_ttl}</span>
+						<div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
+							<span className="font-semibold text-gray-700">Нийт Оноо:</span>
+							<div className="text-right">
+								<p className="text-3xl font-bold text-blue-600">
+									{resultInfo.point_perc}%
+								</p>
+								<p className="text-sm text-gray-600">
+									{resultInfo.point}/{resultInfo.ttl_point} оноо
+								</p>
 							</div>
 						</div>
 
-						<div className="flex justify-between text-sm pt-2 text-muted-foreground">
+						<div className="grid grid-cols-2 gap-3 text-sm">
+							<div className="bg-green-50 p-3 rounded-md border border-green-200">
+								<div className="flex items-center mb-1">
+									<CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+									<span className="font-medium text-green-700">Зөв</span>
+								</div>
+								<p className="text-2xl font-bold text-green-600">
+									{resultInfo.correct_ttl}
+								</p>
+							</div>
+							<div className="bg-red-50 p-3 rounded-md border border-red-200">
+								<div className="flex items-center mb-1">
+									<XCircle className="w-4 h-4 mr-2 text-red-600" />
+									<span className="font-medium text-red-700">Буруу</span>
+								</div>
+								<p className="text-2xl font-bold text-red-600">
+									{resultInfo.wrong_ttl}
+								</p>
+							</div>
+						</div>
+
+						<div className="flex justify-between text-sm pt-2 text-muted-foreground border-t">
 							<div className="flex items-center">
 								<Clock className="w-4 h-4 mr-2" />
-								<span>Хугацаа: {resultInfo.test_time}</span>
+								<span>{resultInfo.test_time}</span>
 							</div>
 							<div className="flex items-center">
 								<Zap className="w-4 h-4 mr-2" />
-								<span>Үнэлгээ: {resultInfo.unelgee}</span>
+								<span>{resultInfo.unelgee}</span>
 							</div>
 						</div>
 					</div>
 
-					<DialogFooter className="mt-4">
+					<DialogFooter className="mt-4 gap-2">
 						<Button
+							variant="outline"
 							onClick={handleCloseResults}
-							className="w-full font-semibold"
+							className="flex-1"
 						>
 							Хаах
+						</Button>
+						<Button
+							onClick={handleViewDetails}
+							className="flex-1 font-semibold"
+						>
+							<FileText className="w-4 h-4 mr-2" />
+							Дэлгэрэнгүй харах
 						</Button>
 					</DialogFooter>
 				</DialogContent>
@@ -294,7 +292,7 @@ export default function FinishExamResultDialog({
 		);
 	}
 
-	// --- CONFIRMATION VIEW (Default) ---
+	// Default Confirmation Dialog
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
@@ -302,16 +300,13 @@ export default function FinishExamResultDialog({
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-[425px]">
 				<DialogHeader>
-					<DialogTitle className="">
-						Шалгалтыг баталгаажуулж дуусгах
-					</DialogTitle>
+					<DialogTitle>Шалгалтыг баталгаажуулж дуусгах</DialogTitle>
 					<DialogDescription className="pt-2 text-base text-gray-700">
 						Та шалгалтыг дуусгах гэж байна. Дуусгасны дараа хариултуудыг өөрчлөх
 						боломжгүй. Та итгэлтэй байна уу?
 					</DialogDescription>
 				</DialogHeader>
 
-				{/* Явцын мэдээлэл */}
 				<div className="py-4 border-y border-dashed my-2">
 					<p className="text-sm font-semibold text-gray-700 mb-2">
 						Шалгалтын явцын мэдээлэл:
@@ -341,7 +336,6 @@ export default function FinishExamResultDialog({
 					</p>
 				</div>
 
-				{/* Footer buttons */}
 				<DialogFooter className="flex sm:justify-between gap-3 pt-4 border-t">
 					<Button
 						variant="outline"

@@ -27,7 +27,8 @@ interface MatchingByLineProps {
 	onMatchChange?: (matches: Record<number, number>) => void;
 	readonly?: boolean;
 	mode?: "exam" | "review";
-	userAnswers?: Record<number, number>;
+	userAnswers?: Record<number, number>; // server-с ирсэн хадгалсан холболтууд
+	initialMatches?: Record<number, number>;
 }
 
 interface Connection {
@@ -50,7 +51,7 @@ export default function MatchingByLine({
 	const lastNotifiedRef = useRef<string>("");
 	const onMatchChangeRef = useRef(onMatchChange);
 
-	// 🎯 1. Answers-г асуултаар бүлэглэх (Map<question_id, answers[]>)
+	// 🎯 Answers-г асуултаар бүлэглэх
 	const answersByQuestion = useMemo(() => {
 		const map = new Map<number, QuestionItem[]>();
 		answers.forEach((answer) => {
@@ -63,32 +64,16 @@ export default function MatchingByLine({
 		return map;
 	}, [answers]);
 
-	// 🎯 2. ref_child_id ашиглан асуулт ба хариулт ялгах
-	const matchingData = useMemo(() => {
-		const questionsFiltered = answers.filter(
-			(q): q is QuestionItem & { refid: number } =>
-				q.ref_child_id !== -1 &&
-				q.ref_child_id !== null &&
-				typeof q.refid === "number",
-		);
-		const answersFiltered = answers.filter(
-			(a): a is QuestionItem & { refid: number } =>
-				a.ref_child_id === -1 && typeof a.refid === "number",
-		);
-		return { questions: questionsFiltered, answers: answersFiltered };
-	}, [answers]);
-
-	// 🎯 3. Нэг асуултанд харгалзах бүх хариултуудыг авах функц
-	const getAnswersForQuestion = useCallback(
+	// 🎯 Нэг асуултанд харгалзах бүх хариулт
+	const _getAnswersForQuestion = useCallback(
 		(questionId: number) => answersByQuestion.get(questionId) || [],
 		[answersByQuestion],
 	);
 
-	// 🎯 4. Build correct answer mapping from ref_child_id
-	const correctAnswers = useMemo(() => {
+	// 🎯 Correct answer mapping
+	const _correctAnswers = useMemo(() => {
 		const mapping: Record<number, number> = {};
 		answers.forEach((item) => {
-			// Questions have ref_child_id pointing to their correct answer
 			if (item.ref_child_id !== null && item.ref_child_id !== -1) {
 				mapping[item.answer_id] = item.ref_child_id;
 			}
@@ -96,21 +81,21 @@ export default function MatchingByLine({
 		return mapping;
 	}, [answers]);
 
-	// 🎯 5. Initialize connections from userAnswers in review mode
+	// 🎯 UserAnswers-аас connections үүсгэх
 	useEffect(() => {
-		if (mode === "review" && Object.keys(userAnswers).length > 0) {
-			const reviewConnections: Connection[] = [];
+		if (Object.keys(userAnswers).length > 0) {
+			const restored: Connection[] = [];
 			Object.entries(userAnswers).forEach(([qId, aId]) => {
-				const isCorrect = correctAnswers[Number(qId)] === Number(aId);
-				reviewConnections.push({
+				const color = "#3b82f6"; // Сэргээсэн холболтын өнгө
+				restored.push({
 					start: `q-${qId}`,
 					end: `a-${aId}`,
-					color: isCorrect ? "#22c55e" : "#ef4444", // green if correct, red if wrong
+					color,
 				});
 			});
-			setConnections(reviewConnections);
+			setConnections(restored);
 		}
-	}, [mode, userAnswers, correctAnswers]);
+	}, [userAnswers]);
 
 	const colorPalette = useRef<string[]>([
 		"#ef4444",
@@ -158,6 +143,7 @@ export default function MatchingByLine({
 		return () => window.removeEventListener("resize", updateXarrow);
 	}, [updateXarrow]);
 
+	// 🎯 Connections update callback
 	useEffect(() => {
 		if (!onMatchChangeRef.current) return;
 		const matches: Record<number, number> = {};
@@ -182,7 +168,6 @@ export default function MatchingByLine({
 		connections.find((c) => c.start === id || c.end === id)?.color;
 
 	const handleItemClick = (id: string, isQuestion: boolean) => {
-		// Disable interaction in review mode
 		if (mode === "review") return;
 
 		const existing = connections.find((c) => c.start === id || c.end === id);
@@ -209,20 +194,10 @@ export default function MatchingByLine({
 		</div>
 	);
 
-	const getItemStatus = (id: string, isQuestion: boolean) => {
-		if (mode === "exam") return null;
-
-		const connection = connections.find((c) =>
-			isQuestion ? c.start === id : c.end === id,
-		);
-		if (!connection) return null;
-
-		const questionId = parseInt(connection.start.replace("q-", ""), 10);
-		const answerId = parseInt(connection.end.replace("a-", ""), 10);
-		const isCorrect = correctAnswers[questionId] === answerId;
-
-		return isCorrect ? "correct" : "incorrect";
-	};
+	const questionsOnly = answers.filter(
+		(a) => a.ref_child_id !== -1 && a.ref_child_id !== null,
+	);
+	const answersOnly = answers.filter((a) => a.ref_child_id === -1);
 
 	const interactiveProps = (id: string, isQuestion: boolean) => ({
 		role: "button",
@@ -232,9 +207,6 @@ export default function MatchingByLine({
 			if (e.key === "Enter" || e.key === " ") handleItemClick(id, isQuestion);
 		},
 	});
-
-	const questionsOnly = matchingData.questions;
-	const answersOnly = matchingData.answers;
 
 	return (
 		<div ref={containerRef} className="w-full relative">
@@ -253,11 +225,8 @@ export default function MatchingByLine({
 
 					{questionsOnly.map((q, index) => {
 						const qid = `q-${q.answer_id}`;
-						const _answerOptions = getAnswersForQuestion(q.question_id ?? -1);
 						const a = answersOnly[index];
 						const aid = a ? `a-${a.answer_id}` : null;
-						const qStatus = getItemStatus(qid, true);
-						const aStatus = aid ? getItemStatus(aid, false) : null;
 
 						return (
 							<React.Fragment key={q.refid}>
@@ -271,22 +240,14 @@ export default function MatchingByLine({
 											? "border-blue-500"
 											: mode === "exam" && isConnected(qid)
 												? "border-green-500 bg-green-50"
-												: qStatus === "correct"
-													? "border-green-500 bg-green-50"
-													: qStatus === "incorrect"
-														? "border-red-500 bg-red-50"
-														: "border-gray-300",
+												: "border-gray-300",
 									)}
-									style={
-										mode === "exam"
-											? {
-													borderColor: getConnectionColor(qid),
-													backgroundColor: getConnectionColor(qid)
-														? `${getConnectionColor(qid)}20`
-														: undefined,
-												}
-											: undefined
-									}
+									style={{
+										borderColor: getConnectionColor(qid),
+										backgroundColor: getConnectionColor(qid)
+											? `${getConnectionColor(qid)}20`
+											: undefined,
+									}}
 								>
 									{renderContent(q)}
 								</div>
@@ -302,22 +263,14 @@ export default function MatchingByLine({
 												? "border-blue-500 bg-blue-50"
 												: mode === "exam" && isConnected(aid)
 													? "border-green-500 bg-green-50"
-													: aStatus === "correct"
-														? "border-green-500 bg-green-50"
-														: aStatus === "incorrect"
-															? "border-red-500 bg-red-50"
-															: "border-gray-300",
+													: "border-gray-300",
 										)}
-										style={
-											mode === "exam"
-												? {
-														borderColor: getConnectionColor(aid),
-														backgroundColor: getConnectionColor(aid)
-															? `${getConnectionColor(aid)}20`
-															: undefined,
-													}
-												: undefined
-										}
+										style={{
+											borderColor: getConnectionColor(aid),
+											backgroundColor: getConnectionColor(aid)
+												? `${getConnectionColor(aid)}20`
+												: undefined,
+										}}
 									>
 										{renderContent(a)}
 									</div>
@@ -327,6 +280,7 @@ export default function MatchingByLine({
 					})}
 				</div>
 
+				{/* Xarrow */}
 				{!isMobile &&
 					connections.map((c) => (
 						<Xarrow

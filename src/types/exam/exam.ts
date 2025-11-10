@@ -1,5 +1,12 @@
 // types/exam.ts
 
+export type AnswerValue =
+	| number
+	| number[]
+	| string
+	| Record<number, number>
+	| null;
+
 export interface Question {
 	row_num: string;
 	question_id: number;
@@ -22,7 +29,7 @@ export interface Answer {
 	answer_name_html: string;
 	ismaths: number;
 	answer_descr: string;
-	answer_img: string;
+	answer_img: string | null;
 	answer_type: number;
 	refid: number;
 	ref_child_id: number | null;
@@ -45,7 +52,7 @@ export interface ExamInfo {
 
 export interface ChoosedAnswer {
 	QueType: number | null;
-	QueID: number | null;
+	QueID: number;
 	AnsID: number | null;
 	Answer: string | null;
 	PageNum: number | null;
@@ -80,12 +87,13 @@ export interface ApiExamResponse {
 	RetData: RetDataItem[];
 }
 
+// **Зассан SaveAnswerRequest**
 export interface SaveAnswerRequest {
 	userId: number;
 	examId: number;
 	questionId: number;
 	queTypeId: number;
-	answerValue: number | number[] | string | Record<string, string> | null;
+	answerValue: AnswerValue; // number | number[] | string | Record<number,number>
 }
 
 export interface SaveAnswerResponse {
