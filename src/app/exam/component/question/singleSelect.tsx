@@ -1,3 +1,4 @@
+// ========== D:\Programms\Bymbaa\front\src\app\exam\component\question\singleSelect.tsx ==========
 "use client";
 
 import parse from "html-react-parser";
@@ -45,6 +46,7 @@ function SingleSelectQuestion({
 	return (
 		<div className="space-y-3 sm:space-y-4">
 			<div className="space-y-2 sm:space-y-3">
+				<p>Нэг хариулт сонгох боломжтой</p>
 				{answers.map((option) => {
 					const isSelected = selectedAnswer === option.answer_id;
 					const isCorrect =

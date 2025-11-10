@@ -1,15 +1,19 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Bookmark, BookmarkCheck } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import FinishExamResultDialog from "@/app/exam/component/finish";
 import ExamMinimap from "@/app/exam/component/minimap";
+import FillInTheBlankQuestion from "@/app/exam/component/question/fillblank";
+import MatchingByLine from "@/app/exam/component/question/matching";
+import MultiSelectQuestion from "@/app/exam/component/question/multiselect";
+import DragAndDropWrapper from "@/app/exam/component/question/order";
 import SingleSelectQuestion from "@/app/exam/component/question/singleSelect";
+import FixedScrollButton from "@/components/FixedScrollButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { getExamById, saveExamAnswer } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import ExamTimer from "../component/Itime";
@@ -18,285 +22,404 @@ export default function ExamPage() {
 	const { userId } = useAuthStore();
 	const { id } = useParams();
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+	const [bookmarkedQuestions, setBookmarkedQuestions] = useState<Set<number>>(
+		new Set(),
+	);
+	const [selectedAnswers, setSelectedAnswers] = useState<
+		Record<number, number | number[] | string | Record<number, number> | null>
+	>({});
 
-	const { data: examData, isLoading } = useQuery({
+	const { data: examData } = useQuery({
 		queryKey: ["exam", userId, id],
 		queryFn: () => getExamById(userId || 0, Number(id)),
 		enabled: !!userId && !!id,
 		staleTime: 5 * 60 * 1000,
 	});
 
-	const singleSelectQuestions = useMemo(() => {
+	const allQuestions = useMemo(() => {
 		if (!examData) return [];
-		return examData.Questions.filter((q) => q.que_type_id === 1).map((q) => {
-			const answers = examData.Answers.filter(
-				(a) => a.question_id === q.question_id && a.answer_type === 1,
+		return examData.Questions.filter(
+			(q) =>
+				q.que_type_id === 1 ||
+				q.que_type_id === 2 ||
+				q.que_type_id === 4 ||
+				q.que_type_id === 5 ||
+				q.que_type_id === 6,
+		).map((q) => ({
+			...q,
+			question_img: q.question_img || "",
+			answers: examData.Answers.filter(
+				(a) =>
+					a.question_id === q.question_id && a.answer_type === q.que_type_id,
 			).map((a) => ({
+				...a,
 				answer_id: a.answer_id,
 				answer_name_html: a.answer_name_html,
 				answer_img: a.answer_img || undefined,
+				answer_type: a.answer_type,
 				is_true: false,
-			}));
-			return { ...q, answers };
-		});
+			})),
+		}));
 	}, [examData]);
 
-	const [selectedAnswers, setSelectedAnswers] = useState<
-		Record<number, number | null>
-	>({});
-
-	const totalCount = singleSelectQuestions.length;
+	const totalCount = allQuestions.length;
 	const answeredCount = useMemo(
 		() =>
-			Object.values(selectedAnswers).filter((answer) => answer !== null).length,
+			Object.values(selectedAnswers).filter((ans) => {
+				if (Array.isArray(ans)) return ans.length > 0;
+				if (typeof ans === "string") return ans.trim() !== "";
+				if (typeof ans === "object" && ans !== null)
+					return Object.keys(ans).length > 0;
+				return ans !== null;
+			}).length,
 		[selectedAnswers],
 	);
-	const progressPercentage =
-		totalCount > 0 ? Math.round((answeredCount / totalCount) * 100) : 0;
 
 	const saveAnswerMutation = useMutation({
-		mutationFn: ({
-			questionId,
-			answerId,
-			queTypeId,
-			rowNum,
-		}: {
+		mutationFn: (params: {
 			questionId: number;
-			answerId: number;
+			answerId: number | null;
 			queTypeId: number;
+			answerText: string;
 			rowNum: number;
 		}) => {
-			const examId = examData?.ExamInfo[0]?.id;
-			if (!examId) {
-				throw new Error("Exam ID олдсонгүй");
-			}
+			const { questionId, answerId, queTypeId, answerText, rowNum } = params;
+			if (!examData?.ExamInfo[0]?.id) throw new Error("Exam ID олдсонгүй");
+
 			return saveExamAnswer(
 				userId || 0,
-				examData?.ExamInfo[0].id,
+				examData.ExamInfo[0].id,
 				questionId,
 				answerId,
 				queTypeId,
-				"",
+				answerText,
 				rowNum,
 			);
 		},
-		onSuccess: (response) => console.log("Server response:", response),
-		onError: (err) => console.error("Failed to save answer", err),
+		onSuccess: (response) =>
+			console.log("✅ Амжилттай хадгалагдлаа:", response),
+		onError: (err) => console.error("❌ Хадгалахад алдаа гарлаа:", err),
 	});
 
-	const handleAnswerChange = (questionId: number, answerId: number | null) => {
-		setSelectedAnswers((prev) => ({ ...prev, [questionId]: answerId }));
-		if (!examData || answerId === null) return;
-		const question = examData.Questions.find(
+	const handleAnswerChange = (
+		questionId: number,
+		answer: number | number[] | string | Record<number, number> | null,
+	) => {
+		const question = examData?.Questions.find(
 			(q) => q.question_id === questionId,
 		);
 		if (!question) return;
 
-		saveAnswerMutation.mutate({
+		const rowNum = Number(question.row_num);
+		const queTypeId = question.que_type_id;
+
+		setSelectedAnswers((prev) => ({ ...prev, [questionId]: answer }));
+
+		console.log("📝 handleAnswerChange called:", {
 			questionId,
-			answerId,
-			queTypeId: question.que_type_id,
-			rowNum: Number(question.row_num),
+			queTypeId,
+			rowNum,
+			answer,
+			type:
+				queTypeId === 1
+					? "Single-select"
+					: queTypeId === 2
+						? "Multi-select"
+						: queTypeId === 4
+							? "Fill-in-the-blank"
+							: queTypeId === 5
+								? "Drag-and-Drop"
+								: queTypeId === 6
+									? "Matching"
+									: "Unknown",
+		});
+
+		if (queTypeId === 1) {
+			// Single-select
+			console.log("📌 Single-select хадгалж байна:", answer);
+			saveAnswerMutation.mutate({
+				questionId,
+				answerId: typeof answer === "number" ? answer : null,
+				queTypeId,
+				answerText: "",
+				rowNum,
+			});
+		}
+
+		if (queTypeId === 2) {
+			// Multi-select
+			console.log("📌 Multi-select хадгалж байна:", answer);
+			if (Array.isArray(answer) && answer.length === 0) {
+				saveAnswerMutation.mutate({
+					questionId,
+					answerId: null,
+					queTypeId,
+					answerText: "",
+					rowNum,
+				});
+			} else if (Array.isArray(answer)) {
+				answer.forEach((ansId, idx) => {
+					console.log(`  └─ [${idx + 1}/${answer.length}] answerId: ${ansId}`);
+					saveAnswerMutation.mutate({
+						questionId,
+						answerId: ansId,
+						queTypeId,
+						answerText: "",
+						rowNum,
+					});
+				});
+			}
+		}
+
+		if (queTypeId === 4 && typeof answer === "string") {
+			// Fill-in-the-blank
+			console.log("✍️ Fill-in-the-blank хадгалж байна:", answer);
+			saveAnswerMutation.mutate({
+				questionId,
+				answerId: null,
+				queTypeId,
+				answerText: answer,
+				rowNum,
+			});
+		}
+
+		if (queTypeId === 5 && Array.isArray(answer)) {
+			// Drag-and-Drop
+			console.log("↕️ Drag-and-Drop дараалал хадгалж байна:", answer);
+			answer.forEach((ansId, idx) => {
+				console.log(`  └─ [${idx + 1}/${answer.length}] answerId: ${ansId}`);
+				saveAnswerMutation.mutate({
+					questionId,
+					answerId: ansId,
+					queTypeId,
+					answerText: "",
+					rowNum,
+				});
+			});
+		}
+
+		if (
+			queTypeId === 6 &&
+			typeof answer === "object" &&
+			answer !== null &&
+			!Array.isArray(answer)
+		) {
+			console.log("🔗 Matching холболтууд хадгалж байна:", answer);
+
+			Object.entries(answer).forEach(([questionAnswerId, answerAnswerId]) => {
+				console.log(
+					`  └─ Question ${questionAnswerId} → Answer ${answerAnswerId}`,
+				);
+				saveAnswerMutation.mutate({
+					questionId,
+					answerId: Number(answerAnswerId),
+					queTypeId,
+					answerText: String(questionAnswerId),
+					rowNum,
+				});
+			});
+		}
+	};
+
+	const toggleBookmark = (questionId: number) => {
+		setBookmarkedQuestions((prev) => {
+			const newSet = new Set(prev);
+			newSet.has(questionId)
+				? newSet.delete(questionId)
+				: newSet.add(questionId);
+			return newSet;
 		});
 	};
 
 	const goToQuestion = (index: number) => {
 		setCurrentQuestionIndex(index);
-		// Desktop дээр тухайн асуулт руу scroll хийх
 		if (window.innerWidth >= 1024) {
-			const element = document.getElementById(`question-${index}`);
-			if (element) {
-				element.scrollIntoView({ behavior: "smooth", block: "center" });
-			}
+			document.getElementById(`question-${index}`)?.scrollIntoView({
+				behavior: "smooth",
+				block: "center",
+			});
 		}
 	};
 
-	const goToPrevious = () => {
-		if (currentQuestionIndex > 0) {
-			setCurrentQuestionIndex(currentQuestionIndex - 1);
-		}
+	const getCardBorderClass = (questionId: number) => {
+		const answer = selectedAnswers[questionId];
+
+		const isAnswered =
+			(Array.isArray(answer) && answer.length > 0) ||
+			(typeof answer === "string" && answer.trim() !== "") ||
+			(typeof answer === "number" && !Number.isNaN(answer)) ||
+			(typeof answer === "object" &&
+				answer !== null &&
+				!Array.isArray(answer) &&
+				Object.keys(answer).length > 0);
+
+		const isBookmarked = bookmarkedQuestions.has(questionId);
+
+		if (isAnswered && isBookmarked) return " border-amber-500 shadow-sm";
+		if (isAnswered) return " border-blue-600 shadow-sm";
+		if (isBookmarked) return " border-amber-400 shadow-sm";
+		return "border border-gray-200";
 	};
 
-	const goToNext = () => {
-		if (currentQuestionIndex < totalCount - 1) {
-			setCurrentQuestionIndex(currentQuestionIndex + 1);
-		}
-	};
-
-	const currentQuestion = singleSelectQuestions[currentQuestionIndex];
-
-	if (isLoading)
+	if (!examData || examData.Questions.length === 0) {
 		return (
-			<div className="flex justify-center items-center h-screen text-lg font-medium">
-				⏳ Шалгалтын мэдээлэл ачааллаж байна...
+			<div className="flex justify-center items-center h-screen">
+				<div className="text-center p-8 bg-red-50 rounded-xl border border-red-200">
+					<p className="text-xl font-medium text-red-600">Шалгалт олдсонгүй</p>
+				</div>
 			</div>
 		);
-
-	if (!examData || examData.Questions.length === 0)
-		return (
-			<div className="p-8 text-center text-xl font-medium text-red-600">
-				❌ Шалгалт олдсонгүй эсвэл асуулт байхгүй байна.
-			</div>
-		);
+	}
 
 	return (
-		<div className="p-4 md:p-8">
-			{/* Desktop Grid Layout: 1-3-1 */}
-			<div className="hidden lg:grid grid-cols-5 gap-6 max-w-7xl mx-auto">
-				{/* Зүүн тал - Minimap + Timer */}
-				<aside className="col-span-1">
-					<ExamMinimap
-						totalCount={totalCount}
-						answeredCount={answeredCount}
-						currentQuestionIndex={currentQuestionIndex}
-						selectedAnswers={selectedAnswers}
-						questions={singleSelectQuestions}
-						onQuestionClick={goToQuestion}
-						timerComponent={<ExamTimer initialSeconds={300} />}
-					/>
-				</aside>
-
-				{/* Төв хэсэг - Бүх асуултууд */}
-				<main className="col-span-3 space-y-6">
-					{singleSelectQuestions.map((q, index) => (
-						<div
-							key={q.question_id}
-							id={`question-${index}`}
-							className={`border rounded-xl p-5 shadow-sm transition-all duration-300 ${
-								selectedAnswers[q.question_id] !== null
-									? "border-green-400 bg-green-50/50"
-									: "hover:shadow-md"
-							}`}
-						>
-							<h2 className="font-bold mb-4 text-lg">
-								<span className="text-blue-600 mr-2">{index + 1}.</span>
-								{q.question_name}
-							</h2>
-							<SingleSelectQuestion
-								questionId={q.question_id}
-								questionText={q.question_name}
-								answers={q.answers}
-								mode="exam"
-								selectedAnswer={selectedAnswers[q.question_id] ?? null}
-								onAnswerChange={handleAnswerChange}
-							/>
-						</div>
-					))}
-
-					{examData && examData.ExamInfo.length > 0 && (
-						<div className="mt-8 pt-4 border-t flex justify-end">
-							<FinishExamResultDialog
-								examId={examData.ExamInfo[0].id}
-								examType={examData.ExamInfo[0].exam_type}
-								startEid={examData.ExamInfo[0].start_eid}
-								examTime={examData.ExamInfo[0].minut}
-								answeredCount={answeredCount}
+		<div className="min-h-screen">
+			<div className="hidden lg:block">
+				<div className="grid grid-cols-6 gap-6 max-w-[1800px] mx-auto p-6 xl:p-8">
+					<aside className="col-span-1">
+						<div className="sticky top-6 space-y-4">
+							<ExamMinimap
 								totalCount={totalCount}
+								answeredCount={answeredCount}
+								currentQuestionIndex={currentQuestionIndex}
+								selectedAnswers={selectedAnswers}
+								questions={allQuestions}
+								onQuestionClick={goToQuestion}
+								bookmarkedQuestions={bookmarkedQuestions}
 							/>
+							{examData?.ExamInfo[0] && (
+								<div className="pt-6 flex justify-center">
+									<FinishExamResultDialog
+										examId={examData.ExamInfo[0].id}
+										examType={examData.ExamInfo[0].exam_type}
+										startEid={examData.ExamInfo[0].start_eid}
+										examTime={examData.ExamInfo[0].minut}
+										answeredCount={answeredCount}
+										totalCount={totalCount}
+									/>
+								</div>
+							)}
 						</div>
-					)}
-				</main>
+					</aside>
 
-				{/* Баруун тал - Timer */}
-				<aside className="col-span-1">
-					<div className="sticky top-4">
-						<ExamTimer initialSeconds={300} />
-					</div>
-				</aside>
-			</div>
+					{/* Main Content - Questions */}
+					<main className="col-span-4 space-y-5">
+						{allQuestions.map((q, index) => (
+							<div key={q.question_id} id={`question-${index}`}>
+								<Card className={getCardBorderClass(q.question_id)}>
+									<CardContent className="p-6 flex gap-4">
+										{/* Question number */}
+										<div className=" w-12 h-12 ">{index + 1}.</div>
 
-			{/* Mobile View - Нэг асуулт харуулах */}
-			<div className="lg:hidden">
-				{/* Progress + Timer дээд хэсэгт */}
-				<div className="sticky top-0 z-10 bg-white pb-4 space-y-3">
-					<Card className="shadow-lg border-t-4 border-blue-500">
-						<CardContent className="p-4">
-							<div className="flex justify-between items-center mb-2">
-								<span className="text-sm font-medium">
-									Асуулт {currentQuestionIndex + 1} / {totalCount}
-								</span>
-								<span className="text-sm text-blue-600 font-bold">
-									{progressPercentage}%
-								</span>
+										{/* Question content */}
+										<div className="flex-1 min-w-0">
+											<div className="flex items-start justify-between gap-2 mb-4">
+												<h2 className="font-semibold text-lg flex-1">
+													{q.question_name}
+												</h2>
+												<Button
+													variant="ghost"
+													size="icon"
+													onClick={() => toggleBookmark(q.question_id)}
+													className="flex-shrink-0 hover:bg-gray-100"
+													title={
+														bookmarkedQuestions.has(q.question_id)
+															? "Тэмдэглэгээ хасах"
+															: "Тэмдэглэх"
+													}
+												>
+													{bookmarkedQuestions.has(q.question_id) ? (
+														<BookmarkCheck className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+													) : (
+														<Bookmark className="w-5 h-5 text-gray-400" />
+													)}
+												</Button>
+											</div>
+
+											{/* Question type components */}
+											{q.que_type_id === 1 ? (
+												<SingleSelectQuestion
+													questionId={q.question_id}
+													questionText={q.question_name}
+													answers={q.answers}
+													mode="exam"
+													selectedAnswer={
+														(selectedAnswers[q.question_id] as number) ?? null
+													}
+													onAnswerChange={(qId, ans) =>
+														handleAnswerChange(qId, ans)
+													}
+												/>
+											) : q.que_type_id === 2 ? (
+												<MultiSelectQuestion
+													questionId={q.question_id}
+													questionText={q.question_name}
+													questionImage={q.question_img || null}
+													answers={q.answers}
+													mode="exam"
+													selectedAnswers={
+														(selectedAnswers[q.question_id] as number[]) ?? []
+													}
+													onAnswerChange={(qId, ans) =>
+														handleAnswerChange(qId, ans)
+													}
+												/>
+											) : q.que_type_id === 4 ? (
+												<FillInTheBlankQuestion
+													questionId={q.question_id}
+													questionText={q.question_name}
+													mode="exam"
+													value={
+														(selectedAnswers[q.question_id] as string) ?? ""
+													}
+													onAnswerChange={(qId, ans) =>
+														handleAnswerChange(qId, ans)
+													}
+												/>
+											) : q.que_type_id === 5 ? (
+												<DragAndDropWrapper
+													questionId={q.question_id}
+													answers={q.answers}
+													mode="exam"
+													userAnswers={
+														(selectedAnswers[q.question_id] as number[]) ?? []
+													}
+													onOrderChange={(orderedIds) =>
+														handleAnswerChange(q.question_id, orderedIds)
+													}
+												/>
+											) : q.que_type_id === 6 ? (
+												<MatchingByLine
+													answers={q.answers.map((a) => ({
+														...a,
+														answer_img: a.answer_img || null,
+													}))}
+													onMatchChange={(matches: Record<number, number>) =>
+														handleAnswerChange(q.question_id, matches)
+													}
+												/>
+											) : null}
+										</div>
+									</CardContent>
+								</Card>
 							</div>
-							<Progress value={progressPercentage} className="h-2" />
-						</CardContent>
-					</Card>
-					<ExamTimer initialSeconds={300} />
-				</div>
+						))}
+					</main>
 
-				{/* Одоогийн асуулт */}
-				{currentQuestion && (
-					<div className="my-6">
-						<div
-							className={`border rounded-xl p-5 shadow-md min-h-[60vh] ${
-								selectedAnswers[currentQuestion.question_id] !== null
-									? "border-green-400 bg-green-50/50"
-									: ""
-							}`}
-						>
-							<h2 className="font-bold mb-4 text-lg">
-								<span className="text-blue-600 mr-2">
-									{currentQuestionIndex + 1}.
-								</span>
-								{currentQuestion.question_name}
-							</h2>
-							<SingleSelectQuestion
-								questionId={currentQuestion.question_id}
-								questionText={currentQuestion.question_name}
-								answers={currentQuestion.answers}
-								mode="exam"
-								selectedAnswer={
-									selectedAnswers[currentQuestion.question_id] ?? null
-								}
-								onAnswerChange={handleAnswerChange}
-							/>
+					<aside className="col-span-1">
+						<div className="sticky top-6">
+							<Card>
+								<CardContent className="p-4">
+									<ExamTimer
+										initialSeconds={examData.ExamInfo[0]?.minut * 60 || 300}
+									/>
+								</CardContent>
+							</Card>
 						</div>
-					</div>
-				)}
-
-				{/* Навигацын товчууд */}
-				<div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4">
-					<div className="flex justify-between items-center gap-4 max-w-lg mx-auto">
-						<Button
-							onClick={goToPrevious}
-							disabled={currentQuestionIndex === 0}
-							variant="outline"
-							size="lg"
-							className="flex-1"
-						>
-							<ChevronLeft className="w-5 h-5 mr-1" />
-							Өмнөх
-						</Button>
-
-						{currentQuestionIndex === totalCount - 1 ? (
-							examData &&
-							examData.ExamInfo.length > 0 && (
-								<FinishExamResultDialog
-									examId={examData.ExamInfo[0].id}
-									examType={examData.ExamInfo[0].exam_type}
-									startEid={examData.ExamInfo[0].start_eid}
-									examTime={examData.ExamInfo[0].minut}
-									answeredCount={answeredCount}
-									totalCount={totalCount}
-								/>
-							)
-						) : (
-							<Button
-								onClick={goToNext}
-								disabled={currentQuestionIndex === totalCount - 1}
-								size="lg"
-								className="flex-1"
-							>
-								Дараах
-								<ChevronRight className="w-5 h-5 ml-1" />
-							</Button>
-						)}
-					</div>
+					</aside>
 				</div>
-
-				{/* Доод зайг нөхөх (fixed button-ы хувьд) */}
-				<div className="h-24" />
+			</div>
+			<div>
+				<FixedScrollButton />
 			</div>
 		</div>
 	);
