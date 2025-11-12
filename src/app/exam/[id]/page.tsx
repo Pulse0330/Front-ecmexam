@@ -8,6 +8,7 @@ import FinishExamResultDialog from "@/app/exam/component/finish";
 import ExamMinimap from "@/app/exam/component/minimap";
 import FillInTheBlankQuestion from "@/app/exam/component/question/fillblank";
 import MultiSelectQuestion from "@/app/exam/component/question/multiselect";
+import DragAndDropQuestion from "@/app/exam/component/question/order";
 import SingleSelectQuestion from "@/app/exam/component/question/singleSelect";
 import FixedScrollButton from "@/components/FixedScrollButton";
 import { Button } from "@/components/ui/button";
@@ -31,8 +32,6 @@ export default function ExamPage() {
 	const [savingQuestions, setSavingQuestions] = useState<Set<number>>(
 		new Set(),
 	);
-
-	// Debounce timer for fill-in-the-blank questions
 	const debounceTimers = useRef<Record<number, NodeJS.Timeout>>({});
 
 	const {
@@ -47,7 +46,6 @@ export default function ExamPage() {
 		retry: 2,
 	});
 
-	// Load previous answers
 	useEffect(() => {
 		if (!examData?.ChoosedAnswer) return;
 
@@ -68,24 +66,30 @@ export default function ExamPage() {
 			if (QueID == null) return;
 
 			if (QueType === 1) {
-				// Single select
 				const lastItem = items[items.length - 1];
 				const ansId = lastItem.AnsID ?? null;
 				answersMap[QueID] = ansId && ansId !== 0 ? ansId : null;
 			} else if (QueType === 2) {
-				// Multi select
 				const uniqueIds = [
 					...new Set(
 						items
 							.map((i) => i.AnsID)
-							.filter((id): id is number => id != null && id !== 0),
+							.filter((id): id is number => id !== null && id !== 0),
 					),
 				];
 				answersMap[QueID] = uniqueIds;
 			} else if (QueType === 4) {
-				// Fill in the blank
 				const lastItem = items[items.length - 1];
 				answersMap[QueID] = (lastItem as { Answer?: string }).Answer || "";
+			} else if (QueType === 5) {
+				const sortedItems = [...items].sort((a, b) => {
+					const aOrder = Number((a as { Answer?: string }).Answer) || 999;
+					const bOrder = Number((b as { Answer?: string }).Answer) || 999;
+					return aOrder - bOrder;
+				});
+				answersMap[QueID] = sortedItems
+					.map((i) => i.AnsID)
+					.filter((id): id is number => id !== null && id !== 0);
 			}
 		});
 
@@ -94,9 +98,8 @@ export default function ExamPage() {
 
 	const allQuestions = useMemo(() => {
 		if (!examData?.Questions || !examData?.Answers) return [];
-
-		return examData.Questions.filter(
-			(q) => q.que_type_id === 1 || q.que_type_id === 2 || q.que_type_id === 4,
+		return examData.Questions.filter((q) =>
+			[1, 2, 4, 5].includes(q.que_type_id),
 		).map((q) => ({
 			...q,
 			question_img: q.question_img || "",
@@ -109,10 +112,9 @@ export default function ExamPage() {
 				is_true: false,
 			})),
 		}));
-	}, [examData?.Questions, examData?.Answers]);
+	}, [examData]);
 
 	const totalCount = allQuestions.length;
-
 	const answeredCount = useMemo(
 		() =>
 			Object.values(selectedAnswers).filter((ans) => {
@@ -133,51 +135,42 @@ export default function ExamPage() {
 			answerText: string;
 			rowNum: number;
 		}) => {
-			if (!examData?.ExamInfo?.[0]?.id) {
-				throw new Error("Exam ID олдсонгүй");
-			}
-
+			if (!examData?.ExamInfo?.[0]?.id) throw new Error("Exam ID олдсонгүй");
 			const { questionId, answerId, queTypeId, answerText, rowNum } = params;
-			const examId = examData.ExamInfo[0].id;
-
 			await saveExamAnswer(
 				userId || 0,
-				examId,
+				examData.ExamInfo[0].id,
 				questionId,
 				answerId,
 				queTypeId,
 				answerText,
 				rowNum,
 			);
-
 			return { questionId, success: true };
 		},
-		onMutate: (params) => {
-			setSavingQuestions((prev) => new Set(prev).add(params.questionId));
-		},
-		onSuccess: (data) => {
+		onMutate: (params) =>
+			setSavingQuestions((prev) => new Set(prev).add(params.questionId)),
+		onSuccess: (data) =>
 			setSavingQuestions((prev) => {
 				const newSet = new Set(prev);
 				newSet.delete(data.questionId);
 				return newSet;
-			});
-		},
+			}),
 		onError: (err, params) => {
-			console.error("❌ Хадгалахад алдаа гарлаа:", err);
+			console.error("❌ Хадгалахад алдаа:", err);
 			setSavingQuestions((prev) => {
 				const newSet = new Set(prev);
 				newSet.delete(params.questionId);
 				return newSet;
 			});
-			setSaveError("Хариултыг хадгалахад алдаа гарлаа. Дахин оролдоно уу.");
+			setSaveError("Хариултыг хадгалахад алдаа гарлаа.");
 			setTimeout(() => setSaveError(null), 5000);
 		},
 	});
 
 	const handleAnswerChange = useCallback(
-		(questionId: number, answer: AnswerValue) => {
+		async (questionId: number, answer: AnswerValue) => {
 			if (!examData) return;
-
 			const question = examData.Questions.find(
 				(q) => q.question_id === questionId,
 			);
@@ -187,14 +180,12 @@ export default function ExamPage() {
 			const queTypeId = question.que_type_id;
 			const examId = examData?.ExamInfo?.[0]?.id;
 
-			// Handle single-select deselection
 			if (queTypeId === 1 && answer === null) {
 				const oldAnswer = selectedAnswers[questionId] as number | null;
 				if (oldAnswer && oldAnswer !== 0 && examId) {
 					deleteExamAnswer(userId || 0, examId, questionId, oldAnswer).catch(
-						(err) => {
-							console.error("Delete error:", err);
-							setSaveError("Хариултыг устгахад алдаа гарлаа.");
+						() => {
+							setSaveError("Хариултыг устгахад алдаа.");
 							setTimeout(() => setSaveError(null), 5000);
 						},
 					);
@@ -203,17 +194,19 @@ export default function ExamPage() {
 				return;
 			}
 
-			// Handle multi-select clear all
-			if (queTypeId === 2 && Array.isArray(answer) && answer.length === 0) {
+			if (
+				(queTypeId === 2 || queTypeId === 5) &&
+				Array.isArray(answer) &&
+				answer.length === 0
+			) {
 				const oldAnswers = (selectedAnswers[questionId] as number[]) || [];
 				if (oldAnswers.length > 0 && examId) {
 					Promise.all(
 						oldAnswers.map((id) =>
 							deleteExamAnswer(userId || 0, examId, questionId, id),
 						),
-					).catch((err) => {
-						console.error("Delete error:", err);
-						setSaveError("Хариултуудыг устгахад алдаа гарлаа.");
+					).catch(() => {
+						setSaveError("Хариултуудыг устгахад алдаа.");
 						setTimeout(() => setSaveError(null), 5000);
 					});
 				}
@@ -221,12 +214,9 @@ export default function ExamPage() {
 				return;
 			}
 
-			// Optimistic update
 			setSelectedAnswers((prev) => ({ ...prev, [questionId]: answer }));
 
-			// Save to backend
 			if (queTypeId === 1 && typeof answer === "number") {
-				// Single select
 				saveAnswerMutation.mutate({
 					questionId,
 					answerId: answer,
@@ -235,32 +225,19 @@ export default function ExamPage() {
 					rowNum,
 				});
 			} else if (queTypeId === 2 && Array.isArray(answer)) {
-				// Multi select - save each answer individually
 				const oldAnswers = (selectedAnswers[questionId] as number[]) || [];
-				const newAnswers = answer;
-
-				// Find added and removed answers
-				const addedAnswers = newAnswers.filter(
-					(id) => !oldAnswers.includes(id),
-				);
-				const removedAnswers = oldAnswers.filter(
-					(id) => !newAnswers.includes(id),
-				);
-
-				// Delete removed answers
+				const addedAnswers = answer.filter((id) => !oldAnswers.includes(id));
+				const removedAnswers = oldAnswers.filter((id) => !answer.includes(id));
 				if (removedAnswers.length > 0 && examId) {
 					removedAnswers.forEach((answerId) => {
 						deleteExamAnswer(userId || 0, examId, questionId, answerId).catch(
-							(err) => {
-								console.error("Delete error:", err);
-								setSaveError("Хариулт устгахад алдаа гарлаа.");
+							() => {
+								setSaveError("Хариулт устгахад алдаа.");
 								setTimeout(() => setSaveError(null), 5000);
 							},
 						);
 					});
 				}
-
-				// Save each added answer
 				addedAnswers.forEach((answerId) => {
 					saveAnswerMutation.mutate({
 						questionId,
@@ -271,13 +248,8 @@ export default function ExamPage() {
 					});
 				});
 			} else if (queTypeId === 4 && typeof answer === "string") {
-				// Fill in the blank with debouncing
-				// Clear existing timer
-				if (debounceTimers.current[questionId]) {
+				if (debounceTimers.current[questionId])
 					clearTimeout(debounceTimers.current[questionId]);
-				}
-
-				// Set new timer
 				debounceTimers.current[questionId] = setTimeout(() => {
 					saveAnswerMutation.mutate({
 						questionId,
@@ -287,27 +259,41 @@ export default function ExamPage() {
 						rowNum,
 					});
 					delete debounceTimers.current[questionId];
-				}, 1000); // 1 second debounce
+				}, 1000);
+			} else if (queTypeId === 5 && Array.isArray(answer)) {
+				const oldAnswers = (selectedAnswers[questionId] as number[]) || [];
+				if (oldAnswers.length > 0 && examId) {
+					await Promise.all(
+						oldAnswers.map((answerId) =>
+							deleteExamAnswer(userId || 0, examId, questionId, answerId),
+						),
+					).catch(() => {});
+				}
+				for (let i = 0; i < answer.length; i++) {
+					await saveAnswerMutation.mutateAsync({
+						questionId,
+						answerId: answer[i],
+						queTypeId,
+						answerText: (i + 1).toString(),
+						rowNum,
+					});
+				}
 			}
 		},
 		[examData, selectedAnswers, userId, saveAnswerMutation],
 	);
 
-	// Cleanup debounce timers on unmount
-	useEffect(() => {
-		return () => {
-			Object.values(debounceTimers.current).forEach(clearTimeout);
-		};
-	}, []);
+	useEffect(
+		() => () => Object.values(debounceTimers.current).forEach(clearTimeout),
+		[],
+	);
 
 	const toggleBookmark = useCallback((questionId: number) => {
 		setBookmarkedQuestions((prev) => {
 			const newSet = new Set(prev);
-			if (newSet.has(questionId)) {
-				newSet.delete(questionId);
-			} else {
-				newSet.add(questionId);
-			}
+			newSet.has(questionId)
+				? newSet.delete(questionId)
+				: newSet.add(questionId);
 			return newSet;
 		});
 	}, []);
@@ -315,9 +301,8 @@ export default function ExamPage() {
 	const goToQuestion = useCallback((index: number) => {
 		setCurrentQuestionIndex(index);
 		const element = document.getElementById(`question-${index}`);
-		if (element && window.innerWidth >= 1024) {
+		if (element && window.innerWidth >= 1024)
 			element.scrollIntoView({ behavior: "smooth", block: "center" });
-		}
 	}, []);
 
 	const getCardBorderClass = useCallback(
@@ -331,7 +316,6 @@ export default function ExamPage() {
 					answer !== null &&
 					Object.keys(answer).length > 0);
 			const isBookmarked = bookmarkedQuestions.has(questionId);
-
 			if (isAnswered && isBookmarked)
 				return "border-2 border-amber-500 shadow-sm";
 			if (isAnswered) return "border-2 border-blue-600 shadow-sm";
@@ -341,28 +325,24 @@ export default function ExamPage() {
 		[selectedAnswers, bookmarkedQuestions],
 	);
 
-	// Loading state
 	if (isLoading) {
 		return (
 			<div className="flex justify-center items-center h-screen">
 				<div className="text-center p-8">
 					<Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-blue-600" />
-					<p className="text-lg font-medium text-gray-600">
-						Шалгалт ачааллаж байна...
-					</p>
+					<p className="text-lg font-medium">Шалгалт ачааллаж байна...</p>
 				</div>
 			</div>
 		);
 	}
 
-	// Error state
 	if (error || !examData) {
 		return (
 			<div className="flex justify-center items-center h-screen">
 				<div className="text-center p-8 bg-red-50 rounded-xl border border-red-200 max-w-md">
 					<p className="text-xl font-medium text-red-600 mb-2">Алдаа гарлаа</p>
 					<p className="text-sm text-red-500">
-						{error?.message || "Шалгалт олдсонгүй эсвэл ачаалахад алдаа гарлаа"}
+						{error?.message || "Шалгалт олдсонгүй"}
 					</p>
 					<Button
 						onClick={() => window.location.reload()}
@@ -376,14 +356,11 @@ export default function ExamPage() {
 		);
 	}
 
-	// No questions state
 	if (allQuestions.length === 0) {
 		return (
 			<div className="flex justify-center items-center h-screen">
 				<div className="text-center p-8 bg-yellow-50 rounded-xl border border-yellow-200">
-					<p className="text-xl font-medium text-yellow-600">
-						Энэ шалгалтад асуулт байхгүй байна
-					</p>
+					<p className="text-xl font-medium ">Энэ шалгалтад асуулт байхгүй</p>
 				</div>
 			</div>
 		);
@@ -391,17 +368,14 @@ export default function ExamPage() {
 
 	return (
 		<div className="min-h-screen ">
-			{/* Error notification */}
 			{saveError && (
-				<div className="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg animate-in slide-in-from-top">
+				<div className="fixed top-4 right-4 z-5 px-6 py-3 rounded-lg shadow-lg">
 					{saveError}
 				</div>
 			)}
 
-			{/* Desktop Layout */}
 			<div className="hidden lg:block">
 				<div className="grid grid-cols-6 gap-6 max-w-[1800px] mx-auto p-6 xl:p-8">
-					{/* Left Sidebar - Minimap */}
 					<aside className="col-span-1">
 						<div className="sticky top-6 space-y-4">
 							<ExamMinimap
@@ -428,14 +402,13 @@ export default function ExamPage() {
 						</div>
 					</aside>
 
-					{/* Main Content - Questions */}
 					<main className="col-span-4 space-y-5">
 						{allQuestions.map((q, index) => (
 							<div key={q.question_id} id={`question-${index}`}>
 								<Card className={getCardBorderClass(q.question_id)}>
 									<CardContent className="p-6">
 										<div className="flex gap-4">
-											<div className="flex-shrink-0 w-12 h-12  rounded-lg flex items-center justify-center font-semibold text-gray-700">
+											<div className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center font-semibold ">
 												{index + 1}
 											</div>
 											<div className="flex-1 min-w-0">
@@ -451,7 +424,7 @@ export default function ExamPage() {
 															variant="ghost"
 															size="icon"
 															onClick={() => toggleBookmark(q.question_id)}
-															className="hover:bg-gray-100 transition-colors"
+															className="hover:bg-gray-100"
 															title={
 																bookmarkedQuestions.has(q.question_id)
 																	? "Тэмдэглэгээ хасах"
@@ -466,7 +439,6 @@ export default function ExamPage() {
 														</Button>
 													</div>
 												</div>
-
 												{q.que_type_id === 1 ? (
 													<SingleSelectQuestion
 														questionId={q.question_id}
@@ -499,6 +471,24 @@ export default function ExamPage() {
 														mode="exam"
 														onAnswerChange={handleAnswerChange}
 													/>
+												) : q.que_type_id === 5 ? (
+													<DragAndDropQuestion
+														questionId={q.question_id}
+														examId={examData?.ExamInfo?.[0]?.id}
+														userId={userId || 0}
+														answers={q.answers.map((a) => ({
+															answer_id: a.answer_id,
+															answer_name_html:
+																a.answer_name_html || a.answer_name || "",
+														}))}
+														mode="exam"
+														userAnswers={
+															(selectedAnswers[q.question_id] as number[]) || []
+														}
+														onOrderChange={(orderedIds) =>
+															handleAnswerChange(q.question_id, orderedIds)
+														}
+													/>
 												) : null}
 											</div>
 										</div>
@@ -508,21 +498,127 @@ export default function ExamPage() {
 						))}
 					</main>
 
-					{/* Right Sidebar - Timer */}
 					<aside className="col-span-1">
 						<div className="sticky top-6">
-							<Card>
-								<CardContent className="p-4">
-									{examData?.ExamInfo?.[0] && (
-										<ExamTimer
-											initialSeconds={examData.ExamInfo[0].minut * 60 || 300}
-										/>
-									)}
-								</CardContent>
-							</Card>
+							{examData?.ExamInfo?.[0] && (
+								<ExamTimer
+									examId={examData.ExamInfo[0].id}
+									startTime={examData.ExamInfo[0].ognoo} // "2025-11-06 15:50"
+									endTime={examData.ExamInfo[0].end_time} // "2025-11-12T21:33:32.683Z"
+									examMinutes={examData.ExamInfo[0].minut} // 300
+								/>
+							)}
 						</div>
 					</aside>
 				</div>
+			</div>
+
+			<div className="lg:hidden p-4 space-y-4">
+				<Card className="sticky top-0 z-10 shadow-md ">
+					<CardContent className="p-4">
+						<div className="flex items-center justify-between">
+							<div className="text-sm font-medium">
+								{answeredCount} / {totalCount} хариулсан
+							</div>
+						</div>
+					</CardContent>
+				</Card>
+
+				{allQuestions.map((q, index) => (
+					<Card
+						key={q.question_id}
+						className={getCardBorderClass(q.question_id)}
+					>
+						<CardContent className="p-4">
+							<div className="flex items-start gap-3 mb-4">
+								<div className="flex-shrink-0 w-10 h-10  rounded-lg flex items-center justify-center font-semibold ">
+									{index + 1}
+								</div>
+								<h2 className="font-semibold flex-1 leading-relaxed">
+									{q.question_name}
+								</h2>
+								<div className="flex items-center gap-2 flex-shrink-0">
+									{savingQuestions.has(q.question_id) && (
+										<Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+									)}
+									<Button
+										variant="ghost"
+										size="icon"
+										onClick={() => toggleBookmark(q.question_id)}
+										className="flex-shrink-0"
+									>
+										{bookmarkedQuestions.has(q.question_id) ? (
+											<BookmarkCheck className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+										) : (
+											<Bookmark className="w-5 h-5" />
+										)}
+									</Button>
+								</div>
+							</div>
+							{q.que_type_id === 1 ? (
+								<SingleSelectQuestion
+									questionId={q.question_id}
+									questionText={q.question_name}
+									answers={q.answers}
+									mode="exam"
+									selectedAnswer={
+										selectedAnswers[q.question_id] as number | null
+									}
+									onAnswerChange={handleAnswerChange}
+								/>
+							) : q.que_type_id === 2 ? (
+								<MultiSelectQuestion
+									questionId={q.question_id}
+									questionText={q.question_name}
+									answers={q.answers}
+									mode="exam"
+									selectedAnswers={
+										(selectedAnswers[q.question_id] as number[]) || []
+									}
+									onAnswerChange={handleAnswerChange}
+								/>
+							) : q.que_type_id === 4 ? (
+								<FillInTheBlankQuestion
+									questionId={q.question_id}
+									questionText={q.question_name}
+									value={(selectedAnswers[q.question_id] as string) || ""}
+									mode="exam"
+									onAnswerChange={handleAnswerChange}
+								/>
+							) : q.que_type_id === 5 ? (
+								<DragAndDropQuestion
+									questionId={q.question_id}
+									examId={examData?.ExamInfo?.[0]?.id}
+									userId={userId || 0}
+									answers={q.answers.map((a) => ({
+										answer_id: a.answer_id,
+										answer_name_html: a.answer_name_html || a.answer_name || "",
+									}))}
+									mode="exam"
+									userAnswers={
+										(selectedAnswers[q.question_id] as number[]) || []
+									}
+									onOrderChange={(orderedIds) =>
+										handleAnswerChange(q.question_id, orderedIds)
+									}
+								/>
+							) : null}
+						</CardContent>
+					</Card>
+				))}
+
+				{examData?.ExamInfo?.[0] && (
+					<div className="pb-4">
+						<FinishExamResultDialog
+							examId={examData.ExamInfo[0].id}
+							examType={examData.ExamInfo[0].exam_type}
+							startEid={examData.ExamInfo[0].start_eid}
+							examTime={examData.ExamInfo[0].minut}
+							answeredCount={answeredCount}
+							totalCount={totalCount}
+						/>
+					</div>
+				)}
 			</div>
 
 			<FixedScrollButton />

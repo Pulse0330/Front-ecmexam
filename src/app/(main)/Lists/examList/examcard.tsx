@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useExamStore } from "@/stores/useExamTime"; // Zustand store
 import type { ExamlistsData } from "@/types/exam/examList";
 import ExamRulesDialog from "./dialog";
 
@@ -17,6 +18,8 @@ interface ExamCardProps {
 
 const ExamCard: React.FC<ExamCardProps> = ({ exam, now }) => {
 	const router = useRouter();
+	const setExamStartTime = useExamStore((state) => state.setExamStartTime);
+
 	const [showRulesDialog, setShowRulesDialog] = useState(false);
 	const [isMobile, setIsMobile] = useState(false);
 
@@ -35,7 +38,6 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, now }) => {
 
 	const isFinished = now > endTime;
 	const isActive = now >= startTime && now <= endTime;
-	const _isUpcoming = now < startTime;
 
 	const formatDate = (date: Date) => {
 		return date.toLocaleDateString("mn-MN", {
@@ -53,6 +55,8 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, now }) => {
 	};
 
 	const handleStartExam = () => {
+		const startTimeISO = new Date().toISOString();
+		setExamStartTime(exam.exam_id, startTimeISO); // Zustand-д хадгалах
 		router.push(`/exam/${exam.exam_id}`);
 	};
 

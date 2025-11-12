@@ -1,56 +1,62 @@
-// hooks/useServerTime.ts
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getServerDate } from "@/lib/api";
 
-// --- Server time hook ---
+/**
+ * Серверийн цагийг авдаг, секунд тутам шинэчилдэг hook
+ */
 export function useServerTime() {
 	const { data: serverDateString, isLoading } = useQuery({
 		queryKey: ["serverTime"],
 		queryFn: getServerDate,
-		staleTime: 5 * 60 * 1000, // 5 минут cache
+		staleTime: 0,
+		refetchOnWindowFocus: false,
 	});
 
+	// Серверийн string-г Date болгож хөрвүүлэх
 	const serverDate = useMemo(
 		() => (serverDateString ? new Date(serverDateString) : null),
 		[serverDateString],
 	);
 
+	const serverDateRef = useRef<number | null>(null);
 	const [tickCount, setTickCount] = useState(0);
 
-	// Серверийн цаг ба tick тоолуур
-	const serverTimestamp = serverDate?.getTime() ?? null;
-
+	// Серверийн цаг ирэхэд tick-ийг дахин эхлүүлэх
 	useEffect(() => {
-		if (!serverTimestamp) return;
+		if (serverDate) {
+			if (serverDate.getTime() !== serverDateRef.current) {
+				serverDateRef.current = serverDate.getTime();
+				setTickCount(0);
+			}
+		}
+	}, [serverDate]);
 
-		// Tick-г reset хийх (ESLint rule зөрчиж байна гэдгийг мэднэ)
-		// Гэхдээ энэ тохиолдолд cascading render үүсгэхгүй, учир нь зөвхөн
-		// серверийн цаг ӨӨРЧЛӨГДӨХӨД л дуудагдана
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		setTickCount(0);
-
-		// 1 секунд тутам tick нэмэгдүүлэх
-		const interval = setInterval(() => {
-			setTickCount((prev) => prev + 1);
-		}, 1000);
-
+	// Секунд тутам tick нэмэх
+	useEffect(() => {
+		if (!serverDate) return;
+		const interval = setInterval(() => setTickCount((prev) => prev + 1), 1000);
 		return () => clearInterval(interval);
-	}, [serverTimestamp]);
+	}, [serverDate]);
 
-	// Одоогийн серверийн цаг тооцоолох
-	// serverTimestamp өөрчлөгдөхөд tickCount автоматаар 0 болно (effect дахин ажиллахад)
+	// Одоогийн серверийн цаг
 	const currentTime = useMemo(() => {
 		if (!serverDate) return null;
 		return new Date(serverDate.getTime() + tickCount * 1000);
 	}, [serverDate, tickCount]);
 
-	return { currentTime, isLoading, serverDate };
+	return {
+		currentTime,
+		isLoading,
+		serverDate,
+	};
 }
 
-// --- Formatted server time hook ---
+/**
+ * Форматласан серверийн цаг
+ */
 export function useFormattedServerTime() {
 	const { currentTime, isLoading } = useServerTime();
 

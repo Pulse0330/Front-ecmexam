@@ -1,69 +1,80 @@
 "use client";
 
-import { Clock } from "lucide-react";
+import { AlertCircle, Clock, PlayCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useExamStore } from "@/stores/useExamTime";
 
 interface ExamTimerProps {
-	/** Шалгалт эхлэх хүртэлх секунд */
-	initialSeconds: number;
+	examId: number;
+	examMinutes: number;
 }
 
-export default function ExamTimer({ initialSeconds }: ExamTimerProps) {
-	const [secondsLeft, setSecondsLeft] = useState(initialSeconds);
+export default function ExamTimer({ examId, examMinutes }: ExamTimerProps) {
+	const startedTime = useExamStore((state) => state.startedExams[examId]);
+	const [remainingSec, setRemainingSec] = useState(0);
+	const [status, setStatus] = useState<"before" | "ongoing" | "ended">(
+		"before",
+	);
 
+	// Countdown update
 	useEffect(() => {
-		if (secondsLeft <= 0) return;
+		if (!startedTime) {
+			setStatus("before");
+			setRemainingSec(examMinutes * 60);
+			return;
+		}
 
-		const timer = setInterval(() => {
-			setSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
-		}, 1000);
+		const startDate = new Date(startedTime);
+		const endDate = new Date(startDate.getTime() + examMinutes * 60000);
 
-		return () => clearInterval(timer);
-	}, [secondsLeft]);
+		const update = () => {
+			const now = new Date();
+			if (now < startDate) {
+				setStatus("before");
+				setRemainingSec(
+					Math.floor((startDate.getTime() - now.getTime()) / 1000),
+				);
+			} else if (now >= startDate && now <= endDate) {
+				setStatus("ongoing");
+				setRemainingSec(Math.floor((endDate.getTime() - now.getTime()) / 1000));
+			} else {
+				setStatus("ended");
+				setRemainingSec(0);
+			}
+		};
 
-	const hours = Math.floor(secondsLeft / 3600);
-	const minutes = Math.floor((secondsLeft % 3600) / 60);
-	const seconds = secondsLeft % 60;
+		update();
+		const interval = setInterval(update, 1000);
+		return () => clearInterval(interval);
+	}, [startedTime, examMinutes]);
+
+	const formatTime = (sec: number) => {
+		const h = Math.floor(sec / 3600);
+		const m = Math.floor((sec % 3600) / 60);
+		const s = sec % 60;
+		return `${h.toString().padStart(2, "0")}:${m
+			.toString()
+			.padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+	};
 
 	return (
-		<Card className="w-full max-w-sm mx-auto border border-border shadow-md rounded-2xl">
-			<CardHeader className="flex items-center justify-between pb-2">
-				<CardTitle className="text-lg font-semibold flex items-center gap-2">
-					<Clock className="w-5 h-5 text-primary" />
-					Шалгалт эхлэх хүртэл
+		<Card className="w-full max-w-md mx-auto shadow-lg border">
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2">
+					{status === "before" && <Clock />}
+					{status === "ongoing" && <PlayCircle className="animate-pulse" />}
+					{status === "ended" && <AlertCircle />}
+					{status === "before" && "Шалгалт эхлэхгүй байна"}
+					{status === "ongoing" && "Шалгалт явагдаж байна"}
+					{status === "ended" && "Шалгалт дууссан"}
 				</CardTitle>
 			</CardHeader>
 
-			<CardContent className="text-center space-y-3">
-				{secondsLeft > 0 ? (
-					<div className="flex justify-center gap-4 text-2xl font-bold">
-						<div>
-							<span className="text-3xl">{String(hours).padStart(2, "0")}</span>
-							<div className="text-xs text-muted-foreground uppercase">цаг</div>
-						</div>
-						<div>
-							<span className="text-3xl">
-								{String(minutes).padStart(2, "0")}
-							</span>
-							<div className="text-xs text-muted-foreground uppercase">
-								минут
-							</div>
-						</div>
-						<div>
-							<span className="text-3xl">
-								{String(seconds).padStart(2, "0")}
-							</span>
-							<div className="text-xs text-muted-foreground uppercase">
-								секунд
-							</div>
-						</div>
-					</div>
-				) : (
-					<p className="text-green-600 font-medium text-lg">
-						🟢 Шалгалт эхэлсэн байна!
-					</p>
-				)}
+			<CardContent className="text-center text-4xl font-mono font-bold">
+				{status === "before" && "Шалгалт эхлээгүй"}
+				{status === "ongoing" && formatTime(remainingSec)}
+				{status === "ended" && "00:00:00"}
 			</CardContent>
 		</Card>
 	);

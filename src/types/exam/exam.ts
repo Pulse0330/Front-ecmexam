@@ -43,6 +43,7 @@ export interface ExamInfo {
 	is_date: number;
 	end_time: string; // ISO date string
 	minut: number;
+	ognoo: string;
 	que_cnt: number;
 	exam_type_name: string;
 	exam_type: number;

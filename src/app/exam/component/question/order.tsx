@@ -56,15 +56,11 @@ const DragAndDrop: React.FC<DragAndDropProps> = ({
 	correctIds = [],
 }) => {
 	const [items, setItems] = useState<Answer[]>(answers || []);
-	const isInitialMount = useRef(true);
 
+	// ✅ answers өөрчлөгдөх бүрт items шинэчлэх
 	useEffect(() => {
-		// Зөвхөн эхний удаа эсвэл disabled үед л шинэчилнэ
-		if (isInitialMount.current || disabled) {
-			setItems(answers || []);
-			isInitialMount.current = false;
-		}
-	}, [answers, disabled]);
+		setItems(answers || []);
+	}, [answers]);
 
 	const onDragEnd = (result: DropResult) => {
 		if (disabled || !result.destination) return;
@@ -147,34 +143,31 @@ const DragAndDropWrapper: React.FC<DragAndDropWrapperProps> = ({
 	correctAnswers = [],
 	onOrderChange,
 }) => {
-	const [items, setItems] = useState<Answer[]>(() => {
-		// Initial state - хэрэв хадгалсан дараалал байвал түүгээр эхлүүлнэ
-		if (userAnswers.length > 0) {
-			const sorted = userAnswers
-				.map((id) => answers.find((a) => a.answer_id === id))
-				.filter(Boolean) as Answer[];
-			return sorted.length > 0 ? sorted : answers;
-		}
-		return answers;
-	});
+	const [items, setItems] = useState<Answer[]>(answers);
+	const prevUserAnswersRef = useRef<number[]>([]);
 
-	const prevUserAnswersRef = useRef<number[]>(userAnswers);
-
+	// ✅ Зөвхөн нэг useEffect - userAnswers өөрчлөгдөх бүрт дараалал шинэчлэх
 	useEffect(() => {
-		// Зөвхөн userAnswers өөрчлөгдсөн үед л дахин set хийнэ
-		const userAnswersChanged =
+		// userAnswers өөрчлөгдсөн эсэхийг шалгах
+		const hasChanged =
 			JSON.stringify(prevUserAnswersRef.current) !==
 			JSON.stringify(userAnswers);
 
-		if (userAnswersChanged && userAnswers.length > 0) {
+		if (!hasChanged) return; // Өөрчлөлт байхгүй бол буцах
+
+		if (userAnswers.length > 0) {
 			const sorted = userAnswers
 				.map((id) => answers.find((a) => a.answer_id === id))
 				.filter(Boolean) as Answer[];
 
 			if (sorted.length > 0) {
 				setItems(sorted);
+				prevUserAnswersRef.current = userAnswers;
 			}
-			prevUserAnswersRef.current = userAnswers;
+		} else if (prevUserAnswersRef.current.length > 0) {
+			// Хэрэв өмнө нь хариулт байсан, одоо устсан бол default order
+			setItems(answers);
+			prevUserAnswersRef.current = [];
 		}
 	}, [userAnswers, answers]);
 
