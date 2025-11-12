@@ -1,11 +1,10 @@
-// ========== D:\Programms\Bymbaa\front\src\app\exam\component\question\multiselect.tsx ==========
 "use client";
 
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import parse from "html-react-parser";
 import { ZoomIn } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -51,10 +50,25 @@ export default function MultiSelectQuestion({
 		useState<number[]>(selectedAnswersProp);
 	const isReviewMode = mode === "review" || readOnly;
 
+	// ✅ Use ref to track previous prop value
+	const prevPropsRef = useRef<number[]>(selectedAnswersProp);
+
+	// ✅ Fixed: Sync with props without causing infinite loop
 	useEffect(() => {
-		setSelectedAnswers(
-			Array.isArray(selectedAnswersProp) ? selectedAnswersProp : [],
-		);
+		const newSelected = Array.isArray(selectedAnswersProp)
+			? selectedAnswersProp
+			: [];
+		const prevSelected = prevPropsRef.current;
+
+		// Only update if props actually changed (compare sorted arrays)
+		const hasChanged =
+			newSelected.length !== prevSelected.length ||
+			newSelected.some((id, idx) => id !== prevSelected[idx]);
+
+		if (hasChanged) {
+			setSelectedAnswers(newSelected);
+			prevPropsRef.current = newSelected;
+		}
 	}, [selectedAnswersProp]);
 
 	const handleToggle = useCallback(
@@ -62,9 +76,7 @@ export default function MultiSelectQuestion({
 			// Dialog trigger дарахад checkbox toggle хийхгүй
 			if (event) {
 				const target = event.target as HTMLElement;
-				if (target.closest("[data-dialog-trigger]")) {
-					return;
-				}
+				if (target.closest("[data-dialog-trigger]")) return;
 			}
 
 			if (isReviewMode) return;
@@ -188,7 +200,7 @@ export default function MultiSelectQuestion({
 			{renderQuestionContent()}
 
 			<div className="space-y-3">
-				<p>Олон хариулт хариулт сонгох боломжтой</p>
+				<p>Олон хариулт сонгох боломжтой</p>
 				{answers.map((option) => {
 					const selected = isSelected(option.answer_id);
 					const hasImage = isValidImageUrl(option.answer_img);

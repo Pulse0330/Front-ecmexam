@@ -2,7 +2,7 @@
 "use client";
 
 import type React from "react";
-import type { ExamresultListCardProps } from "@/types/exam/examresiltlist";
+import type { ExamresultListCardProps } from "@/types/exam/examResultList";
 
 export const ExamCard: React.FC<ExamresultListCardProps> = ({ exam }) => {
 	const finished = exam.isfinished === 1;

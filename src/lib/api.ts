@@ -1,20 +1,29 @@
 import api from "@/lib/axios";
 import type { ApiExamResponse } from "@/types/exam/exam";
-import type { ExamAnswerResponse } from "@/types/exam/examchoosed";
+import type { ExamAnswerResponse } from "@/types/exam/examChoosed";
+import type { ExamChoosedAnswerDeleteResponse } from "@/types/exam/examChoosedAnswerDelete";
 import type {
 	FinishExamRequest,
 	FinishExamResponse,
-} from "@/types/exam/examfinish";
-import type { ApiExamlistsResponse } from "@/types/exam/examlist";
-import type { ExamresultListResponseType } from "@/types/exam/examresiltlist";
-import type { ExamResultsResponse } from "@/types/exam/examresult";
-import type { ExamResponseMoreApiResponse } from "@/types/exam/examresultmore";
-import type { GetTestGroupResponse } from "@/types/exercise/testgroup";
+} from "@/types/exam/examFinish";
+import type { ApiExamlistsResponse } from "@/types/exam/examList";
+import type { LeaderboardResponse } from "@/types/exam/examRank";
+import type { ExamResultsResponse } from "@/types/exam/examResult";
+import type { ExamresultListResponseType } from "@/types/exam/examResultList";
+import type { ExamResponseMoreApiResponse } from "@/types/exam/examResultMore";
+import type { ExamFinishResponse } from "@/types/exercise/testGetFill";
+import type { GetTestGroupResponse } from "@/types/exercise/testGroup";
+import type { ApiResponseWithNullData } from "@/types/exercise/testSaved";
+import type {
+	TestSavedMixedItem,
+	TestSavedMixedResponse,
+} from "@/types/exercise/testSavedMixed";
 import type { HomeResponseType } from "@/types/home";
 import type { LoginResponseType } from "@/types/login";
-import type { ApiSorillistsResponse } from "@/types/soril/sorillists";
-import type { SorilresultListResponseType } from "@/types/soril/sorilresultlists";
+import type { ApiSorillistsResponse } from "@/types/soril/sorilLists";
+import type { SorilresultListResponseType } from "@/types/soril/sorilResultLists";
 import type { UserProfileResponseType } from "@/types/user";
+// ===== Login request =====
 export const loginRequest = async (
 	username: string,
 	password: string,
@@ -27,7 +36,6 @@ export const loginRequest = async (
 	});
 	return data;
 };
-
 // ===== HomeScreen request =====
 export const getHomeScreen = async (
 	userId: number,
@@ -51,7 +59,6 @@ export const getServerDate = async (): Promise<string> => {
 	const { data } = await api.post("/getdate", {});
 	return data?.RetData?.[0]?.systemdate ?? "";
 };
-
 //-------------------------------Exam---------------------------------//
 // ===== Get Examlists  =====
 export const getExamlists = async (
@@ -63,7 +70,6 @@ export const getExamlists = async (
 	});
 	return data;
 };
-
 //===== Get Examresultlists =====
 export const getexamresultlists = async (
 	userId: number,
@@ -109,6 +115,25 @@ export const saveExamAnswer = async (
 	});
 	return data;
 };
+// ===== Exam choosedanswer delete   =====
+export const deleteExamAnswer = async (
+	userId: number,
+	examId: number,
+	questionId: number,
+	answerId: number,
+): Promise<ExamChoosedAnswerDeleteResponse> => {
+	// POST method ашиглах
+	const { data } = await api.post<ExamChoosedAnswerDeleteResponse>(
+		"/examdeletedanswer",
+		{
+			user_id: userId,
+			exam_id: examId,
+			question_id: questionId,
+			answer_id: answerId,
+		},
+	);
+	return data;
+};
 // ===== Exam finish   =====
 export const finishExam = async (
 	data: FinishExamRequest,
@@ -145,6 +170,17 @@ export const getExamResultMore = async (
 	);
 	return data;
 };
+// ===== Get Exam Rank =====
+export const getExamRank = async (
+	examId: number,
+	userId: number,
+): Promise<LeaderboardResponse> => {
+	const { data } = await api.post<LeaderboardResponse>("/getexamranks", {
+		exam_id: examId,
+		user_id: userId,
+	});
+	return data;
+};
 //-------------------------------Soril---------------------------------//
 // ===== Get Sorillists  =====
 export const getSorillists = async (
@@ -156,7 +192,6 @@ export const getSorillists = async (
 	});
 	return data;
 };
-
 //===== Get Sorilresultlists =====
 export const getSorilresultlists = async (
 	userId: number,
@@ -170,13 +205,46 @@ export const getSorilresultlists = async (
 	);
 	return data;
 };
-
-// ===== Get testgroup =====
-export const gettestgroup = async (
+//-------------------------------Test---------------------------------//
+// ===== Get testGroup =====
+export const getTestGroup = async (
 	userId: number,
 ): Promise<GetTestGroupResponse> => {
 	const { data } = await api.post<GetTestGroupResponse>("/gettestgroup", {
 		user_id: userId,
+	});
+	return data;
+};
+// ===== Get testSaved =====
+export const getTestSaved = async (
+	test_cnt: number,
+	rlesson_id: number,
+	userId: number,
+): Promise<ApiResponseWithNullData> => {
+	const { data } = await api.post<ApiResponseWithNullData>("/testsaved", {
+		user_id: userId,
+		test_cnt,
+		rlesson_id,
+	});
+	return data;
+};
+// ===== Get testGetFill =====
+export const gettTestFill = async (
+	userId: number,
+): Promise<ExamFinishResponse> => {
+	const { data } = await api.post<ExamFinishResponse>("/gettestfill", {
+		user_id: userId,
+	});
+	return data;
+};
+// ===== Get TestSavedMixed =====
+export const getTestMixed = async (
+	userId: number,
+	tests: TestSavedMixedItem[],
+): Promise<TestSavedMixedResponse> => {
+	const { data } = await api.post<TestSavedMixedResponse>("/testsavedmixed", {
+		user_id: userId,
+		tests,
 	});
 	return data;
 };

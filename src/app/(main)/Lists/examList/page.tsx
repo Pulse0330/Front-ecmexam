@@ -20,7 +20,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import type {
 	ApiExamlistsResponse,
 	ExamlistsData,
-} from "@/types/exam/examlist";
+} from "@/types/exam/examList";
 import ExamCard from "./examcard";
 
 type ExamCategory = "all" | "active" | "upcoming" | "free" | "paid" | "expired";

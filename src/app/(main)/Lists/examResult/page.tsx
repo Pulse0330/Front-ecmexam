@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getexamresultlists } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
-import type { ExamresultListResponseType } from "@/types/exam/examresiltlist";
+import type { ExamresultListResponseType } from "@/types/exam/examResultList";
 import { ExamCard } from "./card";
 
 export default function ExamResultList() {

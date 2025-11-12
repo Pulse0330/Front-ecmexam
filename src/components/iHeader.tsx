@@ -81,11 +81,11 @@ export interface Navbar01Props extends React.HTMLAttributes<HTMLElement> {
 // Default Navigation Links
 const defaultNavigationLinks: Navbar01NavLink[] = [
 	{ href: "/home", label: "Үндсэн хуудас" },
-	{ href: "/Lists/exam-list", label: "Шалгалт" },
-	{ href: "/Lists/exam-result", label: "Шалгалтын үр дүн" },
-	{ href: "/Lists/soril-list", label: "Сорил" },
-	{ href: "/Lists/soril-result", label: "Сорилын үр дүн" },
-	{ href: "/Lists/exercises", label: "Дасгал ажил" },
+	{ href: "/Lists/examList", label: "Шалгалт" },
+	{ href: "/Lists/examResult", label: "Шалгалтын үр дүн" },
+	{ href: "/Lists/sorilList", label: "Сорил" },
+	{ href: "/Lists/sorilResult", label: "Сорилын үр дүн" },
+	{ href: "/Lists/exerciseList", label: "Дасгал ажил" },
 ];
 
 // Navbar01 Component

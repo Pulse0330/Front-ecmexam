@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getSorillists } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
-import type { ApiSorillistsResponse } from "@/types/soril/sorillists";
+import type { ApiSorillistsResponse } from "@/types/soril/sorilLists";
 
 export default function ExamListPage() {
 	const { userId } = useAuthStore();

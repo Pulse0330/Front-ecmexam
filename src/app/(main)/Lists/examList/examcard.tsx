@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { ExamlistsData } from "@/types/exam/examlist";
+import type { ExamlistsData } from "@/types/exam/examList";
 import ExamRulesDialog from "./dialog";
 
 interface ExamCardProps {

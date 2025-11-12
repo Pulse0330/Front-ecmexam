@@ -12,7 +12,7 @@ import {
 import parse from "html-react-parser";
 import { CheckCircle2, XCircle } from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -56,10 +56,15 @@ const DragAndDrop: React.FC<DragAndDropProps> = ({
 	correctIds = [],
 }) => {
 	const [items, setItems] = useState<Answer[]>(answers || []);
+	const isInitialMount = useRef(true);
 
 	useEffect(() => {
-		setItems(answers || []);
-	}, [answers]);
+		// Зөвхөн эхний удаа эсвэл disabled үед л шинэчилнэ
+		if (isInitialMount.current || disabled) {
+			setItems(answers || []);
+			isInitialMount.current = false;
+		}
+	}, [answers, disabled]);
 
 	const onDragEnd = (result: DropResult) => {
 		if (disabled || !result.destination) return;
@@ -142,18 +147,36 @@ const DragAndDropWrapper: React.FC<DragAndDropWrapperProps> = ({
 	correctAnswers = [],
 	onOrderChange,
 }) => {
-	const [items, setItems] = useState<Answer[]>(answers);
-
-	useEffect(() => {
-		if (mode === "review" && userAnswers.length > 0) {
+	const [items, setItems] = useState<Answer[]>(() => {
+		// Initial state - хэрэв хадгалсан дараалал байвал түүгээр эхлүүлнэ
+		if (userAnswers.length > 0) {
 			const sorted = userAnswers
 				.map((id) => answers.find((a) => a.answer_id === id))
 				.filter(Boolean) as Answer[];
-			setItems(sorted);
-		} else {
-			setItems(answers);
+			return sorted.length > 0 ? sorted : answers;
 		}
-	}, [answers, userAnswers, mode]);
+		return answers;
+	});
+
+	const prevUserAnswersRef = useRef<number[]>(userAnswers);
+
+	useEffect(() => {
+		// Зөвхөн userAnswers өөрчлөгдсөн үед л дахин set хийнэ
+		const userAnswersChanged =
+			JSON.stringify(prevUserAnswersRef.current) !==
+			JSON.stringify(userAnswers);
+
+		if (userAnswersChanged && userAnswers.length > 0) {
+			const sorted = userAnswers
+				.map((id) => answers.find((a) => a.answer_id === id))
+				.filter(Boolean) as Answer[];
+
+			if (sorted.length > 0) {
+				setItems(sorted);
+			}
+			prevUserAnswersRef.current = userAnswers;
+		}
+	}, [userAnswers, answers]);
 
 	const handleOrderChange = useCallback(
 		(orderedIds: number[]) => {
@@ -216,7 +239,7 @@ const DragAndDropWrapper: React.FC<DragAndDropWrapperProps> = ({
 				</div>
 			)}
 
-			<div className="p-4 border rounded-lg shadow-sm  space-y-3">
+			<div className="p-4 border rounded-lg shadow-sm space-y-3">
 				<h3 className="font-semibold text-base sm:text-lg text-gray-900 dark:text-gray-100">
 					{mode === "exam"
 						? "Зөв дараалалд оруулна уу:"

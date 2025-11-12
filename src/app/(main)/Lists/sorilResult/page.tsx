@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getSorilresultlists } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
-import type { SorilresultListResponseType } from "@/types/soril/sorilresultlists";
+import type { SorilresultListResponseType } from "@/types/soril/sorilResultLists";
 import { ExamCard } from "./card";
 
 export default function ExamResultList() {

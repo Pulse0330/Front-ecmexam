@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import type { SorilresultListCardProps } from "@/types/soril/sorilresultlists";
+import type { SorilresultListCardProps } from "@/types/soril/sorilResultLists";
 
 export const ExamCard: React.FC<SorilresultListCardProps> = ({ exam }) => {
 	const finished = exam.isfinished === 1;
