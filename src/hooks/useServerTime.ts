@@ -6,13 +6,18 @@ import { getServerDate } from "@/lib/api";
 
 /**
  * Серверийн цагийг авдаг, секунд тутам шинэчилдэг hook
+ * Internet салсан ч client дээр цаг үргэлжлүүлнэ
+ * Дахин холбогдоход серверийн цагтай sync хийнэ
  */
 export function useServerTime() {
 	const { data: serverDateString, isLoading } = useQuery({
 		queryKey: ["serverTime"],
 		queryFn: getServerDate,
 		staleTime: 0,
-		refetchOnWindowFocus: false,
+		refetchOnWindowFocus: true, // Tab буцаж ироход шинэчлэх
+		refetchInterval: 60000, // 1 минут тутам серверээс шалгах
+		retry: 3,
+		retryDelay: 1000,
 	});
 
 	// Серверийн string-г Date болгож хөрвүүлэх
@@ -24,11 +29,14 @@ export function useServerTime() {
 	const serverDateRef = useRef<number | null>(null);
 	const [tickCount, setTickCount] = useState(0);
 
-	// Серверийн цаг ирэхэд tick-ийг дахин эхлүүлэх
+	// Серверийн цаг ирэхэд sync хийх
 	useEffect(() => {
 		if (serverDate) {
-			if (serverDate.getTime() !== serverDateRef.current) {
-				serverDateRef.current = serverDate.getTime();
+			const newServerTime = serverDate.getTime();
+
+			// Анхны эсвэл шинэ серверийн цаг ирсэн
+			if (serverDateRef.current !== newServerTime) {
+				serverDateRef.current = newServerTime;
 				setTickCount(0);
 			}
 		}
@@ -36,21 +44,44 @@ export function useServerTime() {
 
 	// Секунд тутам tick нэмэх
 	useEffect(() => {
-		if (!serverDate) return;
-		const interval = setInterval(() => setTickCount((prev) => prev + 1), 1000);
-		return () => clearInterval(interval);
-	}, [serverDate]);
+		const interval = setInterval(() => {
+			setTickCount((prev) => prev + 1);
+		}, 1000);
 
-	// Одоогийн серверийн цаг
+		return () => clearInterval(interval);
+	}, []);
+
+	// Одоогийн серверийн цаг (internet салсан ч үргэлжилнэ)
 	const currentTime = useMemo(() => {
-		if (!serverDate) return null;
-		return new Date(serverDate.getTime() + tickCount * 1000);
-	}, [serverDate, tickCount]);
+		if (!serverDateRef.current) {
+			return null;
+		}
+
+		// tickCount ашиглан тооцоолох (секунд тутам шинэчлэгдэх)
+		return new Date(serverDateRef.current + tickCount * 1000);
+	}, [tickCount]);
+
+	// Online/offline status
+	const [isOnline, setIsOnline] = useState(true);
+
+	useEffect(() => {
+		const handleOnline = () => setIsOnline(true);
+		const handleOffline = () => setIsOnline(false);
+
+		window.addEventListener("online", handleOnline);
+		window.addEventListener("offline", handleOffline);
+
+		return () => {
+			window.removeEventListener("online", handleOnline);
+			window.removeEventListener("offline", handleOffline);
+		};
+	}, []);
 
 	return {
 		currentTime,
-		isLoading,
+		isLoading: isLoading && !currentTime, // Анхны ачааллалт
 		serverDate,
+		isOnline,
 	};
 }
 
@@ -58,7 +89,7 @@ export function useServerTime() {
  * Форматласан серверийн цаг
  */
 export function useFormattedServerTime() {
-	const { currentTime, isLoading } = useServerTime();
+	const { currentTime, isLoading, isOnline } = useServerTime();
 
 	const formatted = useMemo(() => {
 		if (!currentTime) {
@@ -75,12 +106,12 @@ export function useFormattedServerTime() {
 			};
 		}
 
-		const year = currentTime.getUTCFullYear();
-		const month = String(currentTime.getUTCMonth() + 1).padStart(2, "0");
-		const day = String(currentTime.getUTCDate()).padStart(2, "0");
-		const hours = String(currentTime.getUTCHours()).padStart(2, "0");
-		const minutes = String(currentTime.getUTCMinutes()).padStart(2, "0");
-		const seconds = String(currentTime.getUTCSeconds()).padStart(2, "0");
+		const year = currentTime.getFullYear();
+		const month = String(currentTime.getMonth() + 1).padStart(2, "0");
+		const day = String(currentTime.getDate()).padStart(2, "0");
+		const hours = String(currentTime.getHours()).padStart(2, "0");
+		const minutes = String(currentTime.getMinutes()).padStart(2, "0");
+		const seconds = String(currentTime.getSeconds()).padStart(2, "0");
 
 		return {
 			year: String(year),
@@ -99,5 +130,6 @@ export function useFormattedServerTime() {
 		...formatted,
 		currentTime,
 		isLoading,
+		isOnline,
 	};
 }

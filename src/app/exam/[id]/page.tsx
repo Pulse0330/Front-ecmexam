@@ -497,15 +497,13 @@ export default function ExamPage() {
 							</div>
 						))}
 					</main>
-
 					<aside className="col-span-1">
 						<div className="sticky top-6">
 							{examData?.ExamInfo?.[0] && (
 								<ExamTimer
-									examId={examData.ExamInfo[0].id}
-									startTime={examData.ExamInfo[0].ognoo} // "2025-11-06 15:50"
-									endTime={examData.ExamInfo[0].end_time} // "2025-11-12T21:33:32.683Z"
-									examMinutes={examData.ExamInfo[0].minut} // 300
+									examStartTime={examData.ExamInfo[0].ognoo}
+									examEndTime={examData.ExamInfo[0].end_time}
+									examMinutes={examData.ExamInfo[0].minut}
 								/>
 							)}
 						</div>

@@ -2,11 +2,7 @@
 "use client";
 
 import { Bookmark, CheckCircle2 } from "lucide-react";
-import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
+import { memo, useMemo } from "react";
 
 interface ExamMinimapProps {
 	totalCount: number;
@@ -14,15 +10,14 @@ interface ExamMinimapProps {
 	currentQuestionIndex?: number;
 	selectedAnswers: Record<
 		number,
-		number | number[] | string | Record<number, number> | null
+		number | number[] | string | Record<string, number> | null
 	>;
 	questions: Array<{ question_id: number }>;
 	onQuestionClick?: (index: number) => void;
-	timerComponent?: ReactNode;
 	bookmarkedQuestions?: Set<number>;
 }
 
-export default function ExamMinimap({
+const ExamMinimap = memo(function ExamMinimap({
 	totalCount,
 	answeredCount,
 	currentQuestionIndex,
@@ -31,13 +26,6 @@ export default function ExamMinimap({
 	onQuestionClick,
 	bookmarkedQuestions = new Set(),
 }: ExamMinimapProps) {
-	const progressPercentage =
-		totalCount > 0 ? Math.round((answeredCount / totalCount) * 100) : 0;
-
-	const bookmarkedCount = questions.filter((q) =>
-		bookmarkedQuestions.has(q.question_id),
-	).length;
-
 	const isQuestionAnswered = (questionId: number): boolean => {
 		const answer = selectedAnswers[questionId];
 		if (Array.isArray(answer)) return answer.length > 0;
@@ -47,107 +35,161 @@ export default function ExamMinimap({
 			answer !== null &&
 			!Array.isArray(answer)
 		) {
-			// Handle Record<number, number> for matching questions
 			return Object.keys(answer).length > 0;
 		}
 		return answer !== null && answer !== undefined;
 	};
 
+	const stats = useMemo(() => {
+		const bookmarked = questions.filter((q) =>
+			bookmarkedQuestions.has(q.question_id),
+		).length;
+		return { answered: answeredCount, bookmarked, total: totalCount };
+	}, [answeredCount, totalCount, bookmarkedQuestions, questions]);
+
+	const bookmarkedQuestionsArray = useMemo(() => {
+		return questions.filter((q) => bookmarkedQuestions.has(q.question_id));
+	}, [questions, bookmarkedQuestions]);
+
+	const progressPercentage =
+		totalCount > 0 ? Math.round((answeredCount / totalCount) * 100) : 0;
+
 	return (
-		<Card className="shadow-lg border-border sticky top-4 overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-2xl">
-			<CardContent className="p-5 space-y-5">
-				{/* Progress Card */}
-				<div className="rounded-xl p-4 border-b">
-					<div className="flex items-center justify-between mb-2">
-						<span className="text-sm font-medium opacity-90">Явц</span>
-						<span className="text-2xl font-bold">{progressPercentage}%</span>
-					</div>
-					<Progress value={progressPercentage} className="h-3 bg-blue-400" />
-					<div className="flex items-center gap-2 mt-3 text-sm opacity-90">
-						<CheckCircle2 className="w-5 h-5" />
-						<span>
-							{answeredCount} / {totalCount} хариулсан
+		<div className="space-y-2 w-full">
+			{/* Progress Card */}
+			<div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+				<div className="p-2.5 sm:p-3">
+					<div className="flex items-center justify-between mb-1.5 sm:mb-2">
+						<span className="text-[10px] sm:text-xs font-bold text-slate-700 dark:text-slate-200">
+							Явц
+						</span>
+						<span className="text-base sm:text-lg md:text-xl font-black text-blue-600 dark:text-blue-400">
+							{progressPercentage}%
 						</span>
 					</div>
+					<div className="h-1.5 sm:h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mb-1.5 sm:mb-2">
+						<div
+							className="h-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all duration-300"
+							style={{ width: `${progressPercentage}%` }}
+						/>
+					</div>
+					<div className="flex items-center justify-center gap-1.5">
+						<CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-green-600 dark:text-green-400" />
+						<p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-medium">
+							{stats.answered} / {stats.total} хариулсан
+						</p>
+					</div>
 				</div>
+			</div>
 
-				{/* Question Grid */}
-				<div>
-					<div className="flex items-center justify-between mb-3">
-						<h3 className="text-sm font-semibold text-gray-700">Асуултууд</h3>
-						<span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+			{/* Question Grid */}
+			<div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+				<div className="p-2.5 sm:p-3">
+					<div className="flex items-center justify-between mb-2">
+						<span className="text-[10px] sm:text-xs font-bold text-slate-700 dark:text-slate-200">
+							Асуултууд
+						</span>
+						<span className="text-[9px] sm:text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 sm:px-2 py-0.5 rounded-full font-semibold text-slate-600 dark:text-slate-400">
 							{questions.length}
 						</span>
 					</div>
-					<div className="grid grid-cols-5 gap-3">
-						{questions.map((q, index) => {
-							const isAnswered = isQuestionAnswered(q.question_id);
-							const isCurrent = currentQuestionIndex === index;
+					<div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-6 gap-1 sm:gap-1.5">
+						{questions.map((q, idx) => {
+							const answered = isQuestionAnswered(q.question_id);
 							const isBookmarked = bookmarkedQuestions.has(q.question_id);
+							const isCurrent = currentQuestionIndex === idx;
 
 							return (
-								<Button
+								<button
+									type="button"
 									key={q.question_id}
-									onClick={() => onQuestionClick?.(index)}
-									variant="ghost"
-									className={cn(
-										"aspect-square rounded-lg flex items-center justify-center text-sm font-semibold relative group transition-all duration-300",
-										"hover:scale-105 hover:shadow-md active:scale-95",
-										isAnswered
-											? "bg-gradient-to-br from-green-400 to-green-600 text-white"
-											: "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600",
-										isCurrent &&
-											"ring-2 ring-offset-2 ring-blue-500 shadow-lg scale-110 text-lg font-bold",
-									)}
-									title={`Асуулт ${index + 1} ${
-										isAnswered ? "(✓ Хариулсан)" : "(Хариулаагүй)"
-									}${isBookmarked ? " 🔖" : ""}`}
+									onClick={() => onQuestionClick?.(idx)}
+									className={`relative aspect-square rounded-lg transition-all active:scale-90 flex items-center justify-center text-[10px] sm:text-xs font-bold w-full
+                    ${
+											answered
+												? "bg-gradient-to-br from-green-500 to-green-600 text-white shadow-sm hover:shadow-md"
+												: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600"
+										}
+                    ${
+											isCurrent
+												? "ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-slate-900 scale-105"
+												: ""
+										}
+                  `}
 								>
-									<span>{index + 1}</span>
-									{isAnswered && (
-										<CheckCircle2 className="w-4 h-4 absolute top-1 right-1 text-white opacity-90" />
-									)}
+									{idx + 1}
+
 									{isBookmarked && (
-										<Bookmark className="w-4 h-4 absolute bottom-1 right-1 text-yellow-400 fill-yellow-400" />
+										<span className="absolute -top-0.5 -right-0.5 z-10">
+											<div className="bg-yellow-400 rounded-full p-[2px] shadow-md">
+												<Bookmark className="w-[6px] h-[6px] sm:w-2 sm:h-2 fill-white text-white" />
+											</div>
+										</span>
 									)}
-									{isCurrent && (
-										<div className="absolute inset-0 bg-blue-500/20 rounded-lg animate-pulse" />
+
+									{answered && (
+										<CheckCircle2 className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 text-white opacity-80" />
 									)}
-								</Button>
+								</button>
 							);
 						})}
 					</div>
 				</div>
+			</div>
 
-				{/* Stats */}
-				<div className="rounded-lg bg-gray-50 border border-gray-200 p-3 space-y-2 text-sm">
-					<div className="flex items-center justify-between">
-						<div className="flex items-center gap-2">
-							<div className="w-3 h-3 rounded bg-green-500" />
-							<span className="text-gray-700 font-medium">Хариулсан</span>
-						</div>
-						<span className="font-bold text-green-600">{answeredCount}</span>
+			{/* Stats Grid */}
+			<div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+				<div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-2 sm:p-2.5 text-center">
+					<div className="text-lg sm:text-xl md:text-2xl font-black text-green-600 dark:text-green-400">
+						{stats.answered}
 					</div>
-					<div className="flex items-center justify-between">
-						<div className="flex items-center gap-2">
-							<div className="w-3 h-3 rounded bg-gray-300" />
-							<span className="text-gray-700 font-medium">Хариулаагүй</span>
-						</div>
-						<span className="font-bold text-gray-600">
-							{totalCount - answeredCount}
-						</span>
+					<div className="text-[9px] sm:text-[10px] md:text-xs text-green-700 dark:text-green-300 font-semibold">
+						Хариулсан
 					</div>
-					{bookmarkedCount > 0 && (
-						<div className="flex items-center justify-between">
-							<Bookmark className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-							<span className="text-gray-700 font-medium">Тэмдэглэсэн</span>
-							<span className="font-bold text-yellow-600">
-								{bookmarkedCount}
+				</div>
+
+				<div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-2 sm:p-2.5 text-center">
+					<div className="text-lg sm:text-xl md:text-2xl font-black text-orange-600 dark:text-orange-400">
+						{stats.total - stats.answered}
+					</div>
+					<div className="text-[9px] sm:text-[10px] md:text-xs text-orange-700 dark:text-orange-300 font-semibold">
+						Үлдсэн
+					</div>
+				</div>
+			</div>
+
+			{/* Bookmarks Section */}
+			{bookmarkedQuestionsArray.length > 0 && (
+				<div className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl shadow-sm border border-yellow-200 dark:border-yellow-800 overflow-hidden">
+					<div className="p-2 sm:p-2.5">
+						<div className="flex items-center gap-1.5 mb-1.5">
+							<Bookmark className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-yellow-500 text-yellow-500" />
+							<span className="text-[10px] sm:text-xs font-bold text-yellow-800 dark:text-yellow-200">
+								Тэмдэглэсэн ({bookmarkedQuestionsArray.length})
 							</span>
 						</div>
-					)}
+						<div className="flex flex-wrap gap-1 sm:gap-1.5">
+							{bookmarkedQuestionsArray.map((q) => {
+								const questionIndex = questions.findIndex(
+									(quest) => quest.question_id === q.question_id,
+								);
+								return (
+									<button
+										type="button"
+										key={q.question_id}
+										onClick={() => onQuestionClick?.(questionIndex)}
+										className="bg-white dark:bg-slate-800 border border-yellow-300 dark:border-yellow-700 rounded-md px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 active:scale-95 transition-all shadow-sm"
+									>
+										#{questionIndex + 1}
+									</button>
+								);
+							})}
+						</div>
+					</div>
 				</div>
-			</CardContent>
-		</Card>
+			)}
+		</div>
 	);
-}
+});
+
+export default ExamMinimap;
