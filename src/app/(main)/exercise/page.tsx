@@ -156,7 +156,6 @@ export default function ExercisePage() {
 		}
 	};
 
-	// Type 1: Single Select
 	const handleSingleSelect = (questionId: number, answerId: number | null) => {
 		setSelectedAnswers((prev) => {
 			const existing = prev.find((a) => a.questionId === questionId);
@@ -171,7 +170,6 @@ export default function ExercisePage() {
 		});
 	};
 
-	// Type 2: Multi Select
 	const handleMultiSelect = (questionId: number, answerIds: number[]) => {
 		setSelectedAnswers((prev) => {
 			const existing = prev.find((a) => a.questionId === questionId);
@@ -184,7 +182,6 @@ export default function ExercisePage() {
 		});
 	};
 
-	// Type 4: Fill in Blank
 	const handleFillInBlank = (questionId: number, text: string) => {
 		setSelectedAnswers((prev) => {
 			const existing = prev.find((a) => a.questionId === questionId);
@@ -197,7 +194,6 @@ export default function ExercisePage() {
 		});
 	};
 
-	// Type 5: Ordering
 	const handleOrdering = (questionId: number, orderedIds: number[]) => {
 		setSelectedAnswers((prev) => {
 			const existing = prev.find((a) => a.questionId === questionId);
@@ -210,7 +206,6 @@ export default function ExercisePage() {
 		});
 	};
 
-	// Type 6: Matching
 	const handleMatching = (
 		questionId: number,
 		matches: Record<number, number>,
@@ -226,7 +221,6 @@ export default function ExercisePage() {
 		});
 	};
 
-	// Submit for types 5 & 6
 	const handleSubmitQuestion = (questionId: number) => {
 		const selected = selectedAnswers.find((a) => a.questionId === questionId);
 		if (
@@ -251,13 +245,11 @@ export default function ExercisePage() {
 		const bodolt = getBodolt(question.question_id);
 		const isSubmitted = submittedQuestions.has(question.question_id);
 
-		// Convert is_true from number to boolean for components
 		const convertedAnswers = questionAnswers.map((a) => ({
 			...a,
 			is_true: a.is_true === 1,
 		}));
 
-		// Show feedback
 		const showAnswerFeedback =
 			((question.que_type_id === 1 ||
 				question.que_type_id === 2 ||
@@ -306,16 +298,16 @@ export default function ExercisePage() {
 								onAnswerChange={handleSingleSelect}
 							/>
 
+							{/* ⭐ Feedback shown BELOW answers */}
 							{showAnswerFeedback && selected && (
-								<div className="mt-4">
+								<div className="mt-4 space-y-3">
 									{selected.answerIds.some((id) => isAnswerCorrect(id)) ? (
-										<div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-3 sm:p-4 rounded-lg">
+										<div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 rounded-lg">
 											<p className="text-green-800 dark:text-green-300 font-semibold text-sm sm:text-base flex items-center gap-2">
 												<svg
 													className="w-5 h-5"
 													fill="currentColor"
 													viewBox="0 0 20 20"
-													aria-label="Success icon"
 												>
 													<title>Success</title>
 													<path
@@ -324,17 +316,26 @@ export default function ExercisePage() {
 														clipRule="evenodd"
 													/>
 												</svg>
-												Зөв хариулт!
+												✓ Зөв хариулт!
 											</p>
+											{bodolt && (
+												<div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800">
+													<p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+														📝 Тайлбар:
+													</p>
+													<div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 p-3 rounded-lg">
+														{parse(bodolt.descr)}
+													</div>
+												</div>
+											)}
 										</div>
 									) : (
-										<div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-3 sm:p-4 rounded-lg">
-											<p className="text-red-800 dark:text-red-300 font-semibold mb-2 text-sm sm:text-base flex items-center gap-2">
+										<div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-lg space-y-3">
+											<p className="text-red-800 dark:text-red-300 font-semibold text-sm sm:text-base flex items-center gap-2">
 												<svg
 													className="w-5 h-5"
 													fill="currentColor"
 													viewBox="0 0 20 20"
-													aria-label="Error icon"
 												>
 													<title>Error</title>
 													<path
@@ -343,10 +344,31 @@ export default function ExercisePage() {
 														clipRule="evenodd"
 													/>
 												</svg>
-												Буруу хариулт
+												✗ Буруу хариулт
 											</p>
+
+											{/* ⭐ Show correct answer */}
+											<div className="pt-3 border-t border-red-200 dark:border-red-800">
+												<p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+													✓ Зөв хариулт:
+												</p>
+												<div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3 rounded-lg">
+													{questionAnswers
+														.filter((a) => a.is_true === 1)
+														.map((correctAnswer) => (
+															<div
+																key={correctAnswer.answer_id}
+																className="text-sm text-green-800 dark:text-green-300 font-medium"
+															>
+																{parse(correctAnswer.answer_name_html)}
+															</div>
+														))}
+												</div>
+											</div>
+
+											{/* ⭐ Show explanation */}
 											{bodolt && (
-												<div className="mt-3 pt-3 border-t border-red-200 dark:border-red-800">
+												<div className="pt-3 border-t border-red-200 dark:border-red-800">
 													<p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
 														📝 Бодолт:
 													</p>
@@ -472,7 +494,6 @@ export default function ExercisePage() {
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-4 sm:py-8 px-4 sm:px-6 lg:px-8">
 			<div className="max-w-5xl mx-auto">
-				{/* Header */}
 				<div className="mb-6 sm:mb-8">
 					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
 						<h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
@@ -496,12 +517,10 @@ export default function ExercisePage() {
 					</div>
 				</div>
 
-				{/* Questions */}
 				<div className="space-y-4 sm:space-y-6 md:space-y-8">
 					{questions.map((question, index) => renderQuestion(question, index))}
 				</div>
 
-				{/* Footer Buttons */}
 				<div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 sticky bottom-4 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
 					<Button
 						variant="outline"
@@ -513,7 +532,6 @@ export default function ExercisePage() {
 					<Button
 						onClick={() => {
 							console.log("Submit:", selectedAnswers);
-							// TODO: Submit logic
 						}}
 						className="flex-1 sm:flex-initial bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
 					>

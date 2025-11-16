@@ -16,12 +16,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// -----------------------------
-// Types
-// -----------------------------
 interface Answer {
 	answer_id: number;
 	answer_name_html: string;
+	refid?: number;
 }
 
 interface DragAndDropProps {
@@ -44,9 +42,6 @@ interface DragAndDropWrapperProps {
 	onOrderChange?: (orderedIds: number[]) => void;
 }
 
-// -----------------------------
-// DragAndDrop Component
-// -----------------------------
 const DragAndDrop: React.FC<DragAndDropProps> = ({
 	answers,
 	droppableId = "droppable",
@@ -57,7 +52,6 @@ const DragAndDrop: React.FC<DragAndDropProps> = ({
 }) => {
 	const [items, setItems] = useState<Answer[]>(answers || []);
 
-	// ✅ answers өөрчлөгдөх бүрт items шинэчлэх
 	useEffect(() => {
 		setItems(answers || []);
 	}, [answers]);
@@ -100,25 +94,36 @@ const DragAndDrop: React.FC<DragAndDropProps> = ({
 											{...providedDraggable.draggableProps}
 											{...providedDraggable.dragHandleProps}
 											className={cn(
-												buttonVariants({
-													variant: "outline",
-													size: "default",
-												}),
+												buttonVariants({ variant: "outline", size: "default" }),
 												"w-full mb-2 justify-start transition-colors duration-200 select-none",
 												disabled ? "cursor-default" : "cursor-move",
 												snapshot.isDragging && "bg-accent ring-2 ring-ring/50",
 												isCorrect &&
-													"border-green-500 bg-green-50 text-green-800",
+													"border-green-500 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300",
 												showCorrect &&
 													!isCorrect &&
-													"border-red-400 bg-red-50 text-red-700",
+													"border-red-400 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300",
 											)}
 											style={{ ...providedDraggable.draggableProps.style }}
 										>
-											<div className="flex-1 text-sm text-gray-900 dark:text-gray-100">
-												{item.answer_name_html
-													? parse(item.answer_name_html)
-													: ""}
+											<div className="flex items-center gap-3 w-full">
+												<span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-bold">
+													{index + 1}
+												</span>
+												<div className="flex-1 text-sm text-gray-900 dark:text-gray-100">
+													{item.answer_name_html
+														? parse(item.answer_name_html)
+														: ""}
+												</div>
+												{showCorrect && (
+													<span className="flex-shrink-0">
+														{isCorrect ? (
+															<CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+														) : (
+															<XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+														)}
+													</span>
+												)}
 											</div>
 										</div>
 									)}
@@ -133,9 +138,6 @@ const DragAndDrop: React.FC<DragAndDropProps> = ({
 	);
 };
 
-// -----------------------------
-// DragAndDropWrapper Component
-// -----------------------------
 const DragAndDropWrapper: React.FC<DragAndDropWrapperProps> = ({
 	answers,
 	mode,
@@ -146,18 +148,43 @@ const DragAndDropWrapper: React.FC<DragAndDropWrapperProps> = ({
 	const [items, setItems] = useState<Answer[]>(answers);
 	const prevUserAnswersRef = useRef<number[]>([]);
 
-	// ✅ Зөвхөн нэг useEffect - userAnswers өөрчлөгдөх бүрт дараалал шинэчлэх
+	// ⭐ Remove duplicates based on refid
+	const uniqueAnswers = useMemo(() => {
+		const seen = new Map<number, Answer>();
+
+		answers.forEach((answer) => {
+			const key = answer.refid ?? answer.answer_id;
+			if (!seen.has(key)) {
+				seen.set(key, answer);
+			}
+		});
+
+		const unique = Array.from(seen.values());
+
+		if (unique.length > 0 && unique[0].refid !== undefined) {
+			unique.sort((a, b) => (a.refid ?? 0) - (b.refid ?? 0));
+		}
+
+		console.log("=== Ordering Debug ===");
+		console.log("Total answers:", answers.length);
+		console.log("Unique answers:", unique.length);
+		console.log("User answers:", userAnswers);
+		console.log("Correct answers:", correctAnswers);
+		console.log("====================");
+
+		return unique;
+	}, [answers, userAnswers, correctAnswers]);
+
 	useEffect(() => {
-		// userAnswers өөрчлөгдсөн эсэхийг шалгах
 		const hasChanged =
 			JSON.stringify(prevUserAnswersRef.current) !==
 			JSON.stringify(userAnswers);
 
-		if (!hasChanged) return; // Өөрчлөлт байхгүй бол буцах
+		if (!hasChanged) return;
 
 		if (userAnswers.length > 0) {
 			const sorted = userAnswers
-				.map((id) => answers.find((a) => a.answer_id === id))
+				.map((id) => uniqueAnswers.find((a) => a.answer_id === id))
 				.filter(Boolean) as Answer[];
 
 			if (sorted.length > 0) {
@@ -165,11 +192,10 @@ const DragAndDropWrapper: React.FC<DragAndDropWrapperProps> = ({
 				prevUserAnswersRef.current = userAnswers;
 			}
 		} else if (prevUserAnswersRef.current.length > 0) {
-			// Хэрэв өмнө нь хариулт байсан, одоо устсан бол default order
-			setItems(answers);
+			setItems(uniqueAnswers);
 			prevUserAnswersRef.current = [];
 		}
-	}, [userAnswers, answers]);
+	}, [userAnswers, uniqueAnswers]);
 
 	const handleOrderChange = useCallback(
 		(orderedIds: number[]) => {
@@ -201,14 +227,14 @@ const DragAndDropWrapper: React.FC<DragAndDropWrapperProps> = ({
 		if (mode !== "review" || correctAnswers.length === 0) return [];
 
 		return correctAnswers
-			.map((id) => answers.find((a) => a.answer_id === id))
+			.map((id) => uniqueAnswers.find((a) => a.answer_id === id))
 			.filter(Boolean) as Answer[];
-	}, [correctAnswers, answers, mode]);
+	}, [correctAnswers, uniqueAnswers, mode]);
 
 	return (
 		<div className="space-y-4">
 			{mode === "review" && reviewStats && (
-				<div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-l-4 border-blue-500 dark:border-blue-400 p-4 rounded-lg">
+				<div className="bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500 dark:border-blue-400 p-4 rounded-lg">
 					<div className="flex items-center justify-between mb-2">
 						<h4 className="font-bold text-blue-900 dark:text-blue-300 text-sm sm:text-base">
 							Дарааллын үр дүн
@@ -232,7 +258,7 @@ const DragAndDropWrapper: React.FC<DragAndDropWrapperProps> = ({
 				</div>
 			)}
 
-			<div className="p-4 border rounded-lg shadow-sm space-y-3">
+			<div className="p-4 border rounded-lg shadow-sm space-y-3 bg-white dark:bg-gray-800">
 				<h3 className="font-semibold text-base sm:text-lg text-gray-900 dark:text-gray-100">
 					{mode === "exam"
 						? "Зөв дараалалд оруулна уу:"

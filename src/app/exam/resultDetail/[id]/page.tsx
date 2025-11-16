@@ -5,7 +5,7 @@ import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
 import { getExamResultMore } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
-import type { ExamResponseMoreApiResponse } from "@/types/exam/examResultMore"; // API response type
+import type { ExamResponseMoreApiResponse } from "@/types/exam/examResultMore";
 
 export default function ExamResultDetailPage() {
 	const { userId } = useAuthStore();

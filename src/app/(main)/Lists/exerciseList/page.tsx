@@ -1,10 +1,9 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, Minus, Plus } from "lucide-react";
+import { ChevronDown, ChevronUp, Minus, Plus, Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { Slider } from "@/components/ui/slider"; // <-- ⭐ НЭМЛЭЭ
 import { getTestGroup, getTestMixed } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { GetTestGroupResponse } from "@/types/exercise/testGroup";
@@ -60,7 +59,6 @@ export default function TestGroupPage() {
 			number,
 			GetTestGroupResponse["RetData"][number][]
 		>();
-
 		filtered.forEach((item) => {
 			const existing = grouped.get(item.ulessonid) || [];
 			grouped.set(item.ulessonid, [...existing, item]);
@@ -112,11 +110,18 @@ export default function TestGroupPage() {
 		0,
 	);
 
-	const _getPercentColor = (percent: number) => {
-		if (percent >= 80) return "from-green-500 to-emerald-500";
-		if (percent >= 60) return "from-blue-500 to-cyan-500";
-		if (percent >= 40) return "from-yellow-500 to-orange-500";
-		return "from-red-500 to-pink-500";
+	const getPercentColor = (percent: number) => {
+		if (percent >= 80) return "text-green-600";
+		if (percent >= 60) return "text-blue-600";
+		if (percent >= 40) return "text-orange-600";
+		return "text-red-600";
+	};
+
+	const getProgressColor = (percent: number) => {
+		if (percent >= 80) return "stroke-green-500";
+		if (percent >= 60) return "stroke-blue-500";
+		if (percent >= 40) return "stroke-orange-500";
+		return "stroke-red-500";
 	};
 
 	if (!userId || isLoading || isError) {
@@ -139,11 +144,11 @@ export default function TestGroupPage() {
 	}
 
 	return (
-		<div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-			<div className="max-w-7xl mx-auto">
-				{/* HEADER */}
+		<div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
+			<div className="max-w-6xl mx-auto">
+				{/* Header */}
 				<div className="mb-8">
-					<h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+					<h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
 						Тестийн бүлгүүд
 					</h1>
 					<p className="text-gray-600 dark:text-gray-400">
@@ -151,41 +156,57 @@ export default function TestGroupPage() {
 					</p>
 				</div>
 
-				{/* SEARCH */}
+				{/* Search */}
 				<div className="mb-6">
 					<div className="relative">
+						<Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
 						<input
 							type="text"
-							placeholder="Хайх... (нэр, хичээл, сэдэв)"
+							placeholder="Хайх..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="w-full px-12 py-4 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900/50 outline-none transition-all"
+							className="w-full pl-12 pr-12 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900/50 outline-none transition-all"
 						/>
+						{searchQuery && (
+							<button
+								type="button"
+								onClick={() => setSearchQuery("")}
+								className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						)}
 					</div>
 				</div>
 
-				{/* SUMMARY */}
+				{/* Summary */}
 				{selectedCount > 0 && (
-					<div className="mb-6 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-6 shadow-lg">
+					<div className="mb-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
 						<div className="flex items-center justify-between flex-wrap gap-4">
 							<div className="flex items-center gap-6">
 								<div>
-									<p className="text-sm text-gray-600 mb-1">Сонгосон тест</p>
-									<p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+									<p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+										Сонгосон
+									</p>
+									<p className="text-2xl font-bold text-gray-900 dark:text-white">
 										{selectedCount}
 									</p>
 								</div>
 								<div className="w-px h-12 bg-gray-300 dark:bg-gray-600" />
 								<div>
-									<p className="text-sm text-gray-600 mb-1">Нийт асуулт</p>
-									<p className="text-3xl font-bold ">{totalQuestions}</p>
+									<p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+										Нийт асуулт
+									</p>
+									<p className="text-2xl font-bold text-gray-900 dark:text-white">
+										{totalQuestions}
+									</p>
 								</div>
 							</div>
 							<button
 								type="button"
 								onClick={handleSubmit}
 								disabled={mutation.isPending}
-								className="px-8 py-3 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
+								className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 							>
 								{mutation.isPending ? "Илгээж байна..." : "Тест эхлүүлэх"}
 							</button>
@@ -193,13 +214,12 @@ export default function TestGroupPage() {
 					</div>
 				)}
 
-				{/* CATEGORY LIST */}
-				<div className="space-y-4">
+				{/* Category List */}
+				<div className="space-y-3">
 					{Array.from(groupedData.entries()).map(([categoryId, items]) => {
 						const isExpanded = expandedCategories.has(categoryId);
 						const categoryName = items[0]?.ulesson_name || "Бусад";
 						const courseName = items[0]?.coursename || "";
-
 						const categorySelectedCount = items.filter(
 							(item) => selectedTests[item.id],
 						).length;
@@ -207,70 +227,64 @@ export default function TestGroupPage() {
 						return (
 							<div
 								key={categoryId}
-								className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700"
+								className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
 							>
-								{/* HEADER */}
+								{/* Category Header */}
 								<button
 									type="button"
 									onClick={() => toggleCategory(categoryId)}
 									className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
 								>
-									<div className="flex items-center gap-4">
-										<div className="text-left">
-											<h3 className="text-lg font-bold text-gray-900 dark:text-white">
-												{categoryName}
-											</h3>
-											<p className="text-sm text-gray-600 dark:text-gray-400">
-												{courseName} • {items.length} тест
-											</p>
-										</div>
+									<div className="text-left">
+										<h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+											{categoryName}
+										</h3>
+										<p className="text-sm text-gray-600 dark:text-gray-400">
+											{courseName} • {items.length} тест
+										</p>
 									</div>
-									<div className="flex items-center gap-4">
+									<div className="flex items-center gap-3">
 										{categorySelectedCount > 0 && (
-											<span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-sm font-semibold">
-												{categorySelectedCount} сонгосон
+											<span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-sm font-medium">
+												{categorySelectedCount}
 											</span>
 										)}
 										{isExpanded ? (
-											<ChevronUp className="w-6 h-6" />
+											<ChevronUp className="w-5 h-5 text-gray-400" />
 										) : (
-											<ChevronDown className="w-6 h-6" />
+											<ChevronDown className="w-5 h-5 text-gray-400" />
 										)}
 									</div>
 								</button>
 
-								{/* CONTENT */}
+								{/* Items */}
 								{isExpanded && (
-									<div className="border-t border-gray-200 dark:border-gray-700">
+									<div className="border-t border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
 										{items.map((item) => {
 											const selectedCount = selectedTests[item.id] || 0;
 
 											return (
 												<div
 													key={item.id}
-													className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+													className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
 												>
-													<div className="flex items-center justify-between gap-4 mb-3">
+													<div className="flex items-start justify-between gap-4 mb-4">
 														<div className="flex-1">
-															<h4 className="font-semibold text-gray-900 dark:text-white mb-1">
+															<h4 className="font-medium text-gray-900 dark:text-white mb-1">
 																{item.name}
 															</h4>
-															<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-																<span>Нийт: {item.cnt} тест</span>
-																<span>•</span>
-																<span className="font-medium">
-																	{item.tpercent}%
-																</span>
-															</div>
+															<p className="text-sm text-gray-600 dark:text-gray-400">
+																Нийт: {item.cnt} тест
+															</p>
 														</div>
 
-														{/* PROGRESS CIRCLE */}
-														<div className="relative w-16 h-16">
-															<svg className="w-16 h-16 transform -rotate-90">
+														{/* Progress Circle */}
+														<div className="relative w-14 h-14 flex-shrink-0">
+															<svg className="w-14 h-14 transform -rotate-90">
 																<circle
-																	cx="32"
-																	cy="32"
-																	r="28"
+																	cx="28"
+																	cy="28"
+																	r="24"
 																	stroke="currentColor"
 																	strokeWidth="4"
 																	fill="none"
@@ -278,109 +292,96 @@ export default function TestGroupPage() {
 																/>
 																<title>asd</title>
 																<circle
-																	cx="32"
-																	cy="32"
-																	r="28"
-																	stroke="url(#gradient)"
+																	cx="28"
+																	cy="28"
+																	r="24"
 																	strokeWidth="4"
 																	fill="none"
-																	strokeDasharray={`${item.tpercent * 1.76} 176`}
+																	strokeDasharray={`${item.tpercent * 1.51} 151`}
 																	strokeLinecap="round"
+																	className={getProgressColor(item.tpercent)}
 																/>
-
-																<defs>
-																	<linearGradient
-																		id="gradient"
-																		x1="0%"
-																		y1="0%"
-																		x2="100%"
-																		y2="0%"
-																	>
-																		<stop offset="0%" />
-																		<stop offset="100%" />
-																	</linearGradient>
-																</defs>
 															</svg>
-															<span className="absolute inset-0 flex items-center justify-center text-sm font-bold">
+															<span
+																className={`absolute inset-0 flex items-center justify-center text-xs font-bold ${getPercentColor(item.tpercent)}`}
+															>
 																{item.tpercent}%
 															</span>
 														</div>
 													</div>
 
-													{/* SLIDER + +- BUTTONS */}
-													<div className="space-y-2">
-														<div className="flex items-center gap-3">
-															{/* MINUS */}
-															<button
-																type="button"
-																onClick={() =>
-																	handleTestCountChange(
-																		item.id,
-																		Math.max(0, selectedCount - 1),
-																	)
-																}
-																disabled={selectedCount === 0}
-																className="w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-30"
-															>
-																<Minus className="w-4 h-4" />
-															</button>
+													{/* Controls */}
+													<div className="flex items-center gap-3">
+														<button
+															type="button"
+															onClick={() =>
+																handleTestCountChange(
+																	item.id,
+																	Math.max(0, selectedCount - 1),
+																)
+															}
+															disabled={selectedCount === 0}
+															className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+														>
+															<Minus className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+														</button>
 
-															{/* ⭐ NEW SHADCN SLIDER ⭐ */}
-															<Slider
-																value={[selectedCount]}
-																min={0}
-																max={item.cnt}
-																step={1}
-																onValueChange={(value) =>
-																	handleTestCountChange(item.id, value[0])
-																}
-																className="flex-1"
-															/>
-
-															{/* PLUS */}
-															<button
-																type="button"
-																onClick={() =>
-																	handleTestCountChange(
-																		item.id,
-																		Math.min(item.cnt, selectedCount + 1),
-																	)
-																}
-																disabled={selectedCount >= item.cnt}
-																className="w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center disabled:opacity-30"
-															>
-																<Plus className="w-4 h-4" />
-															</button>
-
-															{/* NUMBER INPUT */}
+														<div className="flex-1 relative">
 															<input
-																type="number"
+																type="range"
 																min="0"
 																max={item.cnt}
 																value={selectedCount}
 																onChange={(e) =>
 																	handleTestCountChange(
 																		item.id,
-																		Math.max(
-																			0,
-																			Math.min(
-																				item.cnt,
-																				parseInt(e.target.value, 10) || 0,
-																			),
-																		),
+																		parseInt(e.target.value, 10),
 																	)
 																}
-																className="w-20 text-center px-3 py-1.5 border-2 rounded-lg bg-white dark:bg-gray-700"
+																className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
 															/>
+															<div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+																<span>0</span>
+																<span className="font-medium text-gray-700 dark:text-gray-300">
+																	{selectedCount} / {item.cnt}
+																</span>
+																<span>{item.cnt}</span>
+															</div>
 														</div>
 
-														<div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-															<span>0</span>
-															<span className="font-semibold">
-																{selectedCount} / {item.cnt}
-															</span>
-															<span>{item.cnt}</span>
-														</div>
+														<button
+															type="button"
+															onClick={() =>
+																handleTestCountChange(
+																	item.id,
+																	Math.min(item.cnt, selectedCount + 1),
+																)
+															}
+															disabled={selectedCount >= item.cnt}
+															className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+														>
+															<Plus className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+														</button>
+
+														<input
+															type="number"
+															min="0"
+															max={item.cnt}
+															value={selectedCount}
+															onChange={(e) =>
+																handleTestCountChange(
+																	item.id,
+																	Math.max(
+																		0,
+																		Math.min(
+																			item.cnt,
+																			parseInt(e.target.value, 10) || 0,
+																		),
+																	),
+																)
+															}
+															className="w-16 text-center px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+														/>
 													</div>
 												</div>
 											);
@@ -391,6 +392,16 @@ export default function TestGroupPage() {
 						);
 					})}
 				</div>
+
+				{groupedData.size === 0 && (
+					<div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-12 text-center">
+						<p className="text-gray-600 dark:text-gray-400">
+							{searchQuery
+								? `"${searchQuery}" хайлтад тохирох үр дүн олдсонгүй`
+								: "Тестийн бүлэг байхгүй байна"}
+						</p>
+					</div>
+				)}
 			</div>
 		</div>
 	);
