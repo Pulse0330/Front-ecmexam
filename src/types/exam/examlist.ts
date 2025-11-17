@@ -1,13 +1,32 @@
 // src/types/exam/examList.ts
 
+export interface ExamlistsResponseType {
+	ResponseMessage: string;
+	StatusCode: string;
+	ResponseCode: string;
+	ResponseType: boolean;
+}
+
 export interface ExamlistsData {
 	exam_id: number;
 	title: string;
-	teach_name: string;
-	exam_minute: number;
 	ognoo: string; // ISO date string format
-	que_cnt?: number;
-	exam_type?: string;
+	exam_minute: number;
+	help: string;
+	teach_name: string;
+	exam_type: number;
+	flag_name: string;
+	flag: number;
+	que_cnt: number;
+	ispaydescr: string;
+	amount: number;
+	ispay: number;
+	ispurchased: number;
+	ispurchaseddescr: string;
+	bill_type: number;
+	plan_id: number | null;
+	plan_name: string | null;
+	// Optional fields
 	exam_type_name?: string;
 	lesson_icon?: string;
 	execute_limit?: number;
@@ -20,11 +39,6 @@ export interface ExamlistsData {
 }
 
 export interface ApiExamlistsResponse {
-	RetResponse: {
-		ResponseMessage: string;
-		StatusCode: string;
-		ResponseCode: string;
-		ResponseType: boolean;
-	};
+	RetResponse: ExamlistsResponseType;
 	RetData: ExamlistsData[];
 }
