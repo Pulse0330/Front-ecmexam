@@ -1,33 +1,30 @@
-export interface ExamlistsResponseTye {
-	ResponseMessage: string;
-	StatusCode: string;
-	ResponseCode: string;
-	ResponseType: boolean;
-}
+// src/types/exam/examList.ts
 
 export interface ExamlistsData {
 	exam_id: number;
 	title: string;
-	ognoo: string;
-	exam_minute: number;
-	help: string;
 	teach_name: string;
-	exam_type: number;
-	flag_name: string;
-	flag: number;
-	que_cnt: number;
-	ispaydescr: string;
-	amount: number;
-	ispay: number;
-	ispurchased: number;
-	ispurchaseddescr: string;
-	bill_type: number;
-	plan_id: number | null;
-	plan_name: string | null;
+	exam_minute: number;
+	ognoo: string; // ISO date string format
+	que_cnt?: number;
+	exam_type?: string;
+	exam_type_name?: string;
+	lesson_icon?: string;
+	execute_limit?: number;
+	show_que_analys?: number;
+	show_que_descr?: number;
+	show_true_ans?: number;
+	guits?: number;
+	guitsgui?: number;
+	catid?: number;
 }
-// /types.ts
 
 export interface ApiExamlistsResponse {
-	RetResponse: ExamlistsResponseTye;
+	RetResponse: {
+		ResponseMessage: string;
+		StatusCode: string;
+		ResponseCode: string;
+		ResponseType: boolean;
+	};
 	RetData: ExamlistsData[];
 }
