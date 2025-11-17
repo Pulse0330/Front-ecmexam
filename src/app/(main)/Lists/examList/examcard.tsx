@@ -7,8 +7,29 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { ExamlistsData } from "@/types/exam/examList";
 import ExamRulesDialog from "./dialog";
+
+// Type definition - Complete ExamlistsData interface
+interface ExamlistsData {
+	exam_id: number;
+	title: string;
+	ognoo: string;
+	exam_minute: number;
+	help: string;
+	teach_name: string;
+	exam_type: number;
+	flag_name: string;
+	flag: number;
+	que_cnt: number;
+	ispaydescr: string;
+	amount: number;
+	ispay: number;
+	ispurchased: number;
+	ispurchaseddescr: string;
+	bill_type: number;
+	plan_id: number | null;
+	plan_name: string | null;
+}
 
 interface ExamCardProps {
 	exam: ExamlistsData;
