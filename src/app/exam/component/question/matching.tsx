@@ -1,13 +1,7 @@
 "use client";
 
 import parse from "html-react-parser";
-import React, {
-	useCallback,
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Xarrow, { useXarrow, Xwrapper } from "react-xarrows";
 import { cn } from "@/lib/utils";
 
@@ -27,8 +21,7 @@ interface MatchingByLineProps {
 	onMatchChange?: (matches: Record<number, number>) => void;
 	readonly?: boolean;
 	mode?: "exam" | "review";
-	userAnswers?: Record<number, number>; // server-с ирсэн хадгалсан холболтууд
-	initialMatches?: Record<number, number>;
+	userAnswers?: Record<number, number>;
 }
 
 interface Connection {
@@ -50,52 +43,6 @@ export default function MatchingByLine({
 	const updateXarrow = useXarrow();
 	const lastNotifiedRef = useRef<string>("");
 	const onMatchChangeRef = useRef(onMatchChange);
-
-	// 🎯 Answers-г асуултаар бүлэглэх
-	const answersByQuestion = useMemo(() => {
-		const map = new Map<number, QuestionItem[]>();
-		answers.forEach((answer) => {
-			const qid = answer.question_id;
-			if (qid !== null) {
-				if (!map.has(qid)) map.set(qid, []);
-				map.get(qid)?.push(answer);
-			}
-		});
-		return map;
-	}, [answers]);
-
-	// 🎯 Нэг асуултанд харгалзах бүх хариулт
-	const _getAnswersForQuestion = useCallback(
-		(questionId: number) => answersByQuestion.get(questionId) || [],
-		[answersByQuestion],
-	);
-
-	// 🎯 Correct answer mapping
-	const _correctAnswers = useMemo(() => {
-		const mapping: Record<number, number> = {};
-		answers.forEach((item) => {
-			if (item.ref_child_id !== null && item.ref_child_id !== -1) {
-				mapping[item.answer_id] = item.ref_child_id;
-			}
-		});
-		return mapping;
-	}, [answers]);
-
-	// 🎯 UserAnswers-аас connections үүсгэх
-	useEffect(() => {
-		if (Object.keys(userAnswers).length > 0) {
-			const restored: Connection[] = [];
-			Object.entries(userAnswers).forEach(([qId, aId]) => {
-				const color = "#3b82f6"; // Сэргээсэн холболтын өнгө
-				restored.push({
-					start: `q-${qId}`,
-					end: `a-${aId}`,
-					color,
-				});
-			});
-			setConnections(restored);
-		}
-	}, [userAnswers]);
 
 	const colorPalette = useRef<string[]>([
 		"#ef4444",
@@ -143,23 +90,36 @@ export default function MatchingByLine({
 		return () => window.removeEventListener("resize", updateXarrow);
 	}, [updateXarrow]);
 
-	// 🎯 Connections update callback
+	// Restore userAnswers
 	useEffect(() => {
-		if (!onMatchChangeRef.current) return;
-		const matches: Record<number, number> = {};
-		connections.forEach((conn) => {
-			const startId = parseInt(conn.start.replace("q-", ""), 10);
-			const endId = parseInt(conn.end.replace("a-", ""), 10);
-			if (!Number.isNaN(startId) && !Number.isNaN(endId))
-				matches[startId] = endId;
+		if (Object.keys(userAnswers).length === 0) return;
+
+		const restored: Connection[] = [];
+
+		Object.entries(userAnswers).forEach(([qRefId, aRefId]) => {
+			const question = answers.find(
+				(a) => a.refid === Number(qRefId) && a.answer_descr === "Асуулт",
+			);
+			const answer = answers.find(
+				(a) => a.refid === Number(aRefId) && a.answer_descr === "Хариулт",
+			);
+			if (question && answer) {
+				const color =
+					mode === "review"
+						? answer.is_true
+							? "#22c55e"
+							: "#ef4444"
+						: "#3b82f6";
+				restored.push({
+					start: `q-${question.answer_id}`,
+					end: `a-${answer.answer_id}`,
+					color,
+				});
+			}
 		});
-		const str = JSON.stringify(matches);
-		if (lastNotifiedRef.current !== str) {
-			lastNotifiedRef.current = str;
-			onMatchChangeRef.current(matches);
-		}
-		setTimeout(updateXarrow, 0);
-	}, [connections, updateXarrow]);
+
+		setConnections(restored);
+	}, [userAnswers, answers, mode]);
 
 	const isSelected = (id: string) => id === activeStart;
 	const isConnected = (id: string) =>
@@ -188,17 +148,6 @@ export default function MatchingByLine({
 		}
 	};
 
-	const renderContent = (item: QuestionItem) => (
-		<div className="text-sm font-medium w-full text-center">
-			{parse(item.answer_name_html)}
-		</div>
-	);
-
-	const questionsOnly = answers.filter(
-		(a) => a.ref_child_id !== -1 && a.ref_child_id !== null,
-	);
-	const answersOnly = answers.filter((a) => a.ref_child_id === -1);
-
 	const interactiveProps = (id: string, isQuestion: boolean) => ({
 		role: "button",
 		tabIndex: mode === "review" ? -1 : 0,
@@ -208,6 +157,39 @@ export default function MatchingByLine({
 		},
 	});
 
+	const renderContent = (item: QuestionItem) => (
+		<div className="text-sm font-medium w-full text-center">
+			{parse(item.answer_name_html)}
+		</div>
+	);
+
+	const questionsOnly = answers.filter((a) => a.answer_descr === "Асуулт");
+	const answersOnly = answers.filter((a) => a.answer_descr === "Хариулт");
+
+	// notify matches
+	useEffect(() => {
+		if (!onMatchChangeRef.current || mode === "review") return;
+
+		const matches: Record<number, number> = {};
+
+		connections.forEach((c) => {
+			const startId = parseInt(c.start.replace("q-", ""), 10);
+			const endId = parseInt(c.end.replace("a-", ""), 10);
+			const question = answers.find((a) => a.answer_id === startId);
+			const answer = answers.find((a) => a.answer_id === endId);
+			if (question && answer) {
+				matches[question.refid] = answer.refid;
+			}
+		});
+
+		const str = JSON.stringify(matches);
+		if (lastNotifiedRef.current !== str) {
+			lastNotifiedRef.current = str;
+			onMatchChangeRef.current(matches);
+		}
+		setTimeout(updateXarrow, 0);
+	}, [connections, updateXarrow, mode, answers]);
+
 	return (
 		<div ref={containerRef} className="w-full relative">
 			<Xwrapper>
@@ -216,83 +198,156 @@ export default function MatchingByLine({
 						? "Таны хариултууд (Ногоон = зөв, Улаан = буруу)"
 						: isMobile
 							? "Асуулт дээр дарж дараа нь хариулт сонгоно уу"
-							: "Зөв хариултыг холбоно уу"}
+							: "Асуулт дээр дарж холбох хариултаа сонгоно уу"}
 				</p>
 
-				<div className="grid grid-cols-2 gap-x-8 gap-y-3">
-					<h3 className="border-b pb-2 font-semibold text-center">Асуулт</h3>
-					<h3 className="border-b pb-2 font-semibold text-center">Хариулт</h3>
+				{isMobile ? (
+					<div className="space-y-4 max-h-[80vh] overflow-y-auto">
+						{questionsOnly.map((q) => {
+							const qid = `q-${q.answer_id}`;
+							const connected = connections.find((c) => c.start === qid);
+							const answerItem = connected
+								? answersOnly.find((a) => `a-${a.answer_id}` === connected.end)
+								: null;
 
-					{questionsOnly.map((q, index) => {
-						const qid = `q-${q.answer_id}`;
-						const a = answersOnly[index];
-						const aid = a ? `a-${a.answer_id}` : null;
-
-						return (
-							<React.Fragment key={q.refid}>
-								<div
-									id={qid}
-									{...interactiveProps(qid, true)}
-									className={cn(
-										"w-full p-4 border rounded-lg flex items-center justify-center text-center",
-										mode === "exam" ? "cursor-pointer" : "cursor-default",
-										mode === "exam" && isSelected(qid)
-											? "border-blue-500"
-											: mode === "exam" && isConnected(qid)
-												? "border-green-500 bg-green-50"
-												: "border-gray-300",
-									)}
-									style={{
-										borderColor: getConnectionColor(qid),
-										backgroundColor: getConnectionColor(qid)
-											? `${getConnectionColor(qid)}20`
-											: undefined,
-									}}
-								>
-									{renderContent(q)}
-								</div>
-
-								{aid && a && (
+							return (
+								<div key={qid} className="space-y-2">
 									<div
-										id={aid}
-										{...interactiveProps(aid, false)}
+										id={qid}
+										{...interactiveProps(qid, true)}
 										className={cn(
-											"w-full p-4 border rounded-lg flex items-center justify-center text-center",
-											mode === "exam" ? "cursor-pointer" : "cursor-default",
-											mode === "exam" && isSelected(aid)
-												? "border-blue-500 bg-blue-50"
-												: mode === "exam" && isConnected(aid)
+											"w-full p-3 border rounded-lg flex justify-between items-center text-center transition-colors",
+											isSelected(qid)
+												? "border-blue-500 "
+												: isConnected(qid)
+													? "border-green-500 bg-green-50"
+													: "border-gray-300 bg-white dark:bg-slate-800",
+											mode === "exam"
+												? "cursor-pointer hover:border-green-400"
+												: "cursor-default",
+										)}
+										style={{
+											borderColor: getConnectionColor(qid),
+											backgroundColor: getConnectionColor(qid)
+												? `${getConnectionColor(qid)}20`
+												: undefined,
+										}}
+									>
+										{renderContent(q)}
+									</div>
+
+									{answerItem && (
+										<div className="pl-4 mt-1 border-l-2 border-green-500">
+											<div className="text-sm text-gray-500 dark:text-gray-400">
+												Сонгосон хариулт:
+											</div>
+											<div className="p-2 rounded border border-green-500 bg-green-50 dark:bg-green-900/20">
+												{renderContent(answerItem)}
+											</div>
+										</div>
+									)}
+
+									{isSelected(qid) && !answerItem && (
+										<div className="pl-4 mt-2 space-y-2">
+											{answersOnly
+												.filter((a) => !isConnected(`a-${a.answer_id}`))
+												.map((a) => {
+													const aid = `a-${a.answer_id}`;
+													return (
+														<div
+															key={aid}
+															{...interactiveProps(aid, false)}
+															className="w-full p-2 border border-dashed rounded cursor-pointer hover:bg-yellow-100 dark:hover:bg-yellow-900/20 transition-colors"
+														>
+															{renderContent(a)}
+														</div>
+													);
+												})}
+										</div>
+									)}
+								</div>
+							);
+						})}
+					</div>
+				) : (
+					// Desktop grid
+					<div className="grid grid-cols-2 gap-x-8 gap-y-3">
+						<h3 className="border-b pb-2 font-semibold text-center">Асуулт</h3>
+						<h3 className="border-b pb-2 font-semibold text-center">Хариулт</h3>
+
+						{questionsOnly.map((q, i) => {
+							const qid = `q-${q.answer_id}`;
+							const a = answersOnly[i];
+							const aid = a ? `a-${a.answer_id}` : null;
+							return (
+								<React.Fragment key={qid}>
+									<div
+										id={qid}
+										{...interactiveProps(qid, true)}
+										className={cn(
+											"w-full p-4 border rounded-lg flex items-center justify-center text-center transition-all",
+											mode === "exam"
+												? "cursor-pointer hover:border-green-400"
+												: "cursor-default",
+											isSelected(qid)
+												? "border-blue-500  shadow-md"
+												: isConnected(qid)
 													? "border-green-500 bg-green-50"
 													: "border-gray-300",
 										)}
 										style={{
-											borderColor: getConnectionColor(aid),
-											backgroundColor: getConnectionColor(aid)
-												? `${getConnectionColor(aid)}20`
+											borderColor: getConnectionColor(qid),
+											backgroundColor: getConnectionColor(qid)
+												? `${getConnectionColor(qid)}20`
 												: undefined,
 										}}
 									>
-										{renderContent(a)}
+										{renderContent(q)}
 									</div>
-								)}
-							</React.Fragment>
-						);
-					})}
-				</div>
 
-				{/* Xarrow */}
-				{!isMobile &&
-					connections.map((c) => (
-						<Xarrow
-							key={`${c.start}-${c.end}`}
-							start={c.start}
-							end={c.end}
-							color={c.color}
-							strokeWidth={3}
-							curveness={0.3}
-							showHead={false}
-						/>
-					))}
+									{aid && a && (
+										<div
+											id={aid}
+											{...interactiveProps(aid, false)}
+											className={cn(
+												"w-full p-4 border rounded-lg flex items-center justify-center text-center transition-all",
+												mode === "exam"
+													? "cursor-pointer hover:border-blue-400"
+													: "cursor-default",
+												isSelected(aid)
+													? "border-blue-500 bg-blue-50 shadow-md"
+													: isConnected(aid)
+														? "border-green-500 bg-green-50"
+														: "border-gray-300",
+											)}
+											style={{
+												borderColor: getConnectionColor(aid),
+												backgroundColor: getConnectionColor(aid)
+													? `${getConnectionColor(aid)}20`
+													: undefined,
+											}}
+										>
+											{renderContent(a)}
+										</div>
+									)}
+								</React.Fragment>
+							);
+						})}
+
+						{/* Xarrow for desktop */}
+						{connections.map((c) => (
+							<Xarrow
+								key={`${c.start}-${c.end}`}
+								start={c.start}
+								end={c.end}
+								color={c.color}
+								strokeWidth={3}
+								curveness={0.3}
+								showHead={false}
+							/>
+						))}
+					</div>
+				)}
 			</Xwrapper>
 		</div>
 	);

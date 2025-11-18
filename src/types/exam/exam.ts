@@ -49,6 +49,7 @@ export interface ExamInfo {
 	exam_type: number;
 	start_eid: number;
 	test_id?: number;
+	starteddate: string;
 }
 
 export interface ChoosedAnswer {

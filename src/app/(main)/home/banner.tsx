@@ -30,78 +30,112 @@ export function BannerCarousel({ banners }: BannerProps) {
 		});
 	};
 
+	const activeBanners = banners.filter((_, idx) => !closedBanners[idx]);
+
 	if (!banners || banners.length === 0) return null;
+	if (activeBanners.length === 0) return null;
 
 	return (
 		<div className="my-4">
 			{isCarousel ? (
-				<Swiper
-					modules={[Autoplay, Navigation, Pagination]}
-					navigation
-					pagination={{ clickable: true }}
-					autoplay={{ delay: 5000 }}
-					spaceBetween={20}
-					slidesPerView={1}
-				>
-					{banners.map((banner, idx) =>
-						closedBanners[idx] ? null : (
-							<SwiperSlide key={banner?.url}>
-								<div className="relative">
-									<Button
-										onClick={() => closeBanner(idx)}
-										size={"icon"}
-										variant={"secondary"}
-									>
-										<X />
-									</Button>
-									<a
-										href={banner.url}
-										target="_blank"
-										rel="noreferrer"
-										className="block overflow-hidden rounded shadow hover:shadow-lg transition"
-									>
-										<Image
-											src={banner.filename}
-											alt={banner.title}
-											width={800}
-											height={400}
-											className="w-full h-64 md:h-80 object-cover"
-										/>
-										<div className="p-2 text-center font-semibold text-lg md:text-xl">
-											{banner.title}
-										</div>
-									</a>
-								</div>
-							</SwiperSlide>
-						),
-					)}
-				</Swiper>
+				<div className="relative rounded-xl overflow-hidden shadow-xl">
+					<Swiper
+						modules={[Autoplay, Navigation, Pagination]}
+						navigation
+						pagination={{ clickable: true }}
+						autoplay={{ delay: 5000, disableOnInteraction: false }}
+						spaceBetween={20}
+						slidesPerView={1}
+						loop={activeBanners.length > 1}
+						className="banner-swiper"
+					>
+						{banners.map((banner, idx) =>
+							closedBanners[idx] ? null : (
+								<SwiperSlide key={banner?.url}>
+									<div className="relative group">
+										<Button
+											onClick={() => closeBanner(idx)}
+											size="icon"
+											variant="secondary"
+											className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg"
+										>
+											<X className="w-4 h-4" />
+										</Button>
+										<a
+											href={banner.url}
+											target="_blank"
+											rel="noreferrer"
+											className="block overflow-hidden"
+										>
+											<div className="relative overflow-hidden">
+												<Image
+													src={banner.filename}
+													alt={banner.title}
+													width={1200}
+													height={500}
+													className="w-full h-64 md:h-96 object-cover transition-transform duration-500 group-hover:scale-105"
+													priority
+												/>
+												<div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+											</div>
+											<div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+												<h3 className="text-white font-bold text-xl md:text-2xl drop-shadow-lg">
+													{banner.title}
+												</h3>
+												{banner.descr && (
+													<p className="text-white/90 text-sm md:text-base mt-2 drop-shadow">
+														{banner.descr}
+													</p>
+												)}
+											</div>
+										</a>
+									</div>
+								</SwiperSlide>
+							),
+						)}
+					</Swiper>
+				</div>
 			) : (
-				<div className="flex gap-4 overflow-x-auto py-2">
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 					{banners.map((banner, idx) =>
 						closedBanners[idx] ? null : (
-							<div key={banner.url} className="relative shrink-0 w-64 md:w-72">
+							<div
+								key={banner.url}
+								className="relative group rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-card border border-border"
+							>
 								<Button
 									onClick={() => closeBanner(idx)}
-									className="absolute top-2 right-2 z-10 bg-black/40 text-white rounded-full w-6 h-6 flex items-center justify-center"
+									size="icon"
+									variant="secondary"
+									className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 w-8 h-8 shadow-lg"
 								>
-									<X />
+									<X className="w-4 h-4" />
 								</Button>
 								<a
 									href={banner.url}
 									target="_blank"
 									rel="noreferrer"
-									className="block overflow-hidden rounded shadow hover:shadow-lg transition"
+									className="block"
 								>
-									<Image
-										src={banner.filename}
-										alt={banner.title}
-										width={600}
-										height={200}
-										className="w-full h-48 object-cover"
-									/>
-									<div className="p-2 text-center font-semibold text-sm md:text-base">
-										{banner.descr}
+									<div className="relative overflow-hidden">
+										<Image
+											src={banner.filename}
+											alt={banner.title}
+											width={600}
+											height={300}
+											className="w-full h-56 object-cover transition-transform duration-500 group-hover:scale-110"
+										/>
+										<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+									</div>
+									<div className="p-4 border-t border-border">
+										<h3 className="font-bold text-lg text-card-foreground group-hover:text-primary transition-colors line-clamp-1">
+											{banner.title}
+										</h3>
+										{banner.descr && (
+											<p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+												{banner.descr}
+											</p>
+										)}
 									</div>
 								</a>
 							</div>
@@ -109,6 +143,43 @@ export function BannerCarousel({ banners }: BannerProps) {
 					)}
 				</div>
 			)}
+
+			<style jsx global>{`
+				.banner-swiper .swiper-button-next,
+				.banner-swiper .swiper-button-prev {
+					background: rgba(0, 0, 0, 0.5);
+					width: 40px;
+					height: 40px;
+					border-radius: 50%;
+					backdrop-filter: blur(10px);
+				}
+
+				.banner-swiper .swiper-button-next:after,
+				.banner-swiper .swiper-button-prev:after {
+					font-size: 16px;
+					color: white;
+					font-weight: bold;
+				}
+
+				.banner-swiper .swiper-button-next:hover,
+				.banner-swiper .swiper-button-prev:hover {
+					background: rgba(0, 0, 0, 0.7);
+				}
+
+				.banner-swiper .swiper-pagination-bullet {
+					background: white;
+					opacity: 0.5;
+					width: 10px;
+					height: 10px;
+				}
+
+				.banner-swiper .swiper-pagination-bullet-active {
+					opacity: 1;
+					background: white;
+					width: 24px;
+					border-radius: 5px;
+				}
+			`}</style>
 		</div>
 	);
 }

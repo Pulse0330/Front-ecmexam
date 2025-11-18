@@ -6,7 +6,9 @@ import {
 	CheckCircle,
 	Clock,
 	FileText,
+	Flag,
 	Loader2,
+	Send,
 	Target,
 	Trophy,
 	XCircle,
@@ -165,30 +167,26 @@ export default function FinishExamResultDialog({
 	const unansweredCount = totalCount - answeredCount;
 	const resultInfo = resultsData?.RetData?.[0];
 
+	const handleCloseResults = () => {
+		setFinishedTestId(null);
+		setOpen(false);
+	};
+
 	// Result Dialog
 	if (finishedTestId) {
-		const handleCloseResults = () => {
-			setFinishedTestId(null);
-			setOpen(false);
-		};
-
 		if (isLoadingResults) {
 			return (
-				<Dialog open={true} onOpenChange={handleCloseResults}>
-					<DialogContent className="sm:max-w-[500px] border-none shadow-2xl">
-						<div className="flex flex-col items-center justify-center py-12 space-y-4">
-							<div className="relative">
-								<div className="absolute inset-0 animate-ping rounded-full bg-blue-400 opacity-20" />
-								<Loader2 className="w-16 h-16 animate-spin text-blue-600" />
-							</div>
-							<div className="text-center space-y-2">
-								<h3 className="text-xl font-bold text-gray-900 dark:text-white">
-									Үр дүнг боловсруулж байна
-								</h3>
-								<p className="text-gray-600 dark:text-gray-400">
-									Түр хүлээнэ үү...
-								</p>
-							</div>
+				<Dialog open={open} onOpenChange={setOpen}>
+					<DialogTrigger asChild>
+						<Button className="w-full sm:w-auto px-6 py-4 font-bold text-lg shadow-lg hover:shadow-xl transition-all flex justify-center items-center gap-2">
+							<span>Шалгалт дуусгах</span>
+							<Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+						</Button>
+					</DialogTrigger>
+
+					<DialogContent className="w-full sm:max-w-[550px] border-t-4 border-t-blue-500 p-4 sm:p-6">
+						<div className="flex justify-center items-center py-8">
+							<Loader2 className="w-10 h-10 animate-spin text-blue-600" />
 						</div>
 					</DialogContent>
 				</Dialog>
@@ -198,7 +196,7 @@ export default function FinishExamResultDialog({
 		if (!resultInfo) {
 			return (
 				<Dialog open={true} onOpenChange={handleCloseResults}>
-					<DialogContent className="sm:max-w-[450px]">
+					<DialogContent className="w-full sm:max-w-[450px] p-6">
 						<DialogHeader className="text-center">
 							<XCircle className="w-12 h-12 mx-auto mb-2 text-red-500" />
 							<DialogTitle className="text-xl">Үр дүн олдсонгүй</DialogTitle>
@@ -207,7 +205,7 @@ export default function FinishExamResultDialog({
 							</DialogDescription>
 						</DialogHeader>
 						<DialogFooter>
-							<Button onClick={handleCloseResults} className="w-full">
+							<Button onClick={handleCloseResults} className="w-full sm:w-auto">
 								Хаах
 							</Button>
 						</DialogFooter>
@@ -222,11 +220,11 @@ export default function FinishExamResultDialog({
 		return (
 			<Dialog open={true} onOpenChange={handleCloseResults}>
 				<DialogContent
-					className={`sm:max-w-[550px] border-t-4 ${
+					className={`w-full sm:max-w-[550px] border-t-4 shadow-2xl ${
 						isPassed ? "border-t-green-500" : "border-t-red-500"
-					} shadow-2xl`}
+					} p-4 sm:p-6`}
 				>
-					<DialogHeader className="text-center space-y-4 pt-6">
+					<DialogHeader className="text-center space-y-4">
 						<div className="relative inline-block mx-auto">
 							<div
 								className={`absolute inset-0 blur-2xl opacity-30 rounded-full ${
@@ -249,10 +247,10 @@ export default function FinishExamResultDialog({
 						</div>
 
 						<div>
-							<DialogTitle className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+							<DialogTitle className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
 								Шалгалтын үр дүн
 							</DialogTitle>
-							<DialogDescription className="text-lg font-semibold mt-2">
+							<DialogDescription className="text-lg sm:text-xl font-semibold mt-2">
 								{isExcellent
 									? "🌟 Гайхалтай! Та маш сайн өгүүлэв!"
 									: isPassed
@@ -271,10 +269,14 @@ export default function FinishExamResultDialog({
 									: "bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30 border-2 border-red-300 dark:border-red-700"
 							}`}
 						>
-							<div className="flex items-center justify-between">
+							<div className="flex flex-col sm:flex-row items-center justify-between gap-4">
 								<div className="flex items-center gap-3">
 									<Award
-										className={`w-10 h-10 ${isPassed ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+										className={`w-10 h-10 ${
+											isPassed
+												? "text-green-600 dark:text-green-400"
+												: "text-red-600 dark:text-red-400"
+										}`}
 									/>
 									<div>
 										<p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -285,22 +287,14 @@ export default function FinishExamResultDialog({
 										</p>
 									</div>
 								</div>
-								<div className="text-right">
-									<div
-										className={`text-5xl font-black ${
-											isPassed
-												? "text-green-600 dark:text-green-400"
-												: "text-red-600 dark:text-red-400"
-										}`}
-									>
-										{resultInfo.point_perc}%
-									</div>
+								<div className="text-5xl font-black text-center sm:text-right">
+									{resultInfo.point_perc}%
 								</div>
 							</div>
 						</div>
 
 						{/* Stats Grid */}
-						<div className="grid grid-cols-3 gap-3">
+						<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 							<div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-4 rounded-xl border-2 border-blue-200 dark:border-blue-800 text-center">
 								<Target className="w-6 h-6 mx-auto mb-2 text-blue-600 dark:text-blue-400" />
 								<p className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1">
@@ -333,33 +327,33 @@ export default function FinishExamResultDialog({
 						</div>
 
 						{/* Additional Info */}
-						<div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+						<div className="flex flex-col sm:flex-row justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 text-sm">
 							<div className="flex items-center gap-2">
 								<Clock className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-								<span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+								<span className="text-gray-700 dark:text-gray-300">
 									Хугацаа: {resultInfo.test_time}
 								</span>
 							</div>
 							<div className="flex items-center gap-2">
 								<Zap className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-								<span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+								<span className="text-gray-700 dark:text-gray-300">
 									{resultInfo.unelgee}
 								</span>
 							</div>
 						</div>
 					</div>
 
-					<DialogFooter className="gap-2 pt-4 border-t">
+					<DialogFooter className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
 						<Button
 							variant="outline"
 							onClick={handleCloseResults}
-							className="flex-1 font-semibold"
+							className="flex-1 font-semibold h-12"
 						>
 							Хаах
 						</Button>
 						<Button
 							onClick={handleViewDetails}
-							className="flex-1 font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+							className="flex-1 font-semibold h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
 						>
 							<FileText className="w-4 h-4 mr-2" />
 							Дэлгэрэнгүй
@@ -374,25 +368,31 @@ export default function FinishExamResultDialog({
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
-				<Button className="font-semibold px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all">
-					Шалгалт дуусгах
+				<Button className="w-full sm:w-auto px-6 py-4 font-bold text-lg shadow-lg hover:shadow-xl transition-all flex justify-center items-center gap-2">
+					<span>Шалгалт дуусгах</span>
+					<Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-[500px]">
-				<DialogHeader>
+
+			<DialogContent className="w-full sm:max-w-[550px] border-t-4 border-t-blue-500 p-4 sm:p-6">
+				<DialogHeader className="text-center space-y-3">
+					<div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 rounded-full flex items-center justify-center">
+						<Flag className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+					</div>
 					<DialogTitle className="text-2xl font-bold">
 						Шалгалт дуусгах уу?
 					</DialogTitle>
-					<DialogDescription className="text-base">
+					<DialogDescription>
 						Дуусгасны дараа хариултуудыг өөрчлөх боломжгүй болно.
 					</DialogDescription>
 				</DialogHeader>
 
-				<div className="space-y-4 py-6">
+				<div className="space-y-4 py-4">
 					{/* Progress Card */}
-					<div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl p-5 border-2 border-blue-200 dark:border-blue-800">
+					<div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl p-4 border-2 border-blue-200 dark:border-blue-800 shadow-inner">
 						<div className="flex items-center justify-between mb-4">
-							<span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+							<span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+								<Target className="w-5 h-5 text-blue-600" />
 								Нийт асуулт
 							</span>
 							<span className="text-3xl font-black text-blue-600 dark:text-blue-400">
@@ -400,25 +400,30 @@ export default function FinishExamResultDialog({
 							</span>
 						</div>
 
-						<div className="grid grid-cols-2 gap-3 mb-4">
-							<div className="flex items-center gap-2 bg-white/60 dark:bg-gray-800/60 p-3 rounded-lg">
-								<CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+							<div className="flex items-center gap-3 bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg shadow-sm border border-green-200 dark:border-green-800">
+								<div className="bg-green-100 dark:bg-green-900/50 rounded-full p-2">
+									<CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+								</div>
 								<div>
-									<p className="text-xs text-gray-600 dark:text-gray-400">
+									<p className="text-xs text-gray-600 dark:text-gray-400 font-medium">
 										Хариулсан
 									</p>
-									<p className="text-xl font-bold text-green-600 dark:text-green-400">
+									<p className="text-2xl font-bold text-green-600 dark:text-green-400">
 										{answeredCount}
 									</p>
 								</div>
 							</div>
-							<div className="flex items-center gap-2 bg-white/60 dark:bg-gray-800/60 p-3 rounded-lg">
-								<XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+
+							<div className="flex items-center gap-3 bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg shadow-sm border border-red-200 dark:border-red-800">
+								<div className="bg-red-100 dark:bg-red-900/50 rounded-full p-2">
+									<XCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+								</div>
 								<div>
-									<p className="text-xs text-gray-600 dark:text-gray-400">
+									<p className="text-xs text-gray-600 dark:text-gray-400 font-medium">
 										Хариулаагүй
 									</p>
-									<p className="text-xl font-bold text-red-600 dark:text-red-400">
+									<p className="text-2xl font-bold text-red-600 dark:text-red-400">
 										{unansweredCount}
 									</p>
 								</div>
@@ -427,27 +432,51 @@ export default function FinishExamResultDialog({
 
 						<div className="space-y-2">
 							<div className="flex justify-between text-sm font-medium text-gray-700 dark:text-gray-300">
-								<span>Гүйцэтгэл</span>
-								<span className="font-bold">{progressPercentage}%</span>
+								<span className="flex items-center gap-2">
+									<Zap className="w-4 h-4" />
+									Гүйцэтгэл
+								</span>
+								<span className="font-bold text-lg">{progressPercentage}%</span>
 							</div>
-							<Progress value={progressPercentage} className="h-3" />
+							<Progress
+								value={progressPercentage}
+								className="h-3 shadow-inner"
+							/>
 						</div>
 					</div>
+
+					{/* Warning if unanswered */}
+					{unansweredCount > 0 && (
+						<div className="bg-amber-50 dark:bg-amber-950/20 border-2 border-amber-300 dark:border-amber-700 rounded-lg p-4 flex items-start gap-3">
+							<div className="bg-amber-100 dark:bg-amber-900/50 rounded-full p-1.5 flex-shrink-0">
+								<XCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+							</div>
+							<div className="flex-1">
+								<p className="font-semibold text-amber-900 dark:text-amber-100 text-sm mb-1">
+									Анхааруулга
+								</p>
+								<p className="text-xs text-amber-700 dark:text-amber-300">
+									Танд {unansweredCount} хариулаагүй асуулт байна. Дуусгахаас
+									өмнө шалгана уу.
+								</p>
+							</div>
+						</div>
+					)}
 				</div>
 
-				<DialogFooter className="gap-2 pt-4 border-t">
+				<DialogFooter className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
 					<Button
 						variant="outline"
 						onClick={() => setOpen(false)}
 						disabled={finishMutation.isPending}
-						className="flex-1 font-semibold"
+						className="flex-1 font-semibold h-12"
 					>
-						Үгүй
+						Үгүй, буцах
 					</Button>
 					<Button
 						onClick={handleFinish}
 						disabled={finishMutation.isPending}
-						className="flex-1 font-semibold "
+						className="flex-1 font-semibold h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all"
 					>
 						{finishMutation.isPending ? (
 							<>
@@ -455,7 +484,10 @@ export default function FinishExamResultDialog({
 								Дуусгаж байна...
 							</>
 						) : (
-							"Тийм, дуусгах"
+							<>
+								<Send className="mr-2 h-5 w-5" />
+								Тийм, дуусгах
+							</>
 						)}
 					</Button>
 				</DialogFooter>

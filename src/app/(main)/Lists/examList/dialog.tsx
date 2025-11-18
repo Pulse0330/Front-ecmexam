@@ -26,8 +26,6 @@ import {
 	Zap,
 } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
-import UseAnimations from "react-useanimations";
-import loading2 from "react-useanimations/lib/loading2";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -393,24 +391,6 @@ export default function ExamRulesDialog({
 						{showMessage ? "Бэлдэж байна..." : "Шалгалт эхлүүлэх"}
 					</Button>
 				</DialogFooter>
-
-				{/* Loading Overlay */}
-				{showMessage && (
-					<div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/95 dark:bg-gray-900/95 backdrop-blur-md animate-in fade-in duration-300">
-						<UseAnimations
-							animation={loading2}
-							size={80}
-							strokeColor="#3b82f6"
-							loop
-						/>
-						<p className="mt-6 text-base font-bold text-gray-700 dark:text-gray-300 animate-pulse">
-							Шалгалтын орчин бэлдэж байна...
-						</p>
-						<p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-							Дүрмийг хүлээн зөвшөөрч байна
-						</p>
-					</div>
-				)}
 			</DialogContent>
 		</Dialog>
 	);

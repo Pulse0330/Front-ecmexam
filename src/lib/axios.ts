@@ -43,33 +43,55 @@ api.interceptors.request.use(
 api.interceptors.response.use(
 	(response) => {
 		const data = response.data;
-		if (data.RetResponse && data.RetResponse.ResponseCode !== "10") {
-			toast.error(data.RetResponse.ResponseMessage || "Алдаа гарлаа", {
-				description: `Status code: ${data.RetResponse.StatusCode}`,
+
+		// RetResponse шалгах
+		if (data.RetResponse) {
+			const { ResponseCode, ResponseMessage, StatusCode } = data.RetResponse;
+
+			// ResponseCode шалгах
+			if (ResponseCode === "10") {
+				// Success - Бүгд зөв
+				return response;
+			}
+
+			if (ResponseCode === "11") {
+				// No data - Өгөгдөл байхгүй (Алдаа биш, зүгээр data хоосон)
+				// Toast харуулахгүй, зүгээр response буцаана
+				console.info("No data available:", ResponseMessage);
+				return response;
+			}
+
+			// Бусад ResponseCode (12, 13, гэх мэт) - Алдаа
+			toast.error(ResponseMessage || "Алдаа гарлаа", {
+				description: `Status code: ${StatusCode}`,
 			});
-			return Promise.reject(new Error(data.RetResponse.ResponseMessage));
+			return Promise.reject(new Error(ResponseMessage || "Алдаа гарлаа"));
 		}
+
+		// RetResponse байхгүй бол response-ийг буцаана
 		return response;
 	},
-	(error) => Promise.reject(error),
+	(error) => {
+		// Network error эсвэл бусад алдаа
+		if (error.response) {
+			// Server responded with error status
+			toast.error("Серверийн алдаа", {
+				description: `Status: ${error.response.status}`,
+			});
+		} else if (error.request) {
+			// Request sent but no response
+			toast.error("Сүлжээний алдаа", {
+				description: "Серверт хүрч чадсангүй",
+			});
+		} else {
+			// Something else happened
+			toast.error("Алдаа гарлаа", {
+				description: error.message,
+			});
+		}
+
+		return Promise.reject(error);
+	},
 );
 
 export default api;
-// // src/lib/axios.ts
-// import axios from "axios";
-
-// export const api = axios.create({
-// baseURL: "https://ottapp.ecm.mn/api",
-// headers: { "Content-Type": "application/json" },
-// });
-
-// // Connection config
-// export const conn = {
-//   user: "edusr",
-//   password: "sql$erver43",
-//   database: "ikh_skuul",
-//   server: "172.16.1.79",
-//   pool: { max: 100000, min: 0, idleTimeoutMillis: 30000000 },
-//   options: { encrypt: false, trustServerCertificate: false },
-// };
-// export default api;
