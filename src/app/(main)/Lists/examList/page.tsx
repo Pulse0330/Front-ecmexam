@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
 	AlertCircle,
-	CheckCircle2,
 	Clock,
 	DollarSign,
 	Search,
@@ -105,86 +104,78 @@ export default function ExamListPage() {
 	if (isTimeLoading) return <div>Loading server time...</div>;
 
 	return (
-		<div className="min-h-screen h-screen flex flex-col py-6 px-4 overflow-hidden">
-			<div className="max-w-7xl mx-auto w-full flex flex-col h-full">
+		<div className="min-h-screen flex flex-col py-4 px-3 sm:px-6 overflow-auto">
+			<div className="max-w-7xl mx-auto w-full flex flex-col gap-6">
 				{/* Header */}
-				<header className="mb-6 text-center space-y-2 shrink-0">
-					<h1 className="text-4xl font-extrabold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+				<header className="text-center space-y-1">
+					<h1 className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
 						Шалгалтын жагсаалт
 					</h1>
-					<p className="text-gray-600 dark:text-gray-400">
+					<p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
 						Та өөрийн шалгалтуудыг энд харж, эхлүүлэх боломжтой
 					</p>
 				</header>
 
 				{/* Search & Filter */}
-				<div className="mb-4 flex flex-col lg:flex-row items-center justify-between gap-4 shrink-0">
+				<div className="flex flex-col sm:flex-row items-center justify-between gap-3">
 					{/* Search */}
-					<div className="relative w-full lg:flex-1 max-w-md">
+					<div className="relative w-full sm:max-w-md">
 						<Search
-							className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-							size={20}
+							className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+							size={18}
 						/>
 						<input
 							type="text"
 							placeholder="Шалгалтын нэрээр хайх..."
 							value={searchTerm}
 							onChange={(e) => setSearchTerm(e.target.value)}
-							className="w-full pl-12 pr-10 py-3 rounded-2xl border-2 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+							className="w-full pl-10 pr-8 py-2.5 rounded-2xl border-2 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-sm sm:text-base text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
 						/>
 						{searchTerm && (
 							<Button
 								onClick={clearSearch}
-								className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+								className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
 								aria-label="Хайлт цэвэрлэх"
 							>
-								<X size={18} />
+								<X size={16} />
 							</Button>
 						)}
 					</div>
 
 					{/* Filter Badges */}
-					<div className="flex flex-wrap gap-2 justify-center lg:justify-end">
-						{(
-							[
-								{
-									key: "all",
-									label: "Бүгд",
-									icon: null,
-									count: uniqueData.length,
-								},
-								{
-									key: "active",
-									label: "Идэвхтэй",
-									icon: <Zap size={14} />,
-									count: categorizedData.active.length,
-								},
-								{
-									key: "upcoming",
-									label: "Удахгүй",
-									icon: <Clock size={14} />,
-									count: categorizedData.upcoming.length,
-								},
-								{
-									key: "free",
-									label: "Төлбөргүй",
-									icon: <Sparkles size={14} />,
-									count: categorizedData.free.length,
-								},
-								{
-									key: "paid",
-									label: "Төлбөртэй",
-									icon: <DollarSign size={14} />,
-									count: categorizedData.paid.length,
-								},
-								{
-									key: "expired",
-									label: "Дууссан",
-									icon: <CheckCircle2 size={14} />,
-									count: categorizedData.expired.length,
-								},
-							] as const
-						).map((cat) => (
+					<div className="flex flex-wrap gap-2 justify-center sm:justify-end">
+						{[
+							{
+								key: "all",
+								label: "Бүгд",
+								icon: null,
+								count: uniqueData.length,
+							},
+							{
+								key: "active",
+								label: "Идэвхтэй",
+								icon: <Zap size={14} />,
+								count: categorizedData.active.length,
+							},
+							{
+								key: "upcoming",
+								label: "Удахгүй",
+								icon: <Clock size={14} />,
+								count: categorizedData.upcoming.length,
+							},
+							{
+								key: "free",
+								label: "Төлбөргүй",
+								icon: <Sparkles size={14} />,
+								count: categorizedData.free.length,
+							},
+							{
+								key: "paid",
+								label: "Төлбөртэй",
+								icon: <DollarSign size={14} />,
+								count: categorizedData.paid.length,
+							},
+						].map((cat) => (
 							<CategoryBadge
 								key={cat.key}
 								active={selectedCategory === cat.key}
@@ -200,7 +191,7 @@ export default function ExamListPage() {
 
 				{/* Results Info */}
 				{searchTerm && (
-					<div className="mb-3 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 shrink-0">
+					<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
 						<AlertCircle size={16} />
 						<span>
 							<strong>{filteredData.length}</strong> шалгалт олдлоо &ldquo;
@@ -209,20 +200,15 @@ export default function ExamListPage() {
 					</div>
 				)}
 
-				{/* Scrollable Exam Grid Container */}
-
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 pb-4">
+				{/* Exam Grid */}
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
 					{isPending ? (
 						skeletonIds.map((id) => <SkeletonCard key={id} />)
 					) : filteredData.length === 0 ? (
 						<EmptyState searchTerm={searchTerm} />
 					) : (
 						filteredData.map((exam) => (
-							<ExamCard
-								key={exam.exam_id}
-								exam={exam}
-								now={categorizedData.now}
-							/>
+							<ExamCard key={exam.exam_id} exam={exam} />
 						))
 					)}
 				</div>

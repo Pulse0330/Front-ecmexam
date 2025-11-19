@@ -36,8 +36,6 @@ import {
 } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { AnswerValue } from "@/types/exam/exam";
-import { AdvancedExamProctor } from "../component/examguard";
-import ExamTimer from "../component/Itime";
 
 interface PendingAnswer {
 	questionId: number;
@@ -47,7 +45,7 @@ interface PendingAnswer {
 	timestamp: number;
 }
 
-export default function ExamPage() {
+export default function SorilPage() {
 	const { userId } = useAuthStore();
 	const { id } = useParams();
 	const router = useRouter();
@@ -63,7 +61,7 @@ export default function ExamPage() {
 	const [typingQuestions, setTypingQuestions] = useState<Set<number>>(
 		new Set(),
 	);
-	const [isTimeUp, setIsTimeUp] = useState(false);
+	const [isTimeUp, _setIsTimeUp] = useState(false);
 	const [isAutoFinishing, setIsAutoFinishing] = useState(false);
 
 	const [showMobileMinimapOverlay, setShowMobileMinimapOverlay] =
@@ -331,7 +329,7 @@ export default function ExamPage() {
 		setIsSaving(false);
 	}, [examData, saveQuestion]);
 
-	const handleAutoFinishExam = useCallback(async () => {
+	const _handleAutoFinishExam = useCallback(async () => {
 		if (!userId || !examData?.ExamInfo?.[0] || hasAutoFinished.current) {
 			return;
 		}
@@ -867,34 +865,9 @@ export default function ExamPage() {
 							</div>
 						))}
 					</main>
-					<aside className="col-span-1">
-						<div className="sticky top-6">
-							{examData?.ExamInfo?.[0] && (
-								<ExamTimer
-									examStartTime={examData.ExamInfo[0].ognoo}
-									examEndTime={examData.ExamInfo[0].end_time}
-									examMinutes={examData.ExamInfo[0].minut}
-									startedDate={examData.ExamInfo[0].starteddate}
-									onTimeUp={(timeUp) => setIsTimeUp(timeUp)}
-									autoFinishOnTimeUp={true}
-									onAutoFinish={handleAutoFinishExam}
-								/>
-							)}
-						</div>
-					</aside>
 				</div>
 			</div>
-			<AdvancedExamProctor
-				maxViolations={3}
-				strictMode={true}
-				enableFullscreen={true}
-				onSubmit={() => {
-					console.log("Шалгалт автоматаар дууслаа");
-				}}
-				onLogout={() => {
-					console.log("Хэрэглэгч гарлаа");
-				}}
-			/>
+
 			{/* Mobile Layout */}
 			<div className="lg:hidden min-h-screen flex flex-col">
 				{/* Compact Header with Timer and Minimap Button */}

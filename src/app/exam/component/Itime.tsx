@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CalendarClock, Clock, PlayCircle } from "lucide-react";
+import { AlertCircle, Clock, PlayCircle } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
 import { useServerTime } from "@/hooks/useServerTime";
 
@@ -10,9 +10,8 @@ interface ExamTimerProps {
 	examMinutes: number;
 	startedDate?: string;
 	onTimeUp?: (isTimeUp: boolean) => void;
-	// Шинэ props
-	autoFinishOnTimeUp?: boolean; // Автоматаар дуусгах эсэх
-	onAutoFinish?: () => Promise<void>; // Дуусгах функц
+	autoFinishOnTimeUp?: boolean;
+	onAutoFinish?: () => Promise<void>;
 }
 
 export default function ExamTimer({
@@ -58,7 +57,6 @@ export default function ExamTimer({
 				calculatedEndTime = new Date(
 					actualStartDate.getTime() + totalSec * 1000,
 				);
-
 				elapsed = Math.floor(
 					(currentTime.getTime() - actualStartDate.getTime()) / 1000,
 				);
@@ -84,21 +82,14 @@ export default function ExamTimer({
 			};
 		}, [currentTime, examStartTime, examMinutes, startedDate]);
 
-	// Цаг дуусахад автоматаар шалгалт дуусгах
 	useEffect(() => {
 		if (status === "ended" && !hasAutoFinished.current) {
 			hasAutoFinished.current = true;
-
-			// onTimeUp callback дуудах
 			if (onTimeUp && !hasNotifiedTimeUp.current) {
 				hasNotifiedTimeUp.current = true;
 				onTimeUp(true);
 			}
-
-			// Автоматаар дуусгах
-			if (autoFinishOnTimeUp && onAutoFinish) {
-				onAutoFinish();
-			}
+			if (autoFinishOnTimeUp && onAutoFinish) onAutoFinish();
 		}
 	}, [status, onTimeUp, autoFinishOnTimeUp, onAutoFinish]);
 
@@ -127,86 +118,73 @@ export default function ExamTimer({
 		const totalMinutes = Math.floor(remainingSec / 60);
 		const hours = Math.floor(totalMinutes / 60);
 		const minutes = totalMinutes % 60;
-
-		if (hours > 0) {
-			return `${hours} цаг ${minutes} минут`;
-		}
-		return `${minutes} минут`;
+		return hours > 0 ? `${hours} цаг ${minutes} минут` : `${minutes} минут`;
 	};
 
 	const isWarning = percentage <= 20 && percentage > 10;
 	const isDanger = percentage <= 10;
 
 	const getStatusConfig = () => {
-		if (status === "ended") {
+		if (status === "ended")
 			return {
-				bg: "bg-gradient-to-br from-red-50 via-pink-50 to-red-50 dark:from-red-950/30 dark:via-pink-950/30 dark:to-red-950/30",
-				border: "border-red-300 dark:border-red-700",
+				bg: "from-red-50",
+				border: "border-red-300",
 				icon: AlertCircle,
-				iconColor: "text-red-600 dark:text-red-400",
-				iconBg: "bg-red-100 dark:bg-red-900/40",
-				timerColor: "text-red-600 dark:text-red-400",
-				badge:
-					"bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-red-300 dark:border-red-700",
+				iconColor: "text-red-600",
+				iconBg: "bg-red-100",
+				timerColor: "text-red-600",
+				badge: "bg-red-100 text-red-700 border-red-300",
 				badgeText: "🛑 Дууссан",
 				progressColor: "from-red-600 to-red-500",
 				pulse: false,
 			};
-		}
-		if (status === "before") {
+		if (status === "before")
 			return {
-				bg: "bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-50 dark:from-blue-950/30 dark:via-indigo-950/30 dark:to-blue-950/30",
-				border: "border-blue-200 dark:border-blue-800",
+				bg: "from-blue-50",
+				border: "border-blue-200",
 				icon: Clock,
-				iconColor: "text-blue-600 dark:text-blue-400",
-				iconBg: "bg-blue-100 dark:bg-blue-900/40",
-				timerColor: "text-blue-600 dark:text-blue-400",
-				badge:
-					"bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border-blue-300 dark:border-blue-700",
+				iconColor: "text-blue-600",
+				iconBg: "bg-blue-100",
+				timerColor: "text-blue-600",
+				badge: "bg-blue-100 text-blue-700 border-blue-300",
 				badgeText: "⏳ Эхлээгүй",
 				progressColor: "from-blue-600 to-indigo-600",
 				pulse: true,
 			};
-		}
-		if (isDanger) {
+		if (isDanger)
 			return {
-				bg: "bg-gradient-to-br from-red-50 via-orange-50 to-red-50 dark:from-red-950/30 dark:via-orange-950/30 dark:to-red-950/30",
-				border: "border-red-300 dark:border-red-700",
+				bg: "from-red-50",
+				border: "border-red-300",
 				icon: AlertCircle,
-				iconColor: "text-red-600 dark:text-red-400",
-				iconBg: "bg-red-100 dark:bg-red-900/40",
-				timerColor: "text-red-600 dark:text-red-400",
-				badge:
-					"bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-red-300 dark:border-red-700 animate-pulse",
+				iconColor: "text-red-600",
+				iconBg: "bg-red-100",
+				timerColor: "text-red-600",
+				badge: "bg-red-100 text-red-700 border-red-300 animate-pulse",
 				badgeText: "⚠️ Анхаар!",
 				progressColor: "from-red-600 to-red-500",
 				pulse: true,
 			};
-		}
-		if (isWarning) {
+		if (isWarning)
 			return {
-				bg: "bg-gradient-to-br from-yellow-50 via-orange-50 to-yellow-50 dark:from-yellow-950/30 dark:via-orange-950/30 dark:to-yellow-950/30",
-				border: "border-yellow-300 dark:border-yellow-700",
+				bg: "from-yellow-50",
+				border: "border-yellow-300",
 				icon: Clock,
-				iconColor: "text-yellow-600 dark:text-yellow-400",
-				iconBg: "bg-yellow-100 dark:bg-yellow-900/40",
-				timerColor: "text-yellow-600 dark:text-yellow-400",
-				badge:
-					"bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700",
+				iconColor: "text-yellow-600",
+				iconBg: "bg-yellow-100",
+				timerColor: "text-yellow-600",
+				badge: "bg-yellow-100 text-yellow-700 border-yellow-300",
 				badgeText: "⏰ Болгоомжтой",
 				progressColor: "from-yellow-500 to-orange-500",
 				pulse: false,
 			};
-		}
 		return {
-			bg: "bg-gradient-to-br from-green-50 via-emerald-50 to-green-50 dark:from-green-950/30 dark:via-emerald-950/30 dark:to-green-950/30",
-			border: "border-green-200 dark:border-green-800",
+			bg: "from-green-50",
+			border: "border-green-200",
 			icon: PlayCircle,
-			iconColor: "text-green-600 dark:text-green-400",
-			iconBg: "bg-green-100 dark:bg-green-900/40",
-			timerColor: "text-green-600 dark:text-green-400",
-			badge:
-				"bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 border-green-300 dark:border-green-700",
+			iconColor: "text-green-600",
+			iconBg: "bg-green-100",
+			timerColor: "text-green-600",
+			badge: "bg-green-100 text-green-700 border-green-300",
 			badgeText: "▶️ Явагдаж байна",
 			progressColor: "from-green-600 to-emerald-600",
 			pulse: false,
@@ -229,7 +207,7 @@ export default function ExamTimer({
 
 	return (
 		<div
-			className={`rounded-lg sm:rounded-xl shadow-sm border-2 ${config.border} ${config.bg} w-full overflow-hidden transition-all duration-300 relative`}
+			className={`rounded-lg sm:rounded-xl shadow-sm border-2 ${config.border} w-full overflow-hidden transition-all duration-300 relative`}
 		>
 			{!isOnline && (
 				<div className="absolute top-1 right-1 z-10">
@@ -259,7 +237,7 @@ export default function ExamTimer({
 					</div>
 				</div>
 
-				{/* Large Timer Display */}
+				{/* Timer Display */}
 				<div className="mb-3 sm:mb-4 text-center">
 					<div
 						className={`font-mono font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl ${config.timerColor} tracking-tight mb-1 sm:mb-2`}
@@ -296,38 +274,30 @@ export default function ExamTimer({
 				</div>
 
 				{/* Time Info */}
-				<div className="grid grid-cols-2 gap-2 sm:gap-3 pt-2.5 sm:pt-3 border-t border-slate-200 dark:border-slate-700">
-					<div className="flex items-start gap-1.5 sm:gap-2 min-w-0">
-						<CalendarClock className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-						<div className="min-w-0 flex-1">
-							<p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 leading-tight mb-1">
-								{startedDate ? "Эхэлсэн" : "Эхлэх"}
-							</p>
-							<p className="font-bold text-xs sm:text-sm md:text-base text-slate-900 dark:text-white truncate leading-tight">
-								{formatDateTime(startedDate || examStartTime)}
-							</p>
-						</div>
+				<div className="grid grid-cols-2 gap-2 sm:gap-3 pt-2.5 sm:pt-3">
+					{/* Start Time */}
+					<div className="flex flex-col gap-1 border rounded-2xl p-3 items-center bg-blue-50 dark:bg-blue-950/20">
+						<p className="font-bold text-sm sm:text-base">
+							{startedDate ? "Эхэлсэн" : "Эхлэх"}
+						</p>
+						<p className="text-xs sm:text-sm text-center">
+							{formatDateTime(startedDate || examStartTime)}
+						</p>
 					</div>
 
-					<div className="flex items-start gap-1.5 sm:gap-2 min-w-0">
-						<CalendarClock className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-						<div className="min-w-0 flex-1">
-							<p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 leading-tight mb-1">
-								Дуусах
-							</p>
-							<p className="font-bold text-xs sm:text-sm md:text-base text-slate-900 dark:text-white truncate leading-tight">
-								{endDateTime
-									? formatDateTime(endDateTime)
-									: formatDateTime(examEndTime)}
-							</p>
-						</div>
+					{/* End Time */}
+					<div className="flex flex-col gap-1 border rounded-2xl p-3 items-center bg-red-50 dark:bg-red-950/20">
+						<p className="font-bold text-sm sm:text-base">Дуусах</p>
+						<p className="text-xs sm:text-sm text-center">
+							{formatDateTime(endDateTime || examEndTime)}
+						</p>
 					</div>
 				</div>
 
-				{/* Warning Messages */}
+				{/* Warnings */}
 				{status === "ongoing" && isDanger && (
 					<div className="mt-3 sm:mt-4 bg-red-100 dark:bg-red-900/40 border-2 border-red-300 dark:border-red-700 rounded-lg p-3 sm:p-4 animate-pulse shadow-lg">
-						<p className="text-sm sm:text-base md:text-lg font-black text-red-700 dark:text-red-300 text-center leading-tight">
+						<p className="text-center font-black text-red-700 dark:text-red-300">
 							⚠️ Цаг дуусч байна! Шалгалтаа дүүргээрэй!
 						</p>
 					</div>
@@ -335,11 +305,11 @@ export default function ExamTimer({
 
 				{status === "ended" && (
 					<div className="mt-3 sm:mt-4 bg-red-100 dark:bg-red-900/40 border-2 border-red-300 dark:border-red-700 rounded-lg p-3 sm:p-4 shadow-lg">
-						<p className="text-base sm:text-lg md:text-xl font-black text-red-700 dark:text-red-300 text-center leading-tight mb-1">
+						<p className="text-center font-black text-red-700 dark:text-red-300 mb-1">
 							🛑 Шалгалтын цаг дууслаа
 						</p>
 						{autoFinishOnTimeUp && (
-							<p className="text-xs sm:text-sm text-red-600 dark:text-red-400 text-center font-semibold">
+							<p className="text-center text-red-600 dark:text-red-400 font-semibold">
 								Автоматаар дуусгаж байна...
 							</p>
 						)}

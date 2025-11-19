@@ -108,7 +108,7 @@ export default function HomePage() {
 				<div className="animate-in fade-in-0 slide-in-from-top-4 duration-700">
 					<div className="bg-gradient-to-r from-primary to-primary/80 rounded-xl p-6 md:p-8 shadow-lg">
 						<h1 className="text-2xl md:text-3xl font-bold text-primary-foreground">
-							Сайн байна уу, {username}! 👋
+							Сайн байна уу, {username}
 						</h1>
 						<p className="text-primary-foreground/90 mt-2">
 							Танд өнөөдөр ямар шалгалт бэлтгэх вэ?

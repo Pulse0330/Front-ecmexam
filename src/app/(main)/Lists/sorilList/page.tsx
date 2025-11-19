@@ -135,50 +135,62 @@ export default function SorilListPage() {
 		<div className="min-h-screen bg-gradient-page p-4 md:p-6">
 			<div className="max-w-7xl mx-auto">
 				{/* Гарчиг */}
-				<div className="mb-6">
-					<h1 className="text-3xl font-bold mb-2">Сорилын жагсаалт</h1>
-					<p className="text-muted-foreground">
+				<div className="mb-8">
+					<h1 className="text-3xl md:text-4xl font-bold mb-3 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+						Сорилын жагсаалт
+					</h1>
+					<p className="text-muted-foreground text-lg">
 						Өөрийн мэдлэгээ турших сорилуудаа сонгоно уу
 					</p>
 				</div>
 
 				{/* Статистик */}
 				{stats && (
-					<div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-						<Card>
-							<CardContent className="p-4">
+					<div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+						<Card className="hover:shadow-lg transition-shadow duration-300 border-primary/20">
+							<CardContent className="p-6">
 								<div className="flex items-center justify-between">
 									<div>
-										<p className="text-sm text-muted-foreground">Нийт</p>
-										<p className="text-2xl font-bold">{stats.total}</p>
+										<p className="text-sm text-muted-foreground mb-1">Нийт</p>
+										<p className="text-3xl font-bold">{stats.total}</p>
 									</div>
-									<BookOpen className="w-8 h-8 text-blue-500" />
+									<div className="bg-blue-500/10 p-3 rounded-full">
+										<BookOpen className="w-8 h-8 text-blue-500" />
+									</div>
 								</div>
 							</CardContent>
 						</Card>
-						<Card>
-							<CardContent className="p-4">
+						<Card className="hover:shadow-lg transition-shadow duration-300 border-green-500/20">
+							<CardContent className="p-6">
 								<div className="flex items-center justify-between">
 									<div>
-										<p className="text-sm text-muted-foreground">Дууссан</p>
-										<p className="text-2xl font-bold text-green-600">
+										<p className="text-sm text-muted-foreground mb-1">
+											Дууссан
+										</p>
+										<p className="text-3xl font-bold text-green-600">
 											{stats.completed}
 										</p>
 									</div>
-									<TrendingUp className="w-8 h-8 text-green-500" />
+									<div className="bg-green-500/10 p-3 rounded-full">
+										<TrendingUp className="w-8 h-8 text-green-500" />
+									</div>
 								</div>
 							</CardContent>
 						</Card>
-						<Card>
-							<CardContent className="p-4">
+						<Card className="hover:shadow-lg transition-shadow duration-300 border-muted/50 col-span-2 md:col-span-1">
+							<CardContent className="p-6">
 								<div className="flex items-center justify-between">
 									<div>
-										<p className="text-sm text-muted-foreground">Эхлээгүй</p>
-										<p className="text-2xl font-bold text-muted-foreground">
+										<p className="text-sm text-muted-foreground mb-1">
+											Эхлээгүй
+										</p>
+										<p className="text-3xl font-bold text-muted-foreground">
 											{stats.notStarted}
 										</p>
 									</div>
-									<FilterIcon className="w-8 h-8 text-muted-foreground" />
+									<div className="bg-muted/50 p-3 rounded-full">
+										<FilterIcon className="w-8 h-8 text-muted-foreground" />
+									</div>
 								</div>
 							</CardContent>
 						</Card>
@@ -186,23 +198,23 @@ export default function SorilListPage() {
 				)}
 
 				{/* Хайлт ба Шүүлтүүр */}
-				<Card className="mb-6">
-					<CardContent className="p-4">
+				<Card className="mb-8 shadow-md">
+					<CardContent className="p-6">
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 							{/* Хайлт */}
 							<div className="relative">
-								<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+								<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
 								<Input
 									placeholder="Сорил хайх..."
 									value={searchQuery}
 									onChange={(e) => setSearchQuery(e.target.value)}
-									className="pl-10"
+									className="pl-10 h-11"
 								/>
 							</div>
 
 							{/* Төлвөөр шүүх */}
 							<Select value={selectedStatus} onValueChange={setSelectedStatus}>
-								<SelectTrigger>
+								<SelectTrigger className="h-11">
 									<SelectValue placeholder="Бүх төлөв" />
 								</SelectTrigger>
 								<SelectContent>
@@ -214,7 +226,7 @@ export default function SorilListPage() {
 
 							{/* Төлөвлөгөөгөөр шүүх */}
 							<Select value={selectedPlan} onValueChange={setSelectedPlan}>
-								<SelectTrigger>
+								<SelectTrigger className="h-11">
 									<SelectValue placeholder="Бүх төлөвлөгөө" />
 								</SelectTrigger>
 								<SelectContent>
@@ -234,7 +246,7 @@ export default function SorilListPage() {
 								variant="ghost"
 								size="sm"
 								onClick={clearFilters}
-								className="mt-4"
+								className="mt-4 hover:bg-destructive/10 hover:text-destructive"
 							>
 								<X className="w-4 h-4 mr-2" />
 								Шүүлтийг цэвэрлэх
@@ -248,17 +260,17 @@ export default function SorilListPage() {
 					<div className="space-y-8">
 						<div className="space-y-4">
 							<Skeleton className="h-8 w-64" />
-							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 								{[1, 2, 3, 4, 5, 6].map((i) => (
-									<Card key={i}>
-										<Skeleton className="h-40" />
+									<Card key={i} className="overflow-hidden">
+										<Skeleton className="h-48 w-full" />
 										<CardContent className="p-5 space-y-3">
 											<Skeleton className="h-6 w-20" />
 											<Skeleton className="h-5 w-full" />
 											<Skeleton className="h-5 w-3/4" />
 											<Skeleton className="h-4 w-full" />
 											<Skeleton className="h-4 w-2/3" />
-											<Skeleton className="h-10 w-full" />
+											<Skeleton className="h-11 w-full mt-4" />
 										</CardContent>
 									</Card>
 								))}
@@ -269,36 +281,37 @@ export default function SorilListPage() {
 
 				{/* Алдаа */}
 				{error && (
-					<Alert variant="destructive">
-						<AlertDescription>
-							❌ Алдаа гарлаа. Дахин оролдоно уу.
+					<Alert variant="destructive" className="mb-6">
+						<AlertDescription className="flex items-center gap-2">
+							<span className="text-lg">❌</span>
+							Алдаа гарлаа. Дахин оролдоно уу.
 						</AlertDescription>
 					</Alert>
 				)}
 
 				{/* Сорилын жагсаалт */}
 				{filteredData.length > 0 && groupedExams && (
-					<div className="space-y-8">
+					<div className="space-y-10">
 						{Object.entries(groupedExams).map(([planName, exams]) => (
 							<section key={planName}>
-								<div className="mb-4 flex items-center gap-3">
-									<BookOpen className="w-6 h-6 text-primary" />
-									<h2 className="text-xl font-semibold">{planName}</h2>
-									<span className="text-sm text-muted-foreground">
-										({exams.length} сорил)
+								<div className="mb-6 flex items-center gap-3 pb-3 border-b-2 border-primary/20">
+									<div className="bg-primary/10 p-2 rounded-lg">
+										<BookOpen className="w-6 h-6 text-primary" />
+									</div>
+									<h2 className="text-2xl font-semibold">{planName}</h2>
+									<span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
+										{exams.length} сорил
 									</span>
 								</div>
 
-								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 									{exams.map((exam) => (
-										<Button
-											type="button"
-											key={exam.exam_id}
-											onClick={() => handleExamClick(exam.exam_id)}
-											className="cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg text-left w-full p-0 border-0 bg-transparent"
-										>
-											<SorilCard exam={exam} />
-										</Button>
+										<div key={exam.exam_id}>
+											<SorilCard
+												exam={exam}
+												onClick={() => handleExamClick(exam.exam_id)}
+											/>
+										</div>
 									))}
 								</div>
 							</section>
@@ -308,13 +321,21 @@ export default function SorilListPage() {
 
 				{/* Хоосон төлөв */}
 				{!isPending && filteredData.length === 0 && (
-					<div className="text-center py-12">
-						<BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-						<p className="text-lg mb-2">
+					<div className="text-center py-16">
+						<div className="bg-muted/30 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+							<BookOpen className="w-12 h-12 text-muted-foreground" />
+						</div>
+						<p className="text-xl font-semibold mb-2">
 							{hasActiveFilters ? "Илэрц олдсонгүй" : "Сорил олдсонгүй"}
 						</p>
+						<p className="text-muted-foreground mb-4">
+							{hasActiveFilters
+								? "Өөр шүүлтүүр ашиглан үзнэ үү"
+								: "Одоогоор сорил байхгүй байна"}
+						</p>
 						{hasActiveFilters && (
-							<Button variant="link" onClick={clearFilters}>
+							<Button variant="outline" onClick={clearFilters}>
+								<X className="w-4 h-4 mr-2" />
 								Шүүлтийг цэвэрлэх
 							</Button>
 						)}
