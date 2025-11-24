@@ -1,9 +1,18 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, Minus, Plus, Search, X } from "lucide-react";
+import {
+	CheckCircle2,
+	ChevronDown,
+	ChevronUp,
+	Minus,
+	Plus,
+	Search,
+	X,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { getTestGroup, getTestMixed } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { GetTestGroupResponse } from "@/types/exercise/testGroup";
@@ -110,20 +119,6 @@ export default function TestGroupPage() {
 		0,
 	);
 
-	const getPercentColor = (percent: number) => {
-		if (percent >= 80) return "text-green-600";
-		if (percent >= 60) return "text-blue-600";
-		if (percent >= 40) return "text-orange-600";
-		return "text-red-600";
-	};
-
-	const getProgressColor = (percent: number) => {
-		if (percent >= 80) return "stroke-green-500";
-		if (percent >= 60) return "stroke-blue-500";
-		if (percent >= 40) return "stroke-orange-500";
-		return "stroke-red-500";
-	};
-
 	if (!userId || isLoading || isError) {
 		return (
 			<div className="min-h-screen flex items-center justify-center p-4">
@@ -144,7 +139,7 @@ export default function TestGroupPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
+		<div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8 pb-32">
 			<div className="max-w-6xl mx-auto">
 				{/* Header */}
 				<div className="mb-8">
@@ -181,23 +176,26 @@ export default function TestGroupPage() {
 
 				{/* Summary */}
 				{selectedCount > 0 && (
-					<div className="mb-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+					<div className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-6 shadow-lg">
 						<div className="flex items-center justify-between flex-wrap gap-4">
 							<div className="flex items-center gap-6">
-								<div>
-									<p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-										Сонгосон
-									</p>
-									<p className="text-2xl font-bold text-gray-900 dark:text-white">
-										{selectedCount}
-									</p>
+								<div className="flex items-center gap-2">
+									<CheckCircle2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+									<div>
+										<p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+											Сонгосон бүлэг
+										</p>
+										<p className="text-2xl font-bold text-gray-900 dark:text-white">
+											{selectedCount}
+										</p>
+									</div>
 								</div>
 								<div className="w-px h-12 bg-gray-300 dark:bg-gray-600" />
 								<div>
 									<p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
 										Нийт асуулт
 									</p>
-									<p className="text-2xl font-bold text-gray-900 dark:text-white">
+									<p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
 										{totalQuestions}
 									</p>
 								</div>
@@ -206,9 +204,11 @@ export default function TestGroupPage() {
 								type="button"
 								onClick={handleSubmit}
 								disabled={mutation.isPending}
-								className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+								className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
 							>
-								{mutation.isPending ? "Илгээж байна..." : "Тест эхлүүлэх"}
+								{mutation.isPending
+									? "Илгээж байна..."
+									: `Тест эхлүүлэх (${totalQuestions} асуулт)`}
 							</button>
 						</div>
 					</div>
@@ -223,6 +223,10 @@ export default function TestGroupPage() {
 						const categorySelectedCount = items.filter(
 							(item) => selectedTests[item.id],
 						).length;
+						const categoryTotalQuestions = items.reduce(
+							(sum, item) => sum + (selectedTests[item.id] || 0),
+							0,
+						);
 
 						return (
 							<div
@@ -245,9 +249,14 @@ export default function TestGroupPage() {
 									</div>
 									<div className="flex items-center gap-3">
 										{categorySelectedCount > 0 && (
-											<span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-sm font-medium">
-												{categorySelectedCount}
-											</span>
+											<div className="flex items-center gap-2">
+												<span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-sm font-medium">
+													{categorySelectedCount} бүлэг
+												</span>
+												<span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-full text-sm font-bold">
+													{categoryTotalQuestions} асуулт
+												</span>
+											</div>
 										)}
 										{isExpanded ? (
 											<ChevronUp className="w-5 h-5 text-gray-400" />
@@ -262,51 +271,33 @@ export default function TestGroupPage() {
 									<div className="border-t border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
 										{items.map((item) => {
 											const selectedCount = selectedTests[item.id] || 0;
+											const isSelected = selectedCount > 0;
 
 											return (
 												<div
 													key={item.id}
-													className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+													className={`px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors ${
+														isSelected
+															? "bg-blue-50/50 dark:bg-blue-900/10"
+															: ""
+													}`}
 												>
 													<div className="flex items-start justify-between gap-4 mb-4">
 														<div className="flex-1">
-															<h4 className="font-medium text-gray-900 dark:text-white mb-1">
-																{item.name}
-															</h4>
+															<div className="flex items-center gap-2 mb-1">
+																<h4 className="font-medium text-gray-900 dark:text-white">
+																	{item.name}
+																</h4>
+																{isSelected && (
+																	<span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-semibold">
+																		<CheckCircle2 className="w-3 h-3" />
+																		{selectedCount}
+																	</span>
+																)}
+															</div>
 															<p className="text-sm text-gray-600 dark:text-gray-400">
 																Нийт: {item.cnt} тест
 															</p>
-														</div>
-
-														{/* Progress Circle */}
-														<div className="relative w-14 h-14 flex-shrink-0">
-															<svg className="w-14 h-14 transform -rotate-90">
-																<circle
-																	cx="28"
-																	cy="28"
-																	r="24"
-																	stroke="currentColor"
-																	strokeWidth="4"
-																	fill="none"
-																	className="text-gray-200 dark:text-gray-700"
-																/>
-																<title>asd</title>
-																<circle
-																	cx="28"
-																	cy="28"
-																	r="24"
-																	strokeWidth="4"
-																	fill="none"
-																	strokeDasharray={`${item.tpercent * 1.51} 151`}
-																	strokeLinecap="round"
-																	className={getProgressColor(item.tpercent)}
-																/>
-															</svg>
-															<span
-																className={`absolute inset-0 flex items-center justify-center text-xs font-bold ${getPercentColor(item.tpercent)}`}
-															>
-																{item.tpercent}%
-															</span>
 														</div>
 													</div>
 
@@ -342,7 +333,9 @@ export default function TestGroupPage() {
 															/>
 															<div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
 																<span>0</span>
-																<span className="font-medium text-gray-700 dark:text-gray-300">
+																<span
+																	className={`font-medium ${isSelected ? "text-blue-600 dark:text-blue-400" : "text-gray-700 dark:text-gray-300"}`}
+																>
 																	{selectedCount} / {item.cnt}
 																</span>
 																<span>{item.cnt}</span>
@@ -380,7 +373,11 @@ export default function TestGroupPage() {
 																	),
 																)
 															}
-															className="w-16 text-center px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+															className={`w-16 text-center px-2 py-1.5 border rounded-lg text-sm focus:ring-1 outline-none transition-colors ${
+																isSelected
+																	? "border-blue-500 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 focus:ring-blue-500"
+																	: "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-blue-500"
+															}`}
 														/>
 													</div>
 												</div>
@@ -403,6 +400,41 @@ export default function TestGroupPage() {
 					</div>
 				)}
 			</div>
+
+			{/* Sticky Bottom Summary */}
+			{selectedCount > 0 && (
+				<div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t-2 border-blue-200 dark:border-blue-800 shadow-2xl p-4 z-50">
+					<div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+						<div className="flex items-center gap-6">
+							<div className="text-center">
+								<p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+									Бүлэг
+								</p>
+								<p className="text-xl font-bold text-gray-900 dark:text-white">
+									{selectedCount}
+								</p>
+							</div>
+							<div className="w-px h-10 bg-gray-300 dark:bg-gray-600" />
+							<div className="text-center">
+								<p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+									Нийт асуулт
+								</p>
+								<p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+									{totalQuestions}
+								</p>
+							</div>
+						</div>
+						<Button
+							type="button"
+							onClick={handleSubmit}
+							disabled={mutation.isPending}
+							className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
+						>
+							{mutation.isPending ? "Илгээж байна..." : `Тест эхлүүлэх →`}
+						</Button>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

@@ -1,8 +1,8 @@
-// HomePage.tsx
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
+import { useEffect, useState } from "react";
 import UseAnimations from "react-useanimations";
 import loading2 from "react-useanimations/lib/loading2";
 import { getHomeScreen, getUserProfile } from "@/lib/api";
@@ -16,6 +16,18 @@ import HomeSorilLists from "./sorillists";
 
 export default function HomePage() {
 	const { userId } = useAuthStore();
+	const [isDay, setIsDay] = useState(true);
+
+	useEffect(() => {
+		const hour = new Date().getHours();
+		setIsDay(hour >= 6 && hour < 18); // 6:00 - 18:00 өдөр, бусад нь шөнө
+	}, []);
+
+	const gradientClass = isDay
+		? "from-blue-400 via-cyan-300 to-sky-200"
+		: "from-gray-800 via-gray-900 to-black";
+
+	const textColor = isDay ? "text-white" : "text-gray-200";
 
 	const {
 		data: homeData,
@@ -39,7 +51,6 @@ export default function HomePage() {
 		enabled: !!userId,
 	});
 
-	// Not logged in state
 	if (!userId) {
 		return (
 			<div className="flex items-center justify-center min-h-[60vh]">
@@ -56,7 +67,6 @@ export default function HomePage() {
 		);
 	}
 
-	// Loading state
 	if (isHomeLoading || isProfileLoading) {
 		return (
 			<div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
@@ -79,7 +89,6 @@ export default function HomePage() {
 		);
 	}
 
-	// Error state
 	if (isHomeError || isProfileError) {
 		return (
 			<div className="flex items-center justify-center min-h-[60vh] p-4">
@@ -102,17 +111,52 @@ export default function HomePage() {
 	const username = profileData?.RetData?.[0]?.username || "Хэрэглэгч";
 
 	return (
-		<div className="min-h-screen  bg-gradient-page">
+		<div className="min-h-screen bg-gradient-page">
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 				{/* Welcome Header */}
-				<div className="animate-in fade-in-0 slide-in-from-top-4 duration-700">
-					<div className="bg-gradient-to-r from-primary to-primary/80 rounded-xl p-6 md:p-8 shadow-lg">
-						<h1 className="text-2xl md:text-3xl font-bold text-primary-foreground">
+				<div className="animate-in fade-in-0 slide-in-from-top-4 duration-700 relative">
+					<div
+						className={`bg-gradient-to-r ${gradientClass} rounded-xl p-6 md:p-8 shadow-lg overflow-hidden relative`}
+					>
+						<h1 className={`text-2xl md:text-3xl font-bold ${textColor}`}>
 							Сайн байна уу, {username}
 						</h1>
-						<p className="text-primary-foreground/90 mt-2">
+						<p className={`${textColor} mt-2`}>
 							Танд өнөөдөр ямар шалгалт бэлтгэх вэ?
 						</p>
+
+						{/* Цас */}
+						<div className="absolute inset-0 pointer-events-none">
+							{[...Array(20)].map(() => {
+								const id = Math.random().toString(36).substr(2, 9);
+								return (
+									<div
+										key={id}
+										className="absolute w-2 h-2 bg-white rounded-full opacity-80"
+										style={{
+											left: `${Math.random() * 100}%`,
+											top: `${Math.random() * -10}%`,
+											animation: `fall ${3 + Math.random() * 2}s linear infinite`,
+											animationDelay: `${Math.random() * 5}s`,
+										}}
+									></div>
+								);
+							})}
+						</div>
+
+						{/* Inline keyframes */}
+						<style jsx>{`
+              @keyframes fall {
+                0% {
+                  transform: translateY(0);
+                  opacity: 1;
+                }
+                100% {
+                  transform: translateY(100vh);
+                  opacity: 0;
+                }
+              }
+            `}</style>
 					</div>
 				</div>
 

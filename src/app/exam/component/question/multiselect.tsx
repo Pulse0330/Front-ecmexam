@@ -104,7 +104,7 @@ export default function MultiSelectQuestion({
 		return (
 			<Dialog>
 				<DialogTrigger asChild>
-					<button
+					<Button
 						type="button"
 						className="relative mb-4 w-full cursor-pointer hover:opacity-90 transition-opacity border rounded-md overflow-hidden group"
 					>
@@ -118,7 +118,7 @@ export default function MultiSelectQuestion({
 						<div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
 							<ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
 						</div>
-					</button>
+					</Button>
 				</DialogTrigger>
 				<DialogContent className="max-w-[90vw] max-h-[90vh]">
 					<VisuallyHidden>
@@ -148,7 +148,7 @@ export default function MultiSelectQuestion({
 			return (
 				<Dialog>
 					<DialogTrigger asChild>
-						<button
+						<Button
 							type="button"
 							data-dialog-trigger
 							className="cursor-pointer hover:opacity-90 transition-opacity rounded overflow-hidden border w-full"
@@ -161,7 +161,7 @@ export default function MultiSelectQuestion({
 								height={150}
 								className="w-full h-auto object-contain max-h-[150px]"
 							/>
-						</button>
+						</Button>
 					</DialogTrigger>
 					<DialogContent className="max-w-[90vw] max-h-[90vh]">
 						<VisuallyHidden>

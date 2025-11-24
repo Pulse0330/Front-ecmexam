@@ -5,11 +5,11 @@ const nextConfig: NextConfig = {
 		NEXT_PUBLIC_API_URL: "https://ottapp.ecm.mn/api",
 	},
 	images: {
-		unoptimized: true, // ЭНД НЭМЭХ
+		unoptimized: true,
 		remotePatterns: [
 			{
 				protocol: "https",
-				hostname: "skuul.mn",
+				hostname: "**",
 				port: "",
 				pathname: "/**",
 			},

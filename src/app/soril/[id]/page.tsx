@@ -16,15 +16,15 @@ import {
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import FinishExamResultDialog, {
-	type FinishExamDialogHandle,
-} from "@/app/exam/component/finish";
 import ExamMinimap from "@/app/exam/component/minimap";
 import FillInTheBlankQuestion from "@/app/exam/component/question/fillblank";
 import MatchingByLine from "@/app/exam/component/question/matching";
 import MultiSelectQuestion from "@/app/exam/component/question/multiselect";
 import DragAndDropQuestion from "@/app/exam/component/question/order";
 import SingleSelectQuestion from "@/app/exam/component/question/singleSelect";
+import FinishExamResultDialog, {
+	type FinishExamDialogHandle,
+} from "@/app/soril/finish";
 import FixedScrollButton from "@/components/FixedScrollButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -605,7 +605,6 @@ export default function SorilPage() {
 					questionId={q.question_id}
 					questionText={q.question_name}
 					answers={q.answers}
-					mode="exam"
 					selectedAnswer={selectedAnswers[q.question_id] as number | null}
 					onAnswerChange={handleAnswerChange}
 				/>
@@ -665,7 +664,6 @@ export default function SorilPage() {
 						ref_child_id: a.ref_child_id,
 						is_true: a.is_true,
 					}))}
-					mode="exam"
 					onMatchChange={(matches) =>
 						handleAnswerChange(q.question_id, matches)
 					}

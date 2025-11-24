@@ -10,88 +10,97 @@ interface ExamTimerProps {
 	examMinutes: number;
 	startedDate?: string;
 	onTimeUp?: (isTimeUp: boolean) => void;
-	autoFinishOnTimeUp?: boolean;
-	onAutoFinish?: () => Promise<void>;
+	onAutoFinish?: () => void;
 }
 
 export default function ExamTimer({
 	examStartTime,
-	examEndTime,
+
 	examMinutes,
 	startedDate,
 	onTimeUp,
-	autoFinishOnTimeUp = false,
-	onAutoFinish,
+	onAutoFinish, // PROP-ийг parameter-т нэмсэн
 }: ExamTimerProps) {
 	const { currentTime, isLoading, isOnline } = useServerTime();
 	const hasNotifiedTimeUp = useRef(false);
-	const hasAutoFinished = useRef(false);
+	const hasAutoFinished = useRef(false); // _ устгасан
 
-	const { status, remainingSec, percentage, elapsedSec, endDateTime } =
-		useMemo(() => {
-			if (!currentTime) {
-				return {
-					status: "before" as const,
-					remainingSec: examMinutes * 60,
-					percentage: 100,
-					elapsedSec: 0,
-					endDateTime: null,
-				};
-			}
+	const { status, remainingSec, percentage } = useMemo(() => {
+		if (!currentTime) {
+			return {
+				status: "before" as const,
+				remainingSec: examMinutes * 60,
+				percentage: 100,
+				elapsedSec: 0,
+				endDateTime: null,
+			};
+		}
 
-			const startDate = new Date(`${examStartTime.replace(" ", "T")}Z`);
-			const totalSec = examMinutes * 60;
+		const startDate = new Date(`${examStartTime.replace(" ", "T")}Z`);
+		const totalSec = examMinutes * 60;
 
-			let stat: "before" | "ongoing" | "ended";
-			let remaining: number;
-			let elapsed: number;
-			let calculatedEndTime: Date | null = null;
+		let stat: "before" | "ongoing" | "ended";
+		let remaining: number;
+		let elapsed: number;
+		let calculatedEndTime: Date | null = null;
 
-			if (!startedDate) {
-				stat = "before";
-				remaining = totalSec;
-				elapsed = 0;
-				calculatedEndTime = new Date(startDate.getTime() + totalSec * 1000);
+		if (!startedDate) {
+			stat = "before";
+			remaining = totalSec;
+			elapsed = 0;
+			calculatedEndTime = new Date(startDate.getTime() + totalSec * 1000);
+		} else {
+			const actualStartDate = new Date(startedDate);
+			calculatedEndTime = new Date(actualStartDate.getTime() + totalSec * 1000);
+			elapsed = Math.floor(
+				(currentTime.getTime() - actualStartDate.getTime()) / 1000,
+			);
+			remaining = Math.max(0, totalSec - elapsed);
+
+			if (currentTime >= calculatedEndTime) {
+				stat = "ended";
+				remaining = 0;
+				elapsed = totalSec;
 			} else {
-				const actualStartDate = new Date(startedDate);
-				calculatedEndTime = new Date(
-					actualStartDate.getTime() + totalSec * 1000,
-				);
-				elapsed = Math.floor(
-					(currentTime.getTime() - actualStartDate.getTime()) / 1000,
-				);
-				remaining = Math.max(0, totalSec - elapsed);
+				stat = "ongoing";
+			}
+		}
 
-				if (currentTime >= calculatedEndTime) {
-					stat = "ended";
-					remaining = 0;
-					elapsed = totalSec;
-				} else {
-					stat = "ongoing";
+		const pct = totalSec > 0 ? (remaining / totalSec) * 100 : 0;
+
+		return {
+			status: stat,
+			remainingSec: Math.max(0, remaining),
+			percentage: Math.max(0, Math.min(100, pct)),
+			elapsedSec: Math.max(0, elapsed),
+			endDateTime: calculatedEndTime,
+		};
+	}, [currentTime, examStartTime, examMinutes, startedDate]);
+
+	// ШИНЭ ЛОГИК: Notification ба Auto-finish хийх
+	useEffect(() => {
+		if (status === "ended") {
+			// 1. Notification илгээх (зөвхөн 1 удаа)
+			if (!hasNotifiedTimeUp.current) {
+				hasNotifiedTimeUp.current = true;
+				if (onTimeUp) {
+					onTimeUp(true);
 				}
 			}
 
-			const pct = totalSec > 0 ? (remaining / totalSec) * 100 : 0;
+			// 2. Auto-finish хийх (зөвхөн 1 удаа)
+			if (!hasAutoFinished.current && onAutoFinish) {
+				hasAutoFinished.current = true;
+				// 3 секундийн дараа автоматаар шалгалт дуусгах
+				const timer = setTimeout(() => {
+					onAutoFinish();
+				}, 3000);
 
-			return {
-				status: stat,
-				remainingSec: Math.max(0, remaining),
-				percentage: Math.max(0, Math.min(100, pct)),
-				elapsedSec: Math.max(0, elapsed),
-				endDateTime: calculatedEndTime,
-			};
-		}, [currentTime, examStartTime, examMinutes, startedDate]);
-
-	useEffect(() => {
-		if (status === "ended" && !hasAutoFinished.current) {
-			hasAutoFinished.current = true;
-			if (onTimeUp && !hasNotifiedTimeUp.current) {
-				hasNotifiedTimeUp.current = true;
-				onTimeUp(true);
+				// Cleanup function
+				return () => clearTimeout(timer);
 			}
-			if (autoFinishOnTimeUp && onAutoFinish) onAutoFinish();
 		}
-	}, [status, onTimeUp, autoFinishOnTimeUp, onAutoFinish]);
+	}, [status, onTimeUp, onAutoFinish]);
 
 	const formatTime = (sec: number) => {
 		const h = Math.floor(sec / 3600);
@@ -100,7 +109,7 @@ export default function ExamTimer({
 		return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 	};
 
-	const formatDateTime = (dateStr: string | Date) => {
+	const _formatDateTime = (dateStr: string | Date) => {
 		const date =
 			typeof dateStr === "string"
 				? new Date(
@@ -192,7 +201,7 @@ export default function ExamTimer({
 	};
 
 	const config = getStatusConfig();
-	const Icon = config.icon;
+	const _Icon = config.icon;
 
 	if (isLoading || !currentTime) {
 		return (
@@ -219,28 +228,10 @@ export default function ExamTimer({
 			)}
 
 			<div className="p-3 sm:p-4">
-				{/* Header with Timer */}
-				<div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
-					<div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-shrink">
-						<div
-							className={`rounded-md sm:rounded-lg p-1 sm:p-1.5 flex-shrink-0 ${config.iconBg} ${config.pulse ? "animate-pulse" : ""}`}
-						>
-							<Icon
-								className={`w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 ${config.iconColor}`}
-							/>
-						</div>
-						<div
-							className={`px-2 sm:px-2.5 md:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs md:text-sm font-bold border whitespace-nowrap ${config.badge}`}
-						>
-							{config.badgeText}
-						</div>
-					</div>
-				</div>
-
 				{/* Timer Display */}
 				<div className="mb-3 sm:mb-4 text-center">
 					<div
-						className={`font-mono font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl ${config.timerColor} tracking-tight mb-1 sm:mb-2`}
+						className={`font-mono font-black text-1xl sm:text-2xl md:text-3xl lg:text-4xl ${config.timerColor} tracking-tight mb-1 sm:mb-2`}
 					>
 						{formatTime(remainingSec)}
 					</div>
@@ -253,46 +244,6 @@ export default function ExamTimer({
 				</div>
 
 				{/* Progress Bar */}
-				<div className="mb-3 sm:mb-4">
-					<div className="h-2.5 sm:h-3 md:h-4 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden shadow-inner">
-						<div
-							className={`h-full bg-gradient-to-r ${config.progressColor} transition-all duration-500 ease-out`}
-							style={{ width: `${percentage}%` }}
-						/>
-					</div>
-					<div className="flex justify-between items-center mt-1.5 sm:mt-2">
-						<span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium">
-							{formatTime(elapsedSec)}
-						</span>
-						<span className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded">
-							{Math.round(percentage)}%
-						</span>
-						<span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium">
-							{formatTime(examMinutes * 60)}
-						</span>
-					</div>
-				</div>
-
-				{/* Time Info */}
-				<div className="grid grid-cols-2 gap-2 sm:gap-3 pt-2.5 sm:pt-3">
-					{/* Start Time */}
-					<div className="flex flex-col gap-1 border rounded-2xl p-3 items-center bg-blue-50 dark:bg-blue-950/20">
-						<p className="font-bold text-sm sm:text-base">
-							{startedDate ? "Эхэлсэн" : "Эхлэх"}
-						</p>
-						<p className="text-xs sm:text-sm text-center">
-							{formatDateTime(startedDate || examStartTime)}
-						</p>
-					</div>
-
-					{/* End Time */}
-					<div className="flex flex-col gap-1 border rounded-2xl p-3 items-center bg-red-50 dark:bg-red-950/20">
-						<p className="font-bold text-sm sm:text-base">Дуусах</p>
-						<p className="text-xs sm:text-sm text-center">
-							{formatDateTime(endDateTime || examEndTime)}
-						</p>
-					</div>
-				</div>
 
 				{/* Warnings */}
 				{status === "ongoing" && isDanger && (
@@ -305,14 +256,9 @@ export default function ExamTimer({
 
 				{status === "ended" && (
 					<div className="mt-3 sm:mt-4 bg-red-100 dark:bg-red-900/40 border-2 border-red-300 dark:border-red-700 rounded-lg p-3 sm:p-4 shadow-lg">
-						<p className="text-center font-black text-red-700 dark:text-red-300 mb-1">
-							🛑 Шалгалтын цаг дууслаа
+						<p className="text-center font-black text-red-700 dark:text-red-300">
+							🛑 Шалгалтын цаг дууслаа. Автоматаар дуусгаж байна...
 						</p>
-						{autoFinishOnTimeUp && (
-							<p className="text-center text-red-600 dark:text-red-400 font-semibold">
-								Автоматаар дуусгаж байна...
-							</p>
-						)}
 					</div>
 				)}
 			</div>

@@ -1,8 +1,9 @@
 "use client";
 
 import parse from "html-react-parser";
-import { CheckCircle2, XCircle } from "lucide-react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { CheckCircle2, Eye, XCircle } from "lucide-react";
+import type React from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Xarrow, { useXarrow, Xwrapper } from "react-xarrows";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +43,7 @@ export default function MatchingByLine({
 	const [connections, setConnections] = useState<Connection[]>([]);
 	const [activeStart, setActiveStart] = useState<string>("");
 	const [isMobile, setIsMobile] = useState(false);
+	const [showCorrectAnswers, setShowCorrectAnswers] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const updateXarrow = useXarrow();
 	const lastNotifiedRef = useRef<string>("");
@@ -52,7 +54,6 @@ export default function MatchingByLine({
 		const mapping: Record<number, number> = {};
 		answers.forEach((item) => {
 			if (item.ref_child_id !== null && item.ref_child_id !== -1) {
-				// ref_child_id нь зөв хариултын refid
 				const correctAnswer = answers.find(
 					(a) => a.refid === item.ref_child_id,
 				);
@@ -73,13 +74,8 @@ export default function MatchingByLine({
 				const aIdNum = Number(aId);
 				const isCorrect = correctAnswers[qIdNum] === aIdNum;
 
-				// Review mode дээр зөв/буруу өнгөөр харуулах
 				const color =
-					mode === "review"
-						? isCorrect
-							? "#22c55e"
-							: "#ef4444" // green : red
-						: "#3b82f6"; // blue for exam mode
+					mode === "review" ? (isCorrect ? "#22c55e" : "#ef4444") : "#3b82f6";
 
 				restored.push({
 					start: `q-${qId}`,
@@ -138,7 +134,6 @@ export default function MatchingByLine({
 		return () => window.removeEventListener("resize", updateXarrow);
 	}, [updateXarrow]);
 
-	// 🎯 Connections update callback
 	useEffect(() => {
 		if (!onMatchChangeRef.current) return;
 		const matches: Record<number, number> = {};
@@ -206,20 +201,44 @@ export default function MatchingByLine({
 		},
 	});
 
-	// Review mode үр дүн тооцоолох
 	const reviewStats = useMemo(() => {
 		if (mode !== "review") return null;
-
 		let correct = 0;
 		let wrong = 0;
-
 		connections.forEach((conn) => {
 			if (conn.isCorrect) correct++;
 			else wrong++;
 		});
-
 		return { correct, wrong, total: connections.length };
 	}, [connections, mode]);
+
+	const correctAnswersDisplay = useMemo(() => {
+		const display: Array<{
+			questionText: string;
+			answerText: string;
+			questionId: number;
+			answerId: number;
+		}> = [];
+
+		questionsOnly.forEach((q) => {
+			const correctAnswerId = correctAnswers[q.answer_id];
+			if (correctAnswerId) {
+				const correctAnswer = answersOnly.find(
+					(a) => a.answer_id === correctAnswerId,
+				);
+				if (correctAnswer) {
+					display.push({
+						questionText: q.answer_name_html,
+						answerText: correctAnswer.answer_name_html,
+						questionId: q.answer_id,
+						answerId: correctAnswerId,
+					});
+				}
+			}
+		});
+
+		return display;
+	}, [questionsOnly, answersOnly, correctAnswers]);
 
 	return (
 		<div ref={containerRef} className="w-full relative space-y-4">
@@ -249,8 +268,80 @@ export default function MatchingByLine({
 				</div>
 			)}
 
+			{/* 🆕 Зөв хариултууд харуулах товч */}
+			{mode === "review" && correctAnswersDisplay.length > 0 && (
+				<div className="flex justify-end">
+					<button
+						type="button"
+						onClick={() => setShowCorrectAnswers(!showCorrectAnswers)}
+						className="flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors text-sm font-medium border border-green-300 dark:border-green-700"
+					>
+						<Eye className="w-4 h-4" />
+						{showCorrectAnswers
+							? "Зөв хариултууд нуух"
+							: "Зөв хариултууд харах"}
+					</button>
+				</div>
+			)}
+
+			{/* 🆕 Зөв хариултуудын жагсаалт */}
+			{mode === "review" &&
+				showCorrectAnswers &&
+				correctAnswersDisplay.length > 0 && (
+					<div className="bg-green-50 dark:bg-green-950/20 border-2 border-green-500 dark:border-green-700 rounded-xl p-4 sm:p-6">
+						<h4 className="font-bold text-green-800 dark:text-green-300 mb-4 flex items-center gap-2 text-base">
+							<CheckCircle2 className="w-5 h-5" />
+							Зөв хариултууд
+						</h4>
+						<div className="space-y-3">
+							{correctAnswersDisplay.map((item, index) => (
+								<div
+									key={item.questionId}
+									className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-green-200 dark:border-green-800"
+								>
+									<div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 items-center">
+										<div>
+											<p className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-semibold uppercase">
+												Асуулт {index + 1}
+											</p>
+											<div className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-900 p-2 rounded">
+												{parse(item.questionText)}
+											</div>
+										</div>
+										<div className="hidden sm:flex items-center justify-center text-green-600 dark:text-green-400">
+											<svg
+												className="w-6 h-6"
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+											>
+												<title>a</title>
+												<path
+													strokeLinecap="round"
+													strokeLinejoin="round"
+													strokeWidth={2}
+													d="M13 7l5 5m0 0l-5 5m5-5H6"
+												/>
+											</svg>
+										</div>
+										<div>
+											<p className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-semibold uppercase flex items-center gap-1">
+												<CheckCircle2 className="w-3 h-3 text-green-600" />
+												Зөв хариулт
+											</p>
+											<div className="text-sm text-green-700 dark:text-green-400 font-medium bg-green-50 dark:bg-green-950/30 p-2 rounded border border-green-200 dark:border-green-800">
+												{parse(item.answerText)}
+											</div>
+										</div>
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
+				)}
+
 			<Xwrapper>
-				<p className="font-semibold mb-4 text-center text-sm sm:text-base">
+				<p className="font-semibold mb-4 text-center text-sm sm:text-base text-gray-700 dark:text-gray-300">
 					{mode === "review"
 						? "Таны хариултууд (Ногоон = зөв, Улаан = буруу)"
 						: isMobile
@@ -258,14 +349,18 @@ export default function MatchingByLine({
 							: "Зөв хариултыг холбоно уу"}
 				</p>
 
-				<div className="grid grid-cols-2 gap-x-4 sm:gap-x-8 gap-y-3">
-					<h3 className="border-b pb-2 font-semibold text-center text-sm sm:text-base">
-						Асуулт
-					</h3>
-					<h3 className="border-b pb-2 font-semibold text-center text-sm sm:text-base">
-						Хариулт
-					</h3>
+				<div className="space-y-3">
+					{/* Headers */}
+					<div className="grid grid-cols-2 gap-x-4 sm:gap-x-8">
+						<h3 className="border-b-2 border-gray-300 dark:border-gray-600 pb-2 font-bold text-center text-sm sm:text-base text-gray-800 dark:text-gray-200">
+							Асуулт
+						</h3>
+						<h3 className="border-b-2 border-gray-300 dark:border-gray-600 pb-2 font-bold text-center text-sm sm:text-base text-gray-800 dark:text-gray-200">
+							Хариулт
+						</h3>
+					</div>
 
+					{/* Question-Answer pairs */}
 					{questionsOnly.map((q, index) => {
 						const qid = `q-${q.answer_id}`;
 						const a = answersOnly[index];
@@ -273,12 +368,16 @@ export default function MatchingByLine({
 						const connStatus = getConnectionStatus(qid);
 
 						return (
-							<React.Fragment key={q.refid}>
+							<div
+								key={q.answer_id}
+								className="grid grid-cols-2 gap-x-4 sm:gap-x-8"
+							>
+								{/* Question */}
 								<div
 									id={qid}
 									{...interactiveProps(qid, true)}
 									className={cn(
-										"w-full p-3 sm:p-4 border-2 rounded-lg flex items-center justify-center text-center transition-all relative",
+										"w-full p-3 sm:p-4 border-2 rounded-lg flex items-center justify-center text-center transition-all relative min-h-[60px]",
 										mode === "exam"
 											? "cursor-pointer hover:shadow-md"
 											: "cursor-default",
@@ -313,12 +412,13 @@ export default function MatchingByLine({
 									{renderContent(q)}
 								</div>
 
+								{/* Answer */}
 								{aid && a && (
 									<div
 										id={aid}
 										{...interactiveProps(aid, false)}
 										className={cn(
-											"w-full p-3 sm:p-4 border-2 rounded-lg flex items-center justify-center text-center transition-all",
+											"w-full p-3 sm:p-4 border-2 rounded-lg flex items-center justify-center text-center transition-all min-h-[60px]",
 											mode === "exam"
 												? "cursor-pointer hover:shadow-md"
 												: "cursor-default",
@@ -340,12 +440,12 @@ export default function MatchingByLine({
 										{renderContent(a)}
 									</div>
 								)}
-							</React.Fragment>
+							</div>
 						);
 					})}
 				</div>
 
-				{/* Xarrow */}
+				{/* Xarrow lines */}
 				{!isMobile &&
 					connections.map((c) => (
 						<Xarrow
@@ -360,15 +460,18 @@ export default function MatchingByLine({
 					))}
 			</Xwrapper>
 
-			{/* Legend for review mode */}
+			{/* Legend */}
 			{mode === "review" && (
-				<div className="mt-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg space-y-2 text-sm">
+				<div className="mt-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 space-y-2 text-sm">
+					<p className="font-semibold text-gray-700 dark:text-gray-300 mb-2">
+						Тайлбар:
+					</p>
 					<div className="flex items-center gap-2 text-green-700 dark:text-green-400">
-						<div className="w-4 h-0.5 bg-green-500" />
+						<div className="w-4 h-1 bg-green-500 rounded" />
 						<span>Зөв холболт</span>
 					</div>
 					<div className="flex items-center gap-2 text-red-700 dark:text-red-400">
-						<div className="w-4 h-0.5 bg-red-500" />
+						<div className="w-4 h-1 bg-red-500 rounded" />
 						<span>Буруу холболт</span>
 					</div>
 				</div>

@@ -1,8 +1,13 @@
 "use client";
 
 import parse from "html-react-parser";
-import React, { useEffect, useRef, useState } from "react";
+import { Maximize2, XCircle } from "lucide-react";
+import Image from "next/image";
+import type React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Xarrow, { useXarrow, Xwrapper } from "react-xarrows";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 interface QuestionItem {
@@ -20,7 +25,6 @@ interface MatchingByLineProps {
 	answers: QuestionItem[];
 	onMatchChange?: (matches: Record<number, number>) => void;
 	readonly?: boolean;
-	mode?: "exam" | "review";
 	userAnswers?: Record<number, number>;
 }
 
@@ -33,12 +37,12 @@ interface Connection {
 export default function MatchingByLine({
 	answers = [],
 	onMatchChange,
-	mode = "exam",
 	userAnswers = {},
 }: MatchingByLineProps) {
 	const [connections, setConnections] = useState<Connection[]>([]);
 	const [activeStart, setActiveStart] = useState<string>("");
 	const [isMobile, setIsMobile] = useState(false);
+	const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const updateXarrow = useXarrow();
 	const lastNotifiedRef = useRef<string>("");
@@ -55,18 +59,28 @@ export default function MatchingByLine({
 	]);
 	const usedColors = useRef<Set<string>>(new Set());
 
-	const getUniqueColor = (): string => {
+	const getUniqueColor = useCallback((): string => {
 		const available = colorPalette.current.filter(
 			(c) => !usedColors.current.has(c),
 		);
 		if (!available.length) {
 			usedColors.current.clear();
-			return getUniqueColor();
+			const color = colorPalette.current[0];
+			usedColors.current.add(color);
+			return color;
 		}
 		const color = available[Math.floor(Math.random() * available.length)];
 		usedColors.current.add(color);
 		return color;
-	};
+	}, []);
+
+	const handleImageClick = useCallback(
+		(e: React.MouseEvent, imageUrl: string) => {
+			e.stopPropagation();
+			setZoomedImage(imageUrl);
+		},
+		[],
+	);
 
 	useEffect(() => {
 		onMatchChangeRef.current = onMatchChange;
@@ -90,36 +104,34 @@ export default function MatchingByLine({
 		return () => window.removeEventListener("resize", updateXarrow);
 	}, [updateXarrow]);
 
-	// Restore userAnswers
+	// userAnswers сэргээх - ✅ ЗАСВАРЛАСАН ХЭСЭГ
 	useEffect(() => {
 		if (Object.keys(userAnswers).length === 0) return;
 
 		const restored: Connection[] = [];
 
-		Object.entries(userAnswers).forEach(([qRefId, aRefId]) => {
+		Object.entries(userAnswers).forEach(([qRefIdStr, answerId]) => {
+			const qRefId = Number(qRefIdStr);
+
+			// question: ref_child_id === -1 БА refid === qRefId
 			const question = answers.find(
-				(a) => a.refid === Number(qRefId) && a.answer_descr === "Асуулт",
+				(a) => a.refid === qRefId && a.ref_child_id === -1,
 			);
-			const answer = answers.find(
-				(a) => a.refid === Number(aRefId) && a.answer_descr === "Хариулт",
-			);
+
+			// answer: answer_id === answerId (backend-ээс ирсэн ID)
+			const answer = answers.find((a) => a.answer_id === answerId);
+
 			if (question && answer) {
-				const color =
-					mode === "review"
-						? answer.is_true
-							? "#22c55e"
-							: "#ef4444"
-						: "#3b82f6";
 				restored.push({
 					start: `q-${question.answer_id}`,
 					end: `a-${answer.answer_id}`,
-					color,
+					color: getUniqueColor(),
 				});
 			}
 		});
 
 		setConnections(restored);
-	}, [userAnswers, answers, mode]);
+	}, [userAnswers, answers, getUniqueColor]);
 
 	const isSelected = (id: string) => id === activeStart;
 	const isConnected = (id: string) =>
@@ -127,58 +139,110 @@ export default function MatchingByLine({
 	const getConnectionColor = (id: string) =>
 		connections.find((c) => c.start === id || c.end === id)?.color;
 
-	const handleItemClick = (id: string, isQuestion: boolean) => {
-		if (mode === "review") return;
+	const handleItemClick = useCallback((id: string, isQuestion: boolean) => {
+		setConnections((prev) => {
+			const existing = prev.find((c) => c.start === id || c.end === id);
+			if (existing) {
+				usedColors.current.delete(existing.color);
+				setActiveStart("");
+				return prev.filter((c) => c !== existing);
+			}
+			return prev;
+		});
 
-		const existing = connections.find((c) => c.start === id || c.end === id);
-		if (existing) {
-			usedColors.current.delete(existing.color);
-			setConnections(connections.filter((c) => c !== existing));
-			setActiveStart("");
-			return;
+		if (isQuestion) {
+			setActiveStart(id);
+		} else {
+			setActiveStart((currentStart) => {
+				if (currentStart) {
+					const available = colorPalette.current.filter(
+						(c) => !usedColors.current.has(c),
+					);
+					const color =
+						available.length > 0
+							? available[Math.floor(Math.random() * available.length)]
+							: colorPalette.current[0];
+					usedColors.current.add(color);
+
+					setConnections((prev) => [
+						...prev.filter((c) => c.start !== currentStart),
+						{ start: currentStart, end: id, color },
+					]);
+					return "";
+				}
+				return currentStart;
+			});
 		}
-		if (isQuestion) setActiveStart(id);
-		else if (activeStart) {
-			const color = getUniqueColor();
-			setConnections((prev) => [
-				...prev.filter((c) => c.start !== activeStart),
-				{ start: activeStart, end: id, color },
-			]);
-			setActiveStart("");
-		}
-	};
+	}, []);
 
 	const interactiveProps = (id: string, isQuestion: boolean) => ({
 		role: "button",
-		tabIndex: mode === "review" ? -1 : 0,
+		tabIndex: 0,
 		onClick: () => handleItemClick(id, isQuestion),
 		onKeyDown: (e: React.KeyboardEvent) => {
-			if (e.key === "Enter" || e.key === " ") handleItemClick(id, isQuestion);
+			if (e.key === "Enter" || e.key === " ") {
+				e.preventDefault();
+				handleItemClick(id, isQuestion);
+			}
 		},
 	});
 
-	const renderContent = (item: QuestionItem) => (
-		<div className="text-sm font-medium w-full text-center">
-			{parse(item.answer_name_html)}
-		</div>
+	const renderContent = (item: QuestionItem) => {
+		return (
+			<div className="w-full">
+				{item.answer_img && (
+					<div className="mb-2 relative">
+						<Button
+							className="relative w-full h-32 group cursor-zoom-in block"
+							onClick={(e) => handleImageClick(e, item.answer_img as string)}
+						>
+							<Image
+								src={item.answer_img}
+								alt={item.answer_name_html || "Answer image"}
+								fill
+								className="object-contain rounded-md"
+							/>
+							<div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-md flex items-center justify-center">
+								<Maximize2 className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+							</div>
+						</Button>
+					</div>
+				)}
+				{item.answer_name_html && (
+					<div className="text-sm font-medium text-center break-words">
+						{parse(item.answer_name_html.trim())}
+					</div>
+				)}
+				{!item.answer_name_html && !item.answer_img && (
+					<div className="text-sm text-gray-400 text-center">
+						Контент байхгүй
+					</div>
+				)}
+			</div>
+		);
+	};
+
+	const questionsOnly = answers.filter((a) => a.ref_child_id === -1);
+	const answersOnly = answers.filter(
+		(a) => a.ref_child_id && a.ref_child_id >= 1,
 	);
 
-	const questionsOnly = answers.filter((a) => a.answer_descr === "Асуулт");
-	const answersOnly = answers.filter((a) => a.answer_descr === "Хариулт");
-
-	// notify matches
+	// ✅ ЗАСВАРЛАСАН ХЭСЭГ - answer_id дамжуулах
 	useEffect(() => {
-		if (!onMatchChangeRef.current || mode === "review") return;
+		if (!onMatchChangeRef.current) return;
 
 		const matches: Record<number, number> = {};
 
 		connections.forEach((c) => {
 			const startId = parseInt(c.start.replace("q-", ""), 10);
 			const endId = parseInt(c.end.replace("a-", ""), 10);
+
 			const question = answers.find((a) => a.answer_id === startId);
 			const answer = answers.find((a) => a.answer_id === endId);
+
 			if (question && answer) {
-				matches[question.refid] = answer.refid;
+				// ✅ question.refid: answer.answer_id (refid биш!)
+				matches[question.refid] = answer.answer_id;
 			}
 		});
 
@@ -188,167 +252,196 @@ export default function MatchingByLine({
 			onMatchChangeRef.current(matches);
 		}
 		setTimeout(updateXarrow, 0);
-	}, [connections, updateXarrow, mode, answers]);
+	}, [connections, updateXarrow, answers]);
 
 	return (
-		<div ref={containerRef} className="w-full relative">
-			<Xwrapper>
-				<p className="font-semibold mb-4 text-center">
-					{mode === "review"
-						? "Таны хариултууд (Ногоон = зөв, Улаан = буруу)"
-						: isMobile
+		<>
+			<div ref={containerRef} className="w-full relative">
+				<Xwrapper>
+					<p className="font-semibold mb-4 text-center">
+						{isMobile
 							? "Асуулт дээр дарж дараа нь хариулт сонгоно уу"
 							: "Асуулт дээр дарж холбох хариултаа сонгоно уу"}
-				</p>
+					</p>
 
-				{isMobile ? (
-					<div className="space-y-4 max-h-[80vh] overflow-y-auto">
-						{questionsOnly.map((q) => {
-							const qid = `q-${q.answer_id}`;
-							const connected = connections.find((c) => c.start === qid);
-							const answerItem = connected
-								? answersOnly.find((a) => `a-${a.answer_id}` === connected.end)
-								: null;
+					{isMobile ? (
+						<div className="space-y-4 max-h-[80vh] overflow-y-auto">
+							{questionsOnly.map((q) => {
+								const qid = `q-${q.answer_id}`;
+								const connected = connections.find((c) => c.start === qid);
+								const answerItem = connected
+									? answersOnly.find(
+											(a) => `a-${a.answer_id}` === connected.end,
+										)
+									: null;
 
-							return (
-								<div key={qid} className="space-y-2">
-									<div
-										id={qid}
-										{...interactiveProps(qid, true)}
-										className={cn(
-											"w-full p-3 border rounded-lg flex justify-between items-center text-center transition-colors",
-											isSelected(qid)
-												? "border-blue-500 "
-												: isConnected(qid)
-													? "border-green-500 bg-green-50"
-													: "border-gray-300 bg-white dark:bg-slate-800",
-											mode === "exam"
-												? "cursor-pointer hover:border-green-400"
-												: "cursor-default",
-										)}
-										style={{
-											borderColor: getConnectionColor(qid),
-											backgroundColor: getConnectionColor(qid)
-												? `${getConnectionColor(qid)}20`
-												: undefined,
-										}}
-									>
-										{renderContent(q)}
-									</div>
-
-									{answerItem && (
-										<div className="pl-4 mt-1 border-l-2 border-green-500">
-											<div className="text-sm text-gray-500 dark:text-gray-400">
-												Сонгосон хариулт:
-											</div>
-											<div className="p-2 rounded border border-green-500 bg-green-50 dark:bg-green-900/20">
-												{renderContent(answerItem)}
-											</div>
-										</div>
-									)}
-
-									{isSelected(qid) && !answerItem && (
-										<div className="pl-4 mt-2 space-y-2">
-											{answersOnly
-												.filter((a) => !isConnected(`a-${a.answer_id}`))
-												.map((a) => {
-													const aid = `a-${a.answer_id}`;
-													return (
-														<div
-															key={aid}
-															{...interactiveProps(aid, false)}
-															className="w-full p-2 border border-dashed rounded cursor-pointer hover:bg-yellow-100 dark:hover:bg-yellow-900/20 transition-colors"
-														>
-															{renderContent(a)}
-														</div>
-													);
-												})}
-										</div>
-									)}
-								</div>
-							);
-						})}
-					</div>
-				) : (
-					// Desktop grid
-					<div className="grid grid-cols-2 gap-x-8 gap-y-3">
-						<h3 className="border-b pb-2 font-semibold text-center">Асуулт</h3>
-						<h3 className="border-b pb-2 font-semibold text-center">Хариулт</h3>
-
-						{questionsOnly.map((q, i) => {
-							const qid = `q-${q.answer_id}`;
-							const a = answersOnly[i];
-							const aid = a ? `a-${a.answer_id}` : null;
-							return (
-								<React.Fragment key={qid}>
-									<div
-										id={qid}
-										{...interactiveProps(qid, true)}
-										className={cn(
-											"w-full p-4 border rounded-lg flex items-center justify-center text-center transition-all",
-											mode === "exam"
-												? "cursor-pointer hover:border-green-400"
-												: "cursor-default",
-											isSelected(qid)
-												? "border-blue-500  shadow-md"
-												: isConnected(qid)
-													? "border-green-500 bg-green-50"
-													: "border-gray-300",
-										)}
-										style={{
-											borderColor: getConnectionColor(qid),
-											backgroundColor: getConnectionColor(qid)
-												? `${getConnectionColor(qid)}20`
-												: undefined,
-										}}
-									>
-										{renderContent(q)}
-									</div>
-
-									{aid && a && (
+								return (
+									<div key={qid} className="space-y-2">
 										<div
+											id={qid}
+											{...interactiveProps(qid, true)}
+											className={cn(
+												"w-full p-3 border rounded-lg flex flex-col items-center transition-colors cursor-pointer",
+												isSelected(qid)
+													? "border-blue-500 bg-blue-50"
+													: isConnected(qid)
+														? "border-green-500 bg-green-50"
+														: "border-gray-300 bg-white hover:border-green-400",
+											)}
+											style={
+												getConnectionColor(qid)
+													? {
+															borderColor: getConnectionColor(qid),
+															backgroundColor: `${getConnectionColor(qid)}20`,
+														}
+													: undefined
+											}
+										>
+											{renderContent(q)}
+										</div>
+
+										{answerItem && (
+											<div className="pl-4 mt-1 border-l-2 border-green-500">
+												<div className="text-sm text-gray-500 dark:text-gray-400">
+													Сонгосон хариулт:
+												</div>
+												<div className="p-2 rounded border border-green-500 bg-green-50 dark:bg-green-900/20">
+													{renderContent(answerItem)}
+												</div>
+											</div>
+										)}
+
+										{isSelected(qid) && !answerItem && (
+											<div className="pl-4 mt-2 space-y-2">
+												<div className="text-sm text-gray-600 mb-1">
+													Хариултаа сонгоно уу:
+												</div>
+												{answersOnly
+													.filter((a) => !isConnected(`a-${a.answer_id}`))
+													.map((a) => {
+														const aid = `a-${a.answer_id}`;
+														return (
+															<div
+																key={aid}
+																{...interactiveProps(aid, false)}
+																className="w-full p-2 border border-dashed rounded cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors border-blue-300"
+															>
+																{renderContent(a)}
+															</div>
+														);
+													})}
+											</div>
+										)}
+									</div>
+								);
+							})}
+						</div>
+					) : (
+						<div className="grid grid-cols-2 gap-x-8 gap-y-3">
+							<div className="border-b pb-2">
+								<h3 className="font-semibold text-center">Асуулт</h3>
+							</div>
+							<div className="border-b pb-2">
+								<h3 className="font-semibold text-center">Хариулт</h3>
+							</div>
+
+							<div className="space-y-3">
+								{questionsOnly.map((q) => {
+									const qid = `q-${q.answer_id}`;
+									return (
+										<div
+											key={qid}
+											id={qid}
+											{...interactiveProps(qid, true)}
+											className={cn(
+												"w-full p-4 border rounded-lg flex flex-col items-center justify-center transition-all min-h-[80px] cursor-pointer hover:border-green-400",
+												isSelected(qid)
+													? "border-blue-500 bg-blue-50 shadow-md"
+													: isConnected(qid)
+														? "border-green-500 bg-green-50"
+														: "border-gray-300",
+											)}
+											style={
+												getConnectionColor(qid)
+													? {
+															borderColor: getConnectionColor(qid),
+															backgroundColor: `${getConnectionColor(qid)}20`,
+														}
+													: undefined
+											}
+										>
+											{renderContent(q)}
+										</div>
+									);
+								})}
+							</div>
+
+							<div className="space-y-3">
+								{answersOnly.map((a) => {
+									const aid = `a-${a.answer_id}`;
+									return (
+										<div
+											key={aid}
 											id={aid}
 											{...interactiveProps(aid, false)}
 											className={cn(
-												"w-full p-4 border rounded-lg flex items-center justify-center text-center transition-all",
-												mode === "exam"
-													? "cursor-pointer hover:border-blue-400"
-													: "cursor-default",
+												"w-full p-4 border rounded-lg flex flex-col items-center justify-center transition-all min-h-[80px] cursor-pointer hover:border-blue-400",
 												isSelected(aid)
 													? "border-blue-500 bg-blue-50 shadow-md"
 													: isConnected(aid)
 														? "border-green-500 bg-green-50"
 														: "border-gray-300",
 											)}
-											style={{
-												borderColor: getConnectionColor(aid),
-												backgroundColor: getConnectionColor(aid)
-													? `${getConnectionColor(aid)}20`
-													: undefined,
-											}}
+											style={
+												getConnectionColor(aid)
+													? {
+															borderColor: getConnectionColor(aid),
+															backgroundColor: `${getConnectionColor(aid)}20`,
+														}
+													: undefined
+											}
 										>
 											{renderContent(a)}
 										</div>
-									)}
-								</React.Fragment>
-							);
-						})}
+									);
+								})}
+							</div>
 
-						{/* Xarrow for desktop */}
-						{connections.map((c) => (
-							<Xarrow
-								key={`${c.start}-${c.end}`}
-								start={c.start}
-								end={c.end}
-								color={c.color}
-								strokeWidth={3}
-								curveness={0.3}
-								showHead={false}
+							{connections.map((c) => (
+								<Xarrow
+									key={`${c.start}-${c.end}`}
+									start={c.start}
+									end={c.end}
+									color={c.color}
+									strokeWidth={3}
+									curveness={0.3}
+									showHead={false}
+								/>
+							))}
+						</div>
+					)}
+				</Xwrapper>
+			</div>
+
+			{/* Image Zoom Dialog */}
+			<Dialog open={!!zoomedImage} onOpenChange={() => setZoomedImage(null)}>
+				<DialogContent className="max-w-7xl w-[95vw] h-[95vh] p-0">
+					<DialogClose className="absolute right-4 top-4 z-50 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+						<XCircle className="h-6 w-6" />
+						<span className="sr-only">Close</span>
+					</DialogClose>
+					{zoomedImage && (
+						<div className="relative w-full h-full p-4">
+							<Image
+								src={zoomedImage}
+								alt="Томруулсан зураг"
+								fill
+								className="object-contain"
 							/>
-						))}
-					</div>
-				)}
-			</Xwrapper>
-		</div>
+						</div>
+					)}
+				</DialogContent>
+			</Dialog>
+		</>
 	);
 }

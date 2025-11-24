@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Calendar, Clock, Timer, User } from "lucide-react";
+import { ArrowRight, Calendar, Clock, Lock, Timer, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type React from "react";
 import { useEffect, useState } from "react";
@@ -61,8 +61,22 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam }) => {
 				badgeBg: "bg-emerald-100 dark:bg-emerald-900/30",
 				badgeText: "text-emerald-700 dark:text-emerald-300",
 				iconColor: "text-emerald-600 dark:text-emerald-400",
+				canStart: true,
 			};
 		}
+		if (exam.flag === 2) {
+			return {
+				label: exam.flag_name, // "Хугацаа дууссан"
+				bgColor: "bg-gradient-to-br from-gray-500 to-slate-600",
+				borderColor: "border-gray-400/50",
+				glowColor: "shadow-gray-500/10",
+				badgeBg: "bg-gray-100 dark:bg-gray-900/30",
+				badgeText: "text-gray-700 dark:text-gray-400",
+				iconColor: "text-gray-600 dark:text-gray-400",
+				canStart: false,
+			};
+		}
+		// Бусад flag утгууд
 		return {
 			label: exam.flag_name,
 			bgColor:
@@ -72,10 +86,18 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam }) => {
 			badgeBg: "bg-blue-100 dark:bg-blue-900/30",
 			badgeText: "text-blue-700 dark:text-blue-300",
 			iconColor: "text-blue-600 dark:text-blue-400",
+			canStart: false,
 		};
 	};
 
 	const status = getStatusConfig();
+
+	const handleCardClick = () => {
+		// Зөвхөн flag === 1 үед dialog нээх
+		if (status.canStart) {
+			setShowRulesDialog(true);
+		}
+	};
 
 	return (
 		<>
@@ -84,10 +106,12 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam }) => {
 					"group relative overflow-hidden rounded-2xl border-2 transition-all duration-300",
 					status.borderColor,
 					status.glowColor,
-					"hover:shadow-2xl hover:scale-[1.02] cursor-pointer",
+					status.canStart
+						? "hover:shadow-2xl hover:scale-[1.02] cursor-pointer"
+						: "opacity-75 cursor-not-allowed",
 					"bg-white dark:bg-gray-900",
 				)}
-				onClick={() => setShowRulesDialog(true)}
+				onClick={handleCardClick}
 			>
 				<div
 					className={cn(
@@ -98,8 +122,13 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam }) => {
 
 				{exam.flag === 1 && (
 					<div className="absolute inset-0 rounded-2xl">
-						<div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-400 opacity-0  " />
+						<div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-400 opacity-0" />
 					</div>
+				)}
+
+				{/* Хугацаа дууссан overlay */}
+				{!status.canStart && (
+					<div className="absolute inset-0 bg-black/5 dark:bg-black/20 backdrop-blur-[0.5px] z-10 rounded-2xl" />
 				)}
 
 				<div className="relative p-6 space-y-4">
@@ -182,35 +211,47 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam }) => {
 
 					<Button
 						type="button"
+						disabled={!status.canStart}
 						className={cn(
 							"w-full h-12 rounded-xl font-semibold text-base",
 							"transition-all duration-300",
 							"group/btn relative overflow-hidden",
-							exam.flag === 1
+							status.canStart
 								? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/30"
-								: "bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30",
+								: "bg-gray-400 dark:bg-gray-700 text-gray-200 dark:text-gray-500 cursor-not-allowed",
 						)}
 					>
 						<span className="relative z-10 flex items-center justify-center gap-2">
-							Шалгалт эхлүүлэх
-							<ArrowRight
-								size={20}
-								className="transition-transform duration-300 group-hover/btn:translate-x-1"
-							/>
+							{status.canStart ? (
+								<>
+									Шалгалт эхлүүлэх
+									<ArrowRight
+										size={20}
+										className="transition-transform duration-300 group-hover/btn:translate-x-1"
+									/>
+								</>
+							) : (
+								<>
+									<Lock size={20} />
+									{status.label}
+								</>
+							)}
 						</span>
-						{exam.flag === 1 && (
+						{status.canStart && (
 							<div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-200%] group-hover/btn:translate-x-[200%] transition-transform duration-700" />
 						)}
 					</Button>
 				</div>
 			</Card>
 
-			<ExamRulesDialog
-				open={showRulesDialog}
-				onOpenChange={setShowRulesDialog}
-				onConfirm={handleStartExam}
-				isMobile={isMobile}
-			/>
+			{status.canStart && (
+				<ExamRulesDialog
+					open={showRulesDialog}
+					onOpenChange={setShowRulesDialog}
+					onConfirm={handleStartExam}
+					isMobile={isMobile}
+				/>
+			)}
 		</>
 	);
 };

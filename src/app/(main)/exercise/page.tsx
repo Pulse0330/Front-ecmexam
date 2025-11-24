@@ -36,6 +36,24 @@ export default function ExercisePage() {
 		enabled: !!userId,
 	});
 
+	// Debug logging
+	console.log("📊 Raw data:", data);
+	console.log("📝 Questions count:", data?.Questions?.length);
+	console.log("📋 All questions:", data?.Questions);
+	console.log("📋 All answers:", data?.Answers?.length);
+
+	// Type별 통계
+	if (data?.Questions) {
+		const typeStats = data.Questions.reduce(
+			(acc, q) => {
+				acc[q.que_type_id] = (acc[q.que_type_id] || 0) + 1;
+				return acc;
+			},
+			{} as Record<number, number>,
+		);
+		console.log("📊 Question types:", typeStats);
+	}
+
 	if (!userId) {
 		return (
 			<div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
@@ -135,7 +153,7 @@ export default function ExercisePage() {
 			case 6:
 				return "Хослуулах";
 			default:
-				return "Бусад";
+				return `Тодорхойгүй (${typeId})`;
 		}
 	};
 
@@ -244,19 +262,44 @@ export default function ExercisePage() {
 		const selected = getSelectedAnswer(question.question_id);
 		const bodolt = getBodolt(question.question_id);
 		const isSubmitted = submittedQuestions.has(question.question_id);
+		const questionType = Number(question.que_type_id);
 
+		// Debug each question
+		console.log(`Question ${index + 1}:`, {
+			id: question.question_id,
+			type: questionType,
+			typeName: getQuestionTypeName(questionType),
+			answersCount: questionAnswers.length,
+			answers: questionAnswers.slice(0, 3), // Эхний 3 хариулт
+		});
+
+		// Type 6-д зориулсан нэмэлт debug
+		if (questionType === 6) {
+			console.log(`🔍 Type 6 Question ${question.question_id}:`, {
+				totalAnswers: questionAnswers.length,
+				uniqueRefIds: [...new Set(questionAnswers.map((a) => a.refid))],
+				sampleAnswers: questionAnswers.slice(0, 5),
+			});
+		}
+
+		// 🔥 EXAM PAGE-ийн адил format
 		const convertedAnswers = questionAnswers.map((a) => ({
-			...a,
+			answer_id: a.answer_id,
+			question_id: a.question_id,
+			answer_name: a.answer_name || "",
+			answer_name_html: a.answer_name_html,
+			answer_descr: a.answer_descr || "",
+			answer_img: a.answer_img || undefined,
+			answer_type: a.answer_type,
+			refid: a.refid,
+			ref_child_id: a.ref_child_id || null,
 			is_true: a.is_true === 1,
 		}));
 
 		const showAnswerFeedback =
-			((question.que_type_id === 1 ||
-				question.que_type_id === 2 ||
-				question.que_type_id === 4) &&
+			((questionType === 1 || questionType === 2 || questionType === 4) &&
 				selected) ||
-			((question.que_type_id === 5 || question.que_type_id === 6) &&
-				isSubmitted);
+			((questionType === 5 || questionType === 6) && isSubmitted);
 
 		return (
 			<div
@@ -277,9 +320,9 @@ export default function ExercisePage() {
 								Оноо: {question.que_onoo}
 							</span>
 							<span
-								className={`text-xs sm:text-sm px-3 py-1 rounded-full border ${getTypeColor(question.que_type_id)}`}
+								className={`text-xs sm:text-sm px-3 py-1 rounded-full border ${getTypeColor(questionType)}`}
 							>
-								{getQuestionTypeName(question.que_type_id)}
+								{getQuestionTypeName(questionType)}
 							</span>
 						</div>
 					</div>
@@ -287,35 +330,23 @@ export default function ExercisePage() {
 
 				{/* Question Content */}
 				<div className="ml-0 sm:ml-14 space-y-4">
-					{/* Type 1: Single Select */}
-					{question.que_type_id === 1 && (
+					{/* Type 1: Single Select - EXAM-тай яг ижил */}
+					{questionType === 1 && (
 						<>
 							<SingleSelectQuestion
 								questionId={question.question_id}
+								questionText={question.question_name}
 								answers={convertedAnswers}
 								mode="exam"
 								selectedAnswer={selected?.answerIds[0] || null}
 								onAnswerChange={handleSingleSelect}
 							/>
 
-							{/* ⭐ Feedback shown BELOW answers */}
 							{showAnswerFeedback && selected && (
 								<div className="mt-4 space-y-3">
 									{selected.answerIds.some((id) => isAnswerCorrect(id)) ? (
 										<div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 rounded-lg">
 											<p className="text-green-800 dark:text-green-300 font-semibold text-sm sm:text-base flex items-center gap-2">
-												<svg
-													className="w-5 h-5"
-													fill="currentColor"
-													viewBox="0 0 20 20"
-												>
-													<title>Success</title>
-													<path
-														fillRule="evenodd"
-														d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-														clipRule="evenodd"
-													/>
-												</svg>
 												✓ Зөв хариулт!
 											</p>
 											{bodolt && (
@@ -332,22 +363,9 @@ export default function ExercisePage() {
 									) : (
 										<div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-lg space-y-3">
 											<p className="text-red-800 dark:text-red-300 font-semibold text-sm sm:text-base flex items-center gap-2">
-												<svg
-													className="w-5 h-5"
-													fill="currentColor"
-													viewBox="0 0 20 20"
-												>
-													<title>Error</title>
-													<path
-														fillRule="evenodd"
-														d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-														clipRule="evenodd"
-													/>
-												</svg>
 												✗ Буруу хариулт
 											</p>
 
-											{/* ⭐ Show correct answer */}
 											<div className="pt-3 border-t border-red-200 dark:border-red-800">
 												<p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
 													✓ Зөв хариулт:
@@ -366,7 +384,6 @@ export default function ExercisePage() {
 												</div>
 											</div>
 
-											{/* ⭐ Show explanation */}
 											{bodolt && (
 												<div className="pt-3 border-t border-red-200 dark:border-red-800">
 													<p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -384,11 +401,12 @@ export default function ExercisePage() {
 						</>
 					)}
 
-					{/* Type 2: Multi Select */}
-					{question.que_type_id === 2 && (
+					{/* Type 2: Multi Select - EXAM-тай ижил */}
+					{questionType === 2 && (
 						<>
 							<MultiSelectQuestion
 								questionId={question.question_id}
+								questionText={question.question_name}
 								answers={convertedAnswers}
 								mode="exam"
 								selectedAnswers={selected?.answerIds || []}
@@ -408,8 +426,8 @@ export default function ExercisePage() {
 						</>
 					)}
 
-					{/* Type 4: Fill in Blank */}
-					{question.que_type_id === 4 && (
+					{/* Type 4: Fill in Blank - EXAM-тай ижил */}
+					{questionType === 4 && (
 						<>
 							<FillInTheBlankQuestion
 								questionId={question.question_id}
@@ -431,12 +449,15 @@ export default function ExercisePage() {
 						</>
 					)}
 
-					{/* Type 5: Ordering */}
-					{question.que_type_id === 5 && (
+					{/* Type 5: Ordering - EXAM page адил */}
+					{questionType === 5 && (
 						<>
 							<DragAndDropWrapper
 								questionId={question.question_id}
-								answers={convertedAnswers}
+								answers={convertedAnswers.map((a) => ({
+									answer_id: a.answer_id,
+									answer_name_html: a.answer_name_html || a.answer_name,
+								}))}
 								mode={isSubmitted ? "review" : "exam"}
 								userAnswers={selected?.order || []}
 								correctAnswers={convertedAnswers
@@ -460,11 +481,14 @@ export default function ExercisePage() {
 						</>
 					)}
 
-					{/* Type 6: Matching */}
-					{question.que_type_id === 6 && (
+					{/* Type 6: Matching - EXAM page адил */}
+					{questionType === 6 && (
 						<>
 							<MatchingByLine
-								answers={convertedAnswers}
+								answers={convertedAnswers.map((a) => ({
+									...a,
+									answer_img: a.answer_img || null, // Matching-д null хэрэгтэй
+								}))}
 								mode={isSubmitted ? "review" : "exam"}
 								userAnswers={selected?.matches || {}}
 								onMatchChange={(matches) =>
@@ -486,6 +510,18 @@ export default function ExercisePage() {
 								)}
 						</>
 					)}
+
+					{/* Warning: Unknown question type */}
+					{![1, 2, 4, 5, 6].includes(questionType) && (
+						<div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-lg">
+							<p className="text-red-800 dark:text-red-300 font-semibold text-sm">
+								⚠️ Тодорхойгүй асуултын төрөл: {questionType}
+							</p>
+							<pre className="text-xs mt-2 overflow-auto text-red-700 dark:text-red-400">
+								{JSON.stringify(question, null, 2)}
+							</pre>
+						</div>
+					)}
 				</div>
 			</div>
 		);
@@ -494,8 +530,9 @@ export default function ExercisePage() {
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-4 sm:py-8 px-4 sm:px-6 lg:px-8">
 			<div className="max-w-5xl mx-auto">
-				<div className="mb-6 sm:mb-8">
-					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
+				{/* Sticky Header */}
+				<div className="sticky top-0 z-10 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 pb-4 mb-2">
+					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-3">
 						<h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
 							{examInfo.title}
 						</h1>
@@ -514,6 +551,9 @@ export default function ExercisePage() {
 						<span className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
 							{questions.length} асуулт
 						</span>
+						<span className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+							• {selectedAnswers.length} хариулт өгсөн
+						</span>
 					</div>
 				</div>
 
@@ -528,14 +568,6 @@ export default function ExercisePage() {
 						className="flex-1 sm:flex-initial"
 					>
 						Буцах
-					</Button>
-					<Button
-						onClick={() => {
-							console.log("Submit:", selectedAnswers);
-						}}
-						className="flex-1 sm:flex-initial bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-					>
-						Дуусгах
 					</Button>
 				</div>
 			</div>

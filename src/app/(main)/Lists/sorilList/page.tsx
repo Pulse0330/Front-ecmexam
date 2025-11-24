@@ -1,13 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import {
-	BookOpen,
-	Filter as FilterIcon,
-	Search,
-	TrendingUp,
-	X,
-} from "lucide-react";
+import { BookOpen, Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -48,7 +42,7 @@ export default function SorilListPage() {
 	});
 
 	// Статистик тооцоолох
-	const stats = useMemo(() => {
+	const _stats = useMemo(() => {
 		if (!queryData?.RetData) return null;
 
 		const total = queryData.RetData.length;
@@ -145,57 +139,6 @@ export default function SorilListPage() {
 				</div>
 
 				{/* Статистик */}
-				{stats && (
-					<div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-						<Card className="hover:shadow-lg transition-shadow duration-300 border-primary/20">
-							<CardContent className="p-6">
-								<div className="flex items-center justify-between">
-									<div>
-										<p className="text-sm text-muted-foreground mb-1">Нийт</p>
-										<p className="text-3xl font-bold">{stats.total}</p>
-									</div>
-									<div className="bg-blue-500/10 p-3 rounded-full">
-										<BookOpen className="w-8 h-8 text-blue-500" />
-									</div>
-								</div>
-							</CardContent>
-						</Card>
-						<Card className="hover:shadow-lg transition-shadow duration-300 border-green-500/20">
-							<CardContent className="p-6">
-								<div className="flex items-center justify-between">
-									<div>
-										<p className="text-sm text-muted-foreground mb-1">
-											Дууссан
-										</p>
-										<p className="text-3xl font-bold text-green-600">
-											{stats.completed}
-										</p>
-									</div>
-									<div className="bg-green-500/10 p-3 rounded-full">
-										<TrendingUp className="w-8 h-8 text-green-500" />
-									</div>
-								</div>
-							</CardContent>
-						</Card>
-						<Card className="hover:shadow-lg transition-shadow duration-300 border-muted/50 col-span-2 md:col-span-1">
-							<CardContent className="p-6">
-								<div className="flex items-center justify-between">
-									<div>
-										<p className="text-sm text-muted-foreground mb-1">
-											Эхлээгүй
-										</p>
-										<p className="text-3xl font-bold text-muted-foreground">
-											{stats.notStarted}
-										</p>
-									</div>
-									<div className="bg-muted/50 p-3 rounded-full">
-										<FilterIcon className="w-8 h-8 text-muted-foreground" />
-									</div>
-								</div>
-							</CardContent>
-						</Card>
-					</div>
-				)}
 
 				{/* Хайлт ба Шүүлтүүр */}
 				<Card className="mb-8 shadow-md">
@@ -298,7 +241,7 @@ export default function SorilListPage() {
 									<div className="bg-primary/10 p-2 rounded-lg">
 										<BookOpen className="w-6 h-6 text-primary" />
 									</div>
-									<h2 className="text-2xl font-semibold">{planName}</h2>
+
 									<span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
 										{exams.length} сорил
 									</span>

@@ -1,124 +1,262 @@
-// ========== D:\Programms\Bymbaa\front\src\app\exam\component\question\singleSelect.tsx ==========
 "use client";
 
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import parse from "html-react-parser";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { Maximize2, RotateCw, XCircle, ZoomIn, ZoomOut } from "lucide-react";
 import Image from "next/image";
-import { memo, useCallback } from "react";
+import { memo, useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogTitle,
+} from "@/components/ui/dialog";
 
 interface AnswerData {
 	answer_id: number;
+	answer_name?: string;
 	answer_name_html?: string;
 	answer_img?: string;
+	source_img?: string;
 	is_true?: boolean;
 }
 
 interface SingleSelectQuestionProps {
 	questionId: number;
 	questionText?: string;
+	questionImage?: string;
 	answers: AnswerData[];
-	mode: "exam" | "review";
 	selectedAnswer?: number | null;
-	correctAnswerId?: number | null;
 	onAnswerChange?: (questionId: number, answerId: number | null) => void;
-	initialMatches?: Record<number, number>;
 }
 
 function SingleSelectQuestion({
 	questionId,
+	questionImage,
 	answers,
-	mode,
 	selectedAnswer,
-	correctAnswerId,
 	onAnswerChange,
 }: SingleSelectQuestionProps) {
-	const isReviewMode = mode === "review";
+	const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+	const [zoomLevel, setZoomLevel] = useState(100);
+	const [rotation, setRotation] = useState(0);
 
 	const handleSelect = useCallback(
 		(answerId: number) => {
-			if (isReviewMode || !onAnswerChange) return;
+			if (!onAnswerChange) return;
 			const newValue = selectedAnswer === answerId ? null : answerId;
 			onAnswerChange(questionId, newValue);
 		},
-		[questionId, selectedAnswer, isReviewMode, onAnswerChange],
+		[questionId, selectedAnswer, onAnswerChange],
 	);
 
+	const handleImageClick = useCallback(
+		(e: React.MouseEvent, imageUrl: string) => {
+			e.stopPropagation();
+			e.preventDefault();
+			setZoomedImage(imageUrl);
+			setZoomLevel(100);
+			setRotation(0);
+		},
+		[],
+	);
+
+	const handleZoomIn = useCallback(() => {
+		setZoomLevel((prev) => Math.min(prev + 25, 200));
+	}, []);
+
+	const handleZoomOut = useCallback(() => {
+		setZoomLevel((prev) => Math.max(prev - 25, 50));
+	}, []);
+
+	const handleRotate = useCallback(() => {
+		setRotation((prev) => (prev + 90) % 360);
+	}, []);
+
+	const handleDialogClose = useCallback(() => {
+		setZoomedImage(null);
+		setZoomLevel(100);
+		setRotation(0);
+	}, []);
+
 	return (
-		<div className="space-y-3 sm:space-y-4">
-			<div className="space-y-2 sm:space-y-3">
-				<p>Нэг хариулт сонгох боломжтой</p>
-				{answers.map((option) => {
-					const isSelected = selectedAnswer === option.answer_id;
-					const isCorrect =
-						option.is_true || correctAnswerId === option.answer_id;
+		<>
+			<div className="space-y-3 sm:space-y-4">
+				{/* Question Image */}
+				{questionImage && (
+					<button
+						type="button"
+						className="relative w-full h-64 group cursor-zoom-in border-0 bg-transparent p-0 rounded-md mb-4"
+						onClick={(e) => handleImageClick(e, questionImage)}
+					>
+						<Image
+							src={questionImage}
+							alt="Асуултын зураг"
+							fill
+							className="object-contain rounded-md border border-gray-200 dark:border-gray-700 shadow-sm"
+							sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+						/>
+						<div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-md flex items-center justify-center">
+							<Maximize2 className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+						</div>
+					</button>
+				)}
 
-					const colorClass = isReviewMode
-						? isCorrect
-							? "border-green-500 bg-green-50"
-							: isSelected
-								? "border-red-500 bg-red-50"
-								: "border-border bg-background"
-						: isSelected
+				<div className="space-y-2 sm:space-y-3">
+					<p className="text-sm text-gray-600 dark:text-gray-400">
+						Нэг хариулт сонгох боломжтой
+					</p>
+					{answers.map((option) => {
+						const isSelected = selectedAnswer === option.answer_id;
+
+						const hasContent = option.answer_name_html || option.answer_name;
+						const hasImage = option.answer_img || option.source_img;
+						const imageUrl = option.answer_img || option.source_img;
+
+						const colorClass = isSelected
 							? "border-primary bg-primary/10"
-							: "border-border bg-background";
+							: "border-border bg-background hover:bg-gray-50 dark:hover:bg-gray-800/50";
 
-					return (
-						<Button
-							key={option.answer_id}
-							onClick={() => handleSelect(option.answer_id)}
-							variant="outline"
-							disabled={isReviewMode}
-							className={`relative flex items-start gap-2 sm:gap-3 w-full justify-start p-2 sm:p-3 rounded-md border transition-colors h-auto min-h-11 ${colorClass}`}
-						>
-							{isReviewMode && (
-								<div className="absolute right-3 top-3">
-									{isCorrect ? (
-										<CheckCircle2 className="text-green-600 w-5 h-5" />
-									) : isSelected ? (
-										<XCircle className="text-red-600 w-5 h-5" />
-									) : null}
-								</div>
-							)}
-
-							{/* Radio circle */}
-							<span
-								className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5
-                ${
-									isSelected
-										? isReviewMode
-											? isCorrect
-												? "border-green-500 bg-green-500"
-												: "border-red-500 bg-red-500"
-											: "border-primary bg-primary"
-										: "border-border bg-background"
-								}`}
+						return (
+							<div
+								key={option.answer_id}
+								className={`relative flex items-start gap-2 sm:gap-3 w-full p-3 sm:p-4 rounded-lg border-2 transition-all duration-200 min-h-12 ${colorClass}`}
 							>
-								{isSelected && (
-									<span className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-primary-foreground rounded-full" />
-								)}
-							</span>
+								<button
+									type="button"
+									onClick={() => handleSelect(option.answer_id)}
+									className="absolute inset-0 w-full h-full cursor-pointer opacity-0"
+									aria-label={`Хариулт ${option.answer_id} сонгох`}
+								/>
 
-							{option.answer_img && (
-								<div className="shrink-0 w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 border rounded-md overflow-hidden bg-white">
-									<Image
-										src={option.answer_img}
-										alt={`Answer ${option.answer_id}`}
-										width={80}
-										height={80}
-										className="w-full h-full object-cover"
-									/>
+								<span
+									className={`relative z-10 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 transition-all pointer-events-none
+									${
+										isSelected
+											? "border-primary bg-primary"
+											: "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
+									}`}
+								>
+									{isSelected && (
+										<span className="w-2.5 h-2.5 bg-white rounded-full" />
+									)}
+								</span>
+
+								<div className="relative z-10 flex-1 min-w-0 flex flex-col gap-3 pointer-events-none">
+									{hasImage && imageUrl && (
+										<button
+											type="button"
+											className="relative w-full h-48 group cursor-zoom-in border-0 bg-transparent p-0 rounded-md pointer-events-auto"
+											onClick={(e) => handleImageClick(e, imageUrl)}
+										>
+											<Image
+												src={imageUrl}
+												alt={`Хариулт ${option.answer_id}`}
+												fill
+												className="object-contain rounded-md border border-gray-200 dark:border-gray-700 shadow-sm"
+												sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+											/>
+											<div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-md flex items-center justify-center">
+												<Maximize2 className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+											</div>
+										</button>
+									)}
+
+									{hasContent && (
+										<div className="text-left text-sm sm:text-base leading-relaxed">
+											{option.answer_name_html ? (
+												<div className="prose prose-sm max-w-none dark:prose-invert">
+													{parse(option.answer_name_html)}
+												</div>
+											) : (
+												<span className="text-gray-900 dark:text-gray-100">
+													{option.answer_name}
+												</span>
+											)}
+										</div>
+									)}
+
+									{!hasImage && !hasContent && (
+										<span className="text-sm text-gray-400 italic">
+											Хариулт байхгүй
+										</span>
+									)}
 								</div>
-							)}
-
-							<span className="flex-1 min-w-0 text-left text-sm sm:text-base wrap-break-words leading-relaxed whitespace-pre-wrap">
-								{option.answer_name_html ? parse(option.answer_name_html) : ""}
-							</span>
-						</Button>
-					);
-				})}
+							</div>
+						);
+					})}
+				</div>
 			</div>
-		</div>
+
+			{/* Image Zoom Dialog */}
+			<Dialog open={!!zoomedImage} onOpenChange={handleDialogClose}>
+				<DialogContent className="max-w-7xl w-[95vw] h-[95vh] p-0">
+					<VisuallyHidden>
+						<DialogTitle>Зургийг томруулах</DialogTitle>
+					</VisuallyHidden>
+
+					{/* Control Buttons */}
+					<div className="absolute left-4 top-4 z-50 flex gap-2 bg-background/80 backdrop-blur-sm rounded-lg p-2 border">
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={handleZoomIn}
+							disabled={zoomLevel >= 200}
+							className="h-8 w-8"
+						>
+							<ZoomIn className="h-4 w-4" />
+						</Button>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={handleZoomOut}
+							disabled={zoomLevel <= 50}
+							className="h-8 w-8"
+						>
+							<ZoomOut className="h-4 w-4" />
+						</Button>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={handleRotate}
+							className="h-8 w-8"
+						>
+							<RotateCw className="h-4 w-4" />
+						</Button>
+						<div className="flex items-center px-2 text-sm font-medium">
+							{zoomLevel}%
+						</div>
+					</div>
+
+					<DialogClose className="absolute right-4 top-4 z-50 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+						<XCircle className="h-6 w-6" />
+						<span className="sr-only">Хаах</span>
+					</DialogClose>
+
+					{zoomedImage && (
+						<div className="relative w-full h-full p-4 overflow-auto">
+							<div
+								className="relative w-full h-full flex items-center justify-center"
+								style={{
+									transform: `scale(${zoomLevel / 100}) rotate(${rotation}deg)`,
+									transition: "transform 0.2s ease-out",
+								}}
+							>
+								<Image
+									src={zoomedImage}
+									alt="Томруулсан зураг"
+									fill
+									className="object-contain"
+									priority
+									sizes="95vw"
+								/>
+							</div>
+						</div>
+					)}
+				</DialogContent>
+			</Dialog>
+		</>
 	);
 }
 

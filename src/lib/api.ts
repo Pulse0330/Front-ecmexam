@@ -99,7 +99,7 @@ export const saveExamAnswer = async (
 	userId: number,
 	examId: number,
 	questionId: number,
-	answerId: number | null,
+	answerId: number,
 	queTypeId: number,
 	answer: string = "",
 	rowNum: number,
