@@ -124,18 +124,20 @@
 @layer utilities {
 	/* Page gradient background - яг таны хүссэн градиент */
 	.bg-page-gradient {
-		background: linear-gradient(to bottom right, 
-			rgb(248 250 252),  /* slate-50 */
-			rgb(255 255 255),  /* white */
-			rgb(248 250 252)   /* slate-50 */
+		background: linear-gradient(
+			to bottom right,
+			rgb(248 250 252) /* slate-50 */,
+			rgb(255 255 255) /* white */,
+			rgb(248 250 252) /* slate-50 */
 		);
 	}
-	
+
 	.dark .bg-page-gradient {
-		background: linear-gradient(to bottom right, 
-			rgb(3 7 18),       /* gray-950 */
-			rgb(17 24 39),     /* gray-900 */
-			rgb(3 7 18)        /* gray-950 */
+		background: linear-gradient(
+			to bottom right,
+			rgb(3 7 18) /* gray-950 */,
+			rgb(17 24 39) /* gray-900 */,
+			rgb(3 7 18) /* gray-950 */
 		);
 	}
 }

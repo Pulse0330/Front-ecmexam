@@ -4,19 +4,20 @@
 import { Bookmark, CheckCircle2, X } from "lucide-react";
 import { memo, useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import type { AnswerValue } from "@/types/exam/exam";
 
 interface ExamMinimapProps {
 	totalCount: number;
 	answeredCount: number;
-	currentQuestionIndex?: number;
-	selectedAnswers: Record<
-		number,
-		number | number[] | string | Record<string, number> | null
-	>;
-	questions: Array<{ question_id: number }>;
-	onQuestionClick?: (index: number) => void;
-	bookmarkedQuestions?: Set<number>;
-	// Mobile specific props
+	currentQuestionIndex: number;
+	selectedAnswers: Record<number, AnswerValue>;
+	questions: Array<{
+		question_id: number;
+		que_type_id: number;
+		question_name?: string;
+	}>;
+	onQuestionClick: (index: number) => void;
+	bookmarkedQuestions: Set<number>;
 	isMobileOverlay?: boolean;
 	onClose?: () => void;
 }

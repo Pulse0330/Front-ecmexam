@@ -1,6 +1,7 @@
 import type React from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { Input } from "@/components/ui/input";
+import type { AnswerValue } from "@/types/exam/exam"; // ✅ Add this import
 
 interface AnswerData {
 	answer_id: number;
@@ -13,36 +14,31 @@ interface NumberInputQuestionProps {
 	questionId: number;
 	questionText?: string;
 	answers: AnswerData[];
-	onAnswerChange?: (
-		questionId: number,
-		answerId: number,
-		value: string,
-	) => void;
+	selectedValues?: Record<number, string>;
+	onAnswerChange?: (questionId: number, values: AnswerValue) => void; // ✅ Now it will work
 }
 
 const NumberInputQuestion: React.FC<NumberInputQuestionProps> = ({
 	questionId,
 	questionText,
 	answers,
+	selectedValues = {},
 	onAnswerChange,
 }) => {
-	// Хариултуудын утгыг хадгалах state
-	const [values, setValues] = useState<Record<number, string>>(() =>
-		answers.reduce(
-			(acc, ans) => {
-				acc[ans.answer_id] = "";
-				return acc;
-			},
-			{} as Record<number, string>,
-		),
-	);
+	const values = useMemo(() => {
+		const result: Record<number, string> = {};
+		answers.forEach((ans) => {
+			result[ans.answer_id] = selectedValues[ans.answer_id] || "";
+		});
+		return result;
+	}, [selectedValues, answers]);
 
 	const handleChange = useCallback(
 		(answerId: number, val: string) => {
-			if (!/^\d*$/.test(val)) return; // зөвхөн тоо зөвшөөрнө
+			if (!/^\d*$/.test(val)) return;
+
 			const newValues = { ...values, [answerId]: val };
-			setValues(newValues);
-			onAnswerChange?.(questionId, answerId, val);
+			onAnswerChange?.(questionId, newValues);
 		},
 		[questionId, values, onAnswerChange],
 	);
@@ -52,18 +48,20 @@ const NumberInputQuestion: React.FC<NumberInputQuestionProps> = ({
 			{questionText && <p className="text-sm font-medium">{questionText}</p>}
 			<div className="flex flex-col gap-2">
 				{answers.map((ans, idx) => (
-					<div key={ans.answer_id}>
+					<div key={ans.answer_id} className="flex items-center gap-2">
 						<label
 							htmlFor={`number-input-${ans.answer_id}`}
-							className="text-sm text-gray-600"
+							className="text-sm text-gray-600 min-w-[2rem]"
 						>
 							{String.fromCharCode(97 + idx)}=
 						</label>
 						<Input
-							id={`number-input-${ans.answer_id}`} // label-тэй холбоо
+							id={`number-input-${ans.answer_id}`}
 							type="text"
+							inputMode="numeric"
 							value={values[ans.answer_id]}
 							onChange={(e) => handleChange(ans.answer_id, e.target.value)}
+							placeholder="0"
 							className="max-w-xs"
 						/>
 					</div>

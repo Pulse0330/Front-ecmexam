@@ -1,10 +1,11 @@
 // types/exam.ts
 
 export type AnswerValue =
-	| number
-	| number[]
-	| string
-	| Record<number, number>
+	| number // Type 1: single select
+	| number[] // Type 2: multi-select, Type 5: ordered
+	| string // Type 4: fill in blank
+	| Record<number, number> // Type 6: matching
+	| Record<number, string> // ✅ Type 3: number inputs (answerId -> value)
 	| null;
 
 export interface Question {
@@ -89,13 +90,12 @@ export interface ApiExamResponse {
 	RetData: RetDataItem[];
 }
 
-// **Зассан SaveAnswerRequest**
 export interface SaveAnswerRequest {
 	userId: number;
 	examId: number;
 	questionId: number;
 	queTypeId: number;
-	answerValue: AnswerValue; // number | number[] | string | Record<number,number>
+	answerValue: AnswerValue; // ✅ Now includes Record<number, string>
 }
 
 export interface SaveAnswerResponse {

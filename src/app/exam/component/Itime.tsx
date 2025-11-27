@@ -19,7 +19,7 @@ export default function ExamTimer({
 	examMinutes,
 	startedDate,
 	onTimeUp,
-	onAutoFinish, // PROP-ийг parameter-т нэмсэн
+	onAutoFinish,
 }: ExamTimerProps) {
 	const { currentTime, isLoading, isOnline } = useServerTime();
 	const hasNotifiedTimeUp = useRef(false);

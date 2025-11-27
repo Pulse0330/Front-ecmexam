@@ -163,46 +163,137 @@ export default function SorilPage() {
 			try {
 				const previousAnswer = lastSavedAnswers.current.get(questionId);
 
-				if (queTypeId === 2) {
-					if (Array.isArray(previousAnswer) && previousAnswer.length > 0) {
-						await Promise.allSettled(
-							previousAnswer.map((answerId) =>
-								deleteExamAnswer(userId || 0, examId, questionId, answerId),
-							),
-						);
-					}
-				}
+				// ============================================
+				// STEP 1: DELETE OLD ANSWERS BASED ON TYPE
+				// ============================================
 
-				if (queTypeId === 1 && typeof previousAnswer === "number") {
-					if (previousAnswer !== answer) {
+				// Type 1: Delete old single-select answer
+				if (
+					queTypeId === 1 &&
+					typeof previousAnswer === "number" &&
+					previousAnswer !== 0
+				) {
+					try {
 						await deleteExamAnswer(
 							userId || 0,
 							examId,
 							questionId,
 							previousAnswer,
 						);
+					} catch (_error) {
+						console.log(
+							`Failed to delete old answer for type 1 question ${questionId}`,
+						);
 					}
 				}
 
-				if (queTypeId === 6) {
-					if (
-						typeof previousAnswer === "object" &&
-						previousAnswer !== null &&
-						!Array.isArray(previousAnswer)
-					) {
-						const oldMatches = previousAnswer as Record<number, number>;
-						const oldAnswerIds = Object.values(oldMatches);
-						if (oldAnswerIds.length > 0) {
+				// Type 2: Delete all old multi-select answers
+				if (
+					queTypeId === 2 &&
+					Array.isArray(previousAnswer) &&
+					previousAnswer.length > 0
+				) {
+					try {
+						await Promise.allSettled(
+							previousAnswer.map((answerId) =>
+								deleteExamAnswer(userId || 0, examId, questionId, answerId),
+							),
+						);
+					} catch (_error) {
+						console.log(
+							`Failed to delete old answers for type 2 question ${questionId}`,
+						);
+					}
+				}
+
+				// Type 3: Delete old number input answer
+				if (queTypeId === 3 && previousAnswer !== undefined) {
+					try {
+						// Type 3 stores answerId (selected from options) + user typed number
+						if (
+							typeof previousAnswer === "object" &&
+							!Array.isArray(previousAnswer)
+						) {
+							const prev = previousAnswer as {
+								answerId: number;
+								value: string;
+							};
+							if (prev.answerId && prev.answerId !== 0) {
+								await deleteExamAnswer(
+									userId || 0,
+									examId,
+									questionId,
+									prev.answerId,
+								);
+							}
+						}
+					} catch (_error) {
+						console.log(
+							`Failed to delete old answer for type 3 question ${questionId}`,
+						);
+					}
+				}
+
+				// Type 4: Delete old fill-in-blank answer (answerId = 0)
+				if (queTypeId === 4 && previousAnswer !== undefined) {
+					try {
+						await deleteExamAnswer(userId || 0, examId, questionId, 0);
+					} catch (_error) {
+						console.log(
+							`Failed to delete old answer for type 4 question ${questionId}`,
+						);
+					}
+				}
+
+				// Type 5: Delete all old ordered answers
+				if (
+					queTypeId === 5 &&
+					Array.isArray(previousAnswer) &&
+					previousAnswer.length > 0
+				) {
+					try {
+						await Promise.allSettled(
+							previousAnswer.map((answerId) =>
+								deleteExamAnswer(userId || 0, examId, questionId, answerId),
+							),
+						);
+					} catch (_error) {
+						console.log(
+							`Failed to delete old answers for type 5 question ${questionId}`,
+						);
+					}
+				}
+
+				// Type 6: Delete all old matching answers
+				if (
+					queTypeId === 6 &&
+					typeof previousAnswer === "object" &&
+					previousAnswer !== null &&
+					!Array.isArray(previousAnswer)
+				) {
+					const oldMatches = previousAnswer as Record<number, number>;
+					const oldAnswerIds = Object.values(oldMatches);
+					if (oldAnswerIds.length > 0) {
+						try {
 							await Promise.allSettled(
 								oldAnswerIds.map((answerId) =>
 									deleteExamAnswer(userId || 0, examId, questionId, answerId),
 								),
 							);
+						} catch (_error) {
+							console.log(
+								`Failed to delete old answers for type 6 question ${questionId}`,
+							);
 						}
 					}
 				}
 
-				if (queTypeId === 1 && typeof answer === "number") {
+				// ============================================
+				// STEP 2: SAVE NEW ANSWERS BASED ON TYPE
+				// ============================================
+
+				// Type 1: Save single-select answer
+				if (queTypeId === 1 && typeof answer === "number" && answer !== 0) {
 					await saveExamAnswer(
 						userId || 0,
 						examId,
@@ -212,23 +303,56 @@ export default function SorilPage() {
 						"",
 						rowNum,
 					);
-				} else if (queTypeId === 2 && Array.isArray(answer)) {
-					if (answer.length > 0) {
-						await Promise.all(
-							answer.map((answerId) =>
-								saveExamAnswer(
-									userId || 0,
-									examId,
-									questionId,
-									answerId,
-									queTypeId,
-									"",
-									rowNum,
-								),
+				}
+
+				// Type 2: Save multi-select answers
+				if (queTypeId === 2 && Array.isArray(answer) && answer.length > 0) {
+					await Promise.all(
+						answer.map((answerId) =>
+							saveExamAnswer(
+								userId || 0,
+								examId,
+								questionId,
+								answerId,
+								queTypeId,
+								"",
+								rowNum,
 							),
+						),
+					);
+				}
+
+				// Type 3: Save number input answer (answerId + typed value)
+				if (
+					queTypeId === 3 &&
+					typeof answer === "object" &&
+					!Array.isArray(answer) &&
+					answer !== null
+				) {
+					const numAnswer = answer as { answerId: number; value: string };
+					if (
+						numAnswer.answerId &&
+						numAnswer.answerId !== 0 &&
+						numAnswer.value.trim() !== ""
+					) {
+						await saveExamAnswer(
+							userId || 0,
+							examId,
+							questionId,
+							numAnswer.answerId,
+							queTypeId,
+							numAnswer.value,
+							rowNum,
 						);
 					}
-				} else if (queTypeId === 4 && typeof answer === "string") {
+				}
+
+				// Type 4: Save fill-in-blank answer
+				if (
+					queTypeId === 4 &&
+					typeof answer === "string" &&
+					answer.trim() !== ""
+				) {
 					await saveExamAnswer(
 						userId || 0,
 						examId,
@@ -238,7 +362,10 @@ export default function SorilPage() {
 						answer,
 						rowNum,
 					);
-				} else if (queTypeId === 5 && Array.isArray(answer)) {
+				}
+
+				// Type 5: Save drag-and-drop order
+				if (queTypeId === 5 && Array.isArray(answer) && answer.length > 0) {
 					await Promise.all(
 						answer.map((answerId, index) =>
 							saveExamAnswer(
@@ -252,27 +379,35 @@ export default function SorilPage() {
 							),
 						),
 					);
-				} else if (
-					queTypeId === 6 &&
-					typeof answer === "object" &&
-					answer !== null
-				) {
-					const matches = answer as Record<number, number>;
-					await Promise.all(
-						Object.entries(matches).map(([qRefIdStr, aRefId]) =>
-							saveExamAnswer(
-								userId || 0,
-								examId,
-								questionId,
-								aRefId,
-								queTypeId,
-								qRefIdStr,
-								rowNum,
-							),
-						),
-					);
 				}
 
+				// Type 6: Save matching answers
+				if (
+					queTypeId === 6 &&
+					typeof answer === "object" &&
+					answer !== null &&
+					!Array.isArray(answer)
+				) {
+					const matches = answer as Record<number, number>;
+					const entries = Object.entries(matches);
+					if (entries.length > 0) {
+						await Promise.all(
+							entries.map(([qRefIdStr, aRefId]) =>
+								saveExamAnswer(
+									userId || 0,
+									examId,
+									questionId,
+									aRefId,
+									queTypeId,
+									qRefIdStr,
+									rowNum,
+								),
+							),
+						);
+					}
+				}
+
+				// Update last saved answer in memory
 				lastSavedAnswers.current.set(questionId, answer);
 				return true;
 			} catch (error) {
@@ -282,7 +417,6 @@ export default function SorilPage() {
 		},
 		[userId],
 	);
-
 	const processPendingAnswers = useCallback(async () => {
 		if (
 			isSavingRef.current ||
@@ -643,7 +777,6 @@ export default function SorilPage() {
 						answer_id: a.answer_id,
 						answer_name_html: a.answer_name_html || a.answer_name || "",
 					}))}
-					mode="exam"
 					userAnswers={(selectedAnswers[q.question_id] as number[]) || []}
 					onOrderChange={(orderedIds) =>
 						handleAnswerChange(q.question_id, orderedIds)

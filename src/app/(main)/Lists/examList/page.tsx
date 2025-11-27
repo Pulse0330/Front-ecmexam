@@ -7,7 +7,7 @@ import {
 	DollarSign,
 	Search,
 	Sparkles,
-	X,
+	X, // X icon-ыг expired-д ашиглана.
 	Zap,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
@@ -48,6 +48,7 @@ export default function ExamListPage() {
 		});
 	}, [data]);
 	const skeletonIds = [1, 2, 3, 4, 5, 6];
+
 	// Server time ашиглан category-д ангилах
 	const categorizedData = useMemo(() => {
 		if (!currentTime)
@@ -142,7 +143,7 @@ export default function ExamListPage() {
 						)}
 					</div>
 
-					{/* Filter Badges */}
+					{/* Filter Badges - 🟡 "expired" категори нэмэгдсэн */}
 					<div className="flex flex-wrap gap-2 justify-center sm:justify-end">
 						{[
 							{
@@ -174,6 +175,13 @@ export default function ExamListPage() {
 								label: "Төлбөртэй",
 								icon: <DollarSign size={14} />,
 								count: categorizedData.paid.length,
+							},
+							{
+								// ✅ ШИНЭ: Дууссан шалгалтууд
+								key: "expired",
+								label: "Дууссан",
+								icon: <X size={14} />,
+								count: categorizedData.expired.length,
 							},
 						].map((cat) => (
 							<CategoryBadge
@@ -277,7 +285,7 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(
 					return "bg-gradient-to-r from-cyan-500 to-blue-500 text-white border-2 border-cyan-500 shadow-lg shadow-cyan-500/30";
 				case "paid":
 					return "bg-gradient-to-r from-rose-500 to-red-500 text-white border-2 border-rose-500 shadow-lg shadow-rose-500/30";
-				case "expired":
+				case "expired": // ✅ ШИНЭ: Дууссан шалгалтын загвар
 					return "bg-gradient-to-r from-gray-500 to-slate-500 text-white border-2 border-gray-500 shadow-lg shadow-gray-500/30";
 				default:
 					return "";
