@@ -13,27 +13,24 @@ import {
 	Menu,
 	Save,
 } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import FinishExamResultDialog, {
+	type FinishExamDialogHandle,
+} from "@/app/exam/component/finish";
+import ExamTimer from "@/app/exam/component/Itime";
 import ExamMinimap from "@/app/exam/component/minimap";
 import FillInTheBlankQuestion from "@/app/exam/component/question/fillblank";
 import MatchingByLine from "@/app/exam/component/question/matching";
 import MultiSelectQuestion from "@/app/exam/component/question/multiselect";
+import NumberInputQuestion from "@/app/exam/component/question/numberinput";
 import DragAndDropQuestion from "@/app/exam/component/question/order";
+import QuestionImage from "@/app/exam/component/question/questionImage";
 import SingleSelectQuestion from "@/app/exam/component/question/singleSelect";
-import FinishExamResultDialog, {
-	type FinishExamDialogHandle,
-} from "@/app/soril/finish";
 import FixedScrollButton from "@/components/FixedScrollButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-	deleteExamAnswer,
-	finishExam,
-	getExamById,
-	saveExamAnswer,
-} from "@/lib/api";
+import { deleteExamAnswer, getExamById, saveExamAnswer } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { AnswerValue } from "@/types/exam/exam";
 
@@ -45,10 +42,9 @@ interface PendingAnswer {
 	timestamp: number;
 }
 
-export default function SorilPage() {
+export default function ExamPage() {
 	const { userId } = useAuthStore();
 	const { id } = useParams();
-	const router = useRouter();
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const [bookmarkedQuestions, setBookmarkedQuestions] = useState<Set<number>>(
@@ -61,16 +57,18 @@ export default function SorilPage() {
 	const [typingQuestions, setTypingQuestions] = useState<Set<number>>(
 		new Set(),
 	);
-	const [isTimeUp, _setIsTimeUp] = useState(false);
-	const [isAutoFinishing, setIsAutoFinishing] = useState(false);
-
+	const [isTimeUp, setIsTimeUp] = useState(false);
 	const [showMobileMinimapOverlay, setShowMobileMinimapOverlay] =
 		useState(false);
+
+	// Auto-finish refs
+	const finishDialogRef = useRef<FinishExamDialogHandle>(null);
 	const hasAutoFinished = useRef(false);
+	const isAutoSubmitting = useRef(false);
+
 	const pendingAnswers = useRef<Map<number, PendingAnswer>>(new Map());
 	const saveTimer = useRef<NodeJS.Timeout | null>(null);
 	const lastSavedAnswers = useRef<Map<number, AnswerValue>>(new Map());
-
 	const isSavingRef = useRef(false);
 	const AUTO_SAVE_DELAY = 1000;
 
@@ -115,46 +113,6 @@ export default function SorilPage() {
 		},
 		[],
 	);
-	const formatTime = (sec: number) => {
-		const h = Math.floor(sec / 3600);
-		const m = Math.floor((sec % 3600) / 60);
-		const s = sec % 60;
-		return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-	};
-
-	const remainingSec = useMemo(() => {
-		if (!examData?.ExamInfo?.[0]) return 0;
-
-		const totalSec = examData.ExamInfo[0].minut * 60;
-
-		if (!examData.ExamInfo[0].starteddate) {
-			return totalSec;
-		}
-
-		const actualStartDate = new Date(examData.ExamInfo[0].starteddate);
-		const now = new Date();
-		const elapsed = Math.floor(
-			(now.getTime() - actualStartDate.getTime()) / 1000,
-		);
-		const remaining = Math.max(0, totalSec - elapsed);
-
-		return remaining;
-	}, [examData]);
-
-	const finishDialogRef = useRef<FinishExamDialogHandle>(null);
-
-	const _handleProctorAutoFinish = () => {
-		if (finishDialogRef.current) {
-			finishDialogRef.current.triggerFinish();
-		}
-	};
-	useEffect(() => {
-		const interval = setInterval(() => {
-			setCurrentQuestionIndex((prev) => prev);
-		}, 1000);
-
-		return () => clearInterval(interval);
-	}, []);
 
 	const saveQuestion = useCallback(
 		async (pending: PendingAnswer, examId: number): Promise<boolean> => {
@@ -209,35 +167,47 @@ export default function SorilPage() {
 				// Type 3: Delete old number input answer
 				if (queTypeId === 3 && previousAnswer !== undefined) {
 					try {
-						// Type 3 stores answerId (selected from options) + user typed number
 						if (
 							typeof previousAnswer === "object" &&
+							previousAnswer !== null &&
 							!Array.isArray(previousAnswer)
 						) {
-							const prev = previousAnswer as {
-								answerId: number;
-								value: string;
-							};
-							if (prev.answerId && prev.answerId !== 0) {
-								await deleteExamAnswer(
-									userId || 0,
-									examId,
-									questionId,
-									prev.answerId,
+							const prevMap = previousAnswer as Record<number, string>;
+							const prevIds = Object.keys(prevMap)
+								.map((k) => Number(k))
+								.filter(
+									(id) =>
+										id && id !== 0 && prevMap[id] && prevMap[id].trim() !== "",
+								);
+							if (prevIds.length > 0) {
+								await Promise.allSettled(
+									prevIds.map((answerId) =>
+										deleteExamAnswer(userId || 0, examId, questionId, answerId),
+									),
 								);
 							}
 						}
 					} catch (_error) {
 						console.log(
-							`Failed to delete old answer for type 3 question ${questionId}`,
+							`Failed to delete old answers for type 3 question ${questionId}`,
 						);
 					}
 				}
 
-				// Type 4: Delete old fill-in-blank answer (answerId = 0)
+				// Type 4: Delete old fill-in-blank answer
 				if (queTypeId === 4 && previousAnswer !== undefined) {
 					try {
-						await deleteExamAnswer(userId || 0, examId, questionId, 0);
+						// ✅ Бодит answer_id ашиглах
+						const type4Answer = examData?.Answers?.find(
+							(ans) => ans.question_id === questionId && ans.answer_type === 4,
+						);
+
+						await deleteExamAnswer(
+							userId || 0,
+							examId,
+							questionId,
+							type4Answer?.answer_id || 0,
+						);
 					} catch (_error) {
 						console.log(
 							`Failed to delete old answer for type 4 question ${questionId}`,
@@ -300,7 +270,7 @@ export default function SorilPage() {
 						questionId,
 						answer,
 						queTypeId,
-						"",
+						"1",
 						rowNum,
 					);
 				}
@@ -315,7 +285,7 @@ export default function SorilPage() {
 								questionId,
 								answerId,
 								queTypeId,
-								"",
+								"1",
 								rowNum,
 							),
 						),
@@ -326,23 +296,26 @@ export default function SorilPage() {
 				if (
 					queTypeId === 3 &&
 					typeof answer === "object" &&
-					!Array.isArray(answer) &&
-					answer !== null
+					answer !== null &&
+					!Array.isArray(answer)
 				) {
-					const numAnswer = answer as { answerId: number; value: string };
-					if (
-						numAnswer.answerId &&
-						numAnswer.answerId !== 0 &&
-						numAnswer.value.trim() !== ""
-					) {
-						await saveExamAnswer(
-							userId || 0,
-							examId,
-							questionId,
-							numAnswer.answerId,
-							queTypeId,
-							numAnswer.value,
-							rowNum,
+					const valuesMap = answer as Record<number, string>;
+					const entries = Object.entries(valuesMap)
+						.map(([k, v]) => [Number(k), v as string] as [number, string])
+						.filter(([aid, val]) => aid && aid !== 0 && val.trim() !== "");
+					if (entries.length > 0) {
+						await Promise.all(
+							entries.map(([answerId, val]) =>
+								saveExamAnswer(
+									userId || 0,
+									examId,
+									questionId,
+									answerId,
+									queTypeId,
+									val,
+									rowNum,
+								),
+							),
 						);
 					}
 				}
@@ -353,11 +326,15 @@ export default function SorilPage() {
 					typeof answer === "string" &&
 					answer.trim() !== ""
 				) {
+					const type4Answer = examData?.Answers?.find(
+						(ans) => ans.question_id === questionId && ans.answer_type === 4,
+					);
+
 					await saveExamAnswer(
 						userId || 0,
 						examId,
 						questionId,
-						0,
+						type4Answer?.answer_id || 0,
 						queTypeId,
 						answer,
 						rowNum,
@@ -415,7 +392,7 @@ export default function SorilPage() {
 				return false;
 			}
 		},
-		[userId],
+		[userId, examData],
 	);
 	const processPendingAnswers = useCallback(async () => {
 		if (
@@ -463,58 +440,76 @@ export default function SorilPage() {
 		setIsSaving(false);
 	}, [examData, saveQuestion]);
 
-	const _handleAutoFinishExam = useCallback(async () => {
-		if (!userId || !examData?.ExamInfo?.[0] || hasAutoFinished.current) {
+	// ========================
+	// AUTO SUBMIT HANDLER - одоо processPendingAnswers тодорхойлогдсоны дараа
+	// ========================
+	// ========================
+	// AUTO SUBMIT HANDLER - ЗАСВАРЛАСАН
+	// ========================
+	const _handleAutoSubmit = useCallback(async () => {
+		// Давхар дуудагдахаас сэргийлэх
+		if (hasAutoFinished.current || isAutoSubmitting.current) {
+			console.log("⚠️ Auto-submit аль хэдийн явагдаж байна");
 			return;
 		}
 
 		hasAutoFinished.current = true;
-		setIsAutoFinishing(true);
+		isAutoSubmitting.current = true;
+
+		console.log("🔴 Цаг дууслаа - Автоматаар дуусгаж байна...");
 
 		try {
+			// ✅ STEP 1: Хадгалаагүй хариултуудыг эхлээд хадгална
 			if (pendingAnswers.current.size > 0) {
+				console.log(
+					`💾 ${pendingAnswers.current.size} хариулт хадгалж байна...`,
+				);
 				await processPendingAnswers();
+				console.log("✅ Бүх хариулт хадгалагдлаа");
 			}
 
-			const response = await finishExam({
-				exam_id: examData.ExamInfo[0].id,
-				exam_type: examData.ExamInfo[0].exam_type,
-				start_eid: examData.ExamInfo[0].start_eid,
-				exam_time: examData.ExamInfo[0].minut,
-				user_id: userId,
-			});
-
-			if (response.RetResponse.ResponseCode === "10") {
-				const testId = response.RetData;
-				const examType = examData.ExamInfo[0].exam_type;
-
-				if (examType === 1) {
-					// Дадлага: Home руу шилжих
-					toast.success("⏰ Цаг дууссан. Дадлага автоматаар дууслаа");
-					setTimeout(() => {
-						router.push("/home");
-					}, 1500);
-				} else {
-					// Шалгалт: Дэлгэрэнгүй үр дүн рүү шилжих
-					toast.success("⏰ Цаг дууссан тул шалгалт автоматаар дууслаа");
-					setTimeout(() => {
-						router.push(
-							`/exam/resultDetail/${testId}?examId=${examData.ExamInfo[0].id}`,
-						);
-					}, 1500);
-				}
-			} else {
-				toast.error(response.RetResponse.ResponseMessage);
-				hasAutoFinished.current = false;
+			// ✅ STEP 2: Exam type шалгаж, зөв параметр дамжуулах
+			const examInfo = examData?.ExamInfo?.[0];
+			if (!examInfo) {
+				console.error("❌ Exam info олдсонгүй");
+				return;
 			}
+
+			// ✅ STEP 3: Dialog-оор автомат дуусгах
+			console.log("📤 Шалгалт дуусгах API дуудаж байна...");
+			finishDialogRef.current?.triggerFinish();
 		} catch (error) {
-			console.error("Auto finish error:", error);
-			toast.error("Шалгалт автоматаар дуусгах үед алдаа гарлаа");
+			console.error("❌ Auto submit error:", error);
 			hasAutoFinished.current = false;
-		} finally {
-			setIsAutoFinishing(false);
+			isAutoSubmitting.current = false;
 		}
-	}, [userId, examData, router, processPendingAnswers]);
+	}, [processPendingAnswers, examData]);
+
+	const formatTime = (sec: number) => {
+		const h = Math.floor(sec / 3600);
+		const m = Math.floor((sec % 3600) / 60);
+		const s = sec % 60;
+		return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+	};
+
+	const remainingSec = useMemo(() => {
+		if (!examData?.ExamInfo?.[0]) return 0;
+		const totalSec = examData.ExamInfo[0].minut * 60;
+		if (!examData.ExamInfo[0].starteddate) return totalSec;
+		const actualStartDate = new Date(examData.ExamInfo[0].starteddate);
+		const now = new Date();
+		const elapsed = Math.floor(
+			(now.getTime() - actualStartDate.getTime()) / 1000,
+		);
+		return Math.max(0, totalSec - elapsed);
+	}, [examData]);
+
+	useEffect(() => {
+		const interval = setInterval(() => {
+			setCurrentQuestionIndex((prev) => prev);
+		}, 1000);
+		return () => clearInterval(interval);
+	}, []);
 
 	useEffect(() => {
 		if (!examData?.ChoosedAnswer) return;
@@ -548,6 +543,16 @@ export default function SorilPage() {
 					),
 				];
 				answersMap[QueID] = uniqueIds;
+			} else if (QueType === 3) {
+				const map: Record<number, string> = {};
+				items.forEach((it) => {
+					const ansId = it.AnsID ?? 0;
+					const val = (it as { Answer?: string }).Answer ?? "";
+					if (ansId && ansId !== 0) {
+						map[ansId] = val;
+					}
+				});
+				answersMap[QueID] = map;
 			} else if (QueType === 4) {
 				const lastItem = items[items.length - 1];
 				answersMap[QueID] = (lastItem as { Answer?: string }).Answer || "";
@@ -565,9 +570,7 @@ export default function SorilPage() {
 				items.forEach((item) => {
 					const qRefId = Number((item as { Answer?: string }).Answer);
 					const aRefId = item.AnsID;
-					if (qRefId && aRefId) {
-						matchMap[qRefId] = aRefId;
-					}
+					if (qRefId && aRefId) matchMap[qRefId] = aRefId;
 				});
 				answersMap[QueID] = matchMap;
 			}
@@ -582,7 +585,7 @@ export default function SorilPage() {
 	const allQuestions = useMemo(() => {
 		if (!examData?.Questions || !examData?.Answers) return [];
 		return examData.Questions.filter((q) =>
-			[1, 2, 4, 5, 6].includes(q.que_type_id),
+			[1, 2, 3, 4, 5, 6].includes(q.que_type_id),
 		).map((q) => ({
 			...q,
 			question_img: q.question_img || "",
@@ -611,18 +614,14 @@ export default function SorilPage() {
 	);
 
 	const scheduleAutoSave = useCallback(() => {
-		if (saveTimer.current) {
-			clearTimeout(saveTimer.current);
-		}
+		if (saveTimer.current) clearTimeout(saveTimer.current);
 		saveTimer.current = setTimeout(() => {
 			processPendingAnswers();
 		}, AUTO_SAVE_DELAY);
 	}, [processPendingAnswers]);
 
 	const handleManualSave = useCallback(() => {
-		if (saveTimer.current) {
-			clearTimeout(saveTimer.current);
-		}
+		if (saveTimer.current) clearTimeout(saveTimer.current);
 		processPendingAnswers();
 	}, [processPendingAnswers]);
 
@@ -635,9 +634,7 @@ export default function SorilPage() {
 			if (!question) return;
 
 			const lastSaved = lastSavedAnswers.current.get(questionId);
-			if (areAnswersEqual(lastSaved, answer)) {
-				return;
-			}
+			if (areAnswersEqual(lastSaved, answer)) return;
 
 			const rowNum = Number(question.row_num);
 			const queTypeId = question.que_type_id;
@@ -652,7 +649,6 @@ export default function SorilPage() {
 			}, 1500);
 
 			setSelectedAnswers((prev) => ({ ...prev, [questionId]: answer }));
-
 			pendingAnswers.current.set(questionId, {
 				questionId,
 				answer,
@@ -668,12 +664,8 @@ export default function SorilPage() {
 
 	useEffect(
 		() => () => {
-			if (saveTimer.current) {
-				clearTimeout(saveTimer.current);
-			}
-			if (pendingAnswers.current.size > 0) {
-				processPendingAnswers();
-			}
+			if (saveTimer.current) clearTimeout(saveTimer.current);
+			if (pendingAnswers.current.size > 0) processPendingAnswers();
 		},
 		[processPendingAnswers],
 	);
@@ -735,77 +727,113 @@ export default function SorilPage() {
 	const renderQuestion = (q: (typeof allQuestions)[0]) => {
 		if (q.que_type_id === 1) {
 			return (
-				<SingleSelectQuestion
-					questionId={q.question_id}
-					questionText={q.question_name}
-					answers={q.answers}
-					selectedAnswer={selectedAnswers[q.question_id] as number | null}
-					onAnswerChange={handleAnswerChange}
-				/>
+				<>
+					{q.question_img && (
+						<QuestionImage src={q.question_img} alt="Асуултын зураг" />
+					)}
+					<SingleSelectQuestion
+						questionId={q.question_id}
+						questionText={q.question_name}
+						answers={q.answers}
+						selectedAnswer={selectedAnswers[q.question_id] as number | null}
+						onAnswerChange={handleAnswerChange}
+					/>
+				</>
 			);
 		}
-		if (q.que_type_id === 2) {
+
+		if (
+			q.que_type_id === 2 ||
+			q.que_type_id === 3 ||
+			q.que_type_id === 4 ||
+			q.que_type_id === 6
+		) {
 			return (
-				<MultiSelectQuestion
-					questionId={q.question_id}
-					questionText={q.question_name}
-					answers={q.answers}
-					mode="exam"
-					selectedAnswers={(selectedAnswers[q.question_id] as number[]) || []}
-					onAnswerChange={handleAnswerChange}
-				/>
+				<>
+					{q.question_img && (
+						<QuestionImage src={q.question_img} alt="Асуултын зураг" />
+					)}
+					{q.que_type_id === 2 && (
+						<MultiSelectQuestion
+							questionId={q.question_id}
+							questionText={q.question_name}
+							answers={q.answers}
+							mode="exam"
+							selectedAnswers={
+								(selectedAnswers[q.question_id] as number[]) || []
+							}
+							onAnswerChange={handleAnswerChange}
+						/>
+					)}
+					{q.que_type_id === 3 && (
+						<NumberInputQuestion
+							questionId={q.question_id}
+							questionText={q.question_name}
+							answers={q.answers}
+							selectedValues={
+								selectedAnswers[q.question_id] as Record<number, string>
+							}
+							onAnswerChange={
+								(qId, values) => handleAnswerChange(qId, values as AnswerValue) // ✅ Type assertion
+							}
+						/>
+					)}
+					{q.que_type_id === 4 && (
+						<FillInTheBlankQuestion
+							questionId={q.question_id}
+							questionText={q.question_name}
+							value={(selectedAnswers[q.question_id] as string) || ""}
+							mode="exam"
+							onAnswerChange={handleAnswerChange}
+						/>
+					)}
+					{q.que_type_id === 6 && (
+						<MatchingByLine
+							answers={q.answers.map((a) => ({
+								refid: a.refid,
+								answer_id: a.answer_id,
+								question_id: a.question_id,
+								answer_name_html: a.answer_name_html,
+								answer_descr: a.answer_descr,
+								answer_img: a.answer_img || null,
+								ref_child_id: a.ref_child_id,
+								is_true: a.is_true,
+							}))}
+							onMatchChange={(matches) =>
+								handleAnswerChange(q.question_id, matches)
+							}
+							userAnswers={
+								(selectedAnswers[q.question_id] as Record<number, number>) || {}
+							}
+						/>
+					)}
+				</>
 			);
 		}
-		if (q.que_type_id === 4) {
-			return (
-				<FillInTheBlankQuestion
-					questionId={q.question_id}
-					questionText={q.question_name}
-					value={(selectedAnswers[q.question_id] as string) || ""}
-					mode="exam"
-					onAnswerChange={handleAnswerChange}
-				/>
-			);
-		}
+
 		if (q.que_type_id === 5) {
 			return (
-				<DragAndDropQuestion
-					questionId={q.question_id}
-					examId={examData?.ExamInfo?.[0]?.id}
-					userId={userId || 0}
-					answers={q.answers.map((a) => ({
-						answer_id: a.answer_id,
-						answer_name_html: a.answer_name_html || a.answer_name || "",
-					}))}
-					userAnswers={(selectedAnswers[q.question_id] as number[]) || []}
-					onOrderChange={(orderedIds) =>
-						handleAnswerChange(q.question_id, orderedIds)
-					}
-				/>
+				<>
+					{q.question_img && (
+						<QuestionImage src={q.question_img} alt="Асуултын зураг" />
+					)}
+					<DragAndDropQuestion
+						questionId={q.question_id}
+						examId={examData?.ExamInfo?.[0]?.id}
+						userId={userId || 0}
+						answers={q.answers.map((a) => ({
+							answer_id: a.answer_id,
+							answer_name_html: a.answer_name_html || a.answer_name || "",
+						}))}
+						userAnswers={(selectedAnswers[q.question_id] as number[]) || []}
+						onOrderChange={(orderedIds) =>
+							handleAnswerChange(q.question_id, orderedIds)
+						}
+					/>
+				</>
 			);
 		}
-		if (q.que_type_id === 6) {
-			return (
-				<MatchingByLine
-					answers={q.answers.map((a) => ({
-						refid: a.refid,
-						answer_id: a.answer_id,
-						question_id: a.question_id,
-						answer_name_html: a.answer_name_html,
-						answer_descr: a.answer_descr,
-						answer_img: a.answer_img || null,
-						ref_child_id: a.ref_child_id,
-						is_true: a.is_true,
-					}))}
-					onMatchChange={(matches) =>
-						handleAnswerChange(q.question_id, matches)
-					}
-					userAnswers={
-						(selectedAnswers[q.question_id] as Record<number, number>) || {}
-					}
-				/>
-			);
-		}
+
 		return null;
 	};
 
@@ -850,78 +878,24 @@ export default function SorilPage() {
 		);
 	}
 
-	if (isAutoFinishing) {
-		return (
-			<div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-				<div className="bg-white dark:bg-slate-900 rounded-2xl p-8 max-w-md mx-4 text-center shadow-2xl">
-					<Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-blue-600" />
-					<h3 className="text-2xl font-bold mb-2">
-						{examData.ExamInfo[0].exam_type === 1
-							? "Дадлага дууссан"
-							: "Шалгалт дууссан"}
-					</h3>
-					<p className="text-gray-600 dark:text-gray-400">
-						{examData.ExamInfo[0].exam_type === 1
-							? "Цаг дууссан тул дадлагыг автоматаар дуусгаж байна..."
-							: "Цаг дууссан тул шалгалтыг автоматаар дуусгаж байна..."}
-					</p>
-				</div>
-			</div>
-		);
-	}
-
 	const currentQuestion = allQuestions[currentQuestionIndex];
 
 	return (
 		<div className="min-h-screen">
+			{/* Exam Proctor - Зөрчил хянагч */}
+			{/* <AdvancedExamProctor
+				maxViolations={3}
+				strictMode={true}
+				enableFullscreen={true}
+				onSubmit={handleAutoSubmit}
+				onLogout={() => {
+					console.log("Хэрэглэгч гарлаа");
+				}}
+			/> */}
+
 			{saveError && (
 				<div className="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">
 					{saveError}
-				</div>
-			)}
-
-			{pendingAnswers.current.size > 0 && !isTimeUp && (
-				<div className="fixed bottom-6 right-6 z-50 lg:block hidden">
-					<Button
-						onClick={handleManualSave}
-						disabled={isSaving}
-						className="shadow-lg"
-						size="lg"
-					>
-						{isSaving ? (
-							<>
-								<Loader2 className="w-4 h-4 mr-2 animate-spin" />
-								Хадгалж байна...
-							</>
-						) : (
-							<>
-								<Save className="w-4 h-4 mr-2" />
-								Хадгалах ({pendingAnswers.current.size})
-							</>
-						)}
-					</Button>
-				</div>
-			)}
-
-			{pendingAnswers.current.size > 0 && !isTimeUp && (
-				<div className="lg:hidden fixed bottom-24 right-4 z-50">
-					<Button
-						onClick={handleManualSave}
-						disabled={isSaving}
-						className="shadow-xl rounded-full w-14 h-14 p-0"
-						size="icon"
-					>
-						{isSaving ? (
-							<Loader2 className="w-5 h-5 animate-spin" />
-						) : (
-							<div className="relative">
-								<Save className="w-5 h-5" />
-								<span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
-									{pendingAnswers.current.size}
-								</span>
-							</div>
-						)}
-					</Button>
 				</div>
 			)}
 
@@ -942,6 +916,7 @@ export default function SorilPage() {
 							{examData?.ExamInfo?.[0] && !isTimeUp && (
 								<div className="pt-6 flex justify-center">
 									<FinishExamResultDialog
+										ref={finishDialogRef}
 										examId={examData.ExamInfo[0].id}
 										examType={examData.ExamInfo[0].exam_type}
 										startEid={examData.ExamInfo[0].start_eid}
@@ -996,15 +971,40 @@ export default function SorilPage() {
 							</div>
 						))}
 					</main>
+
+					<aside className="col-span-1">
+						<div className="sticky top-6">
+							{examData?.ExamInfo?.[0] && (
+								<>
+									{/* 🔍 DEBUG LOG - Console дээр харах */}
+									{console.log("📊 ExamTimer Props:", {
+										examId: examData.ExamInfo[0].id,
+										startedDate: examData.ExamInfo[0].starteddate,
+										examMinutes: examData.ExamInfo[0].minut,
+										examStartTime: examData.ExamInfo[0].ognoo,
+									})}
+
+									<ExamTimer
+										examStartTime={examData.ExamInfo[0].ognoo}
+										examEndTime={examData.ExamInfo[0].end_time}
+										examMinutes={examData.ExamInfo[0].minut}
+										startedDate={examData.ExamInfo[0].starteddate}
+										onTimeUp={(timeUp) => setIsTimeUp(timeUp)}
+										onAutoFinish={() =>
+											finishDialogRef.current?.triggerFinish()
+										}
+									/>
+								</>
+							)}
+						</div>
+					</aside>
 				</div>
 			</div>
 
 			{/* Mobile Layout */}
 			<div className="lg:hidden min-h-screen flex flex-col">
-				{/* Compact Header with Timer and Minimap Button */}
 				<div className="sticky top-0 z-20 bg-white dark:bg-slate-900 shadow-sm border-b border-slate-200 dark:border-slate-700">
 					<div className="px-3 py-2">
-						{/* Timer Row */}
 						{examData?.ExamInfo?.[0] && (
 							<div className="flex items-center justify-between mb-2">
 								<div className="flex items-center gap-2">
@@ -1033,7 +1033,6 @@ export default function SorilPage() {
 							</div>
 						)}
 
-						{/* Compact Progress */}
 						<div className="flex items-center gap-2">
 							<div className="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
 								<div
@@ -1049,7 +1048,6 @@ export default function SorilPage() {
 					</div>
 				</div>
 
-				{/* Question Content */}
 				<div className="flex-1 overflow-y-auto px-3 py-3">
 					{currentQuestion && (
 						<Card
@@ -1106,10 +1104,8 @@ export default function SorilPage() {
 					)}
 				</div>
 
-				{/* Compact Bottom Navigation */}
 				<div className="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 shadow-lg">
 					<div className="px-3 py-2 space-y-2">
-						{/* Navigation Buttons */}
 						<div className="flex gap-2">
 							<Button
 								onClick={goToPreviousQuestion}
@@ -1131,7 +1127,6 @@ export default function SorilPage() {
 							</Button>
 						</div>
 
-						{/* Action Buttons */}
 						<div className="flex gap-2">
 							{pendingAnswers.current.size > 0 && !isTimeUp && (
 								<Button
@@ -1168,7 +1163,6 @@ export default function SorilPage() {
 					</div>
 				</div>
 
-				{/* Mobile Minimap Overlay */}
 				{showMobileMinimapOverlay && (
 					<ExamMinimap
 						totalCount={totalCount}
@@ -1183,6 +1177,30 @@ export default function SorilPage() {
 					/>
 				)}
 			</div>
+
+			{/* Save button - Desktop */}
+			{pendingAnswers.current.size > 0 && !isTimeUp && (
+				<div className="fixed bottom-6 right-6 z-50 lg:block hidden">
+					<Button
+						onClick={handleManualSave}
+						disabled={isSaving}
+						className="shadow-lg"
+						size="lg"
+					>
+						{isSaving ? (
+							<>
+								<Loader2 className="w-4 h-4 mr-2 animate-spin" />
+								Хадгалж байна...
+							</>
+						) : (
+							<>
+								<Save className="w-4 h-4 mr-2" />
+								Хадгалах ({pendingAnswers.current.size})
+							</>
+						)}
+					</Button>
+				</div>
+			)}
 
 			<FixedScrollButton />
 		</div>

@@ -142,7 +142,7 @@ export const finishExam = async (
 		"/examfinish",
 		data,
 	);
-	console.log("Exam finish response:", response);
+
 	return response;
 };
 // ===== Get Exam Results =====

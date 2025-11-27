@@ -14,7 +14,7 @@ import {
 	Zap,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { forwardRef, useImperativeHandle, useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -98,7 +98,8 @@ const FinishExamResultDialog = forwardRef<
 		const router = useRouter();
 		const [open, setOpen] = useState(false);
 		const [finishedTestId, setFinishedTestId] = useState<number | null>(null);
-		const [isAutoSubmitting, setIsAutoSubmitting] = useState(false); // ✅ Auto-submit state
+		const [isAutoSubmitting, setIsAutoSubmitting] = useState(false);
+		const autoRedirectTimerRef = useRef<NodeJS.Timeout | null>(null); // ✅ Auto-redirect timer // ✅ Auto-submit state
 
 		const isDadlaga = examType === 1;
 
@@ -107,25 +108,60 @@ const FinishExamResultDialog = forwardRef<
 			Error,
 			FinishExamRequest
 		>({
-			mutationFn: (payload) => finishExam(payload),
+			mutationFn: (payload) => {
+				console.log("📡 finishExam API дуудаж байна:", payload);
+				return finishExam(payload);
+			},
 			onSuccess: (res) => {
+				console.log("✅ finishExam API амжилттай:", res);
+
 				if (res.RetResponse.ResponseCode === "10") {
 					const testId = res.RetData;
+					console.log("✅ ResponseCode: 10, testId:", testId);
 
 					if (isDadlaga) {
+						console.log("✅ Дадлага амжилттай дууслаа");
 						toast.success("✅ Дадлага амжилттай дууслаа!");
 						setTimeout(() => {
 							router.push("/home");
 						}, 1500);
+						setIsAutoSubmitting(false);
+						return;
+					}
+
+					// ✅ Бүх тохиолдолд үр дүн харуулах
+					console.log("✅ Шалгалт амжилттай дууслаа - үр дүн харуулж байна");
+
+					if (isAutoSubmitting) {
+						toast.success("⏰ Цаг дууслаа. Шалгалт автоматаар дууслаа!");
 					} else {
 						toast.success("✅ Шалгалт амжилттай дууслаа");
-						if (testId) setFinishedTestId(testId);
 					}
+
+					if (testId) {
+						console.log("📊 finishedTestId set хийж байна:", testId);
+						setFinishedTestId(testId);
+
+						// ✅ Цаг дуусахад 5 секундийн дараа автоматаар examList руу шилжих
+						if (isAutoSubmitting) {
+							console.log("⏰ 5 секундийн дараа /Lists/examList руу шилжинэ");
+							autoRedirectTimerRef.current = setTimeout(() => {
+								console.log("🏠 /Lists/examList руу redirect хийж байна");
+								router.push("/Lists/examList");
+							}, 5000);
+						}
+					}
+
+					setIsAutoSubmitting(false);
 				} else {
+					console.error(
+						"❌ Finish exam failed:",
+						res.RetResponse.ResponseMessage,
+					);
 					toast.error(res.RetResponse.ResponseMessage);
 					setOpen(false);
+					setIsAutoSubmitting(false);
 				}
-				setIsAutoSubmitting(false); // ✅ Reset auto-submit state
 			},
 			onError: () => {
 				toast.error(
@@ -155,6 +191,8 @@ const FinishExamResultDialog = forwardRef<
 				toast.error("Хэрэглэгчийн мэдээлэл олдсонгүй");
 				return;
 			}
+
+			console.log("📤 finishMutation.mutate() дуудаж байна");
 
 			finishMutation.mutate({
 				exam_id: examId,
@@ -192,14 +230,18 @@ const FinishExamResultDialog = forwardRef<
 			: "0.00";
 
 		const handleCloseResults = () => {
+			// ✅ Cleanup timer
+			if (autoRedirectTimerRef.current) {
+				clearTimeout(autoRedirectTimerRef.current);
+			}
 			setFinishedTestId(null);
 			setOpen(false);
 		};
 
-		// ✅ Auto-submitting Loading State
-		if (isAutoSubmitting && !finishedTestId) {
+		// ✅ Auto-submitting Loading Dialog - зөвхөн API дуудаж байх үед
+		if (isAutoSubmitting && finishMutation.isPending) {
 			return (
-				<Dialog open={open} onOpenChange={() => {}}>
+				<Dialog open={true} onOpenChange={() => {}}>
 					<DialogTrigger asChild>
 						<Button className="w-full sm:w-auto px-4 sm:px-6 py-3 sm:py-4 font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all flex justify-center items-center gap-2">
 							<span className="hidden sm:inline">

@@ -13,8 +13,9 @@ import {
 	Menu,
 	Save,
 } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import FinishExamResultDialog, {
 	type FinishExamDialogHandle,
 } from "@/app/exam/component/finish";
@@ -28,9 +29,15 @@ import SingleSelectQuestion from "@/app/exam/component/question/singleSelect";
 import FixedScrollButton from "@/components/FixedScrollButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { deleteExamAnswer, getExamById, saveExamAnswer } from "@/lib/api";
+import {
+	deleteExamAnswer,
+	finishExam,
+	getExamById,
+	saveExamAnswer,
+} from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { AnswerValue } from "@/types/exam/exam";
+import { AdvancedExamProctor } from "../component/examguard";
 import ExamTimer from "../component/Itime";
 import QuestionImage from "../component/question/questionImage";
 
@@ -71,7 +78,7 @@ export default function ExamPage() {
 	const lastSavedAnswers = useRef<Map<number, AnswerValue>>(new Map());
 	const isSavingRef = useRef(false);
 	const AUTO_SAVE_DELAY = 1000;
-
+	const router = useRouter();
 	const {
 		data: examData,
 		isLoading,
@@ -440,43 +447,115 @@ export default function ExamPage() {
 		setIsSaving(false);
 	}, [examData, saveQuestion]);
 
-	// ========================
-	// AUTO SUBMIT HANDLER - одоо processPendingAnswers тодорхойлогдсоны дараа
-	// ========================
-	const handleAutoSubmit = useCallback(async () => {
-		// Давхар дуудагдахаас сэргийлэх
+	const _handleAutoSubmitWithAPI = useCallback(async () => {
 		if (hasAutoFinished.current || isAutoSubmitting.current) {
+			console.log("⚠️ Auto-submit аль хэдийн явагдаж байна");
 			return;
 		}
 
 		hasAutoFinished.current = true;
 		isAutoSubmitting.current = true;
 
-		console.log("🔴 Автоматаар дуусгаж байна...");
+		console.log("🔴 Цаг дууслаа - Автоматаар дуусгаж байна...");
 
 		try {
-			// Хадгалаагүй хариултуудыг эхлээд хадгална
+			const examInfo = examData?.ExamInfo?.[0];
+			if (!examInfo || !userId) {
+				console.error("❌ Exam info эсвэл userId олдсонгүй");
+				// Алдаа байсан ч /home руу явах
+				router.push("/home");
+				return;
+			}
+
+			// Pending answers хадгалах
 			if (pendingAnswers.current.size > 0) {
+				console.log(
+					`💾 ${pendingAnswers.current.size} хариулт хадгалж байна...`,
+				);
 				await processPendingAnswers();
 			}
 
-			// Dialog-оор автомат дуусгах
+			// API дуудах
+			console.log("📤 finishExam API дуудаж байна...");
+			const response = await finishExam({
+				exam_id: examInfo.id,
+				exam_type: examInfo.exam_type,
+				start_eid: examInfo.start_eid,
+				exam_time: examInfo.minut,
+				user_id: userId,
+			});
+
+			console.log("✅ finishExam амжилттай:", response);
+
+			// API амжилттай эсэхээс үл хамааран /home руу
+			toast.success("⏰ Цаг дууслаа!");
+			router.push("/home");
+		} catch (error) {
+			console.error("❌ Auto submit error:", error);
+			toast.error("Цаг дууслаа");
+			// Алдаа гарсан ч /home руу явна
+			router.push("/home");
+		}
+	}, [
+		processPendingAnswers,
+		examData,
+		userId, // Алдаа гарсан ч /home руу явна
+		router.push,
+	]);
+
+	// ========================
+	// AUTO SUBMIT HANDLER - одоо processPendingAnswers тодорхойлогдсоны дараа
+	// ========================
+	// ========================
+	// AUTO SUBMIT HANDLER - ЗАСВАРЛАСАН
+	// ========================
+	const handleAutoSubmit = useCallback(async () => {
+		// Давхар дуудагдахаас сэргийлэх
+		if (hasAutoFinished.current || isAutoSubmitting.current) {
+			console.log("⚠️ Auto-submit аль хэдийн явагдаж байна");
+			return;
+		}
+
+		hasAutoFinished.current = true;
+		isAutoSubmitting.current = true;
+
+		console.log("🔴 Цаг дууслаа - Автоматаар дуусгаж байна...");
+
+		try {
+			// ✅ STEP 1: Хадгалаагүй хариултуудыг эхлээд хадгална
+			if (pendingAnswers.current.size > 0) {
+				console.log(
+					`💾 ${pendingAnswers.current.size} хариулт хадгалж байна...`,
+				);
+				await processPendingAnswers();
+				console.log("✅ Бүх хариулт хадгалагдлаа");
+			}
+
+			// ✅ STEP 2: Exam type шалгаж, зөв параметр дамжуулах
+			const examInfo = examData?.ExamInfo?.[0];
+			if (!examInfo) {
+				console.error("❌ Exam info олдсонгүй");
+				return;
+			}
+
+			// ✅ STEP 3: Dialog-оор автомат дуусгах
+			console.log("📤 Шалгалт дуусгах API дуудаж байна...");
 			finishDialogRef.current?.triggerFinish();
 		} catch (error) {
-			console.error("Auto submit error:", error);
+			console.error("❌ Auto submit error:", error);
 			hasAutoFinished.current = false;
 			isAutoSubmitting.current = false;
 		}
-	}, [processPendingAnswers]);
+	}, [processPendingAnswers, examData]);
 
-	const formatTime = (sec: number) => {
+	const _formatTime = (sec: number) => {
 		const h = Math.floor(sec / 3600);
 		const m = Math.floor((sec % 3600) / 60);
 		const s = sec % 60;
 		return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 	};
 
-	const remainingSec = useMemo(() => {
+	const _remainingSec = useMemo(() => {
 		if (!examData?.ExamInfo?.[0]) return 0;
 		const totalSec = examData.ExamInfo[0].minut * 60;
 		if (!examData.ExamInfo[0].starteddate) return totalSec;
@@ -866,8 +945,7 @@ export default function ExamPage() {
 
 	return (
 		<div className="min-h-screen">
-			{/* Exam Proctor - Зөрчил хянагч */}
-			{/* <AdvancedExamProctor
+			<AdvancedExamProctor
 				maxViolations={3}
 				strictMode={true}
 				enableFullscreen={true}
@@ -875,7 +953,7 @@ export default function ExamPage() {
 				onLogout={() => {
 					console.log("Хэрэглэгч гарлаа");
 				}}
-			/> */}
+			/>
 
 			{saveError && (
 				<div className="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">
@@ -964,8 +1042,16 @@ export default function ExamPage() {
 									examEndTime={examData.ExamInfo[0].end_time}
 									examMinutes={examData.ExamInfo[0].minut}
 									startedDate={examData.ExamInfo[0].starteddate}
-									onTimeUp={(timeUp) => setIsTimeUp(timeUp)}
-									onAutoFinish={handleAutoSubmit} // ✅ Энэ callback дамжуулагдсан
+									onTimeUp={(timeUp) => {
+										console.log("⏰ onTimeUp дуудагдлаа:", timeUp);
+										setIsTimeUp(timeUp);
+									}}
+									onAutoFinish={() => {
+										console.log(
+											"🔥 onAutoFinish дуудагдлаа - handleAutoSubmit дуудах",
+										);
+										handleAutoSubmit();
+									}}
 								/>
 							)}
 						</div>
@@ -985,7 +1071,22 @@ export default function ExamPage() {
 									</div>
 									<div>
 										<div className="text-lg font-black text-green-600 dark:text-green-400 leading-none">
-											{formatTime(remainingSec)}
+											<ExamTimer
+												examStartTime={examData.ExamInfo[0].ognoo}
+												examEndTime={examData.ExamInfo[0].end_time}
+												examMinutes={examData.ExamInfo[0].minut}
+												startedDate={examData.ExamInfo[0].starteddate}
+												onTimeUp={(timeUp) => {
+													console.log("⏰ onTimeUp дуудагдлаа:", timeUp);
+													setIsTimeUp(timeUp);
+												}}
+												onAutoFinish={() => {
+													console.log(
+														"🔥 onAutoFinish дуудагдлаа - handleAutoSubmit дуудах",
+													);
+													handleAutoSubmit();
+												}}
+											/>
 										</div>
 										<div className="text-[10px] text-slate-500 dark:text-slate-400">
 											Үлдсэн хугацаа
