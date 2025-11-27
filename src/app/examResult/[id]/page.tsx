@@ -1,11 +1,13 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import parse from "html-react-parser";
 import { AlertCircle, ArrowLeft, CheckCircle, XCircle } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import UseAnimations from "react-useanimations";
 import loading2 from "react-useanimations/lib/loading2";
+import QuestionImage from "@/app/exam/component/question/questionImage";
 import { Button } from "@/components/ui/button";
 import { getExamResultMore } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -278,7 +280,27 @@ function ExamResultDetailPage() {
 														src={question.question_img}
 														alt="Question"
 														className="max-w-lg rounded-xl border-2 border-border shadow-lg"
+														width={400}
+														height={500}
 													/>
+
+													{question.source_img && (
+														<QuestionImage
+															src={question.source_img}
+															alt="source"
+														/>
+													)}
+
+													{/* Эх сурвалж name (HTML-тэй учраас parse ашиглана) */}
+													{question.source_name && (
+														<div className="text-sm text-gray-700 leading-relaxed">
+															{" "}
+															<span className="font-semibold">Эх сурвалж:</span>{" "}
+															<div className="mt-1">
+																{parse(question.source_name)}
+															</div>{" "}
+														</div>
+													)}
 												</div>
 											)}
 											<div className="flex items-center gap-2 mt-3">
@@ -359,6 +381,8 @@ function ExamResultDetailPage() {
 															src={answer.answer_img}
 															alt="Answer"
 															className="max-w-sm rounded-xl border-2 border-border shadow-lg"
+															width={600}
+															height={700}
 														/>
 													</div>
 												)}

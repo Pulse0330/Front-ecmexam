@@ -23,7 +23,7 @@ interface ExamCardProps extends ExamresultListCardProps {
 export const ExamCard: React.FC<ExamCardProps> = ({ exam, onViewRank }) => {
 	const router = useRouter();
 
-	const finished = exam.isfinished === 0;
+	const finished = exam.isfinished === 1;
 	const examDate = new Date(exam.Ognoo);
 
 	const formatDate = (date: Date) => {
@@ -194,7 +194,7 @@ export const ExamCard: React.FC<ExamCardProps> = ({ exam, onViewRank }) => {
 									%
 								</div>
 								<div className="text-sm text-muted-foreground font-semibold">
-									{exam.test_dun} оноо
+									{exam.test_perc} оноо
 								</div>
 							</div>
 						</div>

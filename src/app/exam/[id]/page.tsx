@@ -37,7 +37,6 @@ import {
 } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { AnswerValue } from "@/types/exam/exam";
-import { AdvancedExamProctor } from "../component/examguard";
 import ExamTimer from "../component/Itime";
 import QuestionImage from "../component/question/questionImage";
 
@@ -794,6 +793,28 @@ export default function ExamPage() {
 					{q.question_img && (
 						<QuestionImage src={q.question_img} alt="Асуултын зураг" />
 					)}
+					{(q.source_name || q.source_img) && (
+						<div className="mt-3 p-3 border rounded-lg bg-gray-50">
+							{/* Эх сурвалж зураг */}
+							{q.source_img && (
+								<img
+									src={q.source_img}
+									alt="source"
+									className="w-14 h-14 object-cover rounded-md mb-2"
+								/>
+							)}
+
+							{/* Эх сурвалж name (HTML-тэй учраас parse ашиглана) */}
+							{q.source_name && (
+								<div className="text-sm text-gray-700 leading-relaxed">
+									{" "}
+									<span className="font-semibold">Эх сурвалж:</span>{" "}
+									<div className="mt-1">{parse(q.source_name)}</div>{" "}
+								</div>
+							)}
+						</div>
+					)}
+
 					<SingleSelectQuestion
 						questionId={q.question_id}
 						questionText={q.question_name}
@@ -836,8 +857,8 @@ export default function ExamPage() {
 							selectedValues={
 								selectedAnswers[q.question_id] as Record<number, string>
 							}
-							onAnswerChange={
-								(qId, values) => handleAnswerChange(qId, values as AnswerValue) // ✅ Type assertion
+							onAnswerChange={(qId, values) =>
+								handleAnswerChange(qId, values as AnswerValue)
 							}
 						/>
 					)}
@@ -945,7 +966,7 @@ export default function ExamPage() {
 
 	return (
 		<div className="min-h-screen">
-			<AdvancedExamProctor
+			{/* <AdvancedExamProctor
 				maxViolations={3}
 				strictMode={true}
 				enableFullscreen={true}
@@ -953,7 +974,7 @@ export default function ExamPage() {
 				onLogout={() => {
 					console.log("Хэрэглэгч гарлаа");
 				}}
-			/>
+			/> */}
 
 			{saveError && (
 				<div className="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">
