@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Edit2, Send, XCircle } from "lucide-react";
+import { AlertCircle, Edit2, Send } from "lucide-react";
 import { type ChangeEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,20 +9,18 @@ import { Label } from "@/components/ui/label";
 interface FillInTheBlankQuestionProps {
 	questionId: number;
 	questionText: string;
-	correctAnswer?: string;
 	value?: string;
-	mode?: "exam" | "review";
 	onAnswerChange?: (questionId: number, answerText: string) => void;
 	readOnly?: boolean;
+	showValidation?: boolean;
 }
 
 export default function FillInTheBlankQuestion({
 	questionId,
-	correctAnswer,
 	value = "",
-	mode = "exam",
 	onAnswerChange,
 	readOnly = false,
+	showValidation = false,
 }: FillInTheBlankQuestionProps) {
 	const [answer, setAnswer] = useState<string>(value);
 	const [isSubmitted, setIsSubmitted] = useState<boolean>(!!value);
@@ -44,7 +42,10 @@ export default function FillInTheBlankQuestion({
 	};
 
 	const handleSubmit = () => {
-		if (!answer.trim()) return;
+		if (!answer.trim()) {
+			alert("⚠ Хариултаа бичээд дараа нь илгээх товч дарна уу!");
+			return;
+		}
 
 		setIsSubmitted(true);
 		setIsEditing(false);
@@ -60,24 +61,19 @@ export default function FillInTheBlankQuestion({
 		setIsSubmitted(false);
 	};
 
-	const isReviewMode = mode === "review";
-	const isCorrect =
-		isReviewMode && correctAnswer
-			? answer.trim().toLowerCase() === correctAnswer.trim().toLowerCase()
-			: null;
+	const isNotSubmitted = showValidation && !isSubmitted;
+	const hasAnswerButNotSubmitted = answer.trim() && !isSubmitted && isEditing;
 
-	const inputClassName = isReviewMode
-		? isCorrect === true
-			? "border-green-500 bg-green-50"
-			: isCorrect === false
-				? "border-red-500 bg-red-50"
-				: "border-gray-300 bg-gray-50"
-		: isSubmitted && !isEditing
-			? "border-blue-500 bg-blue-50"
-			: "border-primary/50 focus-visible:ring-primary";
+	const inputClassName = isNotSubmitted
+		? "border-red-500 bg-red-50"
+		: hasAnswerButNotSubmitted
+			? "border-red-500 border-2"
+			: isSubmitted && !isEditing
+				? "border-blue-500 bg-blue-50"
+				: "border-primary/50 focus-visible:ring-primary";
 
-	const canEdit = !readOnly && !isReviewMode;
-	const showSubmitButton = canEdit && isEditing && answer.trim();
+	const canEdit = !readOnly;
+	const showSubmitButton = canEdit && isEditing;
 	const showEditButton = canEdit && isSubmitted && !isEditing;
 
 	return (
@@ -87,7 +83,10 @@ export default function FillInTheBlankQuestion({
 					htmlFor={`input-${questionId}`}
 					className="text-sm font-medium text-gray-700"
 				>
-					{isReviewMode ? "Таны хариулт:" : "Хариултаа бичнэ үү:"}
+					Хариултаа бичнэ үү: <span className="text-red-600">*</span>
+					<span className="text-xs text-gray-500 ml-2">
+						(Заавал илгээх товч дарна уу)
+					</span>
 				</Label>
 
 				<div className="flex gap-2">
@@ -112,13 +111,9 @@ export default function FillInTheBlankQuestion({
 							}}
 						/>
 
-						{isReviewMode && isCorrect !== null && (
+						{isNotSubmitted && (
 							<div className="absolute right-3 top-1/2 -translate-y-1/2">
-								{isCorrect ? (
-									<CheckCircle2 className="w-5 h-5 text-green-600" />
-								) : (
-									<XCircle className="w-5 h-5 text-red-600" />
-								)}
+								<AlertCircle className="w-5 h-5 text-red-600" />
 							</div>
 						)}
 					</div>
@@ -129,6 +124,7 @@ export default function FillInTheBlankQuestion({
 							size="icon"
 							className="bg-primary hover:bg-primary/90"
 							title="Илгээх"
+							disabled={!answer.trim()}
 						>
 							<Send className="w-4 h-4" />
 						</Button>
@@ -147,20 +143,11 @@ export default function FillInTheBlankQuestion({
 					)}
 				</div>
 
-				{isSubmitted && !isEditing && !isReviewMode && <div></div>}
-
-				{isReviewMode && isCorrect === false && correctAnswer && (
-					<div className="p-3 bg-green-50 border border-green-200 rounded-md">
-						<p className="text-sm text-green-800">
-							<span className="font-semibold">Зөв хариулт:</span>{" "}
-							{correctAnswer}
+				{isNotSubmitted && (
+					<div className="p-3 bg-red-50 border border-red-200 rounded-md">
+						<p className="text-sm text-red-800 font-medium">
+							⚠ Хариултаа заавал илгээх шаардлагатай!
 						</p>
-					</div>
-				)}
-
-				{isReviewMode && isCorrect === true && (
-					<div className="p-3 bg-green-50 border border-green-200 rounded-md">
-						<p className="text-sm text-green-800 font-medium">✓ Зөв хариулт!</p>
 					</div>
 				)}
 			</div>

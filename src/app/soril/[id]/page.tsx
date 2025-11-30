@@ -783,7 +783,6 @@ export default function ExamPage() {
 							questionId={q.question_id}
 							questionText={q.question_name}
 							value={(selectedAnswers[q.question_id] as string) || ""}
-							mode="exam"
 							onAnswerChange={handleAnswerChange}
 						/>
 					)}

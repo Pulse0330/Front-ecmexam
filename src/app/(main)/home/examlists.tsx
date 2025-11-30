@@ -31,7 +31,7 @@ export default function ExamList({ exams }: ExamListProps) {
 
 				return (
 					<div
-						key={exam.exam_id}
+						key={`exam-${exam.exam_id}-${index}`} // ✅ ЗАСВАР: Combo key ашиглах
 						className={`group relative border rounded-2xl shadow-lg p-6 transition-all duration-500 overflow-hidden hover:shadow-2xl hover:-translate-y-1 ${
 							isActive
 								? "border-green-200 dark:border-green-800 bg-gradient-to-br from-white to-green-50/30 dark:from-gray-800 dark:to-green-900/10"
