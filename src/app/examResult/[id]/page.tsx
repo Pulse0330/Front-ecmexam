@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { getExamResultMore } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { ExamResponseMoreApiResponse } from "@/types/exam/examResultMore";
+import type {  Question, Answer, UserAnswer } from "@/types/exam/examResultMore";
 
 function ExamResultDetailPage() {
 	const params = useParams();
@@ -49,6 +50,7 @@ function ExamResultDetailPage() {
 		};
 		return types[typeId] || "Бусад";
 	};
+	
 
 	if (!userId) {
 		return (
@@ -114,12 +116,11 @@ function ExamResultDetailPage() {
 			</div>
 		);
 	}
-
-	const examSummary = data.RetDataFirst?.[0];
-	const questions = data.RetDataSecond;
-	const answers = data.RetDataThirt;
-	const userAnswers = data.RetDataFourth;
-
+const examSummary = data.RetDataFirst?.[0];
+const questions = data.RetDataSecond;    // ✅ ЗӨВ
+const answers = data.RetDataThirt;       // ✅ ЗӨВ
+const userAnswers = data.RetDataFourth;  // ✅ ЗӨВ
+	
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 py-8 px-4">
 			<div className="max-w-6xl mx-auto space-y-6">
