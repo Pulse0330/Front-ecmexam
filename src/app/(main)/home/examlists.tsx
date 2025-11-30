@@ -2,15 +2,18 @@
 
 import {
 	Calendar,
-	CheckCircle,
 	Clock,
 	CreditCard,
 	PlayCircle,
 	User,
 	XCircle,
+	ArrowRight,
+	Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import type { Exam } from "@/types/home";
 
 interface ExamListProps {
@@ -25,81 +28,104 @@ export default function ExamList({ exams }: ExamListProps) {
 	};
 
 	return (
-		<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+		<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
 			{exams.map((exam, index) => {
 				const isActive = exam.flag === 1;
 
 				return (
-					<div
-						key={`exam-${exam.exam_id}-${index}`} // ✅ ЗАСВАР: Combo key ашиглах
-						className={`group relative border rounded-2xl shadow-lg p-6 transition-all duration-500 overflow-hidden hover:shadow-2xl hover:-translate-y-1 ${
+					<Card
+						key={`exam-${exam.exam_id}-${index}`}
+						className={`relative overflow-hidden border-2 animate-fadeInUp ${
 							isActive
-								? "border-green-200 dark:border-green-800 bg-gradient-to-br from-white to-green-50/30 dark:from-gray-800 dark:to-green-900/10"
-								: "border-red-200 dark:border-red-800 bg-gradient-to-br from-white to-red-50/30 dark:from-gray-800 dark:to-red-900/10"
+								? "border-primary/20"
+								: "border-destructive/20 bg-muted/30"
 						}`}
-						style={{ animationDelay: `${index * 100}ms` }}
+						style={{ 
+							animationDelay: `${index * 100}ms`,
+							animationFillMode: 'forwards',
+						}}
 					>
-						{/* Background gradient orb */}
-						<div
-							className={`absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl -z-0 opacity-30 ${
-								isActive
-									? "bg-gradient-to-br from-green-400 to-emerald-400"
-									: "bg-gradient-to-br from-red-400 to-orange-400"
-							}`}
-						/>
+						{/* Background Orbs */}
+						<div className="absolute inset-0 pointer-events-none overflow-hidden">
+							<div
+								className={`absolute -top-24 -right-24 w-56 h-56 rounded-full blur-3xl opacity-20 ${
+									isActive
+										? "bg-gradient-to-r from-green-500/50 via-emerald-500 to-teal-500/50"
+										: "bg-gradient-to-br from-destructive/10 to-destructive/5"
+								}`}
+							/>
+							<div
+								className={`absolute -bottom-24 -left-24 w-48 h-48 rounded-full blur-3xl opacity-10 ${
+									isActive
+										? "bg-gradient-to-r from-green-500/50 via-emerald-500 to-teal-500/50"
+										: "bg-gradient-to-tr from-destructive/10 to-destructive/5"
+								}`}
+							/>
+						</div>
 
 						{/* Status Badge */}
-						<div className="absolute top-4 right-4 z-10">
-							<div
-								className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shadow-md ${
+						<div className="absolute top-0 right-0 z-20 overflow-hidden rounded-bl-2xl rounded-tr-2xl">
+							<Badge
+								variant={isActive ? "default" : "destructive"}
+								className={`shadow-xl backdrop-blur-md px-4 py-2 rounded-none border-0 ${
 									isActive
-										? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
-										: "bg-gradient-to-r from-red-500 to-orange-600 text-white"
+										? "bg-gradient-to-r from-green-500/50 via-emerald-500 to-teal-500/50"
+										: "bg-gradient-to-br from-destructive via-destructive/90 to-destructive/80"
 								}`}
 							>
 								{isActive ? (
 									<>
-										<CheckCircle className="w-3.5 h-3.5" />
-										<span>{exam.flag_name}</span>
+										<span className="font-bold text-sm">{exam.flag_name}</span>
+										<Sparkles className="w-3.5 h-3.5 ml-1.5" />
 									</>
 								) : (
 									<>
-										<XCircle className="w-3.5 h-3.5" />
-										<span>{exam.flag_name}</span>
+										<XCircle className="w-4 h-4 mr-1.5" />
+										<span className="font-bold text-sm">{exam.flag_name}</span>
 									</>
 								)}
-							</div>
+							</Badge>
 						</div>
 
-						{/* Content */}
-						<div className="relative z-10 space-y-4">
-							{/* Title */}
+						<CardHeader className="relative z-10 pb-4 pt-6">
 							<div className="pr-24">
-								<h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+								<h3
+									className={`text-xl font-bold line-clamp-2 leading-tight ${
+										isActive
+											? "text-foreground"
+											: "text-muted-foreground"
+									}`}
+								>
 									{exam.title}
 								</h3>
 							</div>
+						</CardHeader>
 
-							{/* Divider */}
-							<div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent" />
+						{/* Divider */}
+						<div className="mx-6 mb-4">
+							<div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+						</div>
 
-							{/* Details */}
-							<div className="space-y-3">
-								{/* Date & Time */}
-								<div className="flex items-center gap-3 text-gray-600 dark:text-gray-300">
-									<div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-										<Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+						<CardContent className="relative z-10 space-y-3 pb-4">
+							{/* Date & Time */}
+							<div className="group/item relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-blue-900/30 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 p-3.5">
+								<div className="absolute top-0 right-0 w-20 h-20 bg-blue-400/10 rounded-full blur-2xl" />
+								<div className="relative flex items-center gap-3">
+									<div className="p-2.5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg transition-transform duration-300 group-hover/item:scale-110 group-hover/item:rotate-3">
+										<Calendar className="w-5 h-5 text-white" />
 									</div>
 									<div className="flex-1 min-w-0">
-										<p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">
-											Огноо
+										<p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">
+											Огноо & Цаг
 										</p>
-										<p className="text-sm font-medium truncate">
+										<p className="text-sm font-bold text-foreground">
 											{new Date(exam.ognoo).toLocaleDateString("mn-MN", {
 												year: "numeric",
-												month: "2-digit",
-												day: "2-digit",
-											})}{" "}
+												month: "long",
+												day: "numeric",
+											})}
+										</p>
+										<p className="text-xs font-semibold text-blue-600 dark:text-blue-400 mt-0.5">
 											{new Date(exam.ognoo).toLocaleTimeString("mn-MN", {
 												hour: "2-digit",
 												minute: "2-digit",
@@ -107,90 +133,122 @@ export default function ExamList({ exams }: ExamListProps) {
 										</p>
 									</div>
 								</div>
+							</div>
 
+							{/* Duration & Teacher Grid */}
+							<div className="grid grid-cols-2 gap-3">
 								{/* Duration */}
-								<div className="flex items-center gap-3 text-gray-600 dark:text-gray-300">
-									<div className="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-lg">
-										<Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-									</div>
-									<div className="flex-1 min-w-0">
-										<p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">
+								<div className="group/item relative overflow-hidden rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 p-3">
+									<div className="absolute top-0 right-0 w-16 h-16 bg-purple-400/10 rounded-full blur-xl" />
+									<div className="relative">
+										<div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-md mb-2 inline-flex transition-transform duration-300 group-hover/item:scale-110 group-hover/item:rotate-3">
+											<Clock className="w-4 h-4 text-white" />
+										</div>
+										<p className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1">
 											Хугацаа
 										</p>
-										<p className="text-sm font-medium">
-											{exam.exam_minute} минут
+										<p className="text-lg font-black text-foreground">
+											{exam.exam_minute}
+											<span className="text-xs font-semibold text-purple-600 dark:text-purple-400 ml-1">
+												мин
+											</span>
 										</p>
 									</div>
 								</div>
 
 								{/* Teacher */}
-								<div className="flex items-center gap-3 text-gray-600 dark:text-gray-300">
-									<div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
-										<User className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-									</div>
-									<div className="flex-1 min-w-0">
-										<p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">
+								<div className="group/item relative overflow-hidden rounded-xl border-2 border-indigo-100 dark:border-indigo-900/30 bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-950/30 dark:to-indigo-900/20 p-3">
+									<div className="absolute top-0 right-0 w-16 h-16 bg-indigo-400/10 rounded-full blur-xl" />
+									<div className="relative">
+										<div className="p-2 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg shadow-md mb-2 inline-flex transition-transform duration-300 group-hover/item:scale-110 group-hover/item:rotate-3">
+											<User className="w-4 h-4 text-white" />
+										</div>
+										<p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">
 											Багш
 										</p>
-										<p className="text-sm font-medium truncate">
+										<p className="text-sm font-bold text-foreground truncate" title={exam.teach_name}>
 											{exam.teach_name}
 										</p>
 									</div>
 								</div>
+							</div>
 
-								{/* Payment */}
-								<div className="flex items-center gap-3 text-gray-600 dark:text-gray-300">
-									<div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg">
-										<CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+							{/* Payment */}
+							<div className="group/item relative overflow-hidden rounded-xl border-2 border-emerald-100 dark:border-emerald-900/30 bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 p-3.5">
+								<div className="absolute top-0 right-0 w-20 h-20 bg-emerald-400/10 rounded-full blur-2xl" />
+								<div className="relative flex items-center gap-3">
+									<div className="p-2.5 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-lg transition-transform duration-300 group-hover/item:scale-110 group-hover/item:rotate-3">
+										<CreditCard className="w-5 h-5 text-white" />
 									</div>
 									<div className="flex-1 min-w-0">
-										<p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">
-											Төлбөр
+										<p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1">
+											Төлбөрийн төрөл
 										</p>
-										<p className="text-sm font-medium truncate">
+										<p className="text-sm font-bold text-foreground truncate">
 											{exam.ispaydescr}
 										</p>
 									</div>
 								</div>
 							</div>
+						</CardContent>
 
-							{/* Action Button */}
-							<div className="pt-2">
-								{isActive ? (
-									<Button
-										onClick={() => handleStartExam(exam.exam_id)}
-										className="w-full py-3 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
-									>
-										<span className="flex items-center justify-center gap-2">
-											<PlayCircle className="w-5 h-5" />
-											Эхлүүлэх
-										</span>
-									</Button>
-								) : (
-									<Button
-										disabled
-										className="w-full py-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 text-gray-500 dark:text-gray-400 font-semibold rounded-xl shadow-inner cursor-not-allowed"
-									>
-										<span className="flex items-center justify-center gap-2">
-											<XCircle className="w-5 h-5" />
-											Идэвхгүй
-										</span>
-									</Button>
-								)}
-							</div>
-						</div>
+						<CardFooter className="relative z-10 pt-2 pb-6">
+							{isActive ? (
+								<Button
+									onClick={() => handleStartExam(exam.exam_id)}
+									className="group/button w-full h-14 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 text-white font-bold text-base shadow-lg rounded-xl"
+								>
+									<span className="flex items-center justify-center gap-2.5">
+										<PlayCircle className="w-5 h-5 transition-transform duration-300 group-hover/button:scale-110" />
+										<span className="text-base">{exam.flag_name}</span>
+										<ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover/button:translate-x-2" />
+									</span>
+								</Button>
+							) : (
+								<Button
+									disabled
+									variant="secondary"
+									className="w-full h-14 cursor-not-allowed bg-muted text-muted-foreground font-semibold text-base rounded-xl"
+								>
+									<span className="flex items-center justify-center gap-2">
+										<XCircle className="w-5 h-5" />
+										<span>Идэвхгүй байна</span>
+									</span>
+								</Button>
+							)}
+						</CardFooter>
 
-						{/* Bottom gradient accent */}
+						{/* Bottom Accent Line */}
 						<div
-							className={`absolute bottom-0 left-0 right-0 h-1 transition-all duration-500 ${
+							className={`absolute bottom-0 left-0 right-0 h-1.5 ${
 								isActive
-									? "bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 scale-x-0 group-hover:scale-x-100"
-									: "bg-gradient-to-r from-red-500 via-orange-500 to-pink-500 scale-x-100 opacity-30"
+									? "bg-gradient-to-r from-green-500/50 via-emerald-500 to-teal-500/50"
+									: "bg-gradient-to-r from-destructive/30 via-destructive/50 to-destructive/30 opacity-40"
 							}`}
 						/>
-					</div>
+					</Card>
 				);
 			})}
+			
+			<style jsx>{`
+				@keyframes fadeInUp {
+					from {
+						opacity: 0;
+						transform: translateY(20px);
+					}
+					to {
+						opacity: 1;
+						transform: translateY(0);
+					}
+				}
+				
+				.animate-fadeInUp {
+					animation-name: fadeInUp;
+					animation-duration: 0.6s;
+					animation-timing-function: ease-out;
+					opacity: 0;
+				}
+			`}</style>
 		</div>
 	);
 }

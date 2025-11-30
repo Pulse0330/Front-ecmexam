@@ -18,7 +18,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import FinishExamResultDialog, {
 	type FinishExamDialogHandle,
 } from "@/app/exam/component/finish";
-import ExamTimer from "@/app/exam/component/Itime";
+
 import ExamMinimap from "@/app/exam/component/minimap";
 import FillInTheBlankQuestion from "@/app/exam/component/question/fillblank";
 import MatchingByLine from "@/app/exam/component/question/matching";
@@ -983,16 +983,7 @@ export default function ExamPage() {
 										examStartTime: examData.ExamInfo[0].ognoo,
 									})}
 
-									<ExamTimer
-										examStartTime={examData.ExamInfo[0].ognoo}
-										examEndTime={examData.ExamInfo[0].end_time}
-										examMinutes={examData.ExamInfo[0].minut}
-										startedDate={examData.ExamInfo[0].starteddate}
-										onTimeUp={(timeUp) => setIsTimeUp(timeUp)}
-										onAutoFinish={() =>
-											finishDialogRef.current?.triggerFinish()
-										}
-									/>
+						
 								</>
 							)}
 						</div>
@@ -1006,19 +997,7 @@ export default function ExamPage() {
 					<div className="px-3 py-2">
 						{examData?.ExamInfo?.[0] && (
 							<div className="flex items-center justify-between mb-2">
-								<div className="flex items-center gap-2">
-									<div className="w-7 h-7 rounded-md bg-green-100 dark:bg-green-900/40 flex items-center justify-center flex-shrink-0">
-										<Clock className="w-4 h-4 text-green-600 dark:text-green-400" />
-									</div>
-									<div>
-										<div className="text-lg font-black text-green-600 dark:text-green-400 leading-none">
-											{formatTime(remainingSec)}
-										</div>
-										<div className="text-[10px] text-slate-500 dark:text-slate-400">
-											Үлдсэн хугацаа
-										</div>
-									</div>
-								</div>
+		
 
 								<Button
 									onClick={() => setShowMobileMinimapOverlay(true)}

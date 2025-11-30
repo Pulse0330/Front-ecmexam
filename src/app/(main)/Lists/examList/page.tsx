@@ -7,7 +7,7 @@ import {
 	DollarSign,
 	Search,
 	Sparkles,
-	X, // X icon-ыг expired-д ашиглана.
+	X,
 	Zap,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
@@ -47,9 +47,10 @@ export default function ExamListPage() {
 			return true;
 		});
 	}, [data]);
+
 	const skeletonIds = [1, 2, 3, 4, 5, 6];
 
-	// Server time ашиглан category-д ангилах
+	// ✅ ЗАСВАР: Server time ашиглан category-д зөв ангилах
 	const categorizedData = useMemo(() => {
 		if (!currentTime)
 			return {
@@ -60,39 +61,71 @@ export default function ExamListPage() {
 				expired: [],
 				now: new Date(),
 			};
+		
 		const now = currentTime;
 
 		return {
+			// ✅ Идэвхтэй: эхэлсэн, эрх нээлттэй (хугацаа дуусаагүй эсэхийг шалгахгүй)
 			active: uniqueData.filter((exam) => {
 				const start = new Date(exam.ognoo);
-				const end = new Date(start.getTime() + exam.exam_minute * 60000);
-				const canAccess =
-					exam.ispurchased === 1 || exam.ispaydescr === "Төлбөргүй";
-				return now >= start && now <= end && canAccess;
+				const canAccess = exam.ispurchased === 1 || exam.ispaydescr === "Төлбөргүй";
+				return now >= start && canAccess && exam.flag !== 3; // flag 3 = дууссан гэж үзье
 			}),
+			
+			// ✅ Удахгүй: хугацаа хараахан эхлээгүй
 			upcoming: uniqueData.filter((exam) => {
 				const start = new Date(exam.ognoo);
 				return now < start;
 			}),
-			free: uniqueData.filter((exam) => exam.ispaydescr === "Төлбөргүй"),
-			paid: uniqueData.filter(
-				(exam) => exam.ispaydescr === "Төлбөртэй" && exam.ispurchased === 0,
+			
+			// ✅ Төлбөргүй: бүх төлбөргүй шалгалтууд
+			free: uniqueData.filter((exam) => 
+				exam.ispaydescr === "Төлбөргүй"
 			),
+			
+			// ✅ Төлбөртэй: төлбөртэй боловч төлөгдөөгүй
+			paid: uniqueData.filter((exam) => 
+				exam.ispaydescr === "Төлбөртэй" && exam.ispurchased === 0
+			),
+			
+			// ✅ Дууссан: flag === 3 эсвэл flag_name === "Хугацаа дууссан"
 			expired: uniqueData.filter((exam) => {
-				const start = new Date(exam.ognoo);
-				const end = new Date(start.getTime() + exam.exam_minute * 60000);
-				return now > end;
+				return exam.flag === 3 || exam.flag_name === "Хугацаа дууссан";
 			}),
+			
 			now,
 		};
 	}, [uniqueData, currentTime]);
 
+	// ✅ ЗАСВАР: Filter логикийг илүү тодорхой болгох
 	const filteredData = useMemo(() => {
-		const exams: ExamlistsData[] =
-			selectedCategory === "all"
-				? uniqueData
-				: categorizedData[selectedCategory] || [];
+		let exams: ExamlistsData[] = [];
+		
+		// Сонгосон категорийн дагуу шүүх
+		switch (selectedCategory) {
+			case "all":
+				exams = uniqueData;
+				break;
+			case "active":
+				exams = categorizedData.active;
+				break;
+			case "upcoming":
+				exams = categorizedData.upcoming;
+				break;
+			case "free":
+				exams = categorizedData.free;
+				break;
+			case "paid":
+				exams = categorizedData.paid;
+				break;
+			case "expired":
+				exams = categorizedData.expired;
+				break;
+			default:
+				exams = uniqueData;
+		}
 
+		// Хайлтын шүүлтүүр
 		if (!searchTerm.trim()) return exams;
 
 		return exams.filter((exam) =>
@@ -102,7 +135,16 @@ export default function ExamListPage() {
 
 	const clearSearch = () => setSearchTerm("");
 
-	if (isTimeLoading) return <div>Loading server time...</div>;
+	if (isTimeLoading) {
+		return (
+			<div className="min-h-screen flex items-center justify-center">
+				<div className="text-center space-y-2">
+					<div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+					<p className="text-gray-600 dark:text-gray-400">Уншиж байна...</p>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="min-h-screen flex flex-col py-4 px-3 sm:px-6 overflow-auto">
@@ -133,17 +175,18 @@ export default function ExamListPage() {
 							className="w-full pl-10 pr-8 py-2.5 rounded-2xl border-2 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-sm sm:text-base text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
 						/>
 						{searchTerm && (
-							<Button
+							<button
+								type="button"
 								onClick={clearSearch}
 								className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
 								aria-label="Хайлт цэвэрлэх"
 							>
 								<X size={16} />
-							</Button>
+							</button>
 						)}
 					</div>
 
-					{/* Filter Badges - 🟡 "expired" категори нэмэгдсэн */}
+					{/* Filter Badges */}
 					<div className="flex flex-wrap gap-2 justify-center sm:justify-end">
 						{[
 							{
@@ -177,7 +220,6 @@ export default function ExamListPage() {
 								count: categorizedData.paid.length,
 							},
 							{
-								// ✅ ШИНЭ: Дууссан шалгалтууд
 								key: "expired",
 								label: "Дууссан",
 								icon: <X size={14} />,
@@ -251,7 +293,7 @@ const EmptyState = ({ searchTerm }: { searchTerm: string }) => (
 			</h3>
 			<p className="text-gray-500 dark:text-gray-400 max-w-md">
 				{searchTerm
-					? `&ldquo;${searchTerm}&rdquo; гэсэн хайлтаар шалгалт олдсонгүй. Өөр түлхүүр үг ашиглаж үзнэ үү.`
+					? `"${searchTerm}" гэсэн хайлтаар шалгалт олдсонгүй. Өөр түлхүүр үг ашиглаж үзнэ үү.`
 					: "Энэ категорид шалгалт байхгүй байна."}
 			</p>
 		</div>
@@ -285,7 +327,7 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(
 					return "bg-gradient-to-r from-cyan-500 to-blue-500 text-white border-2 border-cyan-500 shadow-lg shadow-cyan-500/30";
 				case "paid":
 					return "bg-gradient-to-r from-rose-500 to-red-500 text-white border-2 border-rose-500 shadow-lg shadow-rose-500/30";
-				case "expired": // ✅ ШИНЭ: Дууссан шалгалтын загвар
+				case "expired":
 					return "bg-gradient-to-r from-gray-500 to-slate-500 text-white border-2 border-gray-500 shadow-lg shadow-gray-500/30";
 				default:
 					return "";
@@ -293,7 +335,8 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(
 		};
 
 		return (
-			<Button
+			<button
+				type="button"
 				onClick={onClick}
 				className={cn(
 					"inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200",
@@ -315,7 +358,7 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(
 				>
 					{count}
 				</span>
-			</Button>
+			</button>
 		);
 	},
 );

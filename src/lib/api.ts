@@ -161,7 +161,7 @@ export const getExamResultMore = async (
 	userId: number,
 ): Promise<ExamResponseMoreApiResponse> => {
 	const { data } = await api.post<ExamResponseMoreApiResponse>(
-		"/getexamresultmore",
+		"/resexammore",
 		{
 			test_id: testId,
 			exam_id: examId,

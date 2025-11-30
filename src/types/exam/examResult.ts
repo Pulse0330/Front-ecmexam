@@ -8,6 +8,7 @@ export interface ExamResultItem {
 	test_ttl: number;
 	correct_ttl: number;
 	wrong_ttl: number;
+	not_answer: number; // ✅ Нэмсэн
 	ttl_point: number;
 	point: number;
 	point_perc: number;

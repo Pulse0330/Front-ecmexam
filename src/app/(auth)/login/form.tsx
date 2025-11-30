@@ -105,13 +105,7 @@ export function LoginForm() {
 								<FormItem>
 									<div className="flex items-center">
 										<FormLabel>Нууц үг</FormLabel>
-										<Button
-											asChild
-											variant="link"
-											className="ml-auto p-0 h-auto text-sm"
-										>
-											<Link href="/forgot">Нууц үг мартсан?</Link>
-										</Button>
+									
 									</div>
 									<FormControl>
 										<Input
@@ -122,13 +116,22 @@ export function LoginForm() {
 										/>
 									</FormControl>
 									<FormMessage />
+								
 								</FormItem>
+								
 							)}
 						/>
 						<Button type="submit" className="w-full" disabled={isPending}>
 							{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
 							{isPending ? "Нэвтэрч байна..." : "Нэвтрэх"}
 						</Button>
+								<Button
+											asChild
+											variant="link"
+											className="ml-auto p-0 h-auto text-sm"
+										>
+											<Link href="/forgot">Нууц үг мартсан?</Link>
+										</Button>
 					</CardContent>
 				</form>
 			</Form>

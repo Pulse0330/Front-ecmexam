@@ -101,7 +101,7 @@ const FinishExamResultDialog = forwardRef<
 		const [isAutoSubmitting, setIsAutoSubmitting] = useState(false);
 		const autoRedirectTimerRef = useRef<NodeJS.Timeout | null>(null); // ✅ Auto-redirect timer // ✅ Auto-submit state
 
-		const isDadlaga = examType === 1;
+		const isDadlaga = examType === 1 || examType ==2;
 
 		const finishMutation = useMutation<
 			FinishExamResponse,
@@ -113,42 +113,39 @@ const FinishExamResultDialog = forwardRef<
 				return finishExam(payload);
 			},
 			onSuccess: (res) => {
-				console.log("✅ finishExam API амжилттай:", res);
+			;
 
 				if (res.RetResponse.ResponseCode === "10") {
 					const testId = res.RetData;
-					console.log("✅ ResponseCode: 10, testId:", testId);
+					
 
 					if (isDadlaga) {
-						console.log("✅ Дадлага амжилттай дууслаа");
-						toast.success("✅ Дадлага амжилттай дууслаа!");
+					
+						toast.success("✅ Шалгалт амжилттай дууслаа!");
 						setTimeout(() => {
-							router.push("/home");
+							router.push("/Lists/examResult");
 						}, 1500);
 						setIsAutoSubmitting(false);
 						return;
 					}
 
-					// ✅ Бүх тохиолдолд үр дүн харуулах
-					console.log("✅ Шалгалт амжилттай дууслаа - үр дүн харуулж байна");
-
 					if (isAutoSubmitting) {
-						toast.success("⏰ Цаг дууслаа. Шалгалт автоматаар дууслаа!");
+						toast.success(" Цаг дууслаа. Шалгалт автоматаар дууслаа!");
 					} else {
 						toast.success("✅ Шалгалт амжилттай дууслаа");
 					}
 
 					if (testId) {
-						console.log("📊 finishedTestId set хийж байна:", testId);
+						
 						setFinishedTestId(testId);
 
 						// ✅ Цаг дуусахад 5 секундийн дараа автоматаар examList руу шилжих
 						if (isAutoSubmitting) {
-							console.log("⏰ 5 секундийн дараа /Lists/examList руу шилжинэ");
+
 							autoRedirectTimerRef.current = setTimeout(() => {
-								console.log("🏠 /Lists/examList руу redirect хийж байна");
-								router.push("/Lists/examList");
-							}, 5000);
+								
+								router.push("/Lists/examResult");
+							}, 500);
 						}
 					}
 
@@ -166,11 +163,12 @@ const FinishExamResultDialog = forwardRef<
 			onError: () => {
 				toast.error(
 					isDadlaga
-						? "Дадлага дуусгах үед алдаа гарлаа"
+						? "Шалгалт дуусгах үед алдаа гарлаа"
 						: "Шалгалт дуусгах үед алдаа гарлаа",
 				);
 				setOpen(false);
-				setIsAutoSubmitting(false); // ✅ Reset auto-submit state
+                router.push("/Lists/examResult");
+				
 			},
 		});
 
@@ -245,7 +243,7 @@ const FinishExamResultDialog = forwardRef<
 					<DialogTrigger asChild>
 						<Button className="w-full sm:w-auto px-4 sm:px-6 py-3 sm:py-4 font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all flex justify-center items-center gap-2">
 							<span className="hidden sm:inline">
-								{isDadlaga ? "Дадлага дуусгах" : "Шалгалт дуусгах"}
+								{isDadlaga ? "Шалгалт дуусгах" : "Шалгалт дуусгах"}
 							</span>
 							<span className="sm:hidden">Дуусгах</span>
 							<Send className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -466,7 +464,7 @@ const FinishExamResultDialog = forwardRef<
 				<DialogTrigger asChild>
 					<Button className="w-full sm:w-auto px-4 sm:px-6 py-3 sm:py-4 font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all flex justify-center items-center gap-2">
 						<span className="hidden sm:inline">
-							{isDadlaga ? "Дадлага дуусгах" : "Шалгалт дуусгах"}
+							{isDadlaga ? "Шалгалт дуусгах" : "Шалгалт дуусгах"}
 						</span>
 						<span className="sm:hidden">Дуусгах</span>
 						<Send className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -479,11 +477,11 @@ const FinishExamResultDialog = forwardRef<
 							<Flag className="w-7 h-7 sm:w-8 sm:h-8 text-blue-600 dark:text-blue-400" />
 						</div>
 						<DialogTitle className="text-xl sm:text-2xl font-bold px-2">
-							{isDadlaga ? "Дадлага дуусгах уу?" : "Шалгалт дуусгах уу?"}
+							{isDadlaga ? "Шалгалт дуусгах уу?" : "Шалгалт дуусгах уу?"}
 						</DialogTitle>
 						<DialogDescription className="text-sm px-2">
 							{isDadlaga
-								? "Дуусгасны дараа дадлага дууссан тул нүүр хуудас руу шилжих болно."
+								? "Дуусгасны дараа шалгалт дууссан тул нүүр хуудас руу шилжих болно."
 								: "Дуусгасны дараа хариултуудыг өөрчлөх боломжгүй болно."}
 						</DialogDescription>
 					</DialogHeader>
@@ -567,14 +565,7 @@ const FinishExamResultDialog = forwardRef<
 					</div>
 
 					<DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
-						<Button
-							variant="outline"
-							onClick={() => setOpen(false)}
-							disabled={finishMutation.isPending}
-							className="w-full font-semibold h-11 sm:h-12 order-2 sm:order-1"
-						>
-							Үгүй, буцах
-						</Button>
+				
 						<Button
 							onClick={handleFinish}
 							disabled={finishMutation.isPending}
