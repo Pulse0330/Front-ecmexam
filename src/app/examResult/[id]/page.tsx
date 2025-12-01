@@ -383,138 +383,141 @@ function ExamResultDetailPage() {
 
 <div className="space-y-4 pl-14">
 	{/* Type 1 & 2: Single/Multiple Choice */}
-	{(question.que_type_id === 1 || question.que_type_id === 2) && (
-		<>
-			{questionAnswers.length === 0 ? (
-				<p className="text-sm text-muted-foreground">Хариулт олдсонгүй</p>
-			) : (
-				<div className="space-y-4">
-					{userSelectedAnswers.length === 0 && (
-						<div className="relative overflow-hidden">
-							<div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent" />
-							<div className="relative p-5 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border-2 border-orange-400 dark:border-orange-600 rounded-2xl shadow-sm">
-								<div className="flex items-center gap-4">
-									<div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center shadow-lg">
-										<AlertCircle className="w-6 h-6 text-white" />
-									</div>
-									<div>
-										<p className="font-bold text-orange-800 dark:text-orange-300 text-base">
-											Хариулаагүй байна
-										</p>
-										<p className="text-sm text-orange-600 dark:text-orange-400">
-											Та энэ асуултад хариулт өгөөгүй байна
-										</p>
-									</div>
+	{/* Type 1 & 2: Single/Multiple Choice */}
+{/* Type 1 & 2: Single/Multiple Choice */}
+{(question.que_type_id === 1 || question.que_type_id === 2) && (
+	<>
+		{questionAnswers.length === 0 ? (
+			<p className="text-sm text-muted-foreground">Хариулт олдсонгүй</p>
+		) : (
+			<div className="space-y-4">
+				{/* Warning if not answered */}
+				{userSelectedAnswers.length === 0 && (
+					<div className="relative overflow-hidden">
+						<div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent" />
+						<div className="relative p-5 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border-2 border-orange-400 dark:border-orange-600 rounded-2xl shadow-sm">
+							<div className="flex items-center gap-4">
+								<div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center shadow-lg">
+									<AlertCircle className="w-6 h-6 text-white" />
+								</div>
+								<div>
+									<p className="font-bold text-orange-800 dark:text-orange-300 text-base">
+										Хариулаагүй байна
+									</p>
+									<p className="text-sm text-orange-600 dark:text-orange-400">
+										Та энэ асуултад хариулт өгөөгүй байна. Доор зөв хариулт харуулав.
+									</p>
 								</div>
 							</div>
 						</div>
-					)}
-					
-					<div className="space-y-3">
-						{questionAnswers.map((answer, idx) => {
-							const isCorrect = answer.is_true === 1;
-							const isUserSelected = userSelectedAnswers.some(ua => ua.answer_id === answer.answer_id);
-							const isWrongSelection = isUserSelected && !isCorrect;
-							const showCorrectAnswer = isCorrect && !isQuestionCorrect && userSelectedAnswers.length > 0;
-							const isHighlighted = showCorrectAnswer || isUserSelected;
-							
-							return (
+					</div>
+				)}
+				
+				{/* Show ALL answers */}
+				<div className="space-y-3">
+					<p className="text-sm font-semibold text-muted-foreground mb-2">
+						Бүх хариултууд:
+					</p>
+					{questionAnswers.map((answer, idx) => {
+						const isCorrect = answer.is_true === 1;
+						const isUserSelected = userSelectedAnswers.some(ua => ua.answer_id === answer.answer_id);
+						const isWrongSelection = isUserSelected && !isCorrect;
+						
+						return (
+							<div
+								key={answer.answer_id}
+								className="group relative overflow-hidden transition-all duration-300"
+							>
+								{isCorrect && (
+									<div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent" />
+								)}
+								{isWrongSelection && (
+									<div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-red-500/5 to-transparent" />
+								)}
+								
 								<div
-									key={answer.answer_id}
-									className={`group relative overflow-hidden transition-all duration-300 ${
-										isHighlighted ? 'scale-[1.02]' : ''
+									className={`relative flex items-start gap-4 p-5 rounded-2xl border-2 transition-all duration-300 ${
+										isCorrect
+											? 'border-emerald-400 dark:border-emerald-600 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/30 shadow-lg shadow-emerald-500/10'
+											: isWrongSelection
+											? 'border-red-400 dark:border-red-600 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/40 dark:to-rose-950/30 shadow-lg shadow-red-500/10'
+											: 'border-border bg-card/50'
 									}`}
 								>
-									{(showCorrectAnswer || (isUserSelected && isCorrect)) && (
-										<div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent" />
-									)}
-									{isWrongSelection && (
-										<div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-red-500/5 to-transparent" />
-									)}
-									
-									<div
-										className={`relative flex items-start gap-4 p-5 rounded-2xl border-2 transition-all duration-300 ${
-											showCorrectAnswer || (isUserSelected && isCorrect)
-												? 'border-emerald-400 dark:border-emerald-600 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/30 shadow-lg shadow-emerald-500/10'
+									<div className="flex flex-col items-center gap-2">
+										<div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-colors ${
+											isCorrect
+												? 'bg-emerald-500 text-white'
 												: isWrongSelection
-												? 'border-red-400 dark:border-red-600 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/40 dark:to-rose-950/30 shadow-lg shadow-red-500/10'
-												: 'border-border bg-card/50'
-										}`}
-									>
-										<div className="flex flex-col items-center gap-2">
-											<div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-colors ${
-												showCorrectAnswer || (isUserSelected && isCorrect)
-													? 'bg-emerald-500 text-white'
-													: isWrongSelection
-													? 'bg-red-500 text-white'
-													: 'bg-muted text-muted-foreground'
-											}`}>
-												{String.fromCharCode(65 + idx)}
-											</div>
-											
-											<div className="flex-shrink-0">
-												{showCorrectAnswer || (isUserSelected && isCorrect) ? (
-													<div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
-														<CheckCircle className="w-6 h-6 text-white" />
-													</div>
-												) : isWrongSelection ? (
-													<div className="w-10 h-10 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg">
-														<XCircle className="w-6 h-6 text-white" />
-													</div>
-												) : (
-													<div className="w-10 h-10 rounded-xl border-2 border-dashed border-muted-foreground/30" />
-												)}
-											</div>
-										</div>
-										
-										<div className="flex-1 min-w-0">
-											<div className={`text-base leading-relaxed ${
-												isHighlighted ? 'font-medium' : ''
-											}`}>
-												{answer.answer_name_html && answer.answer_name_html.trim() !== '' ? (
-													safeParse(answer.answer_name_html)
-												) : answer.answer_name && answer.answer_name.trim() !== '' ? (
-													safeParse(answer.answer_name)
-												) : answer.answer_img && answer.answer_img.trim() !== '' ? (
-													<Image
-														src={answer.answer_img}
-														alt="Answer"
-														width={300}
-														height={200}
-														className="rounded-xl shadow-md mt-2"
-													/>
-												) : (
-													'Хариулт байхгүй'
-												)}
-											</div>
+												? 'bg-red-500 text-white'
+												: 'bg-muted text-muted-foreground'
+										}`}>
+											{String.fromCharCode(65 + idx)}
 										</div>
 										
 										<div className="flex-shrink-0">
-											{isUserSelected && isCorrect && (
-												<div className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl shadow-lg font-bold text-sm">
-													✓ Зөв
+											{isCorrect ? (
+												<div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
+													<CheckCircle className="w-6 h-6 text-white" />
 												</div>
-											)}
-											{isWrongSelection && (
-												<div className="px-4 py-2 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl shadow-lg font-bold text-sm">
-													✗ Буруу
+											) : isWrongSelection ? (
+												<div className="w-10 h-10 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg">
+													<XCircle className="w-6 h-6 text-white" />
 												</div>
-											)}
-											{showCorrectAnswer && (
-												<div className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl shadow-lg font-bold text-sm">
-													★ Зөв хариулт
-												</div>
+											) : (
+												<div className="w-10 h-10 rounded-xl border-2 border-dashed border-muted-foreground/30" />
 											)}
 										</div>
 									</div>
+									
+									<div className="flex-1 min-w-0">
+										<div className={`text-base leading-relaxed ${
+											isCorrect || isUserSelected ? 'font-medium' : ''
+										}`}>
+											{answer.answer_name_html && answer.answer_name_html.trim() !== '' ? (
+												safeParse(answer.answer_name_html)
+											) : answer.answer_name && answer.answer_name.trim() !== '' ? (
+												safeParse(answer.answer_name)
+											) : answer.answer_img && answer.answer_img.trim() !== '' ? (
+												<Image
+													src={answer.answer_img}
+													alt="Answer"
+													width={300}
+													height={200}
+													className="rounded-xl shadow-md mt-2"
+												/>
+											) : (
+												'Хариулт байхгүй'
+											)}
+										</div>
+									</div>
+									
+									<div className="flex-shrink-0">
+										{isUserSelected && isCorrect && (
+											<div className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl shadow-lg font-bold text-sm">
+												✓ Та зөв сонгосон
+											</div>
+										)}
+										{isWrongSelection && (
+											<div className="px-4 py-2 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl shadow-lg font-bold text-sm">
+												✗ Та буруу сонгосон
+											</div>
+										)}
+										{isCorrect && !isUserSelected && (
+											<div className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl shadow-lg font-bold text-sm">
+												★ Зөв хариулт
+											</div>
+										)}
+									</div>
 								</div>
-							);
-						})}
-					</div>
+							</div>
+						);
+					})}
 				</div>
-			)}
-		</>
-	)}
+			</div>
+		)}
+	</>
+)}
 
 {/* Type 3: Number Input */}
 {question.que_type_id === 3 && (
