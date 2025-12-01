@@ -382,8 +382,7 @@ function ExamResultDetailPage() {
 									</div>
 
 <div className="space-y-4 pl-14">
-	{/* Type 1 & 2: Single/Multiple Choice */}
-	{/* Type 1 & 2: Single/Multiple Choice */}
+
 {/* Type 1 & 2: Single/Multiple Choice */}
 {(question.que_type_id === 1 || question.que_type_id === 2) && (
 	<>
@@ -391,7 +390,8 @@ function ExamResultDetailPage() {
 			<p className="text-sm text-muted-foreground">Хариулт олдсонгүй</p>
 		) : (
 			<div className="space-y-4">
-				{/* Warning if not answered */}
+
+				{/* Хариулаагүй үед анхааруулга */}
 				{userSelectedAnswers.length === 0 && (
 					<div className="relative overflow-hidden">
 						<div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent" />
@@ -405,119 +405,119 @@ function ExamResultDetailPage() {
 										Хариулаагүй байна
 									</p>
 									<p className="text-sm text-orange-600 dark:text-orange-400">
-										Та энэ асуултад хариулт өгөөгүй байна. Доор зөв хариулт харуулав.
+										Та энэ асуултад хариулт хийгээгүй байна.
 									</p>
 								</div>
 							</div>
 						</div>
 					</div>
 				)}
-				
-				{/* Show ALL answers */}
+
+				{/* Бүх хариултууд */}
 				<div className="space-y-3">
 					<p className="text-sm font-semibold text-muted-foreground mb-2">
 						Бүх хариултууд:
 					</p>
+
 					{questionAnswers.map((answer, idx) => {
-						const isCorrect = answer.is_true === 1;
-						const isUserSelected = userSelectedAnswers.some(ua => ua.answer_id === answer.answer_id);
-						const isWrongSelection = isUserSelected && !isCorrect;
-						
+						const isUserSelected = userSelectedAnswers.some(
+							ua => ua.answer_id === answer.answer_id
+						);
+
 						return (
 							<div
 								key={answer.answer_id}
-								className="group relative overflow-hidden transition-all duration-300"
+								className={`relative flex items-start gap-4 p-5 rounded-2xl border-2 transition-all duration-300 ${
+									isUserSelected
+										? "border-blue-400 bg-blue-50 dark:border-blue-600 dark:bg-blue-900/20"
+										: "border-border bg-card/50"
+								}`}
 							>
-								{isCorrect && (
-									<div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent" />
-								)}
-								{isWrongSelection && (
-									<div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-red-500/5 to-transparent" />
-								)}
-								
-								<div
-									className={`relative flex items-start gap-4 p-5 rounded-2xl border-2 transition-all duration-300 ${
-										isCorrect
-											? 'border-emerald-400 dark:border-emerald-600 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/30 shadow-lg shadow-emerald-500/10'
-											: isWrongSelection
-											? 'border-red-400 dark:border-red-600 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/40 dark:to-rose-950/30 shadow-lg shadow-red-500/10'
-											: 'border-border bg-card/50'
-									}`}
-								>
-									<div className="flex flex-col items-center gap-2">
-										<div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-colors ${
-											isCorrect
-												? 'bg-emerald-500 text-white'
-												: isWrongSelection
-												? 'bg-red-500 text-white'
-												: 'bg-muted text-muted-foreground'
-										}`}>
-											{String.fromCharCode(65 + idx)}
-										</div>
-										
-										<div className="flex-shrink-0">
-											{isCorrect ? (
-												<div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
-													<CheckCircle className="w-6 h-6 text-white" />
-												</div>
-											) : isWrongSelection ? (
-												<div className="w-10 h-10 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg">
-													<XCircle className="w-6 h-6 text-white" />
-												</div>
-											) : (
-												<div className="w-10 h-10 rounded-xl border-2 border-dashed border-muted-foreground/30" />
-											)}
-										</div>
+								{/* A B C D тэмдэглэгээ */}
+								<div className="flex flex-col items-center gap-2">
+									<div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
+										isUserSelected
+											? "bg-blue-500 text-white"
+											: "bg-muted text-muted-foreground"
+									}`}>
+										{String.fromCharCode(65 + idx)}
 									</div>
-									
-									<div className="flex-1 min-w-0">
-										<div className={`text-base leading-relaxed ${
-											isCorrect || isUserSelected ? 'font-medium' : ''
-										}`}>
-											{answer.answer_name_html && answer.answer_name_html.trim() !== '' ? (
-												safeParse(answer.answer_name_html)
-											) : answer.answer_name && answer.answer_name.trim() !== '' ? (
-												safeParse(answer.answer_name)
-											) : answer.answer_img && answer.answer_img.trim() !== '' ? (
-												<Image
-													src={answer.answer_img}
-													alt="Answer"
-													width={300}
-													height={200}
-													className="rounded-xl shadow-md mt-2"
-												/>
-											) : (
-												'Хариулт байхгүй'
-											)}
-										</div>
-									</div>
-									
-									<div className="flex-shrink-0">
-										{isUserSelected && isCorrect && (
-											<div className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl shadow-lg font-bold text-sm">
-												✓ Та зөв сонгосон
-											</div>
-										)}
-										{isWrongSelection && (
-											<div className="px-4 py-2 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl shadow-lg font-bold text-sm">
-												✗ Та буруу сонгосон
-											</div>
-										)}
-										{isCorrect && !isUserSelected && (
-											<div className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl shadow-lg font-bold text-sm">
-												★ Зөв хариулт
-											</div>
+								</div>
+
+								{/* Хариултын текст / зураг */}
+								<div className="flex-1 min-w-0">
+									<div className="text-base leading-relaxed font-medium">
+										{answer.answer_name_html && answer.answer_name_html.trim() !== "" ? (
+											safeParse(answer.answer_name_html)
+										) : answer.answer_name && answer.answer_name.trim() !== "" ? (
+											safeParse(answer.answer_name)
+										) : answer.answer_img && answer.answer_img.trim() !== "" ? (
+											<Image
+												src={answer.answer_img}
+												alt="Answer"
+												width={300}
+												height={200}
+												className="rounded-xl shadow-md mt-2"
+											/>
+										) : (
+											"Хариулт байхгүй"
 										)}
 									</div>
 								</div>
+
+								{/* Та сонгосон badge */}
+								{isUserSelected && (
+									<div className="flex-shrink-0">
+										<div className="px-4 py-2 bg-blue-500 text-white rounded-xl shadow-lg font-bold text-sm">
+											✓ Та сонгосон
+										</div>
+									</div>
+								)}
 							</div>
 						);
 					})}
 				</div>
+				{/* Доор зөв хариултыг харуулах */}
+<div className="mt-6 p-4 rounded-xl border-2 border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20">
+  <p className="font-semibold text-emerald-700 dark:text-emerald-300 mb-2">
+    Зөв хариулт:
+  </p>
+
+  {questionAnswers
+    .filter(a => a.is_true === 1)
+    .map((answer, idx) => (
+      <div key={answer.answer_id} className="flex items-start gap-3">
+        <div className="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center font-bold text-sm">
+          {String.fromCharCode(65 + idx)}
+        </div>
+        <div className="text-base leading-relaxed font-medium">
+          {answer.answer_name_html && answer.answer_name_html.trim() !== "" ? (
+            safeParse(answer.answer_name_html)
+          ) : answer.answer_name && answer.answer_name.trim() !== "" ? (
+            safeParse(answer.answer_name)
+          ) : answer.answer_img && answer.answer_img.trim() !== "" ? (
+            <Image
+              src={answer.answer_img}
+              alt="Correct Answer"
+              width={300}
+              height={200}
+              className="rounded-xl shadow-md mt-2"
+            />
+          ) : (
+            "Хариулт байхгүй"
+          )}
+        </div>
+      </div>
+    ))}
+</div>
+
 			</div>
+
 		)}
 	</>
 )}
+
+
 
 {/* Type 3: Number Input */}
 {question.que_type_id === 3 && (
