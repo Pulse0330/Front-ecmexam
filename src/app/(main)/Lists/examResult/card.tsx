@@ -41,7 +41,7 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({ exam, onViewRank }) 
     const router = useRouter();
     const [showAnswers, setShowAnswers] = useState(false);
 
-    const finished = exam.isfinished === 0;
+    const finished = exam.isfinished === 1;
     const examDate = new Date(exam.Ognoo);
 
     const formatDate = (date: Date) =>
