@@ -9,13 +9,14 @@ import { useState } from "react";
 import UseAnimations from "react-useanimations";
 import loading2 from "react-useanimations/lib/loading2";
 import { Button } from "@/components/ui/button";
-import { getExamResultMore } from "@/lib/api";
+import { getExamDun, getExamResultMore } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
+import type { ExamDunApiResponse } from "@/types/exam/examDun";
 import type {
 	Answer,
 	ExamResponseMoreApiResponse,
-	ExamSummary, // нэмэх
-	Question, // нэмэх
+	ExamSummary,
+	Question,
 	UserAnswer,
 } from "@/types/exam/examResultMore";
 
@@ -38,7 +39,16 @@ function ExamResultDetailPage() {
 			queryFn: () => getExamResultMore(testId, examId, userId || 0),
 			enabled: !!userId && !!examId && !!testId,
 		});
+	const pointPerc = data?.RetDataFirst?.[0]?.point_perc;
 
+	const { data: dunData, isLoading: isLoadingDun } =
+		useQuery<ExamDunApiResponse>({
+			queryKey: ["examDun", pointPerc],
+			queryFn: () => getExamDun(pointPerc ?? 0),
+			enabled: typeof pointPerc === "number",
+		});
+
+	const _isLoadingAll = isLoading || isLoadingDun;
 	const safeParse = (html: string | null | undefined) => {
 		if (!html || typeof html !== "string" || html.trim() === "") return "";
 		try {
@@ -143,7 +153,7 @@ function ExamResultDetailPage() {
 	const questions: Question[] = data.RetDataSecond;
 	const answers: Answer[] = data.RetDataThirt;
 	const userAnswers: UserAnswer[] = data.RetDataFourth;
-
+	const dunInfo = dunData?.RetData?.[0];
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 py-8 px-4">
 			<div className="max-w-6xl mx-auto space-y-6">
@@ -156,74 +166,256 @@ function ExamResultDetailPage() {
 							<p className="font-bold text-lg text-emerald-800 dark:text-emerald-300">
 								{data.RetResponse.ResponseMessage}
 							</p>
-							<p className="text-emerald-700 dark:text-emerald-400 text-sm">
-								Шалгалтын дэлгэрэнгүй мэдээлэл амжилттай ачаалагдлаа
-							</p>
+							<div>
+								<p className="text-emerald-700 dark:text-emerald-400 text-sm">
+									{/* Энд өөр агуулга */}
+								</p>
+								{dunInfo && (
+									<p className="text-base text-gray-600 italic">
+										{dunInfo.title}
+									</p>
+								)}
+							</div>
 						</div>
 					</div>
 				)}
 
 				{examSummary && (
-					<div className="bg-card border rounded-2xl p-6 shadow-lg">
-						<h2 className="text-2xl font-bold mb-4">
-							{examSummary.lesson_name}
-						</h2>
+					<div className="bg-gradient-to-br from-card to-card/50 border border-border/50 rounded-3xl p-8 shadow-xl backdrop-blur-sm">
+						{/* Толгой хэсэг */}
+						<div className="mb-6 pb-6 border-b border-border/50">
+							<div className="flex items-center gap-3">
+								<div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center shadow-lg">
+									<svg
+										className="w-6 h-6 text-primary-foreground"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
+									>
+										<title>asd</title>
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											strokeWidth={2}
+											d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+										/>
+									</svg>
+								</div>
+								<h2 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+									{examSummary.lesson_name}
+								</h2>
+							</div>
+						</div>
 
-						<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
+						{/* Статистик */}
+						<div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
 							{/* Нийт асуулт */}
-							<div className="p-4 bg-primary/10 rounded-xl">
-								<p className="text-sm text-muted-foreground">Нийт асуулт</p>
-								<p className="text-2xl font-bold text-primary">
+							<div className="group relative p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl border border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+								<div className="flex items-center justify-between mb-2">
+									<p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+										Нийт асуулт
+									</p>
+									<div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+										<svg
+											className="w-4 h-4 text-primary"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+										>
+											<title>asd</title>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												strokeWidth={2}
+												d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+											/>
+										</svg>
+									</div>
+								</div>
+								<p className="text-4xl font-bold text-primary">
 									{examSummary.test_ttl}
 								</p>
 							</div>
 
-							{/* Авах оноо | Авсан оноо */}
-							<div className="p-4 bg-yellow-400/10 rounded-xl flex justify-between items-center">
-								{/* Зүүн тал: Авах оноо */}
-								<div className="text-center flex-1">
-									<p className="text-sm text-muted-foreground">Авах оноо</p>
-									<p className="text-2xl font-bold text-yellow-600">
-										{examSummary.ttl_point}
-									</p>
-								</div>
+							{/* Оноо харьцуулалт */}
+							<div className="group relative p-6 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 rounded-2xl border border-yellow-200/50 dark:border-yellow-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+								<div className="space-y-4">
+									{/* Авах оноо */}
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-2">
+											<div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
+											<p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+												Авах оноо
+											</p>
+										</div>
+										<p className="text-2xl font-bold text-yellow-600 dark:text-yellow-500">
+											{examSummary.ttl_point}
+										</p>
+									</div>
 
-								{/* Тусгаарлагч */}
-								<div className="mx-4 text-2xl font-bold text-muted-foreground">
-									|
-								</div>
+									{/* Progress bar */}
+									<div className="relative h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+										<div
+											className="absolute inset-y-0 left-0 bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-600 rounded-full transition-all duration-700 ease-out"
+											style={{
+												width: `${Math.min((examSummary.point / examSummary.ttl_point) * 100, 100)}%`,
+											}}
+										>
+											<div className="absolute inset-0 bg-white/20 animate-pulse" />
+										</div>
+									</div>
 
-								{/* Баруун тал: Авсан оноо */}
-								<div className="text-center flex-1">
-									<p className="text-sm text-muted-foreground">Авсан оноо</p>
-									<p className="text-2xl font-bold text-primary">
-										{examSummary.point}
-									</p>
+									{/* Авсан оноо */}
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-2">
+											<div className="w-2 h-2 bg-primary rounded-full" />
+											<p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+												Авсан оноо
+											</p>
+										</div>
+										<p className="text-2xl font-bold text-primary">
+											{examSummary.point}
+										</p>
+									</div>
 								</div>
 							</div>
 
-							{/* Зөв хариулт */}
-							<div className="p-4 bg-emerald-500/10 rounded-xl">
-								<p className="text-sm text-muted-foreground">Зөв хариулт</p>
-								<p className="text-2xl font-bold text-emerald-600">
-									{examSummary.correct_ttl}
-								</p>
-							</div>
+							{/* Хариултын статистик - 3 in 1 */}
+							<div className="group relative p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl border border-slate-200/50 dark:border-slate-700/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+								<div className="space-y-4">
+									{/* Зөв хариулт */}
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-2">
+											<div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+												<svg
+													className="w-4 h-4 text-emerald-600"
+													fill="none"
+													stroke="currentColor"
+													viewBox="0 0 24 24"
+												>
+													<title>Зөв</title>
+													<path
+														strokeLinecap="round"
+														strokeLinejoin="round"
+														strokeWidth={2}
+														d="M5 13l4 4L19 7"
+													/>
+												</svg>
+											</div>
+											<p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+												Зөв
+											</p>
+										</div>
+										<p className="text-2xl font-bold text-emerald-600">
+											{examSummary.correct_ttl}
+										</p>
+									</div>
 
-							{/* Буруу хариулт */}
-							<div className="p-4 bg-red-500/10 rounded-xl">
-								<p className="text-sm text-muted-foreground">Буруу хариулт</p>
-								<p className="text-2xl font-bold text-red-600">
-									{examSummary.wrong_ttl}
-								</p>
+									{/* Буруу хариулт */}
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-2">
+											<div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center">
+												<svg
+													className="w-4 h-4 text-red-600"
+													fill="none"
+													stroke="currentColor"
+													viewBox="0 0 24 24"
+												>
+													<title>Буруу</title>
+													<path
+														strokeLinecap="round"
+														strokeLinejoin="round"
+														strokeWidth={2}
+														d="M6 18L18 6M6 6l12 12"
+													/>
+												</svg>
+											</div>
+											<p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+												Буруу
+											</p>
+										</div>
+										<p className="text-2xl font-bold text-red-600">
+											{examSummary.wrong_ttl}
+										</p>
+									</div>
+									{/* Хариулаагүй */}
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-2">
+											<div className="w-8 h-8 bg-gray-500/20 rounded-lg flex items-center justify-center">
+												<svg
+													className="w-4 h-4 text-gray-600"
+													fill="none"
+													stroke="currentColor"
+													viewBox="0 0 24 24"
+												>
+													<title>Хариулаагүй</title>
+													<path
+														strokeLinecap="round"
+														strokeLinejoin="round"
+														strokeWidth={2}
+														d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+													/>
+												</svg>
+											</div>
+											<p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+												Хариулаагүй
+											</p>
+										</div>
+										<p className="text-2xl font-bold text-gray-600">
+											{examSummary.not_answer}
+										</p>
+									</div>
+								</div>
 							</div>
 
 							{/* Шалгалтын хувь */}
-							<div className="p-4 bg-blue-500/10 rounded-xl">
-								<p className="text-sm text-muted-foreground">Шалгалтын хувь</p>
-								<p className="text-2xl font-bold text-blue-600">
-									{examSummary.point_perc.toFixed(1)}%
-								</p>
+							<div className="group relative p-6 bg-gradient-to-br from-blue-500/10 to-blue-500/5 rounded-2xl border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+								<div className="flex items-center justify-between mb-2">
+									<p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+										Шалгалтын хувь
+									</p>
+									<div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+										<svg
+											className="w-4 h-4 text-blue-600"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+										>
+											<title>asd</title>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												strokeWidth={2}
+												d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+											/>
+										</svg>
+									</div>
+								</div>
+								<div className="flex items-end gap-2">
+									<p className="text-4xl font-bold text-blue-600">
+										{examSummary.point_perc.toFixed(1)}
+									</p>
+									{dunInfo && (
+										<span className="text-3xl font-bold text-gray-700 mb-1 ml-2">
+											({dunInfo.tuval})
+										</span>
+									)}
+									<p className="text-xl font-bold text-blue-600/60 mb-1">%</p>
+								</div>
+								{/* Хувийн визуал индикатор */}
+								<div className="mt-3 flex gap-1">
+									{Array.from({ length: 10 }).map((_, i) => (
+										<div
+											key={`percent-indicator-${examSummary.test_id}-${i}`}
+											className={`h-1 flex-1 rounded-full transition-all duration-500 ${
+												i < Math.floor(examSummary.point_perc / 10)
+													? "bg-blue-500"
+													: "bg-blue-500/20"
+											}`}
+											style={{ transitionDelay: `${i * 50}ms` }}
+										/>
+									))}
+								</div>
 							</div>
 						</div>
 					</div>
@@ -296,8 +488,6 @@ function ExamResultDetailPage() {
 									userAnswers?.filter(
 										(ua) => ua.exam_que_id === question.exam_que_id,
 									) || [];
-
-								// isQuestionCorrect функц дотор type 3-ын шалгалт нэмэх:
 
 								const isQuestionCorrect = (() => {
 									if (userSelectedAnswers.length === 0) return false;
@@ -514,7 +704,7 @@ function ExamResultDetailPage() {
 														<div className="space-y-4">
 															{/* Бүх хариултууд */}
 															<div className="space-y-3">
-																{questionAnswers.map((answer, idx) => {
+																{questionAnswers.map((answer, _idx) => {
 																	const isCorrect = answer.is_true === 1;
 																	const isUserSelected =
 																		userSelectedAnswers.some(
@@ -530,24 +720,10 @@ function ExamResultDetailPage() {
 																				isWrongSelection
 																					? "border-red-400 bg-red-50 dark:bg-red-950/10 shadow-lg"
 																					: isUserSelected
-																						? "border-blue-400 bg-blue-50 dark:bg-blue-950/20 shadow-lg"
+																						? "border-ember-400 bg-blue-50 dark:bg-blue-950/20 shadow-lg"
 																						: "border-border bg-card/50"
 																			}`}
 																		>
-																			<div className="flex flex-col items-center gap-2">
-																				<div
-																					className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
-																						isWrongSelection
-																							? "bg-red-500 text-white"
-																							: isUserSelected
-																								? "bg-blue-500 text-white"
-																								: "bg-muted text-muted-foreground"
-																					}`}
-																				>
-																					{String.fromCharCode(65 + idx)}
-																				</div>
-																			</div>
-
 																			<div className="flex-1 min-w-0">
 																				<div className="text-base leading-relaxed font-medium">
 																					{answer.answer_name_html &&
@@ -603,14 +779,11 @@ function ExamResultDetailPage() {
 																</p>
 																{questionAnswers
 																	.filter((answer) => answer.is_true === 1)
-																	.map((answer, idx) => (
+																	.map((answer) => (
 																		<div
 																			key={answer.answer_id}
-																			className="flex items-start gap-3 mb-2"
+																			className="flex items-start gap-3 mb-2 p-3 border-2 border-emerald-300 dark:border-emerald-700 rounded-lg bg-white dark:bg-emerald-900/10"
 																		>
-																			<div className="w-6 h-6 flex items-center justify-center rounded-lg bg-emerald-500 text-white text-xs font-bold">
-																				{String.fromCharCode(65 + idx)}
-																			</div>
 																			<div className="text-base leading-relaxed">
 																				{answer.answer_name_html &&
 																				answer.answer_name_html.trim() !==
@@ -640,7 +813,7 @@ function ExamResultDetailPage() {
 												) : question.que_type_id === 3 ? (
 													<div className="space-y-4">
 														<div className="space-y-3">
-															{questionAnswers.map((answer, idx) => {
+															{questionAnswers.map((answer, _idx) => {
 																const userInput = userSelectedAnswers.find(
 																	(ua) => ua.answer_id === answer.answer_id,
 																);
@@ -655,25 +828,11 @@ function ExamResultDetailPage() {
 																		className={`relative flex items-center gap-4 p-6 rounded-2xl border-2 transition-all duration-300 ${
 																			userInput
 																				? isCorrect
-																					? "border-blue-400 bg-emerald-50 dark:bg-emerald-950/10 shadow-lg"
+																					? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/10 shadow-lg"
 																					: "border-red-400 bg-red-50 dark:bg-red-950/10 shadow-lg"
 																				: "border-orange-400 bg-orange-50 dark:bg-orange-950/10"
 																		}`}
 																	>
-																		<div className="flex-shrink-0">
-																			<div
-																				className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold ${
-																					userInput
-																						? isCorrect
-																							? "bg-emerald-500 text-white"
-																							: "bg-red-500 text-white"
-																						: "bg-orange-500 text-white"
-																				}`}
-																			>
-																				{String.fromCharCode(97 + idx)}
-																			</div>
-																		</div>
-
 																		{/* Асуултын label ба зураг */}
 																		<div className="flex-1 min-w-0">
 																			<div className="flex items-center gap-4">
@@ -683,21 +842,6 @@ function ExamResultDetailPage() {
 																						<div className="text-base font-semibold text-muted-foreground">
 																							{answer.answer_name} =
 																						</div>
-																					)}
-
-																				{/* Зураг хэрэв байвал */}
-																				{answer.answer_img &&
-																					answer.answer_img.trim() !== "" &&
-																					!answer.answer_img.includes(
-																						"/QuestionBank/",
-																					) && (
-																						<Image
-																							src={answer.answer_img}
-																							alt="Question"
-																							width={150}
-																							height={100}
-																							className="rounded-lg shadow-md"
-																						/>
 																					)}
 
 																				{/* Хэрэглэгчийн оруулсан хариулт */}
@@ -748,7 +892,7 @@ function ExamResultDetailPage() {
 																★ Зөв хариултууд:
 															</p>
 															<div className="space-y-3">
-																{questionAnswers.map((answer, idx) => {
+																{questionAnswers.map((answer) => {
 																	const correctAnswer =
 																		answer.answer_name_html ||
 																		answer.answer_name;
@@ -757,9 +901,6 @@ function ExamResultDetailPage() {
 																			key={answer.answer_id}
 																			className="flex items-center gap-4"
 																		>
-																			<div className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-500 text-white text-sm font-bold flex-shrink-0">
-																				{String.fromCharCode(97 + idx)}
-																			</div>
 																			<div className="text-base">
 																				{answer.answer_name &&
 																					answer.answer_name.trim() !== "" && (
@@ -904,22 +1045,11 @@ function ExamResultDetailPage() {
 																			className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all duration-300 ${
 																				!userInput
 																					? "border-orange-400 bg-orange-50 dark:bg-orange-950/10"
-																					: "border-blue-400 bg-blue-50 dark:bg-blue-950/20 shadow-lg"
+																					: isCorrect
+																						? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/10 shadow-lg"
+																						: "border-red-400 bg-red-50 dark:bg-red-950/10 shadow-lg"
 																			}`}
 																		>
-																			{/* Хэрэглэгчийн оруулсан дугаар */}
-																			<div className="flex-shrink-0">
-																				<div
-																					className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold ${
-																						!userInput
-																							? "bg-orange-500 text-white"
-																							: "bg-blue-500 text-white"
-																					}`}
-																				>
-																					{userPosition || "?"}
-																				</div>
-																			</div>
-
 																			{/* Хариултын текст */}
 																			<div className="flex-1 min-w-0">
 																				<div className="text-base font-medium text-foreground">
@@ -963,11 +1093,8 @@ function ExamResultDetailPage() {
 																	.map((answer) => (
 																		<div
 																			key={answer.answer_id}
-																			className="flex items-center gap-4"
+																			className="flex items-center gap-4 p-3 border-2 border-emerald-300 dark:border-emerald-700 rounded-lg bg-white dark:bg-emerald-900/10"
 																		>
-																			<div className="w-10 h-10 flex items-center justify-center rounded-lg bg-emerald-500 text-white text-base font-bold flex-shrink-0">
-																				{answer.refid}
-																			</div>
 																			<div className="text-base font-medium text-foreground">
 																				{answer.answer_name_html ||
 																					answer.answer_name ||
@@ -1036,16 +1163,12 @@ function ExamResultDetailPage() {
 																						!userMatch
 																							? "border-orange-400 bg-orange-50 dark:bg-orange-950/10"
 																							: isCorrect
-																								? "border-blue-400 bg-emerald-50 dark:bg-emerald-950/20 shadow-lg"
-																								: "border-blue-400 bg-red-50 dark:bg-red-950/10 shadow-lg"
+																								? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 shadow-lg"
+																								: "border-red-400 bg-red-50 dark:bg-red-950/10 shadow-lg"
 																					}`}
 																				>
 																					{/* Right side - Answer (а column) */}
 																					<div className="flex items-center gap-3 flex-1">
-																						<div className="w-10 h-10 rounded-lg bg-blue-500 text-white flex items-center justify-center font-bold flex-shrink-0">
-																							{correctAnswer?.answer_descr ||
-																								"?"}
-																						</div>
 																						<div className="text-base font-medium">
 																							{correctAnswer?.answer_name_html ||
 																								correctAnswer?.answer_name ||
@@ -1061,23 +1184,10 @@ function ExamResultDetailPage() {
 																					{/* Left side - Question (б column) - User's selection */}
 																					<div className="flex items-center gap-3 flex-1">
 																						{userSelectedQuestion ? (
-																							<>
-																								<div
-																									className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold flex-shrink-0 ${
-																										isCorrect
-																											? "bg-emerald-500 text-white"
-																											: "bg-red-500 text-white"
-																									}`}
-																								>
-																									{
-																										userSelectedQuestion.answer_descr
-																									}
-																								</div>
-																								<div className="text-base font-medium">
-																									{userSelectedQuestion.answer_name_html ||
-																										userSelectedQuestion.answer_name}
-																								</div>
-																							</>
+																							<div className="text-base font-medium">
+																								{userSelectedQuestion.answer_name_html ||
+																									userSelectedQuestion.answer_name}
+																							</div>
 																						) : (
 																							<span className="text-orange-600 font-medium">
 																								Харгалзуулаагүй
@@ -1114,47 +1224,72 @@ function ExamResultDetailPage() {
 																			★ Зөв харгалзуулалт:
 																		</p>
 																		<div className="space-y-3">
-																			{questionsOnly.map((questionItem) => {
-																				const correctAnswer = answersOnly.find(
-																					(a) => a.refid === questionItem.refid,
-																				);
+																			{questionsOnly.map(
+																				(questionItem, _idx) => {
+																					const correctAnswer =
+																						answersOnly.find(
+																							(a) =>
+																								a.refid === questionItem.refid,
+																						);
 
-																				return (
-																					<div
-																						key={questionItem.answer_id}
-																						className="flex items-center gap-4"
-																					>
-																						{/* Answer (а column) */}
-																						<div className="flex items-center gap-3 flex-1">
-																							<div className="w-10 h-10 rounded-lg bg-emerald-500 text-white flex items-center justify-center font-bold flex-shrink-0">
-																								{correctAnswer?.answer_descr ||
-																									"?"}
+																					return (
+																						<div
+																							key={questionItem.answer_id}
+																							className="flex items-center gap-4 p-3 border-2 border-emerald-300 dark:border-emerald-700 rounded-lg bg-white dark:bg-emerald-900/10"
+																						>
+																							{/* Answer (а column) */}
+																							<div className="flex items-center gap-3 flex-1">
+																								{correctAnswer?.answer_img &&
+																								correctAnswer.answer_img.trim() !==
+																									"" ? (
+																									<Image
+																										src={
+																											correctAnswer.answer_img
+																										}
+																										alt="Answer"
+																										width={120}
+																										height={90}
+																										className="rounded-lg shadow-md object-contain"
+																									/>
+																								) : (
+																									<div className="text-base font-medium">
+																										{correctAnswer?.answer_name_html ||
+																											correctAnswer?.answer_name ||
+																											"Хариулт"}
+																									</div>
+																								)}
 																							</div>
-																							<div className="text-base font-medium">
-																								{correctAnswer?.answer_name_html ||
-																									correctAnswer?.answer_name ||
-																									"Хариулт"}
+
+																							{/* Arrow */}
+																							<div className="text-2xl text-emerald-600 flex-shrink-0">
+																								→
+																							</div>
+
+																							{/* Question (б column) */}
+																							<div className="flex items-center gap-3 flex-1">
+																								{questionItem.answer_img &&
+																								questionItem.answer_img.trim() !==
+																									"" ? (
+																									<Image
+																										src={
+																											questionItem.answer_img
+																										}
+																										alt="Question"
+																										width={120}
+																										height={90}
+																										className="rounded-lg shadow-md object-contain"
+																									/>
+																								) : (
+																									<div className="text-base font-medium">
+																										{questionItem.answer_name_html ||
+																											questionItem.answer_name}
+																									</div>
+																								)}
 																							</div>
 																						</div>
-
-																						{/* Arrow */}
-																						<div className="text-2xl text-emerald-600 flex-shrink-0">
-																							→
-																						</div>
-
-																						{/* Question (б column) */}
-																						<div className="flex items-center gap-3 flex-1">
-																							<div className="w-10 h-10 rounded-lg bg-emerald-500 text-white flex items-center justify-center font-bold flex-shrink-0">
-																								{questionItem.answer_descr}
-																							</div>
-																							<div className="text-base font-medium">
-																								{questionItem.answer_name_html ||
-																									questionItem.answer_name}
-																							</div>
-																						</div>
-																					</div>
-																				);
-																			})}
+																					);
+																				},
+																			)}
 																		</div>
 																	</div>
 																</>

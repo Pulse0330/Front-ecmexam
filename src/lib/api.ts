@@ -2,6 +2,7 @@ import api from "@/lib/axios";
 import type { ApiExamResponse } from "@/types/exam/exam";
 import type { ExamAnswerResponse } from "@/types/exam/examChoosed";
 import type { ExamChoosedAnswerDeleteResponse } from "@/types/exam/examChoosedAnswerDelete";
+import type { ExamDunApiResponse } from "@/types/exam/examDun";
 import type {
 	FinishExamRequest,
 	FinishExamResponse,
@@ -167,6 +168,20 @@ export const getExamResultMore = async (
 	});
 	return data;
 };
+
+// ===== Get Exam Dun  =====
+export const getExamDun = async (dun: number): Promise<ExamDunApiResponse> => {
+	// Type өөрчлөх
+	const { data } = await api.post<ExamDunApiResponse>(
+		// Энд ч өөрчлөх
+		"/examevaluation",
+		{
+			dun: dun,
+		},
+	);
+	return data;
+};
+
 // ===== Get Exam Rank =====
 export const getExamRank = async (
 	examId: number,

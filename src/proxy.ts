@@ -20,6 +20,6 @@ export function proxy(_request: NextRequest) {
 
 export const config = {
 	matcher: [
-		"/((?!api/|_next/|_static/|_vercel|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js)$).*)",
+		"/((?!api/|_next/|_static/|_vercel|favicon.ico|ECM.png|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js)$).*)",
 	],
 };
