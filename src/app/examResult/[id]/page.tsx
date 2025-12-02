@@ -157,32 +157,15 @@ function ExamResultDetailPage() {
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 py-8 px-4">
 			<div className="max-w-6xl mx-auto space-y-6">
-				{isSuccess && (
-					<div className="bg-emerald-50 dark:bg-emerald-950/30 border-2 border-emerald-300 dark:border-emerald-800 rounded-2xl p-5 flex items-center gap-4">
-						<div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center">
-							<CheckCircle className="w-7 h-7 text-white" />
-						</div>
-						<div>
-							<p className="font-bold text-lg text-emerald-800 dark:text-emerald-300">
-								{data.RetResponse.ResponseMessage}
-							</p>
-							<div>
-								<p className="text-emerald-700 dark:text-emerald-400 text-sm">
-									{/* Энд өөр агуулга */}
-								</p>
-								{dunInfo && (
-									<p className="text-base text-gray-600 italic">
-										{dunInfo.title}
-									</p>
-								)}
-							</div>
-						</div>
-					</div>
-				)}
-
 				{examSummary && (
 					<div className="bg-gradient-to-br from-card to-card/50 border border-border/50 rounded-3xl p-8 shadow-xl backdrop-blur-sm">
 						{/* Толгой хэсэг */}
+						<div className="flex justify-end border-border ">
+							{dunInfo && (
+								<p className="text-right text-xl font-bold ">{dunInfo.title}</p>
+							)}
+						</div>
+
 						<div className="mb-6 pb-6 border-b border-border/50">
 							<div className="flex items-center gap-3">
 								<div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center shadow-lg">
