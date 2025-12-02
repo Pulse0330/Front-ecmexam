@@ -61,38 +61,37 @@ export default function ExamListPage() {
 				expired: [],
 				now: new Date(),
 			};
-		
+
 		const now = currentTime;
 
 		return {
 			// ✅ Идэвхтэй: эхэлсэн, эрх нээлттэй (хугацаа дуусаагүй эсэхийг шалгахгүй)
 			active: uniqueData.filter((exam) => {
 				const start = new Date(exam.ognoo);
-				const canAccess = exam.ispurchased === 1 || exam.ispaydescr === "Төлбөргүй";
+				const canAccess =
+					exam.ispurchased === 1 || exam.ispaydescr === "Төлбөргүй";
 				return now >= start && canAccess && exam.flag !== 3; // flag 3 = дууссан гэж үзье
 			}),
-			
+
 			// ✅ Удахгүй: хугацаа хараахан эхлээгүй
 			upcoming: uniqueData.filter((exam) => {
 				const start = new Date(exam.ognoo);
 				return now < start;
 			}),
-			
+
 			// ✅ Төлбөргүй: бүх төлбөргүй шалгалтууд
-			free: uniqueData.filter((exam) => 
-				exam.ispaydescr === "Төлбөргүй"
-			),
-			
+			free: uniqueData.filter((exam) => exam.ispaydescr === "Төлбөргүй"),
+
 			// ✅ Төлбөртэй: төлбөртэй боловч төлөгдөөгүй
-			paid: uniqueData.filter((exam) => 
-				exam.ispaydescr === "Төлбөртэй" && exam.ispurchased === 0
+			paid: uniqueData.filter(
+				(exam) => exam.ispaydescr === "Төлбөртэй" && exam.ispurchased === 0,
 			),
-			
+
 			// ✅ Дууссан: flag === 3 эсвэл flag_name === "Хугацаа дууссан"
 			expired: uniqueData.filter((exam) => {
 				return exam.flag === 3 || exam.flag_name === "Хугацаа дууссан";
 			}),
-			
+
 			now,
 		};
 	}, [uniqueData, currentTime]);
@@ -100,7 +99,7 @@ export default function ExamListPage() {
 	// ✅ ЗАСВАР: Filter логикийг илүү тодорхой болгох
 	const filteredData = useMemo(() => {
 		let exams: ExamlistsData[] = [];
-		
+
 		// Сонгосон категорийн дагуу шүүх
 		switch (selectedCategory) {
 			case "all":

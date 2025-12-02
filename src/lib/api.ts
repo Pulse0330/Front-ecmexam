@@ -160,14 +160,11 @@ export const getExamResultMore = async (
 	examId: number,
 	userId: number,
 ): Promise<ExamResponseMoreApiResponse> => {
-	const { data } = await api.post<ExamResponseMoreApiResponse>(
-		"/resexammore",
-		{
-			test_id: testId,
-			exam_id: examId,
-			user_id: userId,
-		},
-	);
+	const { data } = await api.post<ExamResponseMoreApiResponse>("/resexammore", {
+		test_id: testId,
+		exam_id: examId,
+		user_id: userId,
+	});
 	return data;
 };
 // ===== Get Exam Rank =====

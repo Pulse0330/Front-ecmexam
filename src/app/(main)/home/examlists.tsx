@@ -13,7 +13,12 @@ import {
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardFooter,
+	CardHeader,
+} from "@/components/ui/card";
 import type { Exam } from "@/types/home";
 
 interface ExamListProps {
@@ -40,9 +45,9 @@ export default function ExamList({ exams }: ExamListProps) {
 								? "border-primary/20"
 								: "border-destructive/20 bg-muted/30"
 						}`}
-						style={{ 
+						style={{
 							animationDelay: `${index * 100}ms`,
-							animationFillMode: 'forwards',
+							animationFillMode: "forwards",
 						}}
 					>
 						{/* Background Orbs */}
@@ -91,9 +96,7 @@ export default function ExamList({ exams }: ExamListProps) {
 							<div className="pr-24">
 								<h3
 									className={`text-xl font-bold line-clamp-2 leading-tight ${
-										isActive
-											? "text-foreground"
-											: "text-muted-foreground"
+										isActive ? "text-foreground" : "text-muted-foreground"
 									}`}
 								>
 									{exam.title}
@@ -166,7 +169,10 @@ export default function ExamList({ exams }: ExamListProps) {
 										<p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">
 											Багш
 										</p>
-										<p className="text-sm font-bold text-foreground truncate" title={exam.teach_name}>
+										<p
+											className="text-sm font-bold text-foreground truncate"
+											title={exam.teach_name}
+										>
 											{exam.teach_name}
 										</p>
 									</div>
@@ -229,7 +235,7 @@ export default function ExamList({ exams }: ExamListProps) {
 					</Card>
 				);
 			})}
-			
+
 			<style jsx>{`
 				@keyframes fadeInUp {
 					from {

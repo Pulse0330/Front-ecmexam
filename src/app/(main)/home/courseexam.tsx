@@ -1,6 +1,13 @@
 "use client";
 
-import { Clock, CreditCard, Sparkles, Star, Tag, TrendingUp } from "lucide-react";
+import {
+	Clock,
+	CreditCard,
+	Sparkles,
+	Star,
+	Tag,
+	TrendingUp,
+} from "lucide-react";
 import type React from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +41,8 @@ export const PaymentExam: React.FC<PaymentExamProps> = ({ courses }) => {
 							Одоогоор курс байхгүй байна
 						</p>
 						<p className="text-sm text-muted-foreground max-w-sm">
-							Тун удахгүй шинэ курсууд нэмэгдэх тул манай сайтад байнга зочилж байгаарай
+							Тун удахгүй шинэ курсууд нэмэгдэх тул манай сайтад байнга зочилж
+							байгаарай
 						</p>
 					</AlertDescription>
 				</div>
@@ -61,7 +69,7 @@ export const PaymentExam: React.FC<PaymentExamProps> = ({ courses }) => {
 					>
 						{/* Gradient Background Effects */}
 						<div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-						
+
 						{/* Animated Orbs */}
 						<div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl animate-pulse" />
 						<div className="absolute -bottom-20 -left-20 w-32 h-32 bg-primary/5 rounded-full blur-2xl animate-pulse delay-75" />
@@ -69,8 +77,8 @@ export const PaymentExam: React.FC<PaymentExamProps> = ({ courses }) => {
 						{/* Coming Soon Badge - Top Right */}
 						{!isAvailable && (
 							<div className="absolute top-4 right-4 z-20">
-								<Badge 
-									variant="default" 
+								<Badge
+									variant="default"
 									className="shadow-lg backdrop-blur-sm bg-primary/90 border border-primary-foreground/10 px-3 py-1"
 								>
 									<Clock className="w-3 h-3 mr-1.5 animate-pulse" />
@@ -82,8 +90,8 @@ export const PaymentExam: React.FC<PaymentExamProps> = ({ courses }) => {
 						{/* Popular/Featured Badge - Top Left */}
 						{isAvailable && course.rate && Number(course.rate) >= 4.5 && (
 							<div className="absolute top-4 left-4 z-20">
-								<Badge 
-									variant="secondary" 
+								<Badge
+									variant="secondary"
 									className="shadow-lg backdrop-blur-sm bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 px-3 py-1"
 								>
 									<TrendingUp className="w-3 h-3 mr-1.5" />
@@ -104,8 +112,8 @@ export const PaymentExam: React.FC<PaymentExamProps> = ({ courses }) => {
 									{course.title}
 								</CardTitle>
 								{course.rate && (
-									<Badge 
-										variant="secondary" 
+									<Badge
+										variant="secondary"
 										className="shrink-0 bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800"
 									>
 										<Star className="w-3.5 h-3.5 mr-1 fill-amber-500 text-amber-500" />
@@ -119,7 +127,7 @@ export const PaymentExam: React.FC<PaymentExamProps> = ({ courses }) => {
 							{/* Price Card with Gradient */}
 							<div className="group/price relative overflow-hidden rounded-xl border-2 border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-4 transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10">
 								<div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl -z-0" />
-								
+
 								<div className="relative flex items-center gap-3">
 									<div className="p-3 bg-gradient-to-br from-primary to-primary/80 rounded-xl shadow-lg group-hover/price:scale-110 transition-transform duration-300">
 										<Tag className="w-5 h-5 text-primary-foreground" />
@@ -157,9 +165,7 @@ export const PaymentExam: React.FC<PaymentExamProps> = ({ courses }) => {
 
 						<CardFooter className="relative z-10 pt-2">
 							{isAvailable ? (
-								<Button 
-									className="w-full h-12 shadow-lg hover:shadow-xl hover:shadow-primary/20 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] font-bold text-base bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
-								>
+								<Button className="w-full h-12 shadow-lg hover:shadow-xl hover:shadow-primary/20 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] font-bold text-base bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary">
 									<span className="flex items-center justify-center gap-2">
 										<span>Дэлгэрэнгүй үзэх</span>
 										<Sparkles className="w-5 h-5" />

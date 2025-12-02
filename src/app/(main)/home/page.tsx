@@ -1,14 +1,24 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, BookOpen, ClipboardList, Sparkles, ChevronDown } from "lucide-react";
+import {
+	AlertCircle,
+	BookOpen,
+	ClipboardList,
+	Sparkles,
+	ChevronDown,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import UseAnimations from "react-useanimations";
 import loading2 from "react-useanimations/lib/loading2";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { getHomeScreen, getUserProfile } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { HomeResponseType } from "@/types/home";
@@ -158,37 +168,35 @@ export default function HomePage() {
 
 						{/* Snowfall / Stars effect */}
 						<div className="absolute inset-0 pointer-events-none overflow-hidden">
-							{isDay ? (
-								// Өдрийн цасан ширхгүүд
-								SNOWFLAKES.map((flake) => (
-									<div
-										key={flake.id}
-										className="absolute w-2 h-2 bg-white/70 rounded-full"
-										style={{
-											left: `${flake.left}%`,
-											top: `${flake.top}%`,
-											animation: `fall ${flake.duration}s linear infinite`,
-											animationDelay: `${flake.delay}s`,
-										}}
-									/>
-								))
-							) : (
-								// Шөнийн одод
-								STARS.map((star) => (
-									<div
-										key={star.id}
-										className="absolute bg-white rounded-full"
-										style={{
-											left: `${star.left}%`,
-											top: `${star.top}%`,
-											width: `${star.size}px`,
-											height: `${star.size}px`,
-											animation: `twinkle 3s ease-in-out infinite`,
-											animationDelay: `${star.delay}s`,
-										}}
-									/>
-								))
-							)}
+							{isDay
+								? // Өдрийн цасан ширхгүүд
+									SNOWFLAKES.map((flake) => (
+										<div
+											key={flake.id}
+											className="absolute w-2 h-2 bg-white/70 rounded-full"
+											style={{
+												left: `${flake.left}%`,
+												top: `${flake.top}%`,
+												animation: `fall ${flake.duration}s linear infinite`,
+												animationDelay: `${flake.delay}s`,
+											}}
+										/>
+									))
+								: // Шөнийн одод
+									STARS.map((star) => (
+										<div
+											key={star.id}
+											className="absolute bg-white rounded-full"
+											style={{
+												left: `${star.left}%`,
+												top: `${star.top}%`,
+												width: `${star.size}px`,
+												height: `${star.size}px`,
+												animation: `twinkle 3s ease-in-out infinite`,
+												animationDelay: `${star.delay}s`,
+											}}
+										/>
+									))}
 						</div>
 
 						{/* Content */}
@@ -249,9 +257,9 @@ export default function HomePage() {
 											<Badge variant="secondary">
 												{homeData?.RetDataSecond?.length || 0} курс
 											</Badge>
-											<ChevronDown 
+											<ChevronDown
 												className={`w-6 h-6 text-muted-foreground transition-transform duration-300 ${
-													isCoursesOpen ? 'rotate-180' : ''
+													isCoursesOpen ? "rotate-180" : ""
 												}`}
 											/>
 										</div>
@@ -297,9 +305,9 @@ export default function HomePage() {
 											<Badge variant="secondary">
 												{homeData?.RetDataThirt?.length || 0} шалгалт
 											</Badge>
-											<ChevronDown 
+											<ChevronDown
 												className={`w-6 h-6 text-muted-foreground transition-transform duration-300 ${
-													isExamsOpen ? 'rotate-180' : ''
+													isExamsOpen ? "rotate-180" : ""
 												}`}
 											/>
 										</div>
@@ -345,9 +353,9 @@ export default function HomePage() {
 											<Badge variant="secondary">
 												{homeData?.RetDataFourth?.length || 0} сорил
 											</Badge>
-											<ChevronDown 
+											<ChevronDown
 												className={`w-6 h-6 text-muted-foreground transition-transform duration-300 ${
-													isSorilsOpen ? 'rotate-180' : ''
+													isSorilsOpen ? "rotate-180" : ""
 												}`}
 											/>
 										</div>

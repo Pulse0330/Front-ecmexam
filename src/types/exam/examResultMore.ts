@@ -10,7 +10,7 @@ export interface ExamResponseMoreApiResponse {
 	RetDataSecond: Question[];
 	RetDataThirt: Answer[];
 	RetDataFourth: UserAnswer[];
-	RetDataFifth: any[];
+	RetDataFifth: [];
 	RetDataSixth: null;
 }
 

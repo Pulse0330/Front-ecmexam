@@ -3,16 +3,16 @@
 import { useQuery } from "@tanstack/react-query";
 import {
 	AlertCircle,
-	CheckCircle2,
-	XCircle,
-	FileText,
 	Award,
-	X,
+	Calendar,
+	CheckCircle2,
+	Clock,
+	FileText,
+	Sparkles,
 	Target,
 	TrendingUp,
-	Calendar,
-	Clock,
-	Sparkles,
+	X,
+	XCircle,
 } from "lucide-react";
 import type React from "react";
 import UseAnimations from "react-useanimations";
@@ -149,12 +149,12 @@ const ExamAnswersDialog: React.FC<ExamAnswersDialogProps> = ({
 								<div className="relative">
 									<div
 										className={`absolute inset-0 bg-gradient-to-br ${getGradeColor(
-											result.unelgee
+											result.unelgee,
 										)} opacity-20 blur-2xl rounded-full animate-pulse`}
 									/>
 									<div
 										className={`relative w-40 h-40 rounded-full border-[12px] flex flex-col items-center justify-center bg-gradient-to-br ${getGradeColor(
-											result.unelgee
+											result.unelgee,
 										)} text-white shadow-2xl`}
 									>
 										<Sparkles className="w-6 h-6 mb-1 animate-pulse" />
@@ -260,7 +260,7 @@ const ExamAnswersDialog: React.FC<ExamAnswersDialogProps> = ({
 											<Badge className="bg-green-100 text-green-700 hover:bg-green-100 font-bold">
 												{result.correct_ttl} / {result.test_ttl} (
 												{Math.round(
-													(result.correct_ttl / result.test_ttl) * 100
+													(result.correct_ttl / result.test_ttl) * 100,
 												)}
 												%)
 											</Badge>
@@ -301,7 +301,7 @@ const ExamAnswersDialog: React.FC<ExamAnswersDialogProps> = ({
 												<Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 font-bold">
 													{result.not_answer} / {result.test_ttl} (
 													{Math.round(
-														(result.not_answer / result.test_ttl) * 100
+														(result.not_answer / result.test_ttl) * 100,
 													)}
 													%)
 												</Badge>

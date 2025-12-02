@@ -982,8 +982,6 @@ export default function ExamPage() {
 										examMinutes: examData.ExamInfo[0].minut,
 										examStartTime: examData.ExamInfo[0].ognoo,
 									})}
-
-						
 								</>
 							)}
 						</div>
@@ -997,8 +995,6 @@ export default function ExamPage() {
 					<div className="px-3 py-2">
 						{examData?.ExamInfo?.[0] && (
 							<div className="flex items-center justify-between mb-2">
-		
-
 								<Button
 									onClick={() => setShowMobileMinimapOverlay(true)}
 									className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/40 rounded-lg border border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition"

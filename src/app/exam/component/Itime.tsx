@@ -86,7 +86,6 @@ export default function ExamTimer({
 		};
 	}, [currentTimeMs, examStartTime, examMinutes, startedDate]);
 
-	
 	useEffect(() => {
 		if (status === "ended") {
 			console.log("🔴 Status = ended, auto-finish эхэллээ");
@@ -184,13 +183,13 @@ export default function ExamTimer({
 
 			<div className="p-3 sm:p-4">
 				<div className="mb-3 sm:mb-4 text-center">
-				<div
-  className={`font-mono font-black 
+					<div
+						className={`font-mono font-black 
   text-2xl sm:text-3xl md:text-4xl lg:text-5xl 
   ${config.timerColor} tracking-tight mb-1 sm:mb-2`}
->
-  {formatTime(remainingSec)}
-</div>
+					>
+						{formatTime(remainingSec)}
+					</div>
 					{status === "ongoing" && (
 						<p className="text-sm sm:text-base md:text-lg font-bold text-slate-700 dark:text-slate-300">
 							<span className={config.timerColor}>{getTimeRemaining()}</span>{" "}

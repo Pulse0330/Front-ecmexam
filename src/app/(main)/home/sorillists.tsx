@@ -39,7 +39,7 @@ export default function HomeSorilLists({ pastExams }: PastExamListProps) {
 						className="group relative overflow-hidden border-2 border-border animate-fadeInUp"
 						style={{
 							animationDelay: `${index * 100}ms`,
-							animationFillMode: 'forwards',
+							animationFillMode: "forwards",
 						}}
 					>
 						{/* Image Section with Gradient Overlay */}
@@ -55,7 +55,7 @@ export default function HomeSorilLists({ pastExams }: PastExamListProps) {
 									/>
 									{/* Gradient overlay */}
 									<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-									
+
 									{/* Decorative orbs */}
 									<div className="absolute inset-0 pointer-events-none">
 										<div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl" />
@@ -209,7 +209,7 @@ export default function HomeSorilLists({ pastExams }: PastExamListProps) {
 					</Card>
 				);
 			})}
-			
+
 			<style jsx>{`
 				@keyframes fadeInUp {
 					from {

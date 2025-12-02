@@ -101,7 +101,7 @@ const FinishExamResultDialog = forwardRef<
 		const [isAutoSubmitting, setIsAutoSubmitting] = useState(false);
 		const autoRedirectTimerRef = useRef<NodeJS.Timeout | null>(null); // ✅ Auto-redirect timer // ✅ Auto-submit state
 
-		const isDadlaga = examType === 1 || examType ==2;
+		const isDadlaga = examType === 1 || examType == 2;
 
 		const finishMutation = useMutation<
 			FinishExamResponse,
@@ -113,14 +113,11 @@ const FinishExamResultDialog = forwardRef<
 				return finishExam(payload);
 			},
 			onSuccess: (res) => {
-			;
 
 				if (res.RetResponse.ResponseCode === "10") {
 					const testId = res.RetData;
-					
 
 					if (isDadlaga) {
-					
 						toast.success("✅ Шалгалт амжилттай дууслаа!");
 						setTimeout(() => {
 							router.push("/Lists/examResult");
@@ -136,14 +133,11 @@ const FinishExamResultDialog = forwardRef<
 					}
 
 					if (testId) {
-						
 						setFinishedTestId(testId);
 
 						// ✅ Цаг дуусахад 5 секундийн дараа автоматаар examList руу шилжих
 						if (isAutoSubmitting) {
-
 							autoRedirectTimerRef.current = setTimeout(() => {
-								
 								router.push("/Lists/examResult");
 							}, 500);
 						}
@@ -167,8 +161,7 @@ const FinishExamResultDialog = forwardRef<
 						: "Шалгалт дуусгах үед алдаа гарлаа",
 				);
 				setOpen(false);
-                router.push("/Lists/examResult");
-				
+				router.push("/Lists/examResult");
 			},
 		});
 
@@ -565,7 +558,6 @@ const FinishExamResultDialog = forwardRef<
 					</div>
 
 					<DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
-				
 						<Button
 							onClick={handleFinish}
 							disabled={finishMutation.isPending}
