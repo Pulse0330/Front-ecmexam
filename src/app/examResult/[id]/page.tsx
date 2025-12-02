@@ -143,29 +143,59 @@ function ExamResultDetailPage() {
 					</div>
 				)}
 
-				{examSummary && (
-					<div className="bg-card border rounded-2xl p-6 shadow-lg">
-						<h2 className="text-2xl font-bold mb-4">{examSummary.lesson_name}</h2>
-						<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-							<div className="p-4 bg-primary/10 rounded-xl">
-								<p className="text-sm text-muted-foreground">Нийт оноо</p>
-								<p className="text-2xl font-bold text-primary">{examSummary.point}/{examSummary.ttl_point}</p>
-							</div>
-							<div className="p-4 bg-emerald-500/10 rounded-xl">
-								<p className="text-sm text-muted-foreground">Зөв хариулт</p>
-								<p className="text-2xl font-bold text-emerald-600">{examSummary.correct_ttl}</p>
-							</div>
-							<div className="p-4 bg-red-500/10 rounded-xl">
-								<p className="text-sm text-muted-foreground">Буруу хариулт</p>
-								<p className="text-2xl font-bold text-red-600">{examSummary.wrong_ttl}</p>
-							</div>
-							<div className="p-4 bg-blue-500/10 rounded-xl">
-								<p className="text-sm text-muted-foreground">Хувь</p>
-								<p className="text-2xl font-bold text-blue-600">{examSummary.point_perc.toFixed(1)}%</p>
-							</div>
-						</div>
-					</div>
-				)}
+{examSummary && (
+  <div className="bg-card border rounded-2xl p-6 shadow-lg">
+    <h2 className="text-2xl font-bold mb-4">{examSummary.lesson_name}</h2>
+
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
+      {/* Нийт асуулт */}
+      <div className="p-4 bg-primary/10 rounded-xl">
+        <p className="text-sm text-muted-foreground">Нийт асуулт</p>
+        <p className="text-2xl font-bold text-primary">{examSummary.test_ttl}</p>
+      </div>
+
+   
+{/* Авах оноо | Авсан оноо */}
+<div className="p-4 bg-yellow-400/10 rounded-xl flex justify-between items-center">
+  {/* Зүүн тал: Авах оноо */}
+  <div className="text-center flex-1">
+    <p className="text-sm text-muted-foreground">Авах оноо</p>
+    <p className="text-2xl font-bold text-yellow-600">{examSummary.ttl_point}</p>
+  </div>
+
+  {/* Тусгаарлагч */}
+  <div className="mx-4 text-2xl font-bold text-muted-foreground">|</div>
+
+  {/* Баруун тал: Авсан оноо */}
+  <div className="text-center flex-1">
+    <p className="text-sm text-muted-foreground">Авсан оноо</p>
+    <p className="text-2xl font-bold text-primary">{examSummary.point}</p>
+  </div>
+</div>
+
+
+
+      {/* Зөв хариулт */}
+      <div className="p-4 bg-emerald-500/10 rounded-xl">
+        <p className="text-sm text-muted-foreground">Зөв хариулт</p>
+        <p className="text-2xl font-bold text-emerald-600">{examSummary.correct_ttl}</p>
+      </div>
+
+      {/* Буруу хариулт */}
+      <div className="p-4 bg-red-500/10 rounded-xl">
+        <p className="text-sm text-muted-foreground">Буруу хариулт</p>
+        <p className="text-2xl font-bold text-red-600">{examSummary.wrong_ttl}</p>
+      </div>
+
+      {/* Шалгалтын хувь */}
+      <div className="p-4 bg-blue-500/10 rounded-xl">
+        <p className="text-sm text-muted-foreground">Шалгалтын хувь</p>
+        <p className="text-2xl font-bold text-blue-600">{examSummary.point_perc.toFixed(1)}%</p>
+      </div>
+    </div>
+  </div>
+)}
+
 
 				<Button onClick={() => router.back()} variant="outline" className="gap-2">
 					<ArrowLeft className="w-5 h-5" />
