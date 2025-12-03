@@ -52,7 +52,7 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 			minute: "2-digit",
 		});
 
-	const getPercentageColor = (perc: number) => {
+	const _getPercentageColor = (perc: number) => {
 		if (perc >= 80) return "bg-teal-500/10 text-teal-600 border-teal-500";
 		if (perc >= 50) return "bg-sky-500/10 text-sky-600 border-sky-500";
 		return "bg-rose-500/10 text-rose-600 border-rose-500";
@@ -111,16 +111,6 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 								>
 									{finished ? "✓ Дууссан" : "⏱ Дуусаагүй"}
 								</Badge>
-
-								{finished && exam.test_perc !== undefined && (
-									<Badge
-										className={`text-xs h-5 px-2 font-bold uppercase border ${getPercentageColor(
-											exam.test_perc,
-										)}`}
-									>
-										{exam.test_perc}%
-									</Badge>
-								)}
 							</div>
 						</div>
 					</div>

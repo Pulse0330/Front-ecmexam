@@ -102,13 +102,66 @@ function ExamResultDetailPage() {
 			return Math.max(0, Math.round((basePoints - penalty) * 10) / 10);
 		}
 
+		if (question.que_type_id === 3) {
+			let correctInputs = 0;
+			let incorrectInputs = 0;
+
+			questionAnswers.forEach((answer) => {
+				const userInput = userSelectedAnswers.find(
+					(ua) => ua.answer_id === answer.answer_id,
+				);
+
+				if (userInput) {
+					const correctAnswer = answer.answer_name_html || answer.answer_name;
+
+					if (userInput.answer === correctAnswer) {
+						correctInputs++;
+					} else {
+						incorrectInputs++;
+					}
+				}
+			});
+
+			const basePoints =
+				(correctInputs / questionAnswers.length) * question.que_onoo;
+			const penalty =
+				(incorrectInputs / questionAnswers.length) * question.que_onoo;
+
+			return Math.max(0, Math.round((basePoints - penalty) * 10) / 10);
+		}
+
+		if (question.que_type_id === 5) {
+			let correctOrders = 0;
+			let incorrectOrders = 0;
+
+			questionAnswers.forEach((answer) => {
+				const userInput = userSelectedAnswers.find(
+					(ua) => ua.answer_id === answer.answer_id,
+				);
+
+				if (userInput) {
+					if (parseInt(userInput.answer, 10) === answer.refid) {
+						correctOrders++;
+					} else {
+						incorrectOrders++;
+					}
+				}
+			});
+
+			const basePoints =
+				(correctOrders / questionAnswers.length) * question.que_onoo;
+			const penalty =
+				(incorrectOrders / questionAnswers.length) * question.que_onoo;
+
+			return Math.max(0, Math.round((basePoints - penalty) * 10) / 10);
+		}
 		if (question.que_type_id === 6) {
 			const answersOnly = questionAnswers.filter(
 				(a) => a.ref_child_id && a.ref_child_id >= 1,
 			);
 
 			let correctMatches = 0;
-			let incorrectMatches = 0;
+			let answeredCount = 0;
 
 			answersOnly.forEach((answerItem) => {
 				const userInput = userSelectedAnswers.find(
@@ -116,73 +169,142 @@ function ExamResultDetailPage() {
 				);
 
 				if (userInput) {
+					answeredCount++;
 					const userSelectedRefId = parseInt(userInput.answer, 10);
 
-					// Зөв харгалзуулсан эсэх
 					if (userSelectedRefId === answerItem.ref_child_id) {
 						correctMatches++;
-					} else {
-						// Буруу харгалзуулсан
-						incorrectMatches++;
 					}
 				}
 			});
 
-			// Хэсэгчилсэн оноо = (зөв тоо / нийт) * оноо - (буруу тоо / нийт) * оноо
-			const basePoints =
-				(correctMatches / answersOnly.length) * question.que_onoo;
-			const penalty =
-				(incorrectMatches / answersOnly.length) * question.que_onoo;
+			// Зөвхөн хариулсан item-д penalty оногдуулах
+			if (answeredCount === 0) return 0;
 
-			return Math.max(0, Math.round((basePoints - penalty) * 10) / 10);
+			const ratio = correctMatches / answersOnly.length;
+			return Math.round(ratio * question.que_onoo * 10) / 10;
 		}
-
-		if (question.que_type_id === 3) {
-			let correctInputs = 0;
-			questionAnswers.forEach((answer) => {
-				const userInput = userSelectedAnswers.find(
-					(ua) => ua.answer_id === answer.answer_id,
-				);
-				const correctAnswer = answer.answer_name_html || answer.answer_name;
-				if (userInput?.answer === correctAnswer) {
-					correctInputs++;
-				}
-			});
-			return (
-				Math.round(
-					(correctInputs / questionAnswers.length) * question.que_onoo * 10,
-				) / 10
-			);
-		}
-
-		if (question.que_type_id === 5) {
-			let correctOrders = 0;
-			questionAnswers.forEach((answer) => {
-				const userInput = userSelectedAnswers.find(
-					(ua) => ua.answer_id === answer.answer_id,
-				);
-				if (userInput && parseInt(userInput.answer, 10) === answer.refid) {
-					correctOrders++;
-				}
-			});
-			return (
-				Math.round(
-					(correctOrders / questionAnswers.length) * question.que_onoo * 10,
-				) / 10
-			);
-		}
-
 		return 0;
 	};
 
 	const getAnswerStatus = (
-		isFullyCorrect: boolean | undefined, // энд өөрчлөх
-		partialPoints: number,
+		isFullyCorrect: boolean | undefined,
+		_partialPoints: number,
 		userSelectedAnswers: UserAnswer[],
+		questionAnswers: Answer[],
+		question: Question,
 	): "unanswered" | "correct" | "partial" | "incorrect" => {
+		// 1. БҮГДЭД хариулаагүй
 		if (userSelectedAnswers.length === 0) return "unanswered";
-		if (isFullyCorrect === true) return "correct"; // строг шалгалт
-		if (partialPoints > 0) return "partial";
+
+		// 2. Бүгдэд зөв хариулсан
+		if (isFullyCorrect === true) return "correct";
+
+		// 3. Хэсэгчилсэн хариулт шалгах
+		const answerCheck = (() => {
+			if (question.que_type_id === 2) {
+				const correctAnswers = questionAnswers.filter((a) => a.is_true === 1);
+				const totalRequired = correctAnswers.length;
+
+				const correctSelected = userSelectedAnswers.filter((ua) =>
+					correctAnswers.some((ca) => ca.answer_id === ua.answer_id),
+				).length;
+
+				const totalAnswered = userSelectedAnswers.length;
+
+				return {
+					hasCorrect: correctSelected > 0,
+					hasUnanswered: totalAnswered < totalRequired,
+					allAnswered: totalAnswered >= totalRequired,
+				};
+			}
+
+			if (question.que_type_id === 3) {
+				let correctCount = 0;
+				let answeredCount = 0;
+
+				questionAnswers.forEach((answer) => {
+					const userInput = userSelectedAnswers.find(
+						(ua) => ua.answer_id === answer.answer_id,
+					);
+					if (userInput) {
+						answeredCount++;
+						const correctAnswer = answer.answer_name_html || answer.answer_name;
+						if (userInput.answer === correctAnswer) {
+							correctCount++;
+						}
+					}
+				});
+
+				return {
+					hasCorrect: correctCount > 0,
+					hasUnanswered: answeredCount < questionAnswers.length,
+					allAnswered: answeredCount === questionAnswers.length,
+				};
+			}
+
+			if (question.que_type_id === 5) {
+				let correctCount = 0;
+				let answeredCount = 0;
+
+				questionAnswers.forEach((answer) => {
+					const userInput = userSelectedAnswers.find(
+						(ua) => ua.answer_id === answer.answer_id,
+					);
+					if (userInput) {
+						answeredCount++;
+						if (parseInt(userInput.answer, 10) === answer.refid) {
+							correctCount++;
+						}
+					}
+				});
+
+				return {
+					hasCorrect: correctCount > 0,
+					hasUnanswered: answeredCount < questionAnswers.length,
+					allAnswered: answeredCount === questionAnswers.length,
+				};
+			}
+
+			if (question.que_type_id === 6) {
+				const answersOnly = questionAnswers.filter(
+					(a) => a.ref_child_id && a.ref_child_id >= 1,
+				);
+
+				let correctCount = 0;
+				let answeredCount = 0;
+
+				answersOnly.forEach((answerItem) => {
+					const userInput = userSelectedAnswers.find(
+						(ua) => ua.answer_id === answerItem.answer_id,
+					);
+					if (userInput) {
+						answeredCount++;
+						if (parseInt(userInput.answer, 10) === answerItem.ref_child_id) {
+							correctCount++;
+						}
+					}
+				});
+
+				return {
+					hasCorrect: correctCount > 0,
+					hasUnanswered: answeredCount < answersOnly.length,
+					allAnswered: answeredCount === answersOnly.length,
+				};
+			}
+
+			return { hasCorrect: false, hasUnanswered: false, allAnswered: true };
+		})();
+
+		// 4. Дутуу хариулсан (зарим хариулаагүй эсвэл зарим зөв)
+		if (
+			answerCheck.hasUnanswered ||
+			(answerCheck.hasCorrect && !isFullyCorrect)
+		) {
+			return "partial";
+		}
+
+		// 5. Бүгдэд хариулсан гэхдээ бүгд буруу
 		return "incorrect";
 	};
 	if (!userId) {
@@ -704,6 +826,8 @@ function ExamResultDetailPage() {
 										isQuestionCorrect || false,
 										partialPoints,
 										userSelectedAnswers,
+										questionAnswers,
+										question,
 									);
 
 									return (
