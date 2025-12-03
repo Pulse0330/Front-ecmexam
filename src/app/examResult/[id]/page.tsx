@@ -1476,80 +1476,77 @@ function ExamResultDetailPage() {
 																		})}
 																	</div>
 
-																	{/* Зөв харгалзуулалт */}
 																	<div className="mt-4 p-5 bg-emerald-50 dark:bg-emerald-950/20 border-2 border-emerald-400 dark:border-emerald-600 rounded-2xl shadow-sm">
 																		<p className="text-base font-bold text-emerald-700 dark:text-emerald-300 mb-4">
 																			★ Зөв харгалзуулалт:
 																		</p>
 																		<div className="space-y-3">
-																			{questionsOnly.map(
-																				(questionItem, _idx) => {
-																					// ЗАСВАР: answer-ын ref_child_id нь question-ий refid-тай тэнцүү байх
-																					const correctAnswer =
-																						answersOnly.find(
-																							(a) =>
-																								a.ref_child_id ===
-																								questionItem.refid,
-																						);
-
-																					return (
-																						<div
-																							key={questionItem.answer_id}
-																							className="flex items-center gap-4 p-3 border-2 border-emerald-300 dark:border-emerald-700 rounded-lg bg-white dark:bg-emerald-900/10"
-																						>
-																							{/* Answer (а column) */}
-																							<div className="flex items-center gap-3 flex-1">
-																								{correctAnswer?.answer_img &&
-																								correctAnswer.answer_img.trim() !==
-																									"" ? (
-																									<Image
-																										src={
-																											correctAnswer.answer_img
-																										}
-																										alt="Answer"
-																										width={120}
-																										height={90}
-																										className="rounded-lg shadow-md object-contain"
-																									/>
-																								) : (
-																									<div className="text-base font-medium">
-																										{correctAnswer?.answer_name_html ||
-																											correctAnswer?.answer_name ||
-																											"Хариулт"}
-																									</div>
-																								)}
-																							</div>
-
-																							{/* Arrow */}
-																							<div className="text-2xl text-emerald-600 flex-shrink-0">
-																								→
-																							</div>
-
-																							{/* Question (б column) */}
-																							<div className="flex items-center gap-3 flex-1">
-																								{questionItem.answer_img &&
-																								questionItem.answer_img.trim() !==
-																									"" ? (
-																									<Image
-																										src={
-																											questionItem.answer_img
-																										}
-																										alt="Question"
-																										width={120}
-																										height={90}
-																										className="rounded-lg shadow-md object-contain"
-																									/>
-																								) : (
-																									<div className="text-base font-medium">
-																										{questionItem.answer_name_html ||
-																											questionItem.answer_name}
-																									</div>
-																								)}
-																							</div>
-																						</div>
+																			{/* ЗАСВАР: answersOnly дээр loop хийх (А багана) */}
+																			{answersOnly.map((answerItem) => {
+																				// answerItem.ref_child_id нь зөв question-ий refid
+																				const correctQuestion =
+																					questionsOnly.find(
+																						(q) =>
+																							q.refid ===
+																							answerItem.ref_child_id,
 																					);
-																				},
-																			)}
+
+																				return (
+																					<div
+																						key={answerItem.answer_id}
+																						className="flex items-center gap-4 p-3 border-2 border-emerald-300 dark:border-emerald-700 rounded-lg bg-white dark:bg-emerald-900/10"
+																					>
+																						{/* Answer (а column) - Зүүн тал */}
+																						<div className="flex items-center gap-3 flex-1">
+																							{answerItem.answer_img &&
+																							answerItem.answer_img.trim() !==
+																								"" ? (
+																								<Image
+																									src={answerItem.answer_img}
+																									alt="Answer"
+																									width={120}
+																									height={90}
+																									className="rounded-lg shadow-md object-contain"
+																								/>
+																							) : (
+																								<div className="text-base font-medium">
+																									{answerItem.answer_name_html ||
+																										answerItem.answer_name ||
+																										"Хариулт"}
+																								</div>
+																							)}
+																						</div>
+
+																						{/* Arrow */}
+																						<div className="text-2xl text-emerald-600 flex-shrink-0">
+																							→
+																						</div>
+
+																						{/* Question (б column) - Баруун тал */}
+																						<div className="flex items-center gap-3 flex-1">
+																							{correctQuestion?.answer_img &&
+																							correctQuestion.answer_img.trim() !==
+																								"" ? (
+																								<Image
+																									src={
+																										correctQuestion.answer_img
+																									}
+																									alt="Question"
+																									width={120}
+																									height={90}
+																									className="rounded-lg shadow-md object-contain"
+																								/>
+																							) : (
+																								<div className="text-base font-medium">
+																									{correctQuestion?.answer_name_html ||
+																										correctQuestion?.answer_name ||
+																										"Хариулт"}
+																								</div>
+																							)}
+																						</div>
+																					</div>
+																				);
+																			})}
 																		</div>
 																	</div>
 																</>
