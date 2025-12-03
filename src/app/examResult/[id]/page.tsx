@@ -108,25 +108,33 @@ function ExamResultDetailPage() {
 			);
 
 			let correctMatches = 0;
+			let incorrectMatches = 0;
 
 			answersOnly.forEach((answerItem) => {
 				const userInput = userSelectedAnswers.find(
 					(ua) => ua.answer_id === answerItem.answer_id,
 				);
 
-				if (
-					userInput &&
-					parseInt(userInput.answer, 10) === answerItem.ref_child_id
-				) {
-					correctMatches++;
+				if (userInput) {
+					const userSelectedRefId = parseInt(userInput.answer, 10);
+
+					// Зөв харгалзуулсан эсэх
+					if (userSelectedRefId === answerItem.ref_child_id) {
+						correctMatches++;
+					} else {
+						// Буруу харгалзуулсан
+						incorrectMatches++;
+					}
 				}
 			});
 
-			return (
-				Math.round(
-					(correctMatches / answersOnly.length) * question.que_onoo * 10,
-				) / 10
-			);
+			// Хэсэгчилсэн оноо = (зөв тоо / нийт) * оноо - (буруу тоо / нийт) * оноо
+			const basePoints =
+				(correctMatches / answersOnly.length) * question.que_onoo;
+			const penalty =
+				(incorrectMatches / answersOnly.length) * question.que_onoo;
+
+			return Math.max(0, Math.round((basePoints - penalty) * 10) / 10);
 		}
 
 		if (question.que_type_id === 3) {
