@@ -2,7 +2,13 @@
 
 import { useQuery } from "@tanstack/react-query";
 import parse from "html-react-parser";
-import { AlertCircle, ArrowLeft, CheckCircle, XCircle } from "lucide-react";
+import {
+	AlertCircle,
+	ArrowLeft,
+	CheckCircle,
+	MinusCircle,
+	XCircle,
+} from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -33,7 +39,7 @@ function ExamResultDetailPage() {
 	const examId = Number(examIdStr);
 	const testId = Number(testIdStr);
 
-	const { data, isLoading, isError, error, isSuccess } =
+	const { data, isLoading, isError, error } =
 		useQuery<ExamResponseMoreApiResponse>({
 			queryKey: ["examResultDetail", testId, examId, userId],
 			queryFn: () => getExamResultMore(testId, examId, userId || 0),
@@ -70,6 +76,117 @@ function ExamResultDetailPage() {
 		return types[typeId] || "Бусад";
 	};
 
+	const calculatePartialPoints = (
+		question: Question,
+		questionAnswers: Answer[],
+		userSelectedAnswers: UserAnswer[],
+	): number => {
+		if (userSelectedAnswers.length === 0) return 0;
+
+		if (question.que_type_id === 2) {
+			const correctAnswers = questionAnswers.filter((a) => a.is_true === 1);
+			const totalCorrect = correctAnswers.length;
+			if (totalCorrect === 0) return 0;
+
+			const correctSelected = userSelectedAnswers.filter((ua) =>
+				correctAnswers.some((ca) => ca.answer_id === ua.answer_id),
+			).length;
+
+			const incorrectSelected = userSelectedAnswers.filter(
+				(ua) => !correctAnswers.some((ca) => ca.answer_id === ua.answer_id),
+			).length;
+
+			const basePoints = (correctSelected / totalCorrect) * question.que_onoo;
+			const penalty = (incorrectSelected / totalCorrect) * question.que_onoo;
+
+			return Math.max(0, Math.round((basePoints - penalty) * 10) / 10);
+		}
+
+		if (question.que_type_id === 6) {
+			const questionsOnly = questionAnswers.filter(
+				(a) => a.ref_child_id === -1,
+			);
+			const answersOnly = questionAnswers.filter(
+				(a) => a.ref_child_id && a.ref_child_id >= 1,
+			);
+
+			let correctMatches = 0;
+
+			questionsOnly.forEach((questionItem) => {
+				// ЗАСВАР: answer-ын ref_child_id нь question-ий refid-тай тэнцүү байх
+				const correctAnswer = answersOnly.find(
+					(a) => a.ref_child_id === questionItem.refid,
+				);
+				if (!correctAnswer) return;
+
+				const userMatch = userSelectedAnswers.find(
+					(ua) => ua.answer_id === correctAnswer.answer_id,
+				);
+
+				// ЗАСВАР: User-ын answer нь question-ий refid-тай тэнцүү эсэхийг шалгах
+				if (
+					userMatch &&
+					parseInt(userMatch.answer, 10) === questionItem.refid
+				) {
+					correctMatches++;
+				}
+			});
+
+			return (
+				Math.round(
+					(correctMatches / questionsOnly.length) * question.que_onoo * 10,
+				) / 10
+			);
+		}
+
+		if (question.que_type_id === 3) {
+			let correctInputs = 0;
+			questionAnswers.forEach((answer) => {
+				const userInput = userSelectedAnswers.find(
+					(ua) => ua.answer_id === answer.answer_id,
+				);
+				const correctAnswer = answer.answer_name_html || answer.answer_name;
+				if (userInput?.answer === correctAnswer) {
+					correctInputs++;
+				}
+			});
+			return (
+				Math.round(
+					(correctInputs / questionAnswers.length) * question.que_onoo * 10,
+				) / 10
+			);
+		}
+
+		if (question.que_type_id === 5) {
+			let correctOrders = 0;
+			questionAnswers.forEach((answer) => {
+				const userInput = userSelectedAnswers.find(
+					(ua) => ua.answer_id === answer.answer_id,
+				);
+				if (userInput && parseInt(userInput.answer, 10) === answer.refid) {
+					correctOrders++;
+				}
+			});
+			return (
+				Math.round(
+					(correctOrders / questionAnswers.length) * question.que_onoo * 10,
+				) / 10
+			);
+		}
+
+		return 0;
+	};
+
+	const getAnswerStatus = (
+		isFullyCorrect: boolean | undefined, // энд өөрчлөх
+		partialPoints: number,
+		userSelectedAnswers: UserAnswer[],
+	): "unanswered" | "correct" | "partial" | "incorrect" => {
+		if (userSelectedAnswers.length === 0) return "unanswered";
+		if (isFullyCorrect === true) return "correct"; // строг шалгалт
+		if (partialPoints > 0) return "partial";
+		return "incorrect";
+	};
 	if (!userId) {
 		return (
 			<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
@@ -153,6 +270,7 @@ function ExamResultDetailPage() {
 	const questions: Question[] = data.RetDataSecond;
 	const answers: Answer[] = data.RetDataThirt;
 	const userAnswers: UserAnswer[] = data.RetDataFourth;
+
 	const dunInfo = dunData?.RetData?.[0];
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 py-8 px-4">
@@ -527,7 +645,6 @@ function ExamResultDetailPage() {
 											return parseInt(userInput.answer, 10) === answer.refid;
 										});
 									} else if (question.que_type_id === 6) {
-										// Matching question - Бүх харгалзуулалт зөв эсэхийг шалгах
 										const questionsOnly = questionAnswers.filter(
 											(a: Answer) => a.ref_child_id === -1,
 										);
@@ -535,24 +652,20 @@ function ExamResultDetailPage() {
 											(a: Answer) => a.ref_child_id && a.ref_child_id >= 1,
 										);
 
-										// Бүх асуулт зөв харгалзуулагдсан эсэхийг шалгах
 										return questionsOnly.every((questionItem: Answer) => {
-											// Энэ асуултын зөв хариулт (refid ижил байх ёстой)
+											// ЗАСВАР: Зөв answer олох
 											const correctAnswer = answersOnly.find(
-												(a: Answer) => a.refid === questionItem.refid,
+												(a: Answer) => a.ref_child_id === questionItem.refid,
 											);
-
 											if (!correctAnswer) return false;
 
-											// Хэрэглэгчийн сонгосон хариулт
 											const userInput = userSelectedAnswers.find(
 												(ua: UserAnswer) =>
 													ua.answer_id === correctAnswer.answer_id,
 											);
-
 											if (!userInput) return false;
 
-											// Хэрэглэгчийн сонгосон хариулт нь зөв асуулттай холбогдсон эсэхийг шалгах
+											// ЗАСВАР: User-ын сонголт зөв эсэхийг шалгах
 											return (
 												parseInt(userInput.answer, 10) === questionItem.refid
 											);
@@ -586,29 +699,47 @@ function ExamResultDetailPage() {
 									userSelectedAnswers,
 									isQuestionCorrect,
 								}) => {
+									// ӨМНӨХ КОД (устгах):
+									// const earnedPoints = isQuestionCorrect ? question.que_onoo : 0;
+
+									// ШИНЭ КОД (нэмэх):
+									const partialPoints = calculatePartialPoints(
+										question,
+										questionAnswers,
+										userSelectedAnswers,
+									);
 									const earnedPoints = isQuestionCorrect
 										? question.que_onoo
-										: 0;
+										: partialPoints;
+									const answerStatus = getAnswerStatus(
+										isQuestionCorrect || false,
+										partialPoints,
+										userSelectedAnswers,
+									);
 
 									return (
 										<div
 											key={question.exam_que_id}
 											className={`border rounded-2xl p-6 shadow-lg ${
-												userSelectedAnswers.length === 0
+												answerStatus === "unanswered"
 													? "bg-orange-50 dark:bg-orange-950/20 border-orange-500"
-													: isQuestionCorrect
+													: answerStatus === "correct"
 														? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-500"
-														: "bg-red-50 dark:bg-red-950/20 border-red-500"
+														: answerStatus === "partial"
+															? "bg-blue-50 dark:bg-blue-950/20 border-blue-500"
+															: "bg-red-50 dark:bg-red-950/20 border-red-500"
 											}`}
 										>
 											<div className="flex items-start gap-4 mb-6">
 												<div
 													className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${
-														userSelectedAnswers.length === 0
+														answerStatus === "unanswered"
 															? "bg-orange-500 text-white"
-															: isQuestionCorrect
+															: answerStatus === "correct"
 																? "bg-emerald-500 text-white"
-																: "bg-red-500 text-white"
+																: answerStatus === "partial"
+																	? "bg-blue-500 text-white"
+																	: "bg-red-500 text-white"
 													}`}
 												>
 													<span>{index + 1}</span>
@@ -623,14 +754,16 @@ function ExamResultDetailPage() {
 														</span>
 														<div
 															className={`ml-auto flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-base shadow-lg ${
-																userSelectedAnswers.length === 0
+																answerStatus === "unanswered"
 																	? "bg-gradient-to-r from-orange-500 to-amber-500 text-white"
-																	: isQuestionCorrect
+																	: answerStatus === "correct"
 																		? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
-																		: "bg-gradient-to-r from-red-500 to-rose-500 text-white"
+																		: answerStatus === "partial"
+																			? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
+																			: "bg-gradient-to-r from-red-500 to-rose-500 text-white"
 															}`}
 														>
-															{userSelectedAnswers.length === 0 ? (
+															{answerStatus === "unanswered" ? (
 																<>
 																	<AlertCircle className="w-5 h-5" />
 																	<span>Хариулаагүй</span>
@@ -638,10 +771,18 @@ function ExamResultDetailPage() {
 																		0/{question.que_onoo}
 																	</div>
 																</>
-															) : isQuestionCorrect ? (
+															) : answerStatus === "correct" ? (
 																<>
 																	<CheckCircle className="w-5 h-5" />
 																	<span>Зөв хариулсан</span>
+																	<div className="ml-2 px-2 py-1 bg-white/20 rounded-lg">
+																		{earnedPoints}/{question.que_onoo}
+																	</div>
+																</>
+															) : answerStatus === "partial" ? (
+																<>
+																	<MinusCircle className="w-5 h-5" />
+																	<span>Дутуу хариулсан</span>
 																	<div className="ml-2 px-2 py-1 bg-white/20 rounded-lg">
 																		{earnedPoints}/{question.que_onoo}
 																	</div>
@@ -657,22 +798,87 @@ function ExamResultDetailPage() {
 															)}
 														</div>
 													</div>
+													{/* Асуултын харуулалт - question card дотор */}
+
 													<div className="text-lg font-medium">
+														{/* 1. Асуултын үндсэн текст */}
 														{question.question_name &&
-														question.question_name.trim() !== "" ? (
-															safeParse(question.question_name)
-														) : question.question_img &&
-															question.question_img.trim() !== "" ? (
-															<Image
-																src={question.question_img}
-																alt="Question"
-																width={400}
-																height={300}
-																className="rounded-lg mt-2"
-															/>
-														) : (
-															"Асуулт байхгүй"
-														)}
+															question.question_name.trim() !== "" && (
+																<div className="mb-3">
+																	{safeParse(question.question_name)}
+																</div>
+															)}
+
+														{/* 2. Асуултын зураг */}
+														{question.question_img &&
+															question.question_img.trim() !== "" && (
+																<div className="mb-3">
+																	<Image
+																		src={question.question_img}
+																		alt="Question Image"
+																		width={500}
+																		height={350}
+																		className="rounded-xl shadow-md"
+																	/>
+																</div>
+															)}
+
+														{/* 3. Source HTML (дуу, материал гэх мэт) */}
+														{question.is_src > 0 &&
+															question.source_html &&
+															question.source_html.trim() !== "" && (
+																<div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-300 dark:border-blue-700 rounded-xl">
+																	<div className="flex items-start gap-3 mb-2">
+																		<svg
+																			className="w-5 h-5 text-blue-600 mt-1 flex-shrink-0"
+																			fill="none"
+																			stroke="currentColor"
+																			viewBox="0 0 24 24"
+																		>
+																			<title>Материал</title>
+																			<path
+																				strokeLinecap="round"
+																				strokeLinejoin="round"
+																				strokeWidth={2}
+																				d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+																			/>
+																		</svg>
+																		<div className="flex-1">
+																			<p className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">
+																				📄 Материал:
+																			</p>
+																			<div className="text-base leading-relaxed text-foreground bg-white dark:bg-gray-800 p-3 rounded-lg">
+																				{safeParse(question.source_html)}
+																			</div>
+																		</div>
+																	</div>
+																</div>
+															)}
+
+														{/* 4. Source зураг (хэрэв байвал) */}
+														{question.source_img &&
+															question.source_img.trim() !== "" && (
+																<div className="mt-3">
+																	<Image
+																		src={question.source_img}
+																		alt="Source Image"
+																		width={500}
+																		height={350}
+																		className="rounded-xl shadow-md"
+																	/>
+																</div>
+															)}
+
+														{/* 5. Хоосон тохиолдол */}
+														{!question.question_name?.trim() &&
+															!question.question_img?.trim() &&
+															(!question.is_src ||
+																!question.source_html?.trim()) &&
+															!question.source_img?.trim() && (
+																<span className="text-muted-foreground italic">
+																	Асуулт байхгүй
+																</span>
+															)}
 													</div>
 												</div>
 											</div>
@@ -696,6 +902,16 @@ function ExamResultDetailPage() {
 																	const isWrongSelection =
 																		isUserSelected && !isCorrect;
 
+																	// ЗАСВАР: Зураг эхлээд шалгах
+																	const hasImage =
+																		answer.answer_img &&
+																		answer.answer_img.trim() !== "";
+																	const hasText =
+																		(answer.answer_name_html &&
+																			answer.answer_name_html.trim() !== "") ||
+																		(answer.answer_name &&
+																			answer.answer_name.trim() !== "");
+
 																	return (
 																		<div
 																			key={answer.answer_id}
@@ -703,21 +919,14 @@ function ExamResultDetailPage() {
 																				isWrongSelection
 																					? "border-red-400 bg-red-50 dark:bg-red-950/10 shadow-lg"
 																					: isUserSelected
-																						? "border-ember-400 bg-blue-50 dark:bg-blue-950/20 shadow-lg"
+																						? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 shadow-lg"
 																						: "border-border bg-card/50"
 																			}`}
 																		>
 																			<div className="flex-1 min-w-0">
 																				<div className="text-base leading-relaxed font-medium">
-																					{answer.answer_name_html &&
-																					answer.answer_name_html.trim() !==
-																						"" ? (
-																						safeParse(answer.answer_name_html)
-																					) : answer.answer_name &&
-																						answer.answer_name.trim() !== "" ? (
-																						safeParse(answer.answer_name)
-																					) : answer.answer_img &&
-																						answer.answer_img.trim() !== "" ? (
+																					{/* ЗАСВАР: Зураг байвал зургийг харуулах */}
+																					{hasImage && (
 																						<Image
 																							src={answer.answer_img}
 																							alt="Answer"
@@ -725,9 +934,25 @@ function ExamResultDetailPage() {
 																							height={200}
 																							className="rounded-xl shadow-md mt-2"
 																						/>
-																					) : (
-																						"Хариулт байхгүй"
 																					)}
+
+																					{/* Текст байвал текстийг харуулах */}
+																					{hasText && (
+																						<div className="mt-2">
+																							{answer.answer_name_html &&
+																							answer.answer_name_html.trim() !==
+																								""
+																								? safeParse(
+																										answer.answer_name_html,
+																									)
+																								: safeParse(answer.answer_name)}
+																						</div>
+																					)}
+
+																					{/* Хоосон бол */}
+																					{!hasImage &&
+																						!hasText &&
+																						"Хариулт байхгүй"}
 																				</div>
 																			</div>
 
@@ -762,34 +987,56 @@ function ExamResultDetailPage() {
 																</p>
 																{questionAnswers
 																	.filter((answer) => answer.is_true === 1)
-																	.map((answer) => (
-																		<div
-																			key={answer.answer_id}
-																			className="flex items-start gap-3 mb-2 p-3 border-2 border-emerald-300 dark:border-emerald-700 rounded-lg bg-white dark:bg-emerald-900/10"
-																		>
-																			<div className="text-base leading-relaxed">
-																				{answer.answer_name_html &&
+																	.map((answer) => {
+																		// ЗАСВАР: Зураг эхлээд шалгах
+																		const hasImage =
+																			answer.answer_img &&
+																			answer.answer_img.trim() !== "";
+																		const hasText =
+																			(answer.answer_name_html &&
 																				answer.answer_name_html.trim() !==
-																					"" ? (
-																					safeParse(answer.answer_name_html)
-																				) : answer.answer_name &&
-																					answer.answer_name.trim() !== "" ? (
-																					safeParse(answer.answer_name)
-																				) : answer.answer_img &&
-																					answer.answer_img.trim() !== "" ? (
-																					<Image
-																						src={answer.answer_img}
-																						alt="Correct Answer"
-																						width={300}
-																						height={200}
-																						className="rounded-xl shadow-md mt-2"
-																					/>
-																				) : (
-																					"Хариулт байхгүй"
-																				)}
+																					"") ||
+																			(answer.answer_name &&
+																				answer.answer_name.trim() !== "");
+
+																		return (
+																			<div
+																				key={answer.answer_id}
+																				className="flex items-start gap-3 mb-2 p-3 border-2 border-emerald-300 dark:border-emerald-700 rounded-lg bg-white dark:bg-emerald-900/10"
+																			>
+																				<div className="text-base leading-relaxed">
+																					{/* ЗАСВАР: Зураг байвал зургийг харуулах */}
+																					{hasImage && (
+																						<Image
+																							src={answer.answer_img}
+																							alt="Correct Answer"
+																							width={300}
+																							height={200}
+																							className="rounded-xl shadow-md mt-2"
+																						/>
+																					)}
+
+																					{/* Текст байвал текстийг харуулах */}
+																					{hasText && (
+																						<div className="mt-2">
+																							{answer.answer_name_html &&
+																							answer.answer_name_html.trim() !==
+																								""
+																								? safeParse(
+																										answer.answer_name_html,
+																									)
+																								: safeParse(answer.answer_name)}
+																						</div>
+																					)}
+
+																					{/* Хоосон бол */}
+																					{!hasImage &&
+																						!hasText &&
+																						"Хариулт байхгүй"}
+																				</div>
 																			</div>
-																		</div>
-																	))}
+																		);
+																	})}
 															</div>
 														</div>
 													)
@@ -1109,9 +1356,10 @@ function ExamResultDetailPage() {
 																		</p>
 
 																		{questionsOnly.map((questionItem) => {
-																			// Find the correct answer for this question (same refid)
+																			// ЗАСВАР: answer-ын ref_child_id нь question-ий refid-тай тэнцүү байх
 																			const correctAnswer = answersOnly.find(
-																				(a) => a.refid === questionItem.refid,
+																				(a) =>
+																					a.ref_child_id === questionItem.refid,
 																			);
 
 																			// Find user's selection for this question
@@ -1125,6 +1373,7 @@ function ExamResultDetailPage() {
 																				: null;
 
 																			// Find which question the user matched to
+																			// ЗАСВАР: User-ын answer утга нь question-ий refid
 																			const userSelectedQuestion = userMatch
 																				? questionsOnly.find(
 																						(q) =>
@@ -1152,11 +1401,23 @@ function ExamResultDetailPage() {
 																				>
 																					{/* Right side - Answer (а column) */}
 																					<div className="flex items-center gap-3 flex-1">
-																						<div className="text-base font-medium">
-																							{correctAnswer?.answer_name_html ||
-																								correctAnswer?.answer_name ||
-																								"Хариулт"}
-																						</div>
+																						{correctAnswer?.answer_img &&
+																						correctAnswer.answer_img.trim() !==
+																							"" ? (
+																							<Image
+																								src={correctAnswer.answer_img}
+																								alt="Answer"
+																								width={120}
+																								height={90}
+																								className="rounded-lg shadow-md object-contain"
+																							/>
+																						) : (
+																							<div className="text-base font-medium">
+																								{correctAnswer?.answer_name_html ||
+																									correctAnswer?.answer_name ||
+																									"Хариулт"}
+																							</div>
+																						)}
 																					</div>
 
 																					{/* Arrow */}
@@ -1167,10 +1428,24 @@ function ExamResultDetailPage() {
 																					{/* Left side - Question (б column) - User's selection */}
 																					<div className="flex items-center gap-3 flex-1">
 																						{userSelectedQuestion ? (
-																							<div className="text-base font-medium">
-																								{userSelectedQuestion.answer_name_html ||
-																									userSelectedQuestion.answer_name}
-																							</div>
+																							userSelectedQuestion.answer_img &&
+																							userSelectedQuestion.answer_img.trim() !==
+																								"" ? (
+																								<Image
+																									src={
+																										userSelectedQuestion.answer_img
+																									}
+																									alt="Selected Question"
+																									width={120}
+																									height={90}
+																									className="rounded-lg shadow-md object-contain"
+																								/>
+																							) : (
+																								<div className="text-base font-medium">
+																									{userSelectedQuestion.answer_name_html ||
+																										userSelectedQuestion.answer_name}
+																								</div>
+																							)
 																						) : (
 																							<span className="text-orange-600 font-medium">
 																								Харгалзуулаагүй
@@ -1209,10 +1484,12 @@ function ExamResultDetailPage() {
 																		<div className="space-y-3">
 																			{questionsOnly.map(
 																				(questionItem, _idx) => {
+																					// ЗАСВАР: answer-ын ref_child_id нь question-ий refid-тай тэнцүү байх
 																					const correctAnswer =
 																						answersOnly.find(
 																							(a) =>
-																								a.refid === questionItem.refid,
+																								a.ref_child_id ===
+																								questionItem.refid,
 																						);
 
 																					return (

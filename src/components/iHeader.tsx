@@ -1,6 +1,6 @@
 "use client";
 import Cookies from "js-cookie";
-import { LogOut, User, UserCircle } from "lucide-react";
+import { LogOut, School, User, UserCircle, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -39,6 +39,8 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+// ШИНЭ: Zustand store import хийх
+import { useUserStore } from "@/stores/useUserStore";
 
 // NavbarAction Component
 const NavbarAction = ({
@@ -74,11 +76,11 @@ export interface Navbar01Props extends React.HTMLAttributes<HTMLElement> {
 	logo?: React.ReactNode;
 	logoHref?: string;
 	navigationLinks?: Navbar01NavLink[];
-	userName?: string;
-	userEmail?: string;
+	// УСТГАХ: userName, userEmail props
+	// userName?: string;
+	// userEmail?: string;
 }
 
-// Default Navigation Links
 const defaultNavigationLinks: Navbar01NavLink[] = [
 	{ href: "/home", label: "Үндсэн хуудас" },
 	{ href: "/Lists/examList", label: "Шалгалт" },
@@ -88,14 +90,12 @@ const defaultNavigationLinks: Navbar01NavLink[] = [
 	{ href: "/Lists/exerciseList", label: "Дасгал ажил" },
 ];
 
-// Navbar01 Component
 export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 	(
 		{
 			className,
 			navigationLinks = defaultNavigationLinks,
-			userName,
-			userEmail,
+			// УСТГАХ: userName, userEmail destructure
 			...props
 		},
 		ref,
@@ -106,6 +106,16 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 		const containerRef = useRef<HTMLElement>(null);
 		const pathname = usePathname();
 		const router = useRouter();
+
+		// ШИНЭ: Zustand store-оос profile авах
+		const profile = useUserStore((state) => state.profile);
+
+		// Хэрэглэгчийн нэр, email, зураг
+		const userName = profile?.fname || profile?.firstname || "Хэрэглэгч";
+		const _userEmail = profile?.email || "";
+		const userImage = profile?.img_url || "";
+		const schoolName = profile?.sch_name || "";
+		const studentGroup = profile?.studentgroupname || "";
 
 		useEffect(() => {
 			const checkWidth = () => {
@@ -133,9 +143,10 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 
 		const handleLogoutClick = () => setShowLogoutDialog(true);
 
-		// ✅ js-cookie ашигласан logout
 		const confirmLogout = () => {
 			Cookies.remove("auth-token", { path: "/" });
+			// ШИНЭ: Store-ыг цэвэрлэх
+			useUserStore.getState().setProfile(null);
 			router.push("/login");
 		};
 
@@ -170,7 +181,6 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 							</Link>
 						</div>
 
-						{/* Center - Navigation Menu (Desktop only) */}
 						{!isMobile && (
 							<div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
 								<NavigationMenu>
@@ -201,6 +211,30 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 
 						{/* Right side - Actions */}
 						<div className="flex items-center gap-3">
+							{/* Хэрэглэгчийн нэр харуулах - Menu-ний баруун талд */}
+							{!isMobile && profile && (
+								<div className="flex items-center gap-2.5 px-4 py-2   ">
+									{userImage ? (
+										<div className="relative">
+											<Image
+												src={userImage}
+												alt={userName}
+												width={32}
+												height={32}
+												className="rounded-full object-cover ring-2 ring-primary/30 ring-offset-1 ring-offset-background"
+											/>
+											<div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
+										</div>
+									) : (
+										<div></div>
+									)}
+									<div className="flex flex-col gap-0.5 min-w-0">
+										<span className="text-sm font-bold text-foreground leading-tight truncate max-w-[120px]">
+											{userName}
+										</span>
+									</div>
+								</div>
+							)}
 							{/* Mobile menu */}
 							{isMobile && (
 								<Popover open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -257,21 +291,76 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 							{/* User dropdown */}
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									<NavbarAction icon={<User className="h-5 w-5" />} />
+									{/* ШИНЭ: Хэрэв зураг байвал зургийг харуулах */}
+									{userImage ? (
+										<Button
+											variant="ghost"
+											className={cn(
+												"p-0 rounded-full backdrop-blur-sm border-2 transition-all duration-300",
+												"bg-white/80 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700",
+												"hover:bg-white dark:hover:bg-gray-700/50",
+												"hover:scale-110 shadow-sm h-10 w-10 overflow-hidden",
+											)}
+										>
+											<Image
+												src={userImage}
+												alt={userName}
+												width={40}
+												height={40}
+												className="rounded-full object-cover"
+											/>
+										</Button>
+									) : (
+										<NavbarAction icon={<User className="h-5 w-5" />} />
+									)}
 								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end" className="w-56">
+								<DropdownMenuContent align="end" className="w-64">
 									<DropdownMenuLabel>
-										<div className="flex flex-col space-y-1">
-											{userName && (
-												<p className="text-sm font-medium leading-none">
+										<div className="flex items-center space-x-3">
+											{/* Зураг */}
+											{userImage ? (
+												<Image
+													src={userImage}
+													alt={userName}
+													width={48}
+													height={48}
+													className="rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
+												/>
+											) : (
+												<div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+													<User className="h-6 w-6 text-primary" />
+												</div>
+											)}
+
+											{/* Мэдээлэл */}
+											<div className="flex flex-col space-y-1.5 flex-1 min-w-0">
+												<p className="text-sm font-bold leading-none truncate">
 													{userName}
 												</p>
-											)}
-											{userEmail && (
-												<p className="text-xs leading-none text-muted-foreground">
-													{userEmail}
-												</p>
-											)}
+
+												{schoolName && (
+													<div
+														className="flex items-center gap-1.5 min-w-0 cursor-help"
+														title={schoolName}
+													>
+														<School className="h-3 w-3 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+														<span className="text-xs text-blue-600 dark:text-blue-400 ">
+															{schoolName}
+														</span>
+													</div>
+												)}
+												{studentGroup && (
+													<div
+														className="flex items-center gap-1.5 min-w-0 cursor-help"
+														title={studentGroup}
+													>
+														<Users className="h-3 w-3 flex-shrink-0 text-green-600 dark:text-green-400" />
+														<span className="text-xs text-green-600 dark:text-green-400 truncate">
+															{studentGroup}
+														</span>
+													</div>
+												)}
+											</div>
 										</div>
 									</DropdownMenuLabel>
 									<DropdownMenuSeparator />

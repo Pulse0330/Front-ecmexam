@@ -1,18 +1,14 @@
-// types/auth.ts
-
 export interface UserProfileResponseType {
-	RetResponse: RetResponse;
-	RetData: UserData[];
+	RetResponse: {
+		ResponseMessage: string;
+		StatusCode: string;
+		ResponseCode: string;
+		ResponseType: boolean;
+	};
+	RetData: UserProfileItem[];
 }
 
-export interface RetResponse {
-	ResponseMessage: string;
-	StatusCode: string;
-	ResponseCode: string;
-	ResponseType: boolean;
-}
-
-export interface UserData {
+export interface UserProfileItem {
 	id: number;
 	login_name: string;
 	lastname: string;
@@ -32,4 +28,6 @@ export interface UserData {
 	img_url: string;
 	username: string;
 	school_id: number;
+	sch_name: string;
+	studentgroupname: string;
 }

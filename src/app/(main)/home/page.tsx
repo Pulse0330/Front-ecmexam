@@ -4,9 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import {
 	AlertCircle,
 	BookOpen,
+	ChevronDown,
 	ClipboardList,
 	Sparkles,
-	ChevronDown,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import UseAnimations from "react-useanimations";
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/collapsible";
 import { getHomeScreen, getUserProfile } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useUserStore } from "@/stores/useUserStore";
 import type { HomeResponseType } from "@/types/home";
 import type { UserProfileResponseType } from "@/types/user";
 import { BannerCarousel } from "./banner";
@@ -28,7 +29,6 @@ import { PaymentExam } from "./courseexam";
 import ExamLists from "./examlists";
 import HomeSorilLists from "./sorillists";
 
-// ✅ Component-н гаднаас SNOWFLAKES үүсгэх (render бүр дээр дахин бүү үүсгэ)
 const SNOWFLAKES = Array.from({ length: 25 }, (_, i) => ({
 	id: `snow-${i}`,
 	left: Math.random() * 100,
@@ -73,6 +73,8 @@ export default function HomePage() {
 		enabled: !!userId,
 	});
 
+	const { setProfile } = useUserStore();
+
 	const {
 		data: profileData,
 		isLoading: isProfileLoading,
@@ -83,6 +85,13 @@ export default function HomePage() {
 		queryFn: () => getUserProfile(userId || 0),
 		enabled: !!userId,
 	});
+
+	// Zustand руу хадгалах
+	useEffect(() => {
+		if (profileData?.RetData?.length) {
+			setProfile(profileData.RetData[0]);
+		}
+	}, [profileData, setProfile]);
 
 	if (!userId) {
 		return (
