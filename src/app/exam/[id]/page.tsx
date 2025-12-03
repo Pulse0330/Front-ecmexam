@@ -13,9 +13,9 @@ import {
 	Menu,
 	Save,
 } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+
 import FinishExamResultDialog, {
 	type FinishExamDialogHandle,
 } from "@/app/exam/component/finish";
@@ -29,17 +29,12 @@ import SingleSelectQuestion from "@/app/exam/component/question/singleSelect";
 import FixedScrollButton from "@/components/FixedScrollButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-	deleteExamAnswer,
-	finishExam,
-	getExamById,
-	saveExamAnswer,
-} from "@/lib/api";
+import { deleteExamAnswer, getExamById, saveExamAnswer } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { AnswerValue } from "@/types/exam/exam";
+import { AdvancedExamProctor } from "../component/examguard";
 import ExamTimer from "../component/Itime";
 import QuestionImage from "../component/question/questionImage";
-import { AdvancedExamProctor } from "../component/examguard";
 
 interface PendingAnswer {
 	questionId: number;
@@ -78,7 +73,7 @@ export default function ExamPage() {
 	const lastSavedAnswers = useRef<Map<number, AnswerValue>>(new Map());
 	const isSavingRef = useRef(false);
 	const AUTO_SAVE_DELAY = 1000;
-	const router = useRouter();
+
 	const {
 		data: examData,
 		isLoading,

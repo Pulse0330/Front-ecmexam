@@ -103,30 +103,20 @@ function ExamResultDetailPage() {
 		}
 
 		if (question.que_type_id === 6) {
-			const questionsOnly = questionAnswers.filter(
-				(a) => a.ref_child_id === -1,
-			);
 			const answersOnly = questionAnswers.filter(
 				(a) => a.ref_child_id && a.ref_child_id >= 1,
 			);
 
 			let correctMatches = 0;
 
-			questionsOnly.forEach((questionItem) => {
-				// ЗАСВАР: answer-ын ref_child_id нь question-ий refid-тай тэнцүү байх
-				const correctAnswer = answersOnly.find(
-					(a) => a.ref_child_id === questionItem.refid,
-				);
-				if (!correctAnswer) return;
-
-				const userMatch = userSelectedAnswers.find(
-					(ua) => ua.answer_id === correctAnswer.answer_id,
+			answersOnly.forEach((answerItem) => {
+				const userInput = userSelectedAnswers.find(
+					(ua) => ua.answer_id === answerItem.answer_id,
 				);
 
-				// ЗАСВАР: User-ын answer нь question-ий refid-тай тэнцүү эсэхийг шалгах
 				if (
-					userMatch &&
-					parseInt(userMatch.answer, 10) === questionItem.refid
+					userInput &&
+					parseInt(userInput.answer, 10) === answerItem.ref_child_id
 				) {
 					correctMatches++;
 				}
@@ -134,7 +124,7 @@ function ExamResultDetailPage() {
 
 			return (
 				Math.round(
-					(correctMatches / questionsOnly.length) * question.que_onoo * 10,
+					(correctMatches / answersOnly.length) * question.que_onoo * 10,
 				) / 10
 			);
 		}
@@ -645,29 +635,20 @@ function ExamResultDetailPage() {
 											return parseInt(userInput.answer, 10) === answer.refid;
 										});
 									} else if (question.que_type_id === 6) {
-										const questionsOnly = questionAnswers.filter(
-											(a: Answer) => a.ref_child_id === -1,
-										);
 										const answersOnly = questionAnswers.filter(
 											(a: Answer) => a.ref_child_id && a.ref_child_id >= 1,
 										);
 
-										return questionsOnly.every((questionItem: Answer) => {
-											// ЗАСВАР: Зөв answer олох
-											const correctAnswer = answersOnly.find(
-												(a: Answer) => a.ref_child_id === questionItem.refid,
-											);
-											if (!correctAnswer) return false;
-
+										return answersOnly.every((answerItem: Answer) => {
 											const userInput = userSelectedAnswers.find(
 												(ua: UserAnswer) =>
-													ua.answer_id === correctAnswer.answer_id,
+													ua.answer_id === answerItem.answer_id,
 											);
 											if (!userInput) return false;
 
-											// ЗАСВАР: User-ын сонголт зөв эсэхийг шалгах
 											return (
-												parseInt(userInput.answer, 10) === questionItem.refid
+												parseInt(userInput.answer, 10) ===
+												answerItem.ref_child_id
 											);
 										});
 									}

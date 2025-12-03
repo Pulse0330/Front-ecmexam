@@ -113,7 +113,6 @@ const FinishExamResultDialog = forwardRef<
 				return finishExam(payload);
 			},
 			onSuccess: (res) => {
-
 				if (res.RetResponse.ResponseCode === "10") {
 					const testId = res.RetData;
 
