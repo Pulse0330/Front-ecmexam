@@ -613,14 +613,16 @@ function ExamResultDetailPage() {
 									</div>
 								</div>
 								<div className="flex items-end gap-2">
-									<p className="text-4xl font-bold text-blue-600">
-										{examSummary.point_perc.toFixed(1)}
-									</p>
+									{/* 🔥 ТҮВШИН ЭХЭНД */}
 									{dunInfo && (
-										<span className="text-3xl font-bold text-gray-700 mb-1 ml-2">
+										<span className="text-3xl font-bold text-gray-700 mb-1">
 											({dunInfo.tuval})
 										</span>
 									)}
+									{/* 🔥 ХУВЬ ДАРАА НЬ */}
+									<p className="text-4xl font-bold text-blue-600">
+										{examSummary.point_perc.toFixed(1)}
+									</p>
 									<p className="text-xl font-bold text-blue-600/60 mb-1">%</p>
 								</div>
 								{/* Хувийн визуал индикатор */}

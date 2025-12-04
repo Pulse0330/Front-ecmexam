@@ -5,16 +5,16 @@ import { useEffect, useMemo, useRef } from "react";
 import { useServerTime } from "@/hooks/useServerTime";
 
 interface ExamTimerProps {
-	examStartTime: string;
-	examEndTime: string;
-	examMinutes: number;
-	startedDate?: string;
+	examStartTime: string; // "2025-12-04 11:11"
+	examEndTime: string; // "2025-12-04T11:21:41.920Z" - ЭНЭ НЬ ДУУСАХ ХУГАЦАА
+	examMinutes: number; // 10
+	startedDate?: string; // "2025-12-04T11:17:17.277Z"
 	onTimeUp?: (isTimeUp: boolean) => void;
 	onAutoFinish?: () => void;
 }
 
 export default function ExamTimer({
-	examStartTime,
+	examEndTime, // 🔥 Энэ параметрийг одоо ашиглана
 	examMinutes,
 	startedDate,
 	onTimeUp,
@@ -27,7 +27,6 @@ export default function ExamTimer({
 	const onTimeUpRef = useRef(onTimeUp);
 	const onAutoFinishRef = useRef(onAutoFinish);
 
-	// ✅ Props update хийх
 	useEffect(() => {
 		onTimeUpRef.current = onTimeUp;
 		onAutoFinishRef.current = onAutoFinish;
@@ -35,57 +34,60 @@ export default function ExamTimer({
 
 	const currentTimeMs = currentTime?.getTime() ?? null;
 
-	// ✅ ЭХЛЭЭД status тооцоолох
+	// 🔥 ҮНДСЭН ТООЦООЛОЛ: examEndTime болон одоогийн цагийг харьцуулна
 	const { status, remainingSec, percentage } = useMemo(() => {
 		if (currentTimeMs === null) {
 			return {
 				status: "before" as const,
 				remainingSec: examMinutes * 60,
 				percentage: 100,
-				elapsedSec: 0,
-				endDateTime: null,
 			};
 		}
 
-		const startDate = new Date(`${examStartTime.replace(" ", "T")}Z`);
 		const totalSec = examMinutes * 60;
 
-		let stat: "before" | "ongoing" | "ended";
-		let remaining: number;
-		let elapsed: number;
-		let calculatedEndTime: Date | null = null;
-
+		// Хэрэв startedDate байхгүй бол "before" гэж үзнэ
 		if (!startedDate) {
-			stat = "before";
-			remaining = totalSec;
-			elapsed = 0;
-			calculatedEndTime = new Date(startDate.getTime() + totalSec * 1000);
-		} else {
-			const actualStartDate = new Date(startedDate);
-			calculatedEndTime = new Date(actualStartDate.getTime() + totalSec * 1000);
-			elapsed = Math.floor((currentTimeMs - actualStartDate.getTime()) / 1000);
-			remaining = Math.max(0, totalSec - elapsed);
-
-			if (currentTimeMs >= calculatedEndTime.getTime()) {
-				stat = "ended";
-				remaining = 0;
-				elapsed = totalSec;
-			} else {
-				stat = "ongoing";
-			}
+			return {
+				status: "before" as const,
+				remainingSec: totalSec,
+				percentage: 100,
+			};
 		}
 
+		// 🔥 ДУУСАХ ХУГАЦААГ examEndTime-с авна (backend-с ирсэн)
+		const endDateTime = new Date(examEndTime);
+		const startDateTime = new Date(startedDate);
+
+		// Одоогийн цаг ба дуусах цагийн зөрүү (секундээр)
+		const remainingMs = endDateTime.getTime() - currentTimeMs;
+		const remaining = Math.max(0, Math.floor(remainingMs / 1000));
+
+		// Status тодорхойлох
+		let stat: "before" | "ongoing" | "ended";
+
+		if (currentTimeMs < startDateTime.getTime()) {
+			// Эхлээгүй байна
+			stat = "before";
+		} else if (currentTimeMs >= endDateTime.getTime()) {
+			// Дууссан
+			stat = "ended";
+		} else {
+			// Явагдаж байна
+			stat = "ongoing";
+		}
+
+		// Percentage тооцоолох (нийт хугацаанаас хэдэн % үлдсэн)
 		const pct = totalSec > 0 ? (remaining / totalSec) * 100 : 0;
 
 		return {
 			status: stat,
-			remainingSec: Math.max(0, remaining),
+			remainingSec: remaining,
 			percentage: Math.max(0, Math.min(100, pct)),
-			elapsedSec: Math.max(0, elapsed),
-			endDateTime: calculatedEndTime,
 		};
-	}, [currentTimeMs, examStartTime, examMinutes, startedDate]);
+	}, [currentTimeMs, examEndTime, examMinutes, startedDate]);
 
+	// Auto-finish логик
 	useEffect(() => {
 		if (status === "ended") {
 			console.log("🔴 Status = ended, auto-finish эхэллээ");
@@ -99,14 +101,14 @@ export default function ExamTimer({
 				}
 			}
 
-			// Step 2: Auto-finish ШУУД дуудах (delay байхгүй)
+			// Step 2: Auto-finish ШУУД дуудах
 			if (!hasAutoFinished.current && onAutoFinishRef.current) {
 				hasAutoFinished.current = true;
 				console.log("⏰ Auto-finish ШУУД дуудагдаж байна");
 				onAutoFinishRef.current();
 			}
 		}
-	}, [status]); // ✅ status dependency
+	}, [status]);
 
 	const formatTime = (sec: number) => {
 		const h = Math.floor(sec / 3600);

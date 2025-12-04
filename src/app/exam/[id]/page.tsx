@@ -82,8 +82,6 @@ export default function ExamPage() {
 		queryKey: ["exam", userId, id],
 		queryFn: () => getExamById(userId || 0, Number(id)),
 		enabled: !!userId && !!id,
-		staleTime: 5 * 60 * 1000,
-		retry: 2,
 	});
 
 	const areAnswersEqual = useCallback(
@@ -514,7 +512,7 @@ export default function ExamPage() {
 	}, []);
 
 	useEffect(() => {
-		if (!examData?.ChoosedAnswer) return;
+		if (isLoading || !examData?.ChoosedAnswer) return;
 
 		const answersMap: Record<number, AnswerValue> = {};
 		const groupedAnswers = examData.ChoosedAnswer.reduce(
@@ -582,7 +580,7 @@ export default function ExamPage() {
 		lastSavedAnswers.current = new Map(
 			Object.entries(answersMap).map(([k, v]) => [Number(k), v]),
 		);
-	}, [examData]);
+	}, [examData, isLoading]);
 
 	const allQuestions = useMemo(() => {
 		if (!examData?.Questions || !examData?.Answers) return [];
