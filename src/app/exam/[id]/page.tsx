@@ -955,7 +955,7 @@ export default function ExamPage() {
 								<Card className={getCardBorderClass(q.question_id)}>
 									<CardContent className="p-6">
 										<div className="flex gap-4">
-											<div className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center font-semibold">
+											<div className="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center font-semibold">
 												{index + 1}
 											</div>
 											<div className="flex-1 min-w-0">
@@ -963,7 +963,7 @@ export default function ExamPage() {
 													<div className="font-semibold text-lg flex-1 leading-relaxed prose prose-sm max-w-none">
 														{parse(q.question_name)}
 													</div>
-													<div className="flex items-center gap-2 flex-shrink-0">
+													<div className="flex items-center gap-2 shrink-0">
 														<Button
 															variant="ghost"
 															size="icon"
@@ -1024,7 +1024,7 @@ export default function ExamPage() {
 						{examData?.ExamInfo?.[0] && (
 							<div className="flex items-center justify-between mb-2">
 								<div className="flex items-center gap-2">
-									<div className="w-7 h-7 rounded-md bg-green-100 dark:bg-green-900/40 flex items-center justify-center flex-shrink-0">
+									<div className="w-7 h-7 rounded-md bg-green-100 dark:bg-green-900/40 flex items-center justify-center shrink-0">
 										<Clock className="w-4 h-4 text-green-600 dark:text-green-400" />
 									</div>
 									<div>
@@ -1067,7 +1067,7 @@ export default function ExamPage() {
 						<div className="flex items-center gap-2">
 							<div className="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
 								<div
-									className="h-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all"
+									className="h-full bg-linear-to-r from-green-500 to-emerald-600 transition-all"
 									style={{ width: `${(answeredCount / totalCount) * 100}%` }}
 								/>
 							</div>
@@ -1086,7 +1086,7 @@ export default function ExamPage() {
 						>
 							<CardContent className="p-4">
 								<div className="flex items-start gap-3 mb-4">
-									<div className="flex-shrink-0 w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-md">
+									<div className="shrink-0 w-9 h-9 rounded-lg bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-md">
 										{currentQuestionIndex + 1}
 									</div>
 									<div className="flex-1 min-w-0">
@@ -1094,7 +1094,7 @@ export default function ExamPage() {
 											{parse(currentQuestion.question_name)}
 										</div>
 									</div>
-									<div className="flex items-center gap-2 flex-shrink-0">
+									<div className="flex items-center gap-2 shrink-0">
 										{typingQuestions.has(currentQuestion.question_id) && (
 											<div className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/40 rounded-md">
 												<div className="flex gap-0.5">
@@ -1119,7 +1119,7 @@ export default function ExamPage() {
 											onClick={() =>
 												toggleBookmark(currentQuestion.question_id)
 											}
-											className="flex-shrink-0 h-9 w-9"
+											className="shrink-0 h-9 w-9"
 										>
 											{bookmarkedQuestions.has(currentQuestion.question_id) ? (
 												<BookmarkCheck className="w-5 h-5 text-yellow-500 fill-yellow-500" />

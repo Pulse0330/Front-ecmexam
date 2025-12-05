@@ -15,6 +15,7 @@ export interface ExamResponseMoreApiResponse {
 }
 
 // Exam Summary (RetDataFirst)
+// ШИНЭ КОД:
 export interface ExamSummary {
 	test_id: number;
 	lesson_name: string;
@@ -26,10 +27,14 @@ export interface ExamSummary {
 	correct_ttl: number;
 	not_answer: number;
 	wrong_ttl: number;
+	zadgai: number;
 	ttl_point: number;
 	point: number;
 	point_perc: number;
 	fname: string;
+	show_true_ans: number; // ✅ Энэ мөрийг нэмнэ
+	show_que_analys: number; // ✅ Бас эдгээр 2-ыг нэмэх хэрэгтэй байж магадгүй
+	show_que_descr: number; // ✅
 }
 
 // Question (RetDataSecond)

@@ -86,7 +86,6 @@ export default function HomePage() {
 		enabled: !!userId,
 	});
 
-	// Zustand руу хадгалах
 	useEffect(() => {
 		if (profileData?.RetData?.length) {
 			setProfile(profileData.RetData[0]);
@@ -145,7 +144,7 @@ export default function HomePage() {
 			<div className="flex items-center justify-center min-h-[60vh] p-4">
 				<Alert variant="destructive" className="max-w-md">
 					<div className="flex items-start space-x-4">
-						<AlertCircle className="w-8 h-8 flex-shrink-0" />
+						<AlertCircle className="w-8 h-8 shrink-0" />
 						<AlertDescription className="flex-1 space-y-2">
 							<h3 className="font-bold text-lg">Алдаа гарлаа</h3>
 							<p className="text-sm">
@@ -167,7 +166,7 @@ export default function HomePage() {
 				{/* Welcome Header */}
 				<div className="animate-in fade-in-0 slide-in-from-top-4 duration-700">
 					<div
-						className={`relative bg-gradient-to-r ${gradientClass} rounded-3xl p-8 md:p-10 shadow-2xl overflow-hidden`}
+						className={`relative bg-linear-to-r ${gradientClass} rounded-3xl p-8 md:p-10 shadow-2xl overflow-hidden`}
 					>
 						{/* Animated background elements */}
 						<div className="absolute inset-0 opacity-20">
