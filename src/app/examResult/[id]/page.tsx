@@ -89,6 +89,11 @@ function ExamResultDetailPage() {
 			const totalCorrect = correctAnswers.length;
 			if (totalCorrect === 0) return 0;
 
+			// Хэрэв truecnt-ээс илүү хариулт сонговол шууд 0 оноо
+			if (userSelectedAnswers.length > question.truecnt) {
+				return 0;
+			}
+
 			const correctSelected = userSelectedAnswers.filter((ua) =>
 				correctAnswers.some((ca) => ca.answer_id === ua.answer_id),
 			).length;
@@ -97,6 +102,7 @@ function ExamResultDetailPage() {
 				(ua) => !correctAnswers.some((ca) => ca.answer_id === ua.answer_id),
 			).length;
 
+			// Хэрэв буруу хариулт сонговол penalty-тэй
 			const basePoints = (correctSelected / totalCorrect) * question.que_onoo;
 			const penalty = (incorrectSelected / totalCorrect) * question.que_onoo;
 
@@ -156,13 +162,16 @@ function ExamResultDetailPage() {
 
 			return Math.max(0, Math.round((basePoints - penalty) * 10) / 10);
 		}
+
 		if (question.que_type_id === 6) {
 			const answersOnly = questionAnswers.filter(
 				(a) => a.ref_child_id && a.ref_child_id >= 1,
 			);
 
+			if (answersOnly.length === 0) return 0;
+
 			let correctMatches = 0;
-			let answeredCount = 0;
+			let incorrectMatches = 0;
 
 			answersOnly.forEach((answerItem) => {
 				const userInput = userSelectedAnswers.find(
@@ -170,21 +179,28 @@ function ExamResultDetailPage() {
 				);
 
 				if (userInput) {
-					answeredCount++;
 					const userSelectedRefId = parseInt(userInput.answer, 10);
 
 					if (userSelectedRefId === answerItem.ref_child_id) {
 						correctMatches++;
+					} else {
+						incorrectMatches++;
 					}
 				}
 			});
 
-			// Зөвхөн хариулсан item-д penalty оногдуулах
-			if (answeredCount === 0) return 0;
+			// Хэрэв хариулаагүй бол 0
+			if (correctMatches === 0 && incorrectMatches === 0) return 0;
 
-			const ratio = correctMatches / answersOnly.length;
-			return Math.round(ratio * question.que_onoo * 10) / 10;
+			// Penalty-тэй оноо тооцох
+			const basePoints =
+				(correctMatches / answersOnly.length) * question.que_onoo;
+			const penalty =
+				(incorrectMatches / answersOnly.length) * question.que_onoo;
+
+			return Math.max(0, Math.round((basePoints - penalty) * 10) / 10);
 		}
+
 		return 0;
 	};
 
@@ -615,16 +631,17 @@ function ExamResultDetailPage() {
 								</div>
 								<div className="flex items-end gap-2">
 									{/* 🔥 ТҮВШИН ЭХЭНД */}
-									{dunInfo && (
-										<span className="text-3xl font-bold text-gray-700 mb-1">
-											({dunInfo.tuval})
-										</span>
-									)}
+
 									{/* 🔥 ХУВЬ ДАРАА НЬ */}
 									<p className="text-4xl font-bold text-blue-600">
 										{examSummary.point_perc.toFixed(1)}
 									</p>
 									<p className="text-xl font-bold text-blue-600/60 mb-1">%</p>
+									{dunInfo && (
+										<span className="text-3xl font-bold text-gray-700 mb-1">
+											({dunInfo.tuval})
+										</span>
+									)}
 								</div>
 								{/* Хувийн визуал индикатор */}
 								<div className="mt-3 flex gap-1">
@@ -813,10 +830,6 @@ function ExamResultDetailPage() {
 									userSelectedAnswers,
 									isQuestionCorrect,
 								}) => {
-									// ӨМНӨХ КОД (устгах):
-									// const earnedPoints = isQuestionCorrect ? question.que_onoo : 0;
-
-									// ШИНЭ КОД (нэмэх):
 									const partialPoints = calculatePartialPoints(
 										question,
 										questionAnswers,
@@ -851,9 +864,7 @@ function ExamResultDetailPage() {
 															>
 																{getQuestionTypeLabel(question.que_type_id)}
 															</Badge>
-															{/* <span className="px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg">
-																
-															</span> */}
+
 															<span className="text-muted-foreground">
 																Нийт: {question.que_onoo} оноо
 															</span>
@@ -893,53 +904,7 @@ function ExamResultDetailPage() {
 																</>
 															)}
 														</Button>
-														{/* <div
-															className={`ml-auto flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-base shadow-lg ${
-																answerStatus === "unanswered"
-																	? "bg-gradient-to-r from-orange-500 to-amber-500 text-white"
-																	: answerStatus === "correct"
-																		? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
-																		: answerStatus === "partial"
-																			? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
-																			: "bg-gradient-to-r from-red-500 to-rose-500 text-white"
-															}`}
-														>
-															{answerStatus === "unanswered" ? (
-																<>
-																	<AlertCircle className="w-5 h-5" />
-																	<span>Хариулаагүй</span>
-																	<div className="ml-2 px-2 py-1 bg-white/20 rounded-lg">
-																		0/{question.que_onoo}
-																	</div>
-																</>
-															) : answerStatus === "correct" ? (
-																<>
-																	<CheckCircle className="w-5 h-5" />
-																	<span>Зөв хариулсан</span>
-																	<div className="ml-2 px-2 py-1 bg-white/20 rounded-lg">
-																		{earnedPoints}/{question.que_onoo}
-																	</div>
-																</>
-															) : answerStatus === "partial" ? (
-																<>
-																	<MinusCircle className="w-5 h-5" />
-																	<span>Дутуу хариулсан</span>
-																	<div className="ml-2 px-2 py-1 bg-white/20 rounded-lg">
-																		{earnedPoints}/{question.que_onoo}
-																	</div>
-																</>
-															) : (
-																<>
-																	<XCircle className="w-5 h-5" />
-																	<span>Буруу хариулсан</span>
-																	<div className="ml-2 px-2 py-1 bg-white/20 rounded-lg">
-																		0/{question.que_onoo}
-																	</div>
-																</>
-															)}
-														</div> */}
 													</div>
-													{/* Асуултын харуулалт - question card дотор */}
 
 													<div className="text-lg font-medium">
 														{/* 1. Асуултын үндсэн текст */}
@@ -1021,8 +986,8 @@ function ExamResultDetailPage() {
 												</div>
 											</div>
 											<div className="space-y-4 pl-14">
-												{question.que_type_id === 1 ||
-												question.que_type_id === 2 ? (
+												{question.que_type_id === 1 ? (
+													// ========== НЭГ СОНГОЛТТОЙ АСУУЛТ ==========
 													questionAnswers.length === 0 ? (
 														<p className="text-sm text-muted-foreground">
 															Хариулт олдсонгүй
@@ -1040,7 +1005,6 @@ function ExamResultDetailPage() {
 																	const isWrongSelection =
 																		isUserSelected && !isCorrect;
 
-																	// ЗАСВАР: Зураг эхлээд шалгах
 																	const hasImage =
 																		answer.answer_img &&
 																		answer.answer_img.trim() !== "";
@@ -1053,17 +1017,16 @@ function ExamResultDetailPage() {
 																	return (
 																		<div
 																			key={answer.answer_id}
-																			className={`relative flex items-center gap-4 p-5 rounded-2xl border border-border bg-input/30  transition-all duration-300 ${
+																			className={`relative flex items-center gap-4 p-5 rounded-2xl border border-border bg-input/30 transition-all duration-300 ${
 																				isWrongSelection
-																					? "border-red-900 bg-red-50 dark:bg-red-950/10 "
+																					? "border-red-900 bg-red-50 dark:bg-red-950/10"
 																					: isUserSelected
-																						? "border-emerald-900 bg-emerald-50 dark:bg-emerald-950/20 "
+																						? "border-emerald-900 bg-emerald-50 dark:bg-emerald-950/20"
 																						: "border-border bg-card/50"
 																			}`}
 																		>
 																			<div className="flex-1 min-w-0">
 																				<div className="text-base leading-relaxed font-medium">
-																					{/* ЗАСВАР: Зураг байвал зургийг харуулах */}
 																					{hasImage && (
 																						<Image
 																							src={answer.answer_img}
@@ -1074,7 +1037,6 @@ function ExamResultDetailPage() {
 																						/>
 																					)}
 
-																					{/* Текст байвал текстийг харуулах */}
 																					{hasText && (
 																						<div>
 																							{answer.answer_name_html &&
@@ -1087,7 +1049,6 @@ function ExamResultDetailPage() {
 																						</div>
 																					)}
 
-																					{/* Хоосон бол */}
 																					{!hasImage &&
 																						!hasText &&
 																						"Хариулт байхгүй"}
@@ -1101,7 +1062,7 @@ function ExamResultDetailPage() {
 																					</div>
 																				)}
 																				{isWrongSelection && (
-																					<div className="px-4 py-1  bg-red-700 text-white rounded-md font-bold text-sm">
+																					<div className="px-4 py-1 bg-red-700 text-white rounded-md font-bold text-sm">
 																						✗ Буруу
 																					</div>
 																				)}
@@ -1118,16 +1079,15 @@ function ExamResultDetailPage() {
 																})}
 															</div>
 
-															{/* Зөв хариулт доор тусдаа card */}
+															{/* Зөв хариулт */}
 															{examSummary?.show_true_ans === 1 && (
-																<div className="mt-4 p-4 border border-emerald-900   rounded-2xl shadow-sm">
+																<div className="mt-4 p-4 border border-emerald-900 rounded-2xl shadow-sm">
 																	<p className="text-base font-semibold mb-4">
 																		Зөв хариулт:
 																	</p>
 																	{questionAnswers
 																		.filter((answer) => answer.is_true === 1)
 																		.map((answer) => {
-																			// ЗАСВАР: Зураг эхлээд шалгах
 																			const hasImage =
 																				answer.answer_img &&
 																				answer.answer_img.trim() !== "";
@@ -1141,10 +1101,9 @@ function ExamResultDetailPage() {
 																			return (
 																				<div
 																					key={answer.answer_id}
-																					className="flex items-start gap-4 mb-2 p-3 border  dark:border-emerald-900 rounded-lg bg-white dark:bg-emerald-900/5"
+																					className="flex items-start gap-4 mb-2 p-3 border dark:border-emerald-900 rounded-lg bg-white dark:bg-emerald-900/5"
 																				>
 																					<div className="text-base leading-relaxed">
-																						{/* ЗАСВАР: Зураг байвал зургийг харуулах */}
 																						{hasImage && (
 																							<Image
 																								src={answer.answer_img}
@@ -1155,7 +1114,6 @@ function ExamResultDetailPage() {
 																							/>
 																						)}
 
-																						{/* Текст байвал текстийг харуулах */}
 																						{hasText && (
 																							<div>
 																								{answer.answer_name_html &&
@@ -1170,7 +1128,189 @@ function ExamResultDetailPage() {
 																							</div>
 																						)}
 
-																						{/* Хоосон бол */}
+																						{!hasImage &&
+																							!hasText &&
+																							"Хариулт байхгүй"}
+																					</div>
+																				</div>
+																			);
+																		})}
+																</div>
+															)}
+														</div>
+													)
+												) : question.que_type_id === 2 ? (
+													questionAnswers.length === 0 ? (
+														<p className="text-sm text-muted-foreground">
+															Хариулт олдсонгүй
+														</p>
+													) : (
+														<div className="space-y-4">
+															{/* 🔥 АНХААРУУЛГА: Хэтэрхий олон хариулт сонгосон бол */}
+															{userSelectedAnswers.length >
+																question.truecnt && (
+																<div className="p-4 bg-red-50 dark:bg-red-950/20 border-2 border-red-500 rounded-xl flex items-start gap-3">
+																	<div className="shrink-0">
+																		<svg
+																			className="w-6 h-6 text-red-600"
+																			fill="none"
+																			stroke="currentColor"
+																			viewBox="0 0 24 24"
+																		>
+																			<title>Анхааруулга</title>
+																			<path
+																				strokeLinecap="round"
+																				strokeLinejoin="round"
+																				strokeWidth={2}
+																				d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+																			/>
+																		</svg>
+																	</div>
+																	<div>
+																		<p className="text-sm text-red-600 dark:text-red-400">
+																			Зөвхөн {question.truecnt} хариулт сонгох
+																			ёстой байсан. Та{" "}
+																			{userSelectedAnswers.length} хариулт
+																			сонгосон тул 0 оноо авлаа.
+																		</p>
+																	</div>
+																</div>
+															)}
+
+															{/* Бүх хариултууд */}
+															<div className="space-y-3">
+																{questionAnswers.map((answer, _idx) => {
+																	const isCorrect = answer.is_true === 1;
+																	const isUserSelected =
+																		userSelectedAnswers.some(
+																			(ua) => ua.answer_id === answer.answer_id,
+																		);
+																	const isWrongSelection =
+																		isUserSelected && !isCorrect;
+
+																	const hasImage =
+																		answer.answer_img &&
+																		answer.answer_img.trim() !== "";
+																	const hasText =
+																		(answer.answer_name_html &&
+																			answer.answer_name_html.trim() !== "") ||
+																		(answer.answer_name &&
+																			answer.answer_name.trim() !== "");
+
+																	return (
+																		<div
+																			key={answer.answer_id}
+																			className={`relative flex items-center gap-4 p-5 rounded-2xl border border-border bg-input/30 transition-all duration-300 ${
+																				isWrongSelection
+																					? "border-red-900 bg-red-50 dark:bg-red-950/10"
+																					: isUserSelected
+																						? "border-emerald-900 bg-emerald-50 dark:bg-emerald-950/20"
+																						: "border-border bg-card/50"
+																			}`}
+																		>
+																			<div className="flex-1 min-w-0">
+																				<div className="text-base leading-relaxed font-medium">
+																					{hasImage && (
+																						<Image
+																							src={answer.answer_img}
+																							alt="Answer"
+																							width={300}
+																							height={200}
+																							className="rounded-xl shadow-md mt-2"
+																						/>
+																					)}
+
+																					{hasText && (
+																						<div>
+																							{answer.answer_name_html &&
+																							answer.answer_name_html.trim() !==
+																								""
+																								? safeParse(
+																										answer.answer_name_html,
+																									)
+																								: safeParse(answer.answer_name)}
+																						</div>
+																					)}
+
+																					{!hasImage &&
+																						!hasText &&
+																						"Хариулт байхгүй"}
+																				</div>
+																			</div>
+
+																			<div className="shrink-0">
+																				{isUserSelected && isCorrect && (
+																					<div className="px-4 py-2 bg-emerald-500 text-white rounded-xl shadow-lg font-bold text-sm">
+																						✓ Зөв
+																					</div>
+																				)}
+																				{isWrongSelection && (
+																					<div className="px-4 py-1 bg-red-700 text-white rounded-md font-bold text-sm">
+																						✗ Буруу
+																					</div>
+																				)}
+																				{isUserSelected &&
+																					!isCorrect &&
+																					!isWrongSelection && (
+																						<div className="px-4 py-2 bg-blue-500 text-white rounded-xl shadow-lg font-bold text-sm">
+																							✓ Та сонгосон
+																						</div>
+																					)}
+																			</div>
+																		</div>
+																	);
+																})}
+															</div>
+
+															{/* Зөв хариултууд */}
+															{examSummary?.show_true_ans === 1 && (
+																<div className="mt-4 p-4 border border-emerald-900 rounded-2xl shadow-sm">
+																	<p className="text-base font-semibold mb-2">
+																		Зөв хариултууд ({question.truecnt}):
+																	</p>
+																	{questionAnswers
+																		.filter((answer) => answer.is_true === 1)
+																		.map((answer) => {
+																			const hasImage =
+																				answer.answer_img &&
+																				answer.answer_img.trim() !== "";
+																			const hasText =
+																				(answer.answer_name_html &&
+																					answer.answer_name_html.trim() !==
+																						"") ||
+																				(answer.answer_name &&
+																					answer.answer_name.trim() !== "");
+
+																			return (
+																				<div
+																					key={answer.answer_id}
+																					className="flex items-start gap-4 mb-2 p-3 border dark:border-emerald-900 rounded-lg bg-white dark:bg-emerald-900/5"
+																				>
+																					<div className="text-base leading-relaxed">
+																						{hasImage && (
+																							<Image
+																								src={answer.answer_img}
+																								alt="Correct Answer"
+																								width={300}
+																								height={200}
+																								className="rounded-xl shadow-md mt-2"
+																							/>
+																						)}
+
+																						{hasText && (
+																							<div>
+																								{answer.answer_name_html &&
+																								answer.answer_name_html.trim() !==
+																									""
+																									? safeParse(
+																											answer.answer_name_html,
+																										)
+																									: safeParse(
+																											answer.answer_name,
+																										)}
+																							</div>
+																						)}
+
 																						{!hasImage &&
 																							!hasText &&
 																							"Хариулт байхгүй"}

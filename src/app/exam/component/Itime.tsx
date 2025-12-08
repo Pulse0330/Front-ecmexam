@@ -1,20 +1,21 @@
 "use client";
 
 import { AlertCircle, Clock, PlayCircle } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import { useServerTime } from "@/hooks/useServerTime";
 
 interface ExamTimerProps {
-	examStartTime: string; // "2025-12-04 11:11"
-	examEndTime: string; // "2025-12-04T11:21:41.920Z" - ЭНЭ НЬ ДУУСАХ ХУГАЦАА
-	examMinutes: number; // 10
-	startedDate?: string; // "2025-12-04T11:17:17.277Z"
+	examStartTime: string;
+	examEndTime: string;
+	examMinutes: number;
+	startedDate?: string;
 	onTimeUp?: (isTimeUp: boolean) => void;
 	onAutoFinish?: () => void;
 }
 
-export default function ExamTimer({
-	examEndTime, // 🔥 Энэ параметрийг одоо ашиглана
+// ✅ Memoize component to prevent unnecessary re-renders
+const ExamTimer = memo(function ExamTimer({
+	examEndTime,
 	examMinutes,
 	startedDate,
 	onTimeUp,
@@ -27,15 +28,25 @@ export default function ExamTimer({
 	const onTimeUpRef = useRef(onTimeUp);
 	const onAutoFinishRef = useRef(onAutoFinish);
 
+	// ✅ Update refs without triggering re-renders
 	useEffect(() => {
 		onTimeUpRef.current = onTimeUp;
 		onAutoFinishRef.current = onAutoFinish;
 	}, [onTimeUp, onAutoFinish]);
 
+	// ✅ Cache parsed dates to avoid repeated parsing
+	const { endDateTime, startDateTime } = useMemo(() => {
+		return {
+			endDateTime: new Date(examEndTime),
+			startDateTime: startedDate ? new Date(startedDate) : null,
+		};
+	}, [examEndTime, startedDate]);
+
 	const currentTimeMs = currentTime?.getTime() ?? null;
 
-	// 🔥 ҮНДСЭН ТООЦООЛОЛ: examEndTime болон одоогийн цагийг харьцуулна
+	// ✅ Optimized calculation with early returns
 	const { status, remainingSec, percentage } = useMemo(() => {
+		// Early return if no current time
 		if (currentTimeMs === null) {
 			return {
 				status: "before" as const,
@@ -46,8 +57,8 @@ export default function ExamTimer({
 
 		const totalSec = examMinutes * 60;
 
-		// Хэрэв startedDate байхгүй бол "before" гэж үзнэ
-		if (!startedDate) {
+		// Early return if not started
+		if (!startDateTime) {
 			return {
 				status: "before" as const,
 				remainingSec: totalSec,
@@ -55,29 +66,21 @@ export default function ExamTimer({
 			};
 		}
 
-		// 🔥 ДУУСАХ ХУГАЦААГ examEndTime-с авна (backend-с ирсэн)
-		const endDateTime = new Date(examEndTime);
-		const startDateTime = new Date(startedDate);
-
-		// Одоогийн цаг ба дуусах цагийн зөрүү (секундээр)
+		// Calculate remaining time
 		const remainingMs = endDateTime.getTime() - currentTimeMs;
 		const remaining = Math.max(0, Math.floor(remainingMs / 1000));
 
-		// Status тодорхойлох
+		// Determine status
 		let stat: "before" | "ongoing" | "ended";
-
 		if (currentTimeMs < startDateTime.getTime()) {
-			// Эхлээгүй байна
 			stat = "before";
-		} else if (currentTimeMs >= endDateTime.getTime()) {
-			// Дууссан
+		} else if (remainingMs <= 0) {
 			stat = "ended";
 		} else {
-			// Явагдаж байна
 			stat = "ongoing";
 		}
 
-		// Percentage тооцоолох (нийт хугацаанаас хэдэн % үлдсэн)
+		// Calculate percentage
 		const pct = totalSec > 0 ? (remaining / totalSec) * 100 : 0;
 
 		return {
@@ -85,80 +88,95 @@ export default function ExamTimer({
 			remainingSec: remaining,
 			percentage: Math.max(0, Math.min(100, pct)),
 		};
-	}, [currentTimeMs, examEndTime, examMinutes, startedDate]);
+	}, [currentTimeMs, endDateTime, examMinutes, startDateTime]);
 
-	// Auto-finish логик
+	// ✅ Auto-finish logic - only runs when status changes to "ended"
 	useEffect(() => {
-		if (status === "ended") {
-			console.log("🔴 Status = ended, auto-finish эхэллээ");
+		if (status !== "ended") return;
 
-			// Step 1: onTimeUp notification
-			if (!hasNotifiedTimeUp.current) {
-				hasNotifiedTimeUp.current = true;
-				console.log("⏰ Цаг дууслаа - onTimeUp дуудаж байна");
-				if (onTimeUpRef.current) {
-					onTimeUpRef.current(true);
-				}
-			}
+		console.log("🔴 Status = ended, auto-finish эхэллээ");
 
-			// Step 2: Auto-finish ШУУД дуудах
-			if (!hasAutoFinished.current && onAutoFinishRef.current) {
-				hasAutoFinished.current = true;
-				console.log("⏰ Auto-finish ШУУД дуудагдаж байна");
-				onAutoFinishRef.current();
-			}
+		// Step 1: onTimeUp notification
+		if (!hasNotifiedTimeUp.current) {
+			hasNotifiedTimeUp.current = true;
+			console.log("⏰ Цаг дууслаа - onTimeUp дуудаж байна");
+			onTimeUpRef.current?.(true);
+		}
+
+		// Step 2: Auto-finish
+		if (!hasAutoFinished.current && onAutoFinishRef.current) {
+			hasAutoFinished.current = true;
+			console.log("⏰ Auto-finish ШУУД дуудагдаж байна");
+			onAutoFinishRef.current();
 		}
 	}, [status]);
 
-	const formatTime = (sec: number) => {
-		const h = Math.floor(sec / 3600);
-		const m = Math.floor((sec % 3600) / 60);
-		const s = sec % 60;
-		return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-	};
+	// ✅ Memoize format function
+	const formatTime = useMemo(() => {
+		return (sec: number) => {
+			const h = Math.floor(sec / 3600);
+			const m = Math.floor((sec % 3600) / 60);
+			const s = sec % 60;
+			return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+		};
+	}, []);
 
-	const getTimeRemaining = () => {
+	// ✅ Memoize time remaining text
+	const timeRemainingText = useMemo(() => {
 		const totalMinutes = Math.floor(remainingSec / 60);
 		const hours = Math.floor(totalMinutes / 60);
 		const minutes = totalMinutes % 60;
 		return hours > 0 ? `${hours} цаг ${minutes} минут` : `${minutes} минут`;
-	};
+	}, [remainingSec]);
 
-	const isWarning = percentage <= 20 && percentage > 10;
-	const isDanger = percentage <= 10;
+	// ✅ Memoize warning states
+	const { isWarning, isDanger } = useMemo(() => {
+		return {
+			isWarning: percentage <= 20 && percentage > 10,
+			isDanger: percentage <= 10,
+		};
+	}, [percentage]);
 
-	const getStatusConfig = () => {
-		if (status === "ended")
+	// ✅ Memoize status config
+	const config = useMemo(() => {
+		if (status === "ended") {
 			return {
 				border: "border-red-300",
 				icon: AlertCircle,
 				iconColor: "text-red-600",
 				timerColor: "text-red-600",
 			};
-		if (isDanger)
+		}
+		if (isDanger) {
 			return {
 				border: "border-red-300",
 				icon: AlertCircle,
 				iconColor: "text-red-600",
 				timerColor: "text-red-600",
 			};
-		if (isWarning)
+		}
+		if (isWarning) {
 			return {
 				border: "border-yellow-300",
 				icon: Clock,
 				iconColor: "text-yellow-600",
 				timerColor: "text-yellow-600",
 			};
+		}
 		return {
 			border: "border-green-200",
 			icon: PlayCircle,
 			iconColor: "text-green-600",
 			timerColor: "text-green-600",
 		};
-	};
+	}, [status, isDanger, isWarning]);
 
-	const config = getStatusConfig();
+	// ✅ Memoize formatted time string
+	const formattedTime = useMemo(() => {
+		return formatTime(remainingSec);
+	}, [remainingSec, formatTime]);
 
+	// Loading state
 	if (isLoading || currentTimeMs === null) {
 		return (
 			<div className="bg-white dark:bg-slate-900 rounded-lg sm:rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 sm:p-4">
@@ -186,15 +204,13 @@ export default function ExamTimer({
 			<div className="p-3 sm:p-4">
 				<div className="mb-3 sm:mb-4 text-center">
 					<div
-						className={`font-mono font-black 
-  text-2xl sm:text-3xl md:text-4xl lg:text-5xl 
-  ${config.timerColor} tracking-tight mb-1 sm:mb-2`}
+						className={`font-mono font-black text-2xl sm:text-3xl md:text-4xl lg:text-5xl ${config.timerColor} tracking-tight mb-1 sm:mb-2`}
 					>
-						{formatTime(remainingSec)}
+						{formattedTime}
 					</div>
 					{status === "ongoing" && (
 						<p className="text-sm sm:text-base md:text-lg font-bold text-slate-700 dark:text-slate-300">
-							<span className={config.timerColor}>{getTimeRemaining()}</span>{" "}
+							<span className={config.timerColor}>{timeRemainingText}</span>{" "}
 							үлдсэн
 						</p>
 					)}
@@ -218,4 +234,6 @@ export default function ExamTimer({
 			</div>
 		</div>
 	);
-}
+});
+
+export default ExamTimer;

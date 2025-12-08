@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
 	AlertCircle,
-	BookOpen,
 	ChevronDown,
 	ClipboardList,
 	Sparkles,
@@ -25,7 +24,7 @@ import { useUserStore } from "@/stores/useUserStore";
 import type { HomeResponseType } from "@/types/home";
 import type { UserProfileResponseType } from "@/types/user";
 import { BannerCarousel } from "./banner";
-import { PaymentExam } from "./courseexam";
+
 import ExamLists from "./examlists";
 import HomeSorilLists from "./sorillists";
 
@@ -49,7 +48,7 @@ const STARS = Array.from({ length: 15 }, (_, i) => ({
 export default function HomePage() {
 	const { userId } = useAuthStore();
 	const [isDay, setIsDay] = useState(true);
-	const [isCoursesOpen, setIsCoursesOpen] = useState(false);
+
 	const [isExamsOpen, setIsExamsOpen] = useState(true);
 	const [isSorilsOpen, setIsSorilsOpen] = useState(true);
 
@@ -166,7 +165,7 @@ export default function HomePage() {
 				{/* Welcome Header */}
 				<div className="animate-in fade-in-0 slide-in-from-top-4 duration-700">
 					<div
-						className={`relative bg-linear-to-r ${gradientClass} rounded-3xl p-8 md:p-10 shadow-2xl overflow-hidden`}
+						className={`relative bg--to-r ${gradientClass} rounded-3xl p-8 md:p-10 shadow-2xl overflow-hidden`}
 					>
 						{/* Animated background elements */}
 						<div className="absolute inset-0 opacity-20">
@@ -239,59 +238,6 @@ export default function HomePage() {
 				{/* Banner Section */}
 				<div className="animate-in fade-in-0 duration-700 delay-100">
 					<BannerCarousel banners={homeData?.RetDataFirst || []} />
-				</div>
-
-				{/* Payment Exam Section - Collapsible */}
-				<div className="animate-in fade-in-0 duration-700 delay-200">
-					<Card>
-						<Collapsible open={isCoursesOpen} onOpenChange={setIsCoursesOpen}>
-							<CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors rounded-t-xl">
-								<CollapsibleTrigger className="w-full">
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-3">
-											<div className="p-3 bg-primary rounded-xl shadow-lg transition-transform duration-300 hover:scale-110 hover:rotate-3">
-												<BookOpen className="w-6 h-6 text-primary-foreground" />
-											</div>
-											<div className="flex flex-col items-start">
-												<h2 className="text-2xl md:text-3xl font-bold text-foreground">
-													Төлбөртэй курсууд
-												</h2>
-												<p className="text-sm text-muted-foreground font-medium mt-0.5">
-													Удахгүй эхлэнэ
-												</p>
-											</div>
-										</div>
-										<div className="flex items-center gap-3">
-											<Badge variant="secondary">
-												{homeData?.RetDataSecond?.length || 0} курс
-											</Badge>
-											<ChevronDown
-												className={`w-6 h-6 text-muted-foreground transition-transform duration-300 ${
-													isCoursesOpen ? "rotate-180" : ""
-												}`}
-											/>
-										</div>
-									</div>
-								</CollapsibleTrigger>
-							</CardHeader>
-							<CollapsibleContent>
-								<CardContent>
-									{homeData?.RetDataSecond?.length === 0 ? (
-										<div className="text-center py-16">
-											<div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-muted mb-4">
-												<BookOpen className="w-10 h-10 text-muted-foreground" />
-											</div>
-											<p className="text-lg font-medium text-muted-foreground">
-												Одоогоор курс байхгүй байна
-											</p>
-										</div>
-									) : (
-										<PaymentExam courses={homeData?.RetDataSecond || []} />
-									)}
-								</CardContent>
-							</CollapsibleContent>
-						</Collapsible>
-					</Card>
 				</div>
 
 				{/* Exam Lists Section - Collapsible */}

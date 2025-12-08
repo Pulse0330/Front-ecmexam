@@ -49,13 +49,56 @@ export default function MatchingByLine({
 	const onMatchChangeRef = useRef(onMatchChange);
 
 	const colorPalette = useRef<string[]>([
-		"#ef4444",
-		"#3b82f6",
-		"#22c55e",
-		"#f59e0b",
-		"#8b5cf6",
-		"#ec4899",
-		"#06b6d4",
+		"#3b82f6", // blue
+		"#8b5cf6", // purple
+		"#ec4899", // pink
+		"#f59e0b", // orange
+		"#eab308", // yellow
+		"#6366f1", // indigo
+		"#a855f7", // violet
+		"#f97316", // deep orange
+		"#fbbf24", // amber
+		"#fb923c", // light orange
+		"#c026d3", // fuchsia
+		"#e11d48", // rose
+		"#7c3aed", // deep purple
+		"#4f46e5", // strong indigo
+		"#2563eb", // medium blue
+		"#0284c7", // sky
+		"#facc15", // bright yellow
+		"#fde047", // lime yellow
+		"#fb7185", // light pink
+		"#f472b6", // medium pink
+		"#d946ef", // magenta
+		"#a78bfa", // light purple
+		"#818cf8", // light indigo
+		"#60a5fa", // light blue
+		"#fcd34d", // golden
+		"#fdba74", // peach
+		"#fed7aa", // light peach
+		"#fde68a", // pale yellow
+		"#93c5fd", // sky blue
+		"#c4b5fd", // lavender
+		"#ddd6fe", // pale lavender
+		"#fbcfe8", // pale pink
+		"#fecaca", // pale rose
+		"#fed7e2", // blush
+		"#fef3c7", // cream
+		"#1d4ed8", // navy blue
+		"#7e22ce", // deep violet
+		"#be185d", // deep rose
+		"#ca8a04", // dark yellow
+		"#ea580c", // burnt orange
+		"#9333ea", // royal purple
+		"#db2777", // hot pink
+		"#0369a1", // ocean blue
+		"#4338ca", // deep indigo
+		"#f59e42", // tangerine
+		"#fbbf80", // apricot
+		"#a21caf", // vivid fuchsia
+		"#854d0e", // brown
+		"#b45309", // copper
+		"#92400e", // rust
 	]);
 	const usedColors = useRef<Set<string>>(new Set());
 
@@ -104,7 +147,6 @@ export default function MatchingByLine({
 		return () => window.removeEventListener("resize", updateXarrow);
 	}, [updateXarrow]);
 
-	// userAnswers сэргээх - ✅ ЗАСВАРЛАСАН ХЭСЭГ
 	useEffect(() => {
 		if (Object.keys(userAnswers).length === 0) return;
 
@@ -113,12 +155,10 @@ export default function MatchingByLine({
 		Object.entries(userAnswers).forEach(([qRefIdStr, answerId]) => {
 			const qRefId = Number(qRefIdStr);
 
-			// question: ref_child_id === -1 БА refid === qRefId
 			const question = answers.find(
 				(a) => a.refid === qRefId && a.ref_child_id === -1,
 			);
 
-			// answer: answer_id === answerId (backend-ээс ирсэн ID)
 			const answer = answers.find((a) => a.answer_id === answerId);
 
 			if (question && answer) {
@@ -209,7 +249,7 @@ export default function MatchingByLine({
 					</div>
 				)}
 				{item.answer_name_html && (
-					<div className="text-sm font-medium text-center break-words">
+					<div className="text-sm font-medium text-center ">
 						{parse(item.answer_name_html.trim())}
 					</div>
 				)}
@@ -227,7 +267,6 @@ export default function MatchingByLine({
 		(a) => a.ref_child_id && a.ref_child_id >= 1,
 	);
 
-	// ✅ ЗАСВАРЛАСАН ХЭСЭГ - answer_id дамжуулах
 	useEffect(() => {
 		if (!onMatchChangeRef.current) return;
 
@@ -241,7 +280,6 @@ export default function MatchingByLine({
 			const answer = answers.find((a) => a.answer_id === endId);
 
 			if (question && answer) {
-				// ✅ question.refid: answer.answer_id (refid биш!)
 				matches[question.refid] = answer.answer_id;
 			}
 		});
@@ -281,20 +319,23 @@ export default function MatchingByLine({
 											id={qid}
 											{...interactiveProps(qid, true)}
 											className={cn(
-												"w-full p-3 border rounded-lg flex flex-col items-center transition-colors cursor-pointer",
+												"w-full p-3 rounded-lg flex flex-col items-center transition-colors cursor-pointer",
 												isSelected(qid)
-													? "border-blue-500 bg-blue-50"
+													? "border-2 border-blue-500 bg-blue-50"
 													: isConnected(qid)
-														? "border-green-500 bg-green-50"
-														: "border-gray-300 bg-white hover:border-green-400",
+														? "border-2 border-green-500 bg-green-50"
+														: "border border-gray-300 bg-white hover:border-2 hover:border-blue-500",
 											)}
 											style={
-												getConnectionColor(qid)
-													? {
-															borderColor: getConnectionColor(qid),
-															backgroundColor: `${getConnectionColor(qid)}20`,
-														}
-													: undefined
+												isSelected(qid)
+													? undefined
+													: getConnectionColor(qid)
+														? {
+																borderWidth: "2px",
+																borderColor: getConnectionColor(qid),
+																backgroundColor: `${getConnectionColor(qid)}20`,
+															}
+														: undefined
 											}
 										>
 											{renderContent(q)}
@@ -354,20 +395,23 @@ export default function MatchingByLine({
 											id={qid}
 											{...interactiveProps(qid, true)}
 											className={cn(
-												"w-full p-4 border rounded-lg flex flex-col items-center justify-center transition-all min-h-[80px] cursor-pointer hover:border-green-400",
+												"w-full p-4 rounded-lg flex flex-col items-center justify-center transition-all min-h-[80px] cursor-pointer hover:border-2 hover:border-blue-500",
 												isSelected(qid)
-													? "border-blue-500 bg-blue-50 shadow-md"
+													? "border-2 border-blue-500"
 													: isConnected(qid)
-														? "border-green-500 bg-green-50"
-														: "border-gray-300",
+														? "border-2 border-green-500"
+														: "border border-gray-300",
 											)}
 											style={
-												getConnectionColor(qid)
-													? {
-															borderColor: getConnectionColor(qid),
-															backgroundColor: `${getConnectionColor(qid)}20`,
-														}
-													: undefined
+												isSelected(qid)
+													? undefined
+													: getConnectionColor(qid)
+														? {
+																borderWidth: "2px",
+																borderColor: getConnectionColor(qid),
+																backgroundColor: `${getConnectionColor(qid)}20`,
+															}
+														: undefined
 											}
 										>
 											{renderContent(q)}
@@ -385,20 +429,23 @@ export default function MatchingByLine({
 											id={aid}
 											{...interactiveProps(aid, false)}
 											className={cn(
-												"w-full p-4 border rounded-lg flex flex-col items-center justify-center transition-all min-h-[80px] cursor-pointer hover:border-blue-400",
+												"w-full p-4 rounded-lg flex flex-col items-center justify-center transition-all min-h-[80px] cursor-pointer hover:border-2 hover:border-blue-500",
 												isSelected(aid)
-													? "border-blue-500 bg-blue-50 shadow-md"
+													? "border-2 border-blue-500 bg-blue-50 shadow-md"
 													: isConnected(aid)
-														? "border-green-500 bg-green-50"
-														: "border-gray-300",
+														? "border-2 border-green-500 bg-green-50"
+														: "border border-gray-300",
 											)}
 											style={
-												getConnectionColor(aid)
-													? {
-															borderColor: getConnectionColor(aid),
-															backgroundColor: `${getConnectionColor(aid)}20`,
-														}
-													: undefined
+												isSelected(aid)
+													? undefined
+													: getConnectionColor(aid)
+														? {
+																borderWidth: "2px",
+																borderColor: getConnectionColor(aid),
+																backgroundColor: `${getConnectionColor(aid)}20`,
+															}
+														: undefined
 											}
 										>
 											{renderContent(a)}

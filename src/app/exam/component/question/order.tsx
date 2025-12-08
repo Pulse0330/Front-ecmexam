@@ -92,8 +92,11 @@ const DragAndDrop: React.FC<DragAndDropProps> = ({
 												size: "default",
 											}),
 											"w-full mb-2 justify-start transition-colors duration-200 select-none",
-											disabled ? "cursor-default" : "cursor-move",
-											snapshot.isDragging && "bg-accent ring-2 ring-ring/50",
+											disabled
+												? "cursor-default"
+												: "cursor-grab active:cursor-grabbing",
+											snapshot.isDragging &&
+												"bg-accent ring-2 ring-ring/50 cursor-grabbing",
 										)}
 										style={{ ...providedDraggable.draggableProps.style }}
 									>

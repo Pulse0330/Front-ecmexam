@@ -1,11 +1,18 @@
 "use client";
 import Cookies from "js-cookie";
-import { LogOut, School, User, UserCircle, Users } from "lucide-react";
+import {
+	ChevronDown,
+	LogOut,
+	School,
+	User,
+	UserCircle,
+	Users,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import UseAnimations from "react-useanimations";
 import menu3 from "react-useanimations/lib/menu3";
 import {
@@ -39,32 +46,35 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-// ШИНЭ: Zustand store import хийх
 import { useUserStore } from "@/stores/useUserStore";
 
 // NavbarAction Component
-const NavbarAction = ({
-	icon,
-	className,
-	...props
-}: {
-	icon: React.ReactNode;
-	className?: string;
-}) => (
-	<Button
-		variant="ghost"
-		className={cn(
-			"p-2 md:p-3 rounded-full backdrop-blur-sm border transition-all duration-300",
-			"bg-white/80 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700",
-			"text-gray-900 dark:text-yellow-400 hover:bg-white dark:hover:bg-gray-700/50",
-			"hover:scale-110 shadow-sm h-auto w-auto",
-			className,
-		)}
-		{...props}
-	>
-		{icon}
-	</Button>
+const NavbarAction = React.memo(
+	({
+		icon,
+		className,
+		...props
+	}: React.ComponentPropsWithoutRef<typeof Button> & {
+		icon: React.ReactNode;
+	}) => (
+		<Button
+			variant="ghost"
+			className={cn(
+				"relative p-2 md:p-3 rounded-full backdrop-blur-sm border transition-all duration-200",
+				"bg-white/90 dark:bg-gray-800/60 border-gray-200/80 dark:border-gray-700/80",
+				"text-gray-900 dark:text-yellow-400",
+				"active:scale-95 will-change-transform",
+				"shadow-sm h-auto w-auto",
+				className,
+			)}
+			{...props}
+		>
+			{icon}
+		</Button>
+	),
 );
+
+NavbarAction.displayName = "NavbarAction";
 
 // Types
 export interface Navbar01NavLink {
@@ -76,30 +86,194 @@ export interface Navbar01Props extends React.HTMLAttributes<HTMLElement> {
 	logo?: React.ReactNode;
 	logoHref?: string;
 	navigationLinks?: Navbar01NavLink[];
-	// УСТГАХ: userName, userEmail props
-	// userName?: string;
-	// userEmail?: string;
 }
 
 const defaultNavigationLinks: Navbar01NavLink[] = [
 	{ href: "/home", label: "Үндсэн хуудас" },
-	{ href: "/Lists/examList", label: "Шалгалт" },
-	{ href: "/Lists/examResult", label: "Шалгалтын үр дүн" },
-	{ href: "/Lists/sorilList", label: "Сорил" },
-	{ href: "/Lists/sorilResult", label: "Сорилын үр дүн" },
 	{ href: "/Lists/exerciseList", label: "Дасгал ажил" },
 ];
 
+const examDropdownLinks = [
+	{
+		href: "/Lists/examList",
+		label: "Шалгалтын жагсаалт",
+		description: "Бүх шалгалтуудыг харах",
+		icon: "📋",
+	},
+	{
+		href: "/Lists/examResult",
+		label: "Шалгалтын үр дүн",
+		description: "Миний үр дүнгүүд",
+		icon: "📊",
+	},
+];
+
+const sorilDropdownLinks = [
+	{
+		href: "/Lists/sorilList",
+		label: "Сорилын жагсаалт",
+		description: "Бүх сорилуудыг харах",
+		icon: "📝",
+	},
+	{
+		href: "/Lists/sorilResult",
+		label: "Сорилын үр дүн",
+		description: "Миний үр дүнгүүд",
+		icon: "🏆",
+	},
+	{
+		href: "/Lists/sorilDetail",
+		label: "Сорилын дэлгэрэнгүй",
+		description: "Нарийвчилсан мэдээлэл",
+		icon: "📑",
+	},
+];
+
+// User Info Component
+const UserInfo = React.memo(
+	({ userName, userImage }: { userName: string; userImage: string }) => (
+		<div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 transition-all duration-300 hover:shadow-md hover:border-primary/30 hover:scale-[1.02]">
+			{userImage ? (
+				<div className="relative shrink-0">
+					<Image
+						src={userImage}
+						alt={userName}
+						width={36}
+						height={36}
+						className="rounded-full object-cover ring-2 ring-primary/40 ring-offset-2 ring-offset-background shadow-sm"
+					/>
+					<div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-gradient-to-br from-green-400 to-green-500 rounded-full border-2 border-background shadow-sm">
+						<div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-75" />
+					</div>
+				</div>
+			) : (
+				<div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0 shadow-sm">
+					<User className="h-5 w-5 text-primary" />
+				</div>
+			)}
+			<span className="text-sm font-semibold text-foreground leading-tight truncate max-w-[150px]">
+				{userName}
+			</span>
+		</div>
+	),
+);
+
+UserInfo.displayName = "UserInfo";
+
+// Mega Menu Component
+const MegaMenuItem = React.memo(
+	({
+		label,
+		items,
+		isActive,
+	}: {
+		label: string;
+		items: typeof examDropdownLinks;
+		isActive: boolean;
+	}) => {
+		const [isOpen, setIsOpen] = useState(false);
+		const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+		const pathname = usePathname();
+
+		const handleMouseEnter = useCallback(() => {
+			if (timeoutRef.current) {
+				clearTimeout(timeoutRef.current);
+			}
+			setIsOpen(true);
+		}, []);
+
+		const handleMouseLeave = useCallback(() => {
+			timeoutRef.current = setTimeout(() => {
+				setIsOpen(false);
+			}, 150);
+		}, []);
+
+		useEffect(() => {
+			return () => {
+				if (timeoutRef.current) {
+					clearTimeout(timeoutRef.current);
+				}
+			};
+		}, []);
+
+		return (
+			<NavigationMenuItem
+				onMouseEnter={handleMouseEnter}
+				onMouseLeave={handleMouseLeave}
+			>
+				<button
+					type="button"
+					className={cn(
+						"group inline-flex h-10 items-center justify-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300",
+						"hover:bg-gradient-to-r hover:from-accent/90 hover:to-accent hover:text-accent-foreground hover:shadow-md hover:scale-105",
+						"active:scale-95",
+						isActive
+							? "bg-gradient-to-r from-accent/90 to-accent text-accent-foreground shadow-md scale-[1.02]"
+							: "text-foreground/80 hover:text-foreground",
+					)}
+				>
+					{label}
+					<ChevronDown
+						className={cn(
+							"h-4 w-4 transition-transform duration-300",
+							isOpen && "rotate-180",
+						)}
+					/>
+				</button>
+
+				{/* Mega Menu Dropdown */}
+				<div
+					className={cn(
+						"absolute left-0 top-full mt-3 w-80 rounded-2xl border bg-popover/98 backdrop-blur-xl shadow-2xl transition-all duration-300",
+						"transform origin-top overflow-hidden",
+						isOpen
+							? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+							: "opacity-0 scale-95 -translate-y-2 pointer-events-none",
+					)}
+				>
+					<div className="p-4 space-y-1.5">
+						<div className="px-3 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground/80 border-b border-border/50 mb-3">
+							{label}
+						</div>
+						{items.map((item) => {
+							const isItemActive = pathname === item.href;
+							return (
+								<Link
+									key={item.href}
+									href={item.href}
+									className={cn(
+										"flex flex-col items-start gap-2 p-3.5 rounded-xl transition-all duration-300",
+										"hover:bg-accent/90 hover:shadow-lg hover:scale-[1.02] hover:translate-x-1",
+										"active:scale-95",
+										isItemActive &&
+											"bg-gradient-to-r from-accent to-accent/80 shadow-lg scale-[1.02] border border-primary/30",
+									)}
+								>
+									<div className="flex items-center gap-3 w-full">
+										<span className="text-2xl filter drop-shadow-sm">
+											{item.icon}
+										</span>
+										<div className="text-sm font-bold leading-none">
+											{item.label}
+										</div>
+									</div>
+									<p className="text-xs leading-relaxed text-muted-foreground pl-9">
+										{item.description}
+									</p>
+								</Link>
+							);
+						})}
+					</div>
+				</div>
+			</NavigationMenuItem>
+		);
+	},
+);
+
+MegaMenuItem.displayName = "MegaMenuItem";
+
 export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
-	(
-		{
-			className,
-			navigationLinks = defaultNavigationLinks,
-			// УСТГАХ: userName, userEmail destructure
-			...props
-		},
-		ref,
-	) => {
+	({ className, navigationLinks = defaultNavigationLinks, ...props }, ref) => {
 		const [isMobile, setIsMobile] = useState(false);
 		const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 		const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -107,84 +281,122 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 		const pathname = usePathname();
 		const router = useRouter();
 
-		// ШИНЭ: Zustand store-оос profile авах
+		// Get profile from Zustand store
 		const profile = useUserStore((state) => state.profile);
 
-		// Хэрэглэгчийн нэр, email, зураг
-		const userName = profile?.fname || profile?.firstname || "Хэрэглэгч";
-		const _userEmail = profile?.email || "";
-		const userImage = profile?.img_url || "";
-		const schoolName = profile?.sch_name || "";
-		const studentGroup = profile?.studentgroupname || "";
+		// Memoize user information
+		const userInfo = useMemo(
+			() => ({
+				userName: profile?.fname || profile?.firstname || "Хэрэглэгч",
+				userEmail: profile?.email || "",
+				userImage: profile?.img_url || "",
+				schoolName: profile?.sch_name || "",
+				studentGroup: profile?.studentgroupname || "",
+			}),
+			[profile],
+		);
 
+		// Optimized resize observer
 		useEffect(() => {
+			let timeoutId: NodeJS.Timeout;
+
 			const checkWidth = () => {
 				if (containerRef.current) {
 					const width = containerRef.current.offsetWidth;
 					setIsMobile(width < 768);
 				}
 			};
+
+			const debouncedCheck = () => {
+				clearTimeout(timeoutId);
+				timeoutId = setTimeout(checkWidth, 100);
+			};
+
 			checkWidth();
-			const resizeObserver = new ResizeObserver(checkWidth);
-			if (containerRef.current) resizeObserver.observe(containerRef.current);
-			return () => resizeObserver.disconnect();
+
+			const resizeObserver = new ResizeObserver(debouncedCheck);
+			if (containerRef.current) {
+				resizeObserver.observe(containerRef.current);
+			}
+
+			return () => {
+				clearTimeout(timeoutId);
+				resizeObserver.disconnect();
+			};
 		}, []);
 
-		const combinedRef = React.useCallback(
+		const combinedRef = useCallback(
 			(node: HTMLElement | null) => {
 				containerRef.current = node;
-				if (typeof ref === "function") ref(node);
-				else if (ref) {
+				if (typeof ref === "function") {
+					ref(node);
+				} else if (ref) {
 					(ref as React.MutableRefObject<HTMLElement | null>).current = node;
 				}
 			},
 			[ref],
 		);
 
-		const handleLogoutClick = () => setShowLogoutDialog(true);
+		const handleLogoutClick = useCallback(() => {
+			setShowLogoutDialog(true);
+		}, []);
 
-		const confirmLogout = () => {
+		const confirmLogout = useCallback(() => {
 			Cookies.remove("auth-token", { path: "/" });
-			// ШИНЭ: Store-ыг цэвэрлэх
 			useUserStore.getState().setProfile(null);
 			router.push("/login");
-		};
+		}, [router]);
 
-		const handleProfileClick = () => router.push("/userProfile");
+		const handleProfileClick = useCallback(() => {
+			router.push("/userProfile");
+		}, [router]);
+
+		const handleMenuToggle = useCallback(() => {
+			setIsMenuOpen(false);
+		}, []);
+
+		// Check if exam/soril paths are active
+		const isExamActive = pathname.includes("/Lists/exam");
+		const isSorilActive = pathname.includes("/Lists/soril");
 
 		return (
 			<>
 				<header
 					ref={combinedRef}
 					className={cn(
-						"rounded-2xl border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 shadow-lg",
+						"rounded-3xl border-2 bg-gradient-to-r from-background/98 via-background/95 to-background/98",
+						"backdrop-blur-xl supports-backdrop-filter:bg-background/60",
+						"shadow-xl shadow-black/5 dark:shadow-black/20",
+						"sticky top-0 z-50 transition-all duration-300",
+						"border-gray-200/60 dark:border-gray-800/60",
 						className,
 					)}
 					{...props}
 				>
-					<div className="flex h-16 items-center justify-between px-6 md:px-10">
+					<div className="flex h-20 items-center justify-between px-6 md:px-12">
 						{/* Left side - Logo */}
-						<div className="flex items-center">
+						<div className="flex items-center shrink-0">
 							<Link
 								href="/"
-								className="flex items-center text-primary hover:text-primary/90 transition-colors"
+								className="flex items-center text-primary hover:text-primary/90 transition-all duration-300 hover:scale-105 active:scale-95"
 							>
 								<Image
 									src="/image/IkhNuudel.png"
 									alt="ECM Logo"
-									width={88}
-									height={88}
-									className="object-contain"
+									width={96}
+									height={96}
+									className="object-contain drop-shadow-md"
 									priority
 									unoptimized
 								/>
 							</Link>
 						</div>
 
+						{/* Center - Desktop Navigation */}
 						{!isMobile && (
 							<div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
 								<NavigationMenu>
-									<NavigationMenuList className="gap-1">
+									<NavigationMenuList className="gap-2">
 										{navigationLinks.map((link) => {
 											const isActive = pathname === link.href;
 											return (
@@ -192,10 +404,11 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 													<Link
 														href={link.href}
 														className={cn(
-															"group inline-flex h-9 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-all duration-300",
-															"hover:bg-accent hover:text-accent-foreground hover:scale-105",
+															"group inline-flex h-10 w-max items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300",
+															"hover:bg-gradient-to-r hover:from-accent/90 hover:to-accent hover:text-accent-foreground hover:shadow-md hover:scale-105",
+															"active:scale-95",
 															isActive
-																? "bg-accent text-accent-foreground"
+																? "bg-gradient-to-r from-accent/90 to-accent text-accent-foreground shadow-md scale-[1.02]"
 																: "text-foreground/80 hover:text-foreground",
 														)}
 													>
@@ -204,6 +417,20 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 												</NavigationMenuItem>
 											);
 										})}
+
+										{/* Шалгалт Mega Menu */}
+										<MegaMenuItem
+											label="Шалгалт"
+											items={examDropdownLinks}
+											isActive={isExamActive}
+										/>
+
+										{/* Сорил Mega Menu */}
+										<MegaMenuItem
+											label="Сорил"
+											items={sorilDropdownLinks}
+											isActive={isSorilActive}
+										/>
 									</NavigationMenuList>
 								</NavigationMenu>
 							</div>
@@ -211,30 +438,14 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 
 						{/* Right side - Actions */}
 						<div className="flex items-center gap-3">
-							{/* Хэрэглэгчийн нэр харуулах - Menu-ний баруун талд */}
+							{/* User name display - Desktop only */}
 							{!isMobile && profile && (
-								<div className="flex items-center gap-2.5 px-4 py-2   ">
-									{userImage ? (
-										<div className="relative">
-											<Image
-												src={userImage}
-												alt={userName}
-												width={32}
-												height={32}
-												className="rounded-full object-cover ring-2 ring-primary/30 ring-offset-1 ring-offset-background"
-											/>
-											<div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
-										</div>
-									) : (
-										<div></div>
-									)}
-									<div className="flex flex-col gap-0.5 min-w-0">
-										<span className="text-sm font-bold text-foreground leading-tight truncate max-w-[120px]">
-											{userName}
-										</span>
-									</div>
-								</div>
+								<UserInfo
+									userName={userInfo.userName}
+									userImage={userInfo.userImage}
+								/>
 							)}
+
 							{/* Mobile menu */}
 							{isMobile && (
 								<Popover open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -242,23 +453,28 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 										<Button
 											variant="ghost"
 											className={cn(
-												"p-2 rounded-full backdrop-blur-sm border transition-all duration-300",
-												"bg-white/80 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700",
-												"text-gray-900 dark:text-yellow-400 hover:bg-white dark:hover:bg-gray-700/50",
-												"hover:scale-110 shadow-sm h-auto w-auto",
+												"p-2.5 rounded-xl backdrop-blur-md border transition-all duration-300",
+												"bg-gradient-to-br from-white/95 to-white/90 dark:from-gray-800/80 dark:to-gray-800/60",
+												"border-gray-200/60 dark:border-gray-700/60",
+												"text-gray-700 dark:text-yellow-400",
+												"hover:shadow-lg hover:scale-105 active:scale-95",
+												"h-10 w-10",
 											)}
 										>
 											<UseAnimations
 												animation={menu3}
-												size={28}
+												size={24}
 												reverse={isMenuOpen}
 												strokeColor="currentColor"
 											/>
 										</Button>
 									</PopoverTrigger>
-									<PopoverContent align="end" className="w-48 p-2">
+									<PopoverContent
+										align="end"
+										className="w-72 p-3 animate-in fade-in-0 zoom-in-95 rounded-2xl shadow-2xl border-2"
+									>
 										<NavigationMenu className="max-w-none">
-											<NavigationMenuList className="flex-col items-start gap-1">
+											<NavigationMenuList className="flex-col items-start gap-1.5">
 												{navigationLinks.map((link) => {
 													const isActive = pathname === link.href;
 													return (
@@ -268,16 +484,98 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 														>
 															<Link
 																href={link.href}
-																onClick={() => setIsMenuOpen(false)}
+																onClick={handleMenuToggle}
 																className={cn(
-																	"flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
-																	"hover:bg-accent hover:text-accent-foreground",
+																	"flex w-full items-center rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-300",
+																	"hover:bg-accent hover:text-accent-foreground hover:translate-x-1 hover:shadow-md",
+																	"active:scale-95",
 																	isActive
-																		? "bg-accent text-accent-foreground"
+																		? "bg-gradient-to-r from-accent/90 to-accent text-accent-foreground shadow-md"
 																		: "text-foreground/80",
 																)}
 															>
 																{link.label}
+															</Link>
+														</NavigationMenuItem>
+													);
+												})}
+
+												{/* Mobile Шалгалт Section */}
+												<div className="w-full pt-4 pb-2">
+													<div className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
+														📝 Шалгалт
+													</div>
+												</div>
+												{examDropdownLinks.map((item) => {
+													const isActive = pathname === item.href;
+													return (
+														<NavigationMenuItem
+															key={item.href}
+															className="w-full"
+														>
+															<Link
+																href={item.href}
+																onClick={handleMenuToggle}
+																className={cn(
+																	"flex w-full items-start gap-3 rounded-xl px-4 py-3 text-sm transition-all duration-300",
+																	"active:scale-95",
+																	isActive
+																		? "bg-gradient-to-r from-accent/90 to-accent text-accent-foreground shadow-md"
+																		: "text-foreground/80",
+																)}
+															>
+																<span className="text-lg mt-0.5 filter drop-shadow-sm">
+																	{item.icon}
+																</span>
+																<div className="flex flex-col gap-1">
+																	<span className="font-bold">
+																		{item.label}
+																	</span>
+																	<span className="text-xs text-muted-foreground leading-tight">
+																		{item.description}
+																	</span>
+																</div>
+															</Link>
+														</NavigationMenuItem>
+													);
+												})}
+
+												{/* Mobile Сорил Section */}
+												<div className="w-full pt-4 pb-2">
+													<div className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
+														🎯 Сорил
+													</div>
+												</div>
+												{sorilDropdownLinks.map((item) => {
+													const isActive = pathname === item.href;
+													return (
+														<NavigationMenuItem
+															key={item.href}
+															className="w-full"
+														>
+															<Link
+																href={item.href}
+																onClick={handleMenuToggle}
+																className={cn(
+																	"flex w-full items-start gap-3 rounded-xl px-4 py-3 text-sm transition-all duration-300",
+																	"hover:bg-accent hover:text-accent-foreground hover:translate-x-1 hover:shadow-md",
+																	"active:scale-95",
+																	isActive
+																		? "bg-gradient-to-r from-accent/90 to-accent text-accent-foreground shadow-md"
+																		: "text-foreground/80",
+																)}
+															>
+																<span className="text-lg mt-0.5 filter drop-shadow-sm">
+																	{item.icon}
+																</span>
+																<div className="flex flex-col gap-1">
+																	<span className="font-bold">
+																		{item.label}
+																	</span>
+																	<span className="text-xs text-muted-foreground leading-tight">
+																		{item.description}
+																	</span>
+																</div>
 															</Link>
 														</NavigationMenuItem>
 													);
@@ -291,72 +589,76 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 							{/* User dropdown */}
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									{/* ШИНЭ: Хэрэв зураг байвал зургийг харуулах */}
-									{userImage ? (
+									{userInfo.userImage ? (
 										<Button
 											variant="ghost"
 											className={cn(
-												"p-0 rounded-full backdrop-blur-sm border-2 transition-all duration-300",
-												"bg-white/80 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700",
-												"hover:bg-white dark:hover:bg-gray-700/50",
-												"hover:scale-110 shadow-sm h-10 w-10 overflow-hidden",
+												"p-0 rounded-xl backdrop-blur-md border-2 transition-all duration-300",
+												"bg-gradient-to-br from-white/95 to-white/90 dark:from-gray-800/80 dark:to-gray-800/60",
+												"border-gray-200/60 dark:border-gray-700/60",
+												"hover:shadow-lg hover:scale-105 hover:border-primary/40",
+												"active:scale-95 h-11 w-11 overflow-hidden",
 											)}
 										>
 											<Image
-												src={userImage}
-												alt={userName}
-												width={40}
-												height={40}
-												className="rounded-full object-cover"
+												src={userInfo.userImage}
+												alt={userInfo.userName}
+												width={44}
+												height={44}
+												className="rounded-xl object-cover"
 											/>
 										</Button>
 									) : (
 										<NavbarAction icon={<User className="h-5 w-5" />} />
 									)}
 								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end" className="w-64">
-									<DropdownMenuLabel>
-										<div className="flex items-center space-x-3">
-											{/* Зураг */}
-											{userImage ? (
-												<Image
-													src={userImage}
-													alt={userName}
-													width={48}
-													height={48}
-													className="rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
-												/>
+								<DropdownMenuContent
+									align="end"
+									className="w-72 animate-in fade-in-0 zoom-in-95 rounded-2xl shadow-2xl border-2"
+								>
+									<DropdownMenuLabel className="pb-3">
+										<div className="flex items-center space-x-3.5">
+											{userInfo.userImage ? (
+												<div className="relative">
+													<Image
+														src={userInfo.userImage}
+														alt={userInfo.userName}
+														width={52}
+														height={52}
+														className="rounded-xl object-cover border-2 border-primary/30 ring-2 ring-primary/10 shadow-md"
+													/>
+													<div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-br from-green-400 to-green-500 rounded-full border-2 border-background shadow-sm" />
+												</div>
 											) : (
-												<div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+												<div className="w-13 h-13 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shadow-md">
 													<User className="h-6 w-6 text-primary" />
 												</div>
 											)}
 
-											{/* Мэдээлэл */}
-											<div className="flex flex-col space-y-1.5 flex-1 min-w-0">
-												<p className="text-sm font-bold leading-none truncate">
-													{userName}
+											<div className="flex flex-col space-y-2 flex-1 min-w-0">
+												<p className="text-base font-bold leading-none truncate">
+													{userInfo.userName}
 												</p>
 
-												{schoolName && (
+												{userInfo.schoolName && (
 													<div
-														className="flex items-center gap-1.5 min-w-0 cursor-help"
-														title={schoolName}
+														className="flex items-center gap-2 min-w-0 cursor-help group"
+														title={userInfo.schoolName}
 													>
-														<School className="h-3 w-3 flex-shrink-0 text-blue-600 dark:text-blue-400" />
-														<span className="text-xs text-blue-600 dark:text-blue-400 ">
-															{schoolName}
+														<School className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400 transition-transform group-hover:scale-110" />
+														<span className="text-xs font-medium text-blue-600 dark:text-blue-400 truncate">
+															{userInfo.schoolName}
 														</span>
 													</div>
 												)}
-												{studentGroup && (
+												{userInfo.studentGroup && (
 													<div
-														className="flex items-center gap-1.5 min-w-0 cursor-help"
-														title={studentGroup}
+														className="flex items-center gap-2 min-w-0 cursor-help group"
+														title={userInfo.studentGroup}
 													>
-														<Users className="h-3 w-3 flex-shrink-0 text-green-600 dark:text-green-400" />
-														<span className="text-xs text-green-600 dark:text-green-400 truncate">
-															{studentGroup}
+														<Users className="h-3.5 w-3.5 shrink-0 text-green-600 dark:text-green-400 transition-transform group-hover:scale-110" />
+														<span className="text-xs font-medium text-green-600 dark:text-green-400 truncate">
+															{userInfo.studentGroup}
 														</span>
 													</div>
 												)}
@@ -366,18 +668,18 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 									<DropdownMenuSeparator />
 									<DropdownMenuItem
 										onClick={handleProfileClick}
-										className="cursor-pointer"
+										className="cursor-pointer transition-all duration-300 rounded-xl py-2.5 my-1"
 									>
-										<UserCircle className="mr-2 h-4 w-4" />
-										<span>Профайл</span>
+										<UserCircle className="mr-2.5 h-4 w-4" />
+										<span className="font-medium">Профайл</span>
 									</DropdownMenuItem>
 									<DropdownMenuSeparator />
 									<DropdownMenuItem
 										onClick={handleLogoutClick}
-										className="cursor-pointer text-red-600 dark:text-red-400"
+										className="cursor-pointer text-red-600 dark:text-red-400 transition-all duration-300 rounded-xl py-2.5 my-1"
 									>
-										<LogOut className="mr-2 h-4 w-4" />
-										<span>Гарах</span>
+										<LogOut className="mr-2.5 h-4 w-4" />
+										<span className="font-medium">Гарах</span>
 									</DropdownMenuItem>
 								</DropdownMenuContent>
 							</DropdownMenu>
@@ -385,10 +687,10 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 							{/* Theme toggler */}
 							<AnimatedThemeToggler
 								className={cn(
-									"p-2 md:p-3 rounded-full backdrop-blur-sm border transition-all duration-300",
-									"bg-white/80 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700",
-									"text-gray-900 dark:text-yellow-400 hover:bg-white dark:hover:bg-gray-700/50",
-									"hover:scale-110 shadow-sm h-auto w-auto",
+									"p-2 md:p-3 rounded-full backdrop-blur-sm border transition-all duration-200",
+									"bg-white/90 dark:bg-gray-800/60 border-gray-200/80 dark:border-gray-700/80",
+									"text-gray-900 dark:text-yellow-400",
+									"active:scale-95 shadow-sm h-auto w-auto",
 								)}
 							/>
 						</div>
@@ -397,19 +699,24 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 
 				{/* Logout Confirmation Dialog */}
 				<AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
-					<AlertDialogContent>
+					<AlertDialogContent className="sm:max-w-md rounded-2xl border-2">
 						<AlertDialogHeader>
-							<AlertDialogTitle>Гарахдаа итгэлтэй байна уу?</AlertDialogTitle>
-							<AlertDialogDescription>
+							<AlertDialogTitle className="flex items-center gap-2.5 text-lg">
+								<LogOut className="h-5 w-5 text-red-600" />
+								Гарахдаа итгэлтэй байна уу?
+							</AlertDialogTitle>
+							<AlertDialogDescription className="text-sm leading-relaxed pt-2">
 								Та системээс гарахдаа итгэлтэй байна уу? Дахин нэвтрэхийн тулд
 								нэвтрэх нэр болон нууц үгээ оруулах шаардлагатай.
 							</AlertDialogDescription>
 						</AlertDialogHeader>
-						<AlertDialogFooter>
-							<AlertDialogCancel>Цуцлах</AlertDialogCancel>
+						<AlertDialogFooter className="gap-2">
+							<AlertDialogCancel className="transition-all duration-300 hover:scale-105 rounded-xl">
+								Цуцлах
+							</AlertDialogCancel>
 							<AlertDialogAction
 								onClick={confirmLogout}
-								className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700"
+								className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-600 dark:to-red-700 dark:hover:from-red-700 dark:hover:to-red-800 transition-all duration-300 hover:scale-105 rounded-xl shadow-lg"
 							>
 								Гарах
 							</AlertDialogAction>

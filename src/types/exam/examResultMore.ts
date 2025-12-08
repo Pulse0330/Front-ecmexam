@@ -57,6 +57,7 @@ export interface Question {
 	zad_onoo: number;
 	zad_descr: string;
 	urltype: string;
+	truecnt: number;
 }
 
 // Answer (RetDataThirt)
