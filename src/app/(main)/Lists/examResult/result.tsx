@@ -14,7 +14,6 @@ import {
 	X,
 	XCircle,
 } from "lucide-react";
-import type React from "react";
 import UseAnimations from "react-useanimations";
 import loading2 from "react-useanimations/lib/loading2";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -33,11 +32,11 @@ interface ExamAnswersDialogProps {
 	onOpenChange: (open: boolean) => void;
 }
 
-const ExamAnswersDialog: React.FC<ExamAnswersDialogProps> = ({
+export default function ExamAnswersDialog({
 	testId,
 	open,
 	onOpenChange,
-}) => {
+}: ExamAnswersDialogProps) {
 	const { data, isLoading, isError, error } = useQuery<ExamResultsResponse>({
 		queryKey: ["examResults", testId],
 		queryFn: () => getExamResults(testId),
@@ -86,7 +85,7 @@ const ExamAnswersDialog: React.FC<ExamAnswersDialogProps> = ({
 				onKeyDown={(e) => e.stopPropagation()}
 			>
 				{/* Header with gradient */}
-				<CardHeader className="sticky top-0 bg-gradient-to-r from-primary via-primary/90 to-primary p-6 z-10 border-b">
+				<CardHeader className="sticky top-0 bg-linear-to-r from-primary via-primary/90 to-primary p-6 z-10 border-b">
 					<div className="flex items-center justify-between text-primary-foreground">
 						<div className="flex items-center gap-3">
 							<div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
@@ -112,7 +111,7 @@ const ExamAnswersDialog: React.FC<ExamAnswersDialogProps> = ({
 					</div>
 				</CardHeader>
 
-				<div className="overflow-auto max-h-[calc(90vh-112px)] bg-gradient-to-b from-background to-muted/20">
+				<div className="overflow-auto max-h-[calc(90vh-112px)] bg-linear-to-b from-background to-muted/20">
 					{isLoading ? (
 						<CardContent className="p-12 text-center">
 							<UseAnimations
@@ -148,12 +147,12 @@ const ExamAnswersDialog: React.FC<ExamAnswersDialogProps> = ({
 							<div className="flex justify-center py-6">
 								<div className="relative">
 									<div
-										className={`absolute inset-0 bg-gradient-to-br ${getGradeColor(
+										className={`absolute inset-0 bg-linear-to-br ${getGradeColor(
 											result.unelgee,
 										)} opacity-20 blur-2xl rounded-full animate-pulse`}
 									/>
 									<div
-										className={`relative w-40 h-40 rounded-full border-[12px] flex flex-col items-center justify-center bg-gradient-to-br ${getGradeColor(
+										className={`relative w-40 h-40 rounded-full  flex flex-col items-center justify-center bg-linear-to-br ${getGradeColor(
 											result.unelgee,
 										)} text-white shadow-2xl`}
 									>
@@ -170,7 +169,7 @@ const ExamAnswersDialog: React.FC<ExamAnswersDialogProps> = ({
 
 							{/* Stats Grid with modern cards */}
 							<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-								<Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 hover:shadow-lg transition-all">
+								<Card className="border-2 border-primary/20 bg-linear-to-br from-primary/5 to-primary/10 hover:shadow-lg transition-all">
 									<CardContent className="p-4 text-center">
 										<Award className="w-8 h-8 mx-auto mb-2 text-primary" />
 										<div className="text-3xl font-black text-primary">
@@ -185,7 +184,7 @@ const ExamAnswersDialog: React.FC<ExamAnswersDialogProps> = ({
 									</CardContent>
 								</Card>
 
-								<Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 hover:shadow-lg transition-all">
+								<Card className="border-2 border-purple-200 bg-linear-to-br from-purple-50 to-purple-100 hover:shadow-lg transition-all">
 									<CardContent className="p-4 text-center">
 										<Target className="w-8 h-8 mx-auto mb-2 text-purple-600" />
 										<div className="text-3xl font-black text-purple-600">
@@ -197,7 +196,7 @@ const ExamAnswersDialog: React.FC<ExamAnswersDialogProps> = ({
 									</CardContent>
 								</Card>
 
-								<Card className="border-2 border-green-300 bg-gradient-to-br from-green-50 to-emerald-100 hover:shadow-lg transition-all">
+								<Card className="border-2 border-green-300 bg-linear-to-br from-green-50 to-emerald-100 hover:shadow-lg transition-all">
 									<CardContent className="p-4 text-center">
 										<CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-600" />
 										<div className="text-3xl font-black text-green-600">
@@ -209,7 +208,7 @@ const ExamAnswersDialog: React.FC<ExamAnswersDialogProps> = ({
 									</CardContent>
 								</Card>
 
-								<Card className="border-2 border-red-300 bg-gradient-to-br from-red-50 to-rose-100 hover:shadow-lg transition-all">
+								<Card className="border-2 border-red-300 bg-linear-to-br from-red-50 to-rose-100 hover:shadow-lg transition-all">
 									<CardContent className="p-4 text-center">
 										<XCircle className="w-8 h-8 mx-auto mb-2 text-red-600" />
 										<div className="text-3xl font-black text-red-600">
@@ -225,7 +224,7 @@ const ExamAnswersDialog: React.FC<ExamAnswersDialogProps> = ({
 							<Separator className="my-6" />
 
 							{/* Performance Analysis with modern styling */}
-							<Card className="border-2 bg-gradient-to-br from-muted/30 to-muted/50">
+							<Card className="border-2 bg-linear-to-br from-muted/30 to-muted/50">
 								<CardHeader className="pb-4">
 									<CardTitle className="text-lg flex items-center gap-2">
 										<TrendingUp className="w-5 h-5 text-primary" />
@@ -319,8 +318,8 @@ const ExamAnswersDialog: React.FC<ExamAnswersDialogProps> = ({
 							<Alert
 								className={`border-2 ${
 									isPassed
-										? "border-green-500 bg-gradient-to-r from-green-50 to-emerald-50"
-										: "border-red-500 bg-gradient-to-r from-red-50 to-rose-50"
+										? "border-green-500 bg-linear-to-r from-green-50 to-emerald-50"
+										: "border-red-500 bg-linear-to-r from-red-50 to-rose-50"
 								}`}
 							>
 								<AlertDescription className="text-center py-2">
@@ -386,6 +385,4 @@ const ExamAnswersDialog: React.FC<ExamAnswersDialogProps> = ({
 			</Card>
 		</div>
 	);
-};
-
-export default ExamAnswersDialog;
+}

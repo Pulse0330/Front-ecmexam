@@ -126,10 +126,10 @@ export default function RankModal({ examId, userId, onClose }: RankModalProps) {
 										key={item.userid}
 										className={`relative overflow-hidden ${
 											index === 0
-												? "md:order-2 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20"
+												? "md:order-2 bg-linear-to-br from-primary/5 to-primary/10 border-primary/20"
 												: index === 1
-													? "md:order-1 bg-gradient-to-br from-muted/30 to-muted/50 border-muted-foreground/20"
-													: "md:order-3 bg-gradient-to-br from-accent/30 to-accent/50 border-accent-foreground/20"
+													? "md:order-1 bg-linear-to-br from-muted/30 to-muted/50 border-muted-foreground/20"
+													: "md:order-3 bg-linear-to-br from-accent/30 to-accent/50 border-accent-foreground/20"
 										}`}
 									>
 										<div className="absolute top-0 right-0 w-24 h-24 opacity-10">
@@ -157,7 +157,7 @@ export default function RankModal({ examId, userId, onClose }: RankModalProps) {
 											</h3>
 											{item.sch_name && (
 												<p className="text-xs text-muted-foreground mb-2 flex items-center justify-center gap-1 truncate">
-													<School className="w-3 h-3 flex-shrink-0" />
+													<School className="w-3 h-3 shrink-0" />
 													<span className="truncate">{item.sch_name}</span>
 												</p>
 											)}
@@ -233,7 +233,7 @@ export default function RankModal({ examId, userId, onClose }: RankModalProps) {
 
 													{currentUserRank.sch_name && (
 														<div className="bg-muted/50 rounded-xl p-3">
-															<span className="text-xs text-muted-foreground block mb-1 flex items-center gap-1">
+															<span className="text-xs text-muted-foreground  mb-1 flex items-center gap-1">
 																<School className="w-3 h-3" />
 																Сургууль:
 															</span>
@@ -268,7 +268,7 @@ export default function RankModal({ examId, userId, onClose }: RankModalProps) {
 												<CardContent className="p-4">
 													<div className="flex items-center gap-3">
 														{/* Rank */}
-														<div className="flex-shrink-0">
+														<div className="shrink-0">
 															{item.medal ? (
 																<Image
 																	src={item.medal}
@@ -293,10 +293,10 @@ export default function RankModal({ examId, userId, onClose }: RankModalProps) {
 																alt={item.fname}
 																width={48}
 																height={48}
-																className="rounded-full border-2 border-border flex-shrink-0"
+																className="rounded-full border-2 border-border shrink-0"
 															/>
 														) : (
-															<div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center border-2 border-border flex-shrink-0">
+															<div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center border-2 border-border shrink-0">
 																<User className="w-6 h-6 text-muted-foreground" />
 															</div>
 														)}
@@ -320,7 +320,7 @@ export default function RankModal({ examId, userId, onClose }: RankModalProps) {
 														</div>
 
 														{/* Score */}
-														<div className="text-right flex-shrink-0">
+														<div className="text-right shrink-0">
 															<div className="font-black text-xl text-primary">
 																{item.point}
 															</div>

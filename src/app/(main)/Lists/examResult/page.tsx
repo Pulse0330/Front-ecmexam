@@ -3,31 +3,58 @@
 import { useQuery } from "@tanstack/react-query";
 import {
 	Award,
+	BookmarkCheck,
 	CheckCircle,
+	ChevronDown,
 	Eye,
 	EyeOff,
 	FileQuestion,
+	Search,
 	TrendingUp,
-	Trophy,
+	X,
 } from "lucide-react";
-import { useState } from "react";
+import dynamic from "next/dynamic";
+import { useEffect, useMemo, useState } from "react";
+import UseAnimations from "react-useanimations";
+import loading2 from "react-useanimations/lib/loading2";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { getexamresultlists } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { ExamresultListResponseType } from "@/types/exam/examResultList";
-
 import { ExamListItem } from "./card";
 import RankModal from "./rank";
+
+// Dynamic import for Result Modal to avoid build errors
+const ExamAnswersDialog = dynamic(() => import("./result"), {
+	ssr: false,
+	loading: () => <div>Loading...</div>,
+});
 
 export default function ExamResultList() {
 	const { userId } = useAuthStore();
 	const [selectedExamId, setSelectedExamId] = useState<number | null>(null);
-	const [showStats, setShowStats] = useState(true);
+	const [selectedTestId, setSelectedTestId] = useState<number | null>(null);
 
-	const { data } = useQuery<ExamresultListResponseType>({
+	const [_showStats, _setShowStats] = useState(true);
+	const [globalShowScore, setGlobalShowScore] = useState(false);
+	const [isResultsOpen, setIsResultsOpen] = useState(true);
+	const [_isDay, setIsDay] = useState(true);
+	const [searchQuery, setSearchQuery] = useState("");
+
+	useEffect(() => {
+		const hour = new Date().getHours();
+		setIsDay(hour >= 6 && hour < 18);
+	}, []);
+
+	const { data, isLoading } = useQuery<ExamresultListResponseType>({
 		queryKey: ["examResults", userId],
 		queryFn: () => getexamresultlists(userId || 0),
 		enabled: !!userId,
@@ -37,29 +64,65 @@ export default function ExamResultList() {
 		!data?.RetResponse?.ResponseType || data?.RetData === null;
 	const exams = data?.RetData || [];
 
+	// Filter exams based on search query
+	const filteredExams = useMemo(() => {
+		if (!searchQuery.trim()) return exams;
+
+		const query = searchQuery.toLowerCase();
+		return exams.filter((exam) => exam.title?.toLowerCase().includes(query));
+	}, [exams, searchQuery]);
+
+	// Handler for viewing results modal
+	const handleViewResults = (_examId: number, testId: number) => {
+		setSelectedTestId(testId);
+		setGlobalShowScore(true);
+	};
+
+	if (isLoading) {
+		return (
+			<div className="flex flex-col items-center justify-center min-h-[60vh] space-y-8">
+				<div className="relative">
+					<div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full animate-pulse" />
+					<UseAnimations
+						animation={loading2}
+						size={80}
+						strokeColor="hsl(var(--primary))"
+						loop
+					/>
+				</div>
+				<div className="space-y-3 text-center">
+					<p className="text-xl font-bold text-foreground animate-pulse">
+						Уншиж байна...
+					</p>
+					<p className="text-sm text-muted-foreground">
+						Таны үр дүнг ачааллаж байна
+					</p>
+				</div>
+			</div>
+		);
+	}
+
 	if (isResponseFailed || exams.length === 0) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-background p-4">
-				<Alert className="max-w-md">
-					<div className="flex flex-col items-center text-center space-y-4 py-4">
-						<div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
-							<FileQuestion className="w-10 h-10 text-primary" />
+			<div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50 p-4">
+				<Alert className="max-w-md border-none shadow-2xl bg-white/80 backdrop-blur-sm">
+					<div className="flex flex-col items-center text-center space-y-4 py-6">
+						<div className="relative">
+							<div className="absolute inset-0 bg-blue-400/20 blur-2xl rounded-full" />
+							<div className="relative w-20 h-20 bg-linear-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl">
+								<FileQuestion className="w-10 h-10 text-white" />
+							</div>
 						</div>
-						<AlertDescription className="space-y-4">
+						<AlertDescription className="space-y-3">
 							<div>
-								<h3 className="text-2xl font-bold text-foreground mb-3">
+								<h3 className="text-xl font-bold text-gray-900 mb-2">
 									Шалгалтын үр дүн олдсонгүй
 								</h3>
-								<p className="text-muted-foreground">
+								<p className="text-sm text-gray-600">
 									Одоогоор дууссан шалгалт байхгүй байна.
 								</p>
-								{data?.RetResponse?.ResponseMessage && (
-									<p className="text-sm text-muted-foreground italic mt-2">
-										{data.RetResponse.ResponseMessage}
-									</p>
-								)}
 							</div>
-							<p className="text-sm text-muted-foreground">
+							<p className="text-xs text-gray-500">
 								Та эхлээд шалгалт өгснөөр энд үр дүн харагдах болно.
 							</p>
 						</AlertDescription>
@@ -69,7 +132,7 @@ export default function ExamResultList() {
 		);
 	}
 
-	const finishedExams = exams.filter((e) => e.isfinished === 0);
+	const finishedExams = exams.filter((e) => e.isfinished === 1);
 	const avgScore =
 		finishedExams.length > 0
 			? Math.round(
@@ -84,92 +147,87 @@ export default function ExamResultList() {
 
 	return (
 		<>
-			<div className="min-h-screen bg-page-gradient py-8 px-4">
-				<div className="max-w-7xl mx-auto space-y-8">
-					{/* Header Section */}
-					<div className="text-center space-y-4 animate-in fade-in slide-in-from-top-4 duration-700">
-						<Badge variant="secondary" className="gap-2">
-							<Trophy className="w-4 h-4" />
-							Шалгалтын үр дүн
-						</Badge>
-						<h1 className="text-4xl md:text-5xl font-black text-foreground">
-							Миний үр дүнгүүд
-						</h1>
-						<p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-							Таны өгсөн бүх шалгалтын дэлгэрэнгүй үр дүн болон статистик
-						</p>
-					</div>
-
-					{/* Stats Grid with Toggle */}
+			<div className="min-h-screen bg-page-gradient">
+				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+					{/* Stats Section */}
 					{finishedExams.length > 0 && (
-						<div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-							<div className="flex justify-end">
+						<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700">
+							<div className="flex justify-end mb-3">
 								<Button
 									variant="outline"
 									size="sm"
-									onClick={() => setShowStats(!showStats)}
-									className="gap-2"
+									onClick={() => setGlobalShowScore(!globalShowScore)}
+									className="h-8 text-xs gap-2 shadow-sm hover:shadow-md transition-all"
 								>
-									{showStats ? (
+									{globalShowScore ? (
 										<>
-											<EyeOff className="w-4 h-4" />
-											Оноо нуух
+											<EyeOff className="w-3.5 h-3.5" />
+											Оноонуудыг нуух
 										</>
 									) : (
 										<>
-											<Eye className="w-4 h-4" />
-											Оноо харуулах
+											<Eye className="w-3.5 h-3.5" />
+											Оноонуудыг харуулах
 										</>
 									)}
 								</Button>
 							</div>
 
-							{showStats && (
-								<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-									<Card>
-										<CardContent className="p-6">
-											<div className="flex items-center justify-between mb-4">
-												<div className="p-3 bg-primary/10 rounded-xl">
-													<CheckCircle className="w-6 h-6 text-primary" />
+							{globalShowScore && (
+								<div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in-0 slide-in-from-top-2 duration-500">
+									<Card className="border-none shadow-lg bg-linear-to-br from-blue-500 to-blue-600 text-white overflow-hidden group hover:shadow-xl transition-all duration-300">
+										<CardContent className="p-6 relative">
+											<div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500" />
+											<div className="relative flex items-center gap-4">
+												<div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
+													<CheckCircle className="w-7 h-7 text-white" />
 												</div>
-												<div className="text-4xl font-black text-foreground">
-													{finishedExams.length}
+												<div className="flex-1 min-w-0">
+													<div className="text-3xl font-bold mb-1">
+														{finishedExams.length}
+													</div>
+													<div className="text-sm text-blue-100">
+														Дууссан шалгалт
+													</div>
 												</div>
-											</div>
-											<div className="text-muted-foreground text-sm font-semibold">
-												Дууссан шалгалт
 											</div>
 										</CardContent>
 									</Card>
 
-									<Card>
-										<CardContent className="p-6">
-											<div className="flex items-center justify-between mb-4">
-												<div className="p-3 bg-primary/10 rounded-xl">
-													<TrendingUp className="w-6 h-6 text-primary" />
+									<Card className="border-none shadow-lg bg-linear-to-br from-emerald-500 to-emerald-600 text-white overflow-hidden group hover:shadow-xl transition-all duration-300">
+										<CardContent className="p-6 relative">
+											<div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500" />
+											<div className="relative flex items-center gap-4">
+												<div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
+													<TrendingUp className="w-7 h-7 text-white" />
 												</div>
-												<div className="text-4xl font-black text-foreground">
-													{avgScore}%
+												<div className="flex-1 min-w-0">
+													<div className="text-3xl font-bold mb-1">
+														{avgScore}%
+													</div>
+													<div className="text-sm text-emerald-100">
+														Дундаж үр дүн
+													</div>
 												</div>
-											</div>
-											<div className="text-muted-foreground text-sm font-semibold">
-												Дундаж үр дүн
 											</div>
 										</CardContent>
 									</Card>
 
-									<Card>
-										<CardContent className="p-6">
-											<div className="flex items-center justify-between mb-4">
-												<div className="p-3 bg-primary/10 rounded-xl">
-													<Award className="w-6 h-6 text-primary" />
+									<Card className="border-none shadow-lg bg-linear-to-br from-amber-500 to-orange-600 text-white overflow-hidden group hover:shadow-xl transition-all duration-300">
+										<CardContent className="p-6 relative">
+											<div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500" />
+											<div className="relative flex items-center gap-4">
+												<div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
+													<Award className="w-7 h-7 text-white" />
 												</div>
-												<div className="text-4xl font-black text-foreground">
-													{highScore}%
+												<div className="flex-1 min-w-0">
+													<div className="text-3xl font-bold mb-1">
+														{highScore}%
+													</div>
+													<div className="text-sm text-amber-100">
+														Хамгийн өндөр
+													</div>
 												</div>
-											</div>
-											<div className="text-muted-foreground text-sm font-semibold">
-												Хамгийн өндөр оноо
 											</div>
 										</CardContent>
 									</Card>
@@ -178,26 +236,114 @@ export default function ExamResultList() {
 						</div>
 					)}
 
-					{/* Exams List */}
-					<div className="space-y-6">
-						<div className="flex items-center justify-between">
-							<h2 className="text-2xl font-black text-foreground">
-								Бүх шалгалтууд
-							</h2>
-							<Badge variant="secondary">{exams.length} шалгалт</Badge>
-						</div>
+					{/* Results Section */}
+					<div className="animate-in fade-in-0 duration-700 delay-300">
+						<Collapsible open={isResultsOpen} onOpenChange={setIsResultsOpen}>
+							<CardHeader>
+								<CollapsibleTrigger className="w-full">
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-4">
+											<div className="relative">
+												<div className="absolute inset-0 bg-blue-400/20 blur-xl rounded-full" />
+												<div className="relative p-3 bg-linear-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg transition-transform duration-300 hover:scale-110 hover:rotate-6">
+													<BookmarkCheck className="w-7 h-7 text-white" />
+												</div>
+											</div>
+											<h2 className="text-2xl md:text-3xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+												Бүх шалгалтууд
+											</h2>
+										</div>
+										<div className="flex items-center gap-3">
+											<Badge
+												variant="secondary"
+												className="text-sm font-semibold shadow-sm"
+											>
+												{exams.length} шалгалт
+											</Badge>
+											<ChevronDown
+												className={`w-6 h-6 text-muted-foreground transition-transform duration-300 ${
+													isResultsOpen ? "rotate-180" : ""
+												}`}
+											/>
+										</div>
+									</div>
+								</CollapsibleTrigger>
+							</CardHeader>
+							<CollapsibleContent>
+								<CardContent className="p-6 space-y-5">
+									{/* Search Bar */}
+									<div className="relative">
+										<Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+										<input
+											type="text"
+											placeholder="Шалгалтын нэр эсвэл хичээлээр хайх..."
+											value={searchQuery}
+											onChange={(e) => setSearchQuery(e.target.value)}
+											className="w-full pl-12 pr-10 h-12 border-2 border-gray-200 focus:border-blue-500 focus:outline-none rounded-xl shadow-sm transition-all duration-200 text-sm"
+										/>
+										{searchQuery && (
+											<Button
+												onClick={() => setSearchQuery("")}
+												className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+											>
+												<X className="w-4 h-4 text-gray-500" />
+											</Button>
+										)}
+									</div>
 
-						<CardContent className="space-y-4">
-							{exams.map((exam, index) => (
-								<div
-									key={exam.exam_id}
-									className="animate-in fade-in-0 slide-in-from-bottom-2"
-									style={{ animationDelay: `${index * 50}ms` }}
-								>
-									<ExamListItem exam={exam} onViewRank={setSelectedExamId} />
-								</div>
-							))}
-						</CardContent>
+									{/* Results Count */}
+									{searchQuery && (
+										<div className="flex items-center gap-2 text-sm text-gray-600">
+											<span className="font-medium">
+												{filteredExams.length}
+											</span>
+											<span>үр дүн олдлоо</span>
+											{filteredExams.length !== exams.length && (
+												<span className="text-gray-400">
+													({exams.length}-аас)
+												</span>
+											)}
+										</div>
+									)}
+
+									{/* Exam Grid */}
+									{filteredExams.length > 0 ? (
+										<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+											{filteredExams.map((exam, index) => (
+												<div
+													key={exam.exam_id}
+													className="animate-in fade-in-0 slide-in-from-bottom-4"
+													style={{
+														animationDelay: `${index * 50}ms`,
+														animationFillMode: "both",
+													}}
+												>
+													<ExamListItem
+														exam={exam}
+														onViewRank={setSelectedExamId}
+														onViewResults={handleViewResults}
+														globalShowScore={globalShowScore}
+													/>
+												</div>
+											))}
+										</div>
+									) : (
+										<div className="flex flex-col items-center justify-center py-16 text-center">
+											<div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+												<Search className="w-8 h-8 text-gray-400" />
+											</div>
+											<h3 className="text-lg font-semibold text-gray-900 mb-2">
+												Үр дүн олдсонгүй
+											</h3>
+											<p className="text-sm text-gray-500 max-w-sm">
+												"{searchQuery}" хайлтад тохирох шалгалт олдсонгүй. Өөр
+												нэрээр хайж үзнэ үү.
+											</p>
+										</div>
+									)}
+								</CardContent>
+							</CollapsibleContent>
+						</Collapsible>
 					</div>
 				</div>
 			</div>
@@ -208,6 +354,16 @@ export default function ExamResultList() {
 					examId={selectedExamId}
 					userId={userId}
 					onClose={() => setSelectedExamId(null)}
+				/>
+			)}
+
+			{/* Result Modal */}
+			{globalShowScore && selectedTestId && (
+				<ExamAnswersDialog
+					examId={0}
+					testId={selectedTestId}
+					open={globalShowScore}
+					onOpenChange={setGlobalShowScore}
 				/>
 			)}
 		</>

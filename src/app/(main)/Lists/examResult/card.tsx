@@ -2,63 +2,101 @@
 
 import {
 	ArrowRight,
-	BookmarkCheck,
+	Award,
 	Calendar,
-	CheckCircle,
 	Clock,
+	Eye,
+	EyeOff,
 	FileText,
 	Target,
-	TrendingUp,
 	XCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type React from "react";
 import { useState } from "react";
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { ExamresultListCardProps } from "@/types/exam/examResultList";
-import ExamAnswersDialog from "./result";
 
-// ==============================
-// Exam List Item Component
-// ==============================
-const _realExamResults: ExamresultListCardProps["exam"][] = [];
 interface ExamListItemProps extends ExamresultListCardProps {
 	onViewRank?: (examId: number) => void;
+	onViewResults?: (examId: number, testId: number) => void;
+	globalShowScore?: boolean;
 }
+
+// Оноог үнэлэх
+const getScoreLevel = (score?: number) => {
+	if (!score) return "none";
+	if (score >= 90) return "excellent";
+	if (score >= 75) return "good";
+	if (score >= 60) return "average";
+	if (score >= 40) return "pass";
+	return "fail";
+};
+
+// Оноо хэсгийн тохиргоо
+const SCORE_CONFIG = {
+	none: {
+		label: "-",
+		badge: "bg-gray-100 text-gray-600",
+		icon: "bg-gray-100 text-gray-400",
+	},
+	excellent: {
+		label: "Маш сайн",
+		badge: "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white",
+		icon: "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white",
+	},
+	good: {
+		label: "Сайн",
+		badge: "bg-gradient-to-br from-green-500 to-green-600 text-white",
+		icon: "bg-gradient-to-br from-green-500 to-green-600 text-white",
+	},
+	average: {
+		label: "Дунд",
+		badge: "bg-gradient-to-br from-yellow-500 to-orange-500 text-white",
+		icon: "bg-gradient-to-br from-yellow-500 to-orange-500 text-white",
+	},
+	pass: {
+		label: "Хангалттай",
+		badge: "bg-gradient-to-br from-orange-500 to-red-500 text-white",
+		icon: "bg-gradient-to-br from-orange-500 to-red-500 text-white",
+	},
+	fail: {
+		label: "Хангалтгүй",
+		badge: "bg-gradient-to-br from-red-600 to-red-700 text-white",
+		icon: "bg-gradient-to-br from-red-600 to-red-700 text-white",
+	},
+};
 
 export const ExamListItem: React.FC<ExamListItemProps> = ({
 	exam,
 	onViewRank,
+	onViewResults,
+	globalShowScore = false,
 }) => {
 	const router = useRouter();
-	const [showAnswers, setShowAnswers] = useState(false);
+	const [localShowScore, setLocalShowScore] = useState(false);
 
 	const finished = exam.isfinished === 1;
+	const showScore = globalShowScore || localShowScore;
 	const examDate = new Date(exam.Ognoo);
+	const scoreLevel = getScoreLevel(exam.test_perc);
+	const config = SCORE_CONFIG[scoreLevel];
 
-	const formatDate = (date: Date) =>
-		date.toLocaleDateString("mn-MN", {
-			year: "numeric",
-			month: "long",
-			day: "numeric",
-		});
-
-	const formatTime = (date: Date) =>
-		date.toLocaleTimeString("mn-MN", {
-			hour: "2-digit",
-			minute: "2-digit",
-		});
-
-	const _getPercentageColor = (perc: number) => {
-		if (perc >= 80) return "bg-teal-500/10 text-teal-600 border-teal-500";
-		if (perc >= 50) return "bg-sky-500/10 text-sky-600 border-sky-500";
-		return "bg-rose-500/10 text-rose-600 border-rose-500";
+	const formatDate = (date: Date) => {
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, "0");
+		const day = String(date.getDate()).padStart(2, "0");
+		return `${year}.${month}.${day}`;
 	};
 
-	// ✔️ Одоо зөвхөн энэ function л router push хийнэ
+	const formatTime = (date: Date) => {
+		const hours = String(date.getHours()).padStart(2, "0");
+		const minutes = String(date.getMinutes()).padStart(2, "0");
+		return `${hours}:${minutes}`;
+	};
+
 	const handleDetailsClick = () => {
 		if (finished) {
 			router.push(`/examResult/${exam.exam_id}_${exam.test_id}`);
@@ -71,210 +109,143 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 	};
 
 	const handleAnswersClick = () => {
-		if (finished) setShowAnswers(true);
+		if (finished && onViewResults) {
+			onViewResults(exam.exam_id, exam.test_id);
+		}
 	};
 
 	return (
-		<Card
-			className={`shadow-sm transition-none ${
-				finished
-					? "border-l-4 border-sky-500/80 bg-sky-500/5"
-					: "opacity-70 border-l-4 border-muted-foreground/30 bg-muted/20"
-			}`}
-		>
-			<CardHeader className="py-3 px-5">
+		<Card className="group hover:border-blue-300 transition-all duration-300 overflow-hidden bg-page-gradient">
+			<CardHeader className="py-5 px-5">
 				<div className="flex items-start justify-between gap-4">
-					<div className="flex items-center gap-4 flex-1 min-w-0">
-						<div
-							className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
-								finished
-									? "bg-sky-500 text-sky-50 shadow-md shadow-sky-500/30"
-									: "bg-muted-foreground/10 text-muted-foreground/70"
-							}`}
-						>
-							{finished ? (
-								<CheckCircle className="w-5 h-5" />
-							) : (
-								<XCircle className="w-5 h-5" />
-							)}
-						</div>
-
-						<div className="flex-1 min-w-0">
-							<CardTitle className="text-base font-bold leading-snug mb-1 truncate">
-								{exam.title}
-							</CardTitle>
-
-							<div className="flex flex-wrap items-center gap-2">
-								<Badge
-									variant={finished ? "default" : "secondary"}
-									className="text-xs h-5 px-2 font-semibold"
-								>
-									{finished ? "✓ Дууссан" : "⏱ Дуусаагүй"}
-								</Badge>
+					<div className="flex-1 min-w-0">
+						<div className="flex items-start gap-3 mb-3">
+							{/* Title & Date */}
+							<div className="flex-1">
+								<h3 className="text-base font-bold ">{exam.title}</h3>
+								<div className="flex flex-wrap gap-2">
+									<Badge variant="secondary" className="gap-1.5">
+										<Calendar className="w-3.5 h-3.5" />
+										{formatDate(examDate)}
+									</Badge>
+									<Badge variant="secondary" className="gap-1.5">
+										<Clock className="w-3.5 h-3.5" />
+										{formatTime(examDate)}
+									</Badge>
+								</div>
 							</div>
 						</div>
 					</div>
+
+					{/* Score Badge */}
+					{finished && exam.test_perc !== undefined && (
+						<div className="relative">
+							<div
+								className={`relative shrink-0 w-20 h-20 rounded-xl transition-all duration-300 group-hover:scale-105 ${
+									showScore
+										? config.badge
+										: "bg-linear-to-br from-gray-400 to-gray-500 text-white"
+								}`}
+							>
+								<div className="absolute inset-0 flex flex-col items-center justify-center">
+									<div
+										className={`text-2xl font-black leading-none ${
+											showScore ? "" : "blur-lg select-none"
+										}`}
+									>
+										{showScore ? exam.test_perc : "88"}
+									</div>
+									<div className="text-xs font-semibold opacity-90 mt-0.5">
+										оноо
+									</div>
+									<div
+										className={`text-[10px] font-medium opacity-80 mt-1 ${
+											showScore ? "" : "blur-lg select-none"
+										}`}
+									>
+										{showScore ? config.label : "Нууц"}
+									</div>
+								</div>
+							</div>
+							<Button
+								onClick={() => setLocalShowScore(!localShowScore)}
+								size="icon"
+								variant="outline"
+								className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full hover:scale-110 transition-transform duration-200 hover:border-blue-400"
+								title={showScore ? "Оноо нуух" : "Оноо харах"}
+							>
+								{showScore ? (
+									<EyeOff className="w-4 h-4 text-gray-600" />
+								) : (
+									<Eye className="w-4 h-4 text-blue-600" />
+								)}
+							</Button>
+						</div>
+					)}
 				</div>
 			</CardHeader>
 
-			<CardContent className="space-y-3 px-5 pb-3">
-				<div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm border-t pt-3">
-					<div className="flex flex-col gap-0.5">
-						<div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-							<Calendar className="w-3.5 h-3.5 text-sky-500" />
-							Огноо
-						</div>
-						<span className="truncate text-xs font-medium">
-							{formatDate(examDate)}
-						</span>
+			<CardContent className="space-y-4 px-5 pb-5">
+				{/* Exam Duration */}
+				<div className="flex items-center justify-between p-3 rounded-lg border border-blue-200">
+					<div className="flex items-center gap-2 text-sm font-semibold ">
+						<Target className="w-4 h-4 " />
+						<span>Үргэлжлэх хугацаа</span>
 					</div>
-
-					<div className="flex flex-col gap-0.5">
-						<div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-							<Clock className="w-3.5 h-3.5 text-sky-500" />
-							Эхэлсэн
-						</div>
-						<span className="truncate text-xs font-medium">
-							{formatTime(examDate)}
-						</span>
-					</div>
-
-					<div className="flex flex-col gap-0.5">
-						<div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-							<Target className="w-3.5 h-3.5 text-sky-500" />
-							Нийт мин
-						</div>
-						<span className="truncate text-xs font-medium">
-							{exam.exam_minute} мин
-						</span>
-					</div>
-
-					<div className="flex flex-col gap-0.5">
-						<div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-							<Clock className="w-3.5 h-3.5 text-sky-500" />
-							Гүйцэтгэсэн
-						</div>
-						<span className="truncate text-xs font-medium">
-							{exam.test_time && finished ? exam.test_time : "—"}
-						</span>
-					</div>
+					<span className="text-lg font-bold ">{exam.exam_minute} минут</span>
 				</div>
 
-				{finished && (
-					<div className="flex flex-wrap items-center gap-2 pt-3 border-t">
-						{/* ✔ Зөвхөн энэ үед router push ажиллана */}
+				{/* Time Spent */}
+				{finished && exam.test_time && (
+					<div className="flex items-center justify-between text-sm">
+						<span className="font-medium">Зарцуулсан хугацаа:</span>
+						<span className=" font-bold">{exam.test_time}</span>
+					</div>
+				)}
+
+				{/* Action Buttons */}
+				{finished ? (
+					<div className="flex items-center gap-2 pt-2">
 						<Button
-							size="sm"
-							variant="default"
-							className="h-7 text-xs font-semibold bg-sky-500 hover:bg-sky-600 text-white"
+							className="flex-1  bg-linear-to-br from-emerald-500 to-emerald-600"
 							onClick={handleDetailsClick}
 						>
-							Дэлгэрэнгүй харах
-							<ArrowRight className="w-3 h-3 ml-1.5" />
+							<span>Дэлгэрэнгүй үзэх</span>
+							<ArrowRight className="w-4 h-4 ml-2" />
 						</Button>
 
 						<Button
-							size="sm"
 							variant="outline"
-							className="h-7 text-xs px-2.5 font-semibold"
+							size="icon"
+							className="w-11 h-11 hover:bg-blue-50 hover:border-blue-300"
 							onClick={handleAnswersClick}
 						>
-							<FileText className="w-3 h-3 mr-1.5" /> Үр дүн
+							<FileText className="w-5 h-5 text-gray-600" />
 						</Button>
 
 						{onViewRank && (
 							<Button
-								size="sm"
 								variant="outline"
-								className="h-7 text-xs px-2.5 font-semibold"
+								size="icon"
+								className="w-11 h-11 hover:bg-purple-50 hover:border-purple-300"
 								onClick={handleRankClick}
 							>
-								<TrendingUp className="w-3 h-3 mr-1.5" /> Rank
+								<Award className="w-5 h-5 text-purple-600" />
 							</Button>
 						)}
 					</div>
+				) : (
+					<div className="text-center py-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+						<XCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+						<p className="text-sm font-semibold text-gray-600">
+							Шалгалт эхлээгүй байна
+						</p>
+						<p className="text-xs text-gray-500 mt-1">
+							Та удахгүй шалгалт өгөх боломжтой
+						</p>
+					</div>
 				)}
 			</CardContent>
-
-			<ExamAnswersDialog
-				examId={exam.exam_id}
-				testId={exam.test_id}
-				open={showAnswers}
-				onOpenChange={setShowAnswers}
-			/>
 		</Card>
 	);
 };
-
-// ==============================
-// Main Page Component
-// ==============================
-
-interface Exam {
-	exam_id: number;
-	test_id: number;
-	title: string;
-	Ognoo: string;
-	isfinished: 0 | 1;
-	exam_minute: number;
-	test_time?: string;
-	test_perc?: number;
-}
-
-const ExamResultsPage: React.FC = () => {
-	const realExamResults: Exam[] = [];
-
-	const handleViewRank = (examId: number) => {
-		console.log("Rank харах:", examId);
-	};
-
-	const isLoading = false;
-
-	return (
-		<div className="min-h-screen bg-background">
-			<header className="py-8 border-b bg-card">
-				<div className="container max-w-4xl mx-auto px-4 sm:px-6 flex items-center gap-3">
-					<BookmarkCheck className="w-8 h-8 text-sky-500" />
-					<h1 className="text-3xl font-bold tracking-tight">
-						Шалгалтын Үр Дүнгийн Жагсаалт
-					</h1>
-				</div>
-			</header>
-
-			<main className="py-5">
-				<div className="container max-w-4xl mx-auto px-4 sm:px-6">
-					{isLoading && (
-						<p className="text-center text-muted-foreground">
-							Өгөгдөл ачааллаж байна...
-						</p>
-					)}
-
-					{!isLoading && realExamResults.length > 0 && (
-						<div className="flex flex-col space-y-4">
-							{realExamResults.map((exam) => (
-								<ExamListItem
-									key={exam.exam_id}
-									exam={exam as ExamresultListCardProps["exam"]}
-									onViewRank={handleViewRank}
-								/>
-							))}
-						</div>
-					)}
-
-					{!isLoading && realExamResults.length === 0 && (
-						<div className="text-center py-20">
-							<h3 className="text-xl font-semibold text-muted-foreground">
-								Шалгалтын үр дүн одоогоор алга байна.
-							</h3>
-							<p className="mt-2 text-sm text-muted-foreground/70">
-								Таны гүйцэтгэсэн шалгалтууд энд гарч ирнэ.
-							</p>
-						</div>
-					)}
-				</div>
-			</main>
-		</div>
-	);
-};
-
-export default ExamResultsPage;

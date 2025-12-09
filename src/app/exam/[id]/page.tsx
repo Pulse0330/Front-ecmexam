@@ -32,6 +32,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { deleteExamAnswer, getExamById, saveExamAnswer } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { AnswerValue } from "@/types/exam/exam";
+import { AdvancedExamProctor } from "../component/examguard";
 import ExamTimer from "../component/Itime";
 import QuestionImage from "../component/question/questionImage";
 
@@ -982,7 +983,7 @@ export default function ExamPage() {
 
 	return (
 		<div className="min-h-screen">
-			{/* <AdvancedExamProctor
+			<AdvancedExamProctor
 				maxViolations={3}
 				strictMode={true}
 				enableFullscreen={true}
@@ -990,7 +991,7 @@ export default function ExamPage() {
 				onLogout={() => {
 					console.log("Хэрэглэгч гарлаа");
 				}}
-			/> */}
+			/>
 
 			{saveError && (
 				<div className="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">

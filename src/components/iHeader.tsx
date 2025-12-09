@@ -97,14 +97,14 @@ const examDropdownLinks = [
 	{
 		href: "/Lists/examList",
 		label: "Шалгалтын жагсаалт",
-		description: "Бүх шалгалтуудыг харах",
-		icon: "📋",
+		description: "",
+		icon: "",
 	},
 	{
 		href: "/Lists/examResult",
 		label: "Шалгалтын үр дүн",
-		description: "Миний үр дүнгүүд",
-		icon: "📊",
+		description: "",
+		icon: "",
 	},
 ];
 
@@ -112,27 +112,21 @@ const sorilDropdownLinks = [
 	{
 		href: "/Lists/sorilList",
 		label: "Сорилын жагсаалт",
-		description: "Бүх сорилуудыг харах",
-		icon: "📝",
+		description: "",
+		icon: "",
 	},
 	{
 		href: "/Lists/sorilResult",
 		label: "Сорилын үр дүн",
-		description: "Миний үр дүнгүүд",
-		icon: "🏆",
-	},
-	{
-		href: "/Lists/sorilDetail",
-		label: "Сорилын дэлгэрэнгүй",
-		description: "Нарийвчилсан мэдээлэл",
-		icon: "📑",
+		description: "",
+		icon: "",
 	},
 ];
 
 // User Info Component
 const UserInfo = React.memo(
 	({ userName, userImage }: { userName: string; userImage: string }) => (
-		<div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 transition-all duration-300 hover:shadow-md hover:border-primary/30 hover:scale-[1.02]">
+		<div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-linear-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 transition-all duration-300 hover:shadow-md hover:border-primary/30 hover:scale-[1.02]">
 			{userImage ? (
 				<div className="relative shrink-0">
 					<Image
@@ -142,12 +136,12 @@ const UserInfo = React.memo(
 						height={36}
 						className="rounded-full object-cover ring-2 ring-primary/40 ring-offset-2 ring-offset-background shadow-sm"
 					/>
-					<div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-gradient-to-br from-green-400 to-green-500 rounded-full border-2 border-background shadow-sm">
+					<div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-linear-to-br from-green-400 to-green-500 rounded-full border-2 border-background shadow-sm">
 						<div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-75" />
 					</div>
 				</div>
 			) : (
-				<div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0 shadow-sm">
+				<div className="w-9 h-9 rounded-full bg-linear-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0 shadow-sm">
 					<User className="h-5 w-5 text-primary" />
 				</div>
 			)}
@@ -205,10 +199,10 @@ const MegaMenuItem = React.memo(
 					type="button"
 					className={cn(
 						"group inline-flex h-10 items-center justify-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300",
-						"hover:bg-gradient-to-r hover:from-accent/90 hover:to-accent hover:text-accent-foreground hover:shadow-md hover:scale-105",
+						"hover:bg-linear-to-r hover:from-accent/90 hover:to-accent hover:text-accent-foreground hover:shadow-md hover:scale-105",
 						"active:scale-95",
 						isActive
-							? "bg-gradient-to-r from-accent/90 to-accent text-accent-foreground shadow-md scale-[1.02]"
+							? "bg-linear-to-r from-accent/90 to-accent text-accent-foreground shadow-md scale-[1.02]"
 							: "text-foreground/80 hover:text-foreground",
 					)}
 				>
@@ -246,7 +240,7 @@ const MegaMenuItem = React.memo(
 										"hover:bg-accent/90 hover:shadow-lg hover:scale-[1.02] hover:translate-x-1",
 										"active:scale-95",
 										isItemActive &&
-											"bg-gradient-to-r from-accent to-accent/80 shadow-lg scale-[1.02] border border-primary/30",
+											"bg-linear-to-r from-accent to-accent/80 shadow-lg scale-[1.02] border border-primary/30",
 									)}
 								>
 									<div className="flex items-center gap-3 w-full">
@@ -364,7 +358,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 				<header
 					ref={combinedRef}
 					className={cn(
-						"rounded-3xl border-2 bg-gradient-to-r from-background/98 via-background/95 to-background/98",
+						"rounded-3xl border-2 bg-linear-to-r from-background/98 via-background/95 to-background/98",
 						"backdrop-blur-xl supports-backdrop-filter:bg-background/60",
 						"shadow-xl shadow-black/5 dark:shadow-black/20",
 						"sticky top-0 z-50 transition-all duration-300",
@@ -405,10 +399,10 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 														href={link.href}
 														className={cn(
 															"group inline-flex h-10 w-max items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300",
-															"hover:bg-gradient-to-r hover:from-accent/90 hover:to-accent hover:text-accent-foreground hover:shadow-md hover:scale-105",
+															"hover:bg-linear-to-r hover:from-accent/90 hover:to-accent hover:text-accent-foreground hover:shadow-md hover:scale-105",
 															"active:scale-95",
 															isActive
-																? "bg-gradient-to-r from-accent/90 to-accent text-accent-foreground shadow-md scale-[1.02]"
+																? "bg-linear-to-r from-accent/90 to-accent text-accent-foreground shadow-md scale-[1.02]"
 																: "text-foreground/80 hover:text-foreground",
 														)}
 													>
@@ -454,7 +448,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 											variant="ghost"
 											className={cn(
 												"p-2.5 rounded-xl backdrop-blur-md border transition-all duration-300",
-												"bg-gradient-to-br from-white/95 to-white/90 dark:from-gray-800/80 dark:to-gray-800/60",
+												"bg-linear-to-br from-white/95 to-white/90 dark:from-gray-800/80 dark:to-gray-800/60",
 												"border-gray-200/60 dark:border-gray-700/60",
 												"text-gray-700 dark:text-yellow-400",
 												"hover:shadow-lg hover:scale-105 active:scale-95",
@@ -490,7 +484,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 																	"hover:bg-accent hover:text-accent-foreground hover:translate-x-1 hover:shadow-md",
 																	"active:scale-95",
 																	isActive
-																		? "bg-gradient-to-r from-accent/90 to-accent text-accent-foreground shadow-md"
+																		? "bg-linear-to-r from-accent/90 to-accent text-accent-foreground shadow-md"
 																		: "text-foreground/80",
 																)}
 															>
@@ -520,7 +514,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 																	"flex w-full items-start gap-3 rounded-xl px-4 py-3 text-sm transition-all duration-300",
 																	"active:scale-95",
 																	isActive
-																		? "bg-gradient-to-r from-accent/90 to-accent text-accent-foreground shadow-md"
+																		? "bg-linear-to-r from-accent/90 to-accent text-accent-foreground shadow-md"
 																		: "text-foreground/80",
 																)}
 															>
@@ -561,7 +555,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 																	"hover:bg-accent hover:text-accent-foreground hover:translate-x-1 hover:shadow-md",
 																	"active:scale-95",
 																	isActive
-																		? "bg-gradient-to-r from-accent/90 to-accent text-accent-foreground shadow-md"
+																		? "bg-linear-to-r from-accent/90 to-accent text-accent-foreground shadow-md"
 																		: "text-foreground/80",
 																)}
 															>
@@ -594,7 +588,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 											variant="ghost"
 											className={cn(
 												"p-0 rounded-xl backdrop-blur-md border-2 transition-all duration-300",
-												"bg-gradient-to-br from-white/95 to-white/90 dark:from-gray-800/80 dark:to-gray-800/60",
+												"bg-linear-to-br from-white/95 to-white/90 dark:from-gray-800/80 dark:to-gray-800/60",
 												"border-gray-200/60 dark:border-gray-700/60",
 												"hover:shadow-lg hover:scale-105 hover:border-primary/40",
 												"active:scale-95 h-11 w-11 overflow-hidden",
@@ -627,10 +621,10 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 														height={52}
 														className="rounded-xl object-cover border-2 border-primary/30 ring-2 ring-primary/10 shadow-md"
 													/>
-													<div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-br from-green-400 to-green-500 rounded-full border-2 border-background shadow-sm" />
+													<div className="absolute -bottom-1 -right-1 w-4 h-4 bg-linear-to-br from-green-400 to-green-500 rounded-full border-2 border-background shadow-sm" />
 												</div>
 											) : (
-												<div className="w-13 h-13 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shadow-md">
+												<div className="w-13 h-13 rounded-xl bg-linear-to-br from-primary/20 to-primary/10 flex items-center justify-center shadow-md">
 													<User className="h-6 w-6 text-primary" />
 												</div>
 											)}
@@ -716,7 +710,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 							</AlertDialogCancel>
 							<AlertDialogAction
 								onClick={confirmLogout}
-								className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-600 dark:to-red-700 dark:hover:from-red-700 dark:hover:to-red-800 transition-all duration-300 hover:scale-105 rounded-xl shadow-lg"
+								className="bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-600 dark:to-red-700 dark:hover:from-red-700 dark:hover:to-red-800 transition-all duration-300 hover:scale-105 rounded-xl shadow-lg"
 							>
 								Гарах
 							</AlertDialogAction>

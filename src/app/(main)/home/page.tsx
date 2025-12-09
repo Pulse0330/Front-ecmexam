@@ -209,11 +209,19 @@ export default function HomePage() {
 						{/* Content */}
 						<div className="relative z-10 space-y-3">
 							<div className="flex items-center gap-3">
-								<h1 className="text-3xl md:text-4xl font-bold text-primary-foreground drop-shadow-lg">
+								<h1
+									className={`text-3xl md:text-4xl font-bold drop-shadow-lg ${
+										isDay ? "text-White-900" : "text-white"
+									}`}
+								>
 									Сайн уу, {username}
 								</h1>
 							</div>
-							<p className="text-primary-foreground/90 text-lg md:text-xl drop-shadow-md">
+							<p
+								className={`text-lg md:text-xl drop-shadow-md ${
+									isDay ? "text-White-700" : "text-white/90"
+								}`}
+							>
 								Танд өнөөдөр ямар шалгалт бэлтгэх вэ?
 							</p>
 						</div>
