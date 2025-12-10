@@ -929,6 +929,10 @@ function ExamResultDetailPage() {
 																		width={500}
 																		height={350}
 																		className="rounded-xl shadow-md"
+																		onError={(e) => {
+																			e.currentTarget.style.display = "none";
+																		}}
+																		unoptimized // Хэрэв external domain бол
 																	/>
 																</div>
 															)}
