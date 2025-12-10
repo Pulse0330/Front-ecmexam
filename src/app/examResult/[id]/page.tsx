@@ -84,6 +84,12 @@ function ExamResultDetailPage() {
 	): number => {
 		if (userSelectedAnswers.length === 0) return 0;
 
+		// 🆕 ЗАДГАЙ ДААЛГАВАР - Багшийн үнэлгээ
+		if (question.que_type_id === 4) {
+			// Багш үнэлсэн бол түүний өгсөн оноог буцаах
+			return question.unelsen === 1 ? question.zad_onoo || 0 : 0;
+		}
+
 		if (question.que_type_id === 2) {
 			const correctAnswers = questionAnswers.filter((a) => a.is_true === 1);
 			const totalCorrect = correctAnswers.length;
@@ -164,6 +170,9 @@ function ExamResultDetailPage() {
 		}
 
 		if (question.que_type_id === 6) {
+			const questionsOnly = questionAnswers.filter(
+				(a) => a.ref_child_id === -1,
+			);
 			const answersOnly = questionAnswers.filter(
 				(a) => a.ref_child_id && a.ref_child_id >= 1,
 			);
@@ -171,34 +180,29 @@ function ExamResultDetailPage() {
 			if (answersOnly.length === 0) return 0;
 
 			let correctMatches = 0;
-			let incorrectMatches = 0;
 
 			answersOnly.forEach((answerItem) => {
+				const correctQuestion = questionsOnly.find(
+					(q) => q.refid === answerItem.ref_child_id,
+				);
+
+				if (!correctQuestion) return;
+
 				const userInput = userSelectedAnswers.find(
 					(ua) => ua.answer_id === answerItem.answer_id,
 				);
 
 				if (userInput) {
 					const userSelectedRefId = parseInt(userInput.answer, 10);
-
-					if (userSelectedRefId === answerItem.ref_child_id) {
+					if (userSelectedRefId === correctQuestion.refid) {
 						correctMatches++;
-					} else {
-						incorrectMatches++;
 					}
 				}
 			});
 
-			// Хэрэв хариулаагүй бол 0
-			if (correctMatches === 0 && incorrectMatches === 0) return 0;
-
-			// Penalty-тэй оноо тооцох
-			const basePoints =
-				(correctMatches / answersOnly.length) * question.que_onoo;
-			const penalty =
-				(incorrectMatches / answersOnly.length) * question.que_onoo;
-
-			return Math.max(0, Math.round((basePoints - penalty) * 10) / 10);
+			// ✅ PENALTY БАЙХГҮЙ - зөвхөн зөв тооноос оноо тооцно
+			const points = (correctMatches / answersOnly.length) * question.que_onoo;
+			return Math.round(points * 10) / 10;
 		}
 
 		return 0;
@@ -933,22 +937,8 @@ function ExamResultDetailPage() {
 														{question.is_src > 0 &&
 															question.source_html &&
 															question.source_html.trim() !== "" && (
-																<div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/20  border border-blue-300 dark:border-blue-700 rounded-xl">
+																<div className="mt-4 p-4 ">
 																	<div className="flex items-start gap-3 mb-2">
-																		<svg
-																			className="w-5 h-5 text-blue-600 mt-1 shrink-0"
-																			fill="none"
-																			stroke="currentColor"
-																			viewBox="0 0 24 24"
-																		>
-																			<title>Материал</title>
-																			<path
-																				strokeLinecap="round"
-																				strokeLinejoin="round"
-																				strokeWidth={2}
-																				d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-																			/>
-																		</svg>
 																		<div className="flex-1">
 																			<div className="text-base leading-relaxed text-foreground  p-3 rounded-lg">
 																				{safeParse(question.source_html)}
@@ -1868,7 +1858,8 @@ function ExamResultDetailPage() {
 																				★ Зөв харгалзуулалт:
 																			</p>
 																			<div className="space-y-3">
-																				{/* ЗАСВАР: answersOnly дээр loop хийх (А багана) */}
+																				{/* ЗАСВАР: 
+																				дээр loop хийх (А багана) */}
 																				{answersOnly.map((answerItem) => {
 																					// answerItem.ref_child_id нь зөв question-ий refid
 																					const correctQuestion =

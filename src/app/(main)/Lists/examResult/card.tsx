@@ -115,7 +115,7 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 	};
 
 	return (
-		<Card className="group hover:border-blue-300 transition-all duration-300 overflow-hidden bg-page-gradient">
+		<Card className="group hover:border-blue-300 transition-all duration-300 overflow-hidden bg-outercard">
 			<CardHeader className="py-5 px-5">
 				<div className="flex items-start justify-between gap-4">
 					<div className="flex-1 min-w-0">
@@ -142,28 +142,26 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 						<div className="relative">
 							<div
 								className={`relative shrink-0 w-20 h-20 rounded-xl transition-all duration-300 group-hover:scale-105 ${
-									showScore
-										? config.badge
-										: "bg-linear-to-br from-gray-400 to-gray-500 text-white"
+									showScore ? config.badge : "bg-gray-200"
 								}`}
 							>
 								<div className="absolute inset-0 flex flex-col items-center justify-center">
 									<div
-										className={`text-2xl font-black leading-none ${
-											showScore ? "" : "blur-lg select-none"
+										className={`text-2xl font-black leading-none transition-all duration-300 ${
+											showScore
+												? "text-white"
+												: "blur-md select-none text-gray-400"
 										}`}
 									>
 										{showScore ? exam.test_perc : "88"}
 									</div>
-									<div className="text-xs font-semibold opacity-90 mt-0.5">
-										оноо
-									</div>
+
 									<div
 										className={`text-[10px] font-medium opacity-80 mt-1 ${
-											showScore ? "" : "blur-lg select-none"
+											showScore ? "text-white" : "text-gray-400"
 										}`}
 									>
-										{showScore ? config.label : "Нууц"}
+										{showScore ? config.label : ""}
 									</div>
 								</div>
 							</div>
@@ -205,34 +203,37 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 
 				{/* Action Buttons */}
 				{finished ? (
-					<div className="flex items-center gap-2 pt-2">
+					<div className="space-y-2 pt-2">
 						<Button
-							className="flex-1  bg-linear-to-br from-emerald-500 to-emerald-600"
+							className="w-full bg-linear-to-br from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700"
 							onClick={handleDetailsClick}
 						>
+							<FileText className="w-4 h-4 mr-2" />
 							<span>Дэлгэрэнгүй үзэх</span>
 							<ArrowRight className="w-4 h-4 ml-2" />
 						</Button>
 
-						<Button
-							variant="outline"
-							size="icon"
-							className="w-11 h-11 hover:bg-blue-50 hover:border-blue-300"
-							onClick={handleAnswersClick}
-						>
-							<FileText className="w-5 h-5 text-gray-600" />
-						</Button>
-
-						{onViewRank && (
+						<div className="flex items-center gap-2">
 							<Button
 								variant="outline"
-								size="icon"
-								className="w-11 h-11 hover:bg-purple-50 hover:border-purple-300"
-								onClick={handleRankClick}
+								className="flex-1 hover:bg-blue-50 hover:border-blue-300 border-blue-200"
+								onClick={handleAnswersClick}
 							>
-								<Award className="w-5 h-5 text-purple-600" />
+								<FileText className="w-4 h-4 mr-2 text-blue-600" />
+								<span className="font-semibold">Шалгалтын оноо</span>
 							</Button>
-						)}
+
+							{onViewRank && (
+								<Button
+									variant="outline"
+									className="flex-1 hover:bg-purple-50 hover:border-purple-300 border-purple-200"
+									onClick={handleRankClick}
+								>
+									<Award className="w-4 h-4 mr-2 text-purple-600" />
+									<span className="font-semibold">Ранк харах</span>
+								</Button>
+							)}
+						</div>
 					</div>
 				) : (
 					<div className="text-center py-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
