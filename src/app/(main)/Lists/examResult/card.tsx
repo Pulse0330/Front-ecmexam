@@ -137,31 +137,26 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 						</div>
 					</div>
 
-					{/* Score Badge */}
 					{finished && exam.test_perc !== undefined && (
 						<div className="relative">
 							<div
-								className={`relative shrink-0 w-20 h-20 rounded-xl transition-all duration-300 group-hover:scale-105 ${
-									showScore ? config.badge : "bg-gray-200"
-								}`}
+								className={`relative shrink-0 w-20 h-20 rounded-xl transition-all duration-300 group-hover:scale-105 `}
 							>
 								<div className="absolute inset-0 flex flex-col items-center justify-center">
 									<div
-										className={`text-2xl font-black leading-none transition-all duration-300 ${
-											showScore
-												? "text-white"
-												: "blur-md select-none text-gray-400"
+										className={`text-2xl font-black leading-none transition-all duration-300 text-white ${
+											showScore ? "" : "blur-md select-none"
 										}`}
 									>
-										{showScore ? exam.test_perc : "88"}
+										{exam.test_perc}
 									</div>
 
 									<div
-										className={`text-[10px] font-medium opacity-80 mt-1 ${
-											showScore ? "text-white" : "text-gray-400"
+										className={`text-[10px] font-medium mt-1 text-white transition-opacity duration-300 ${
+											showScore ? "opacity-80" : "opacity-0"
 										}`}
 									>
-										{showScore ? config.label : ""}
+										{config.label}
 									</div>
 								</div>
 							</div>
@@ -239,10 +234,10 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 					<div className="text-center py-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
 						<XCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
 						<p className="text-sm font-semibold text-gray-600">
-							Шалгалт эхлээгүй байна
+							Шалгалт дуусаагүй байна
 						</p>
 						<p className="text-xs text-gray-500 mt-1">
-							Та удахгүй шалгалт өгөх боломжтой
+							Та удахгүй шалгалтын дэлгэрэнгүйг харах боломжтой
 						</p>
 					</div>
 				)}

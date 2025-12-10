@@ -83,8 +83,6 @@ function ExamResultDetailPage() {
 		userSelectedAnswers: UserAnswer[],
 	): number => {
 		if (userSelectedAnswers.length === 0) return 0;
-
-		// 🆕 ЗАДГАЙ ДААЛГАВАР - Багшийн үнэлгээ
 		if (question.que_type_id === 4) {
 			// Багш үнэлсэн бол түүний өгсөн оноог буцаах
 			return question.unelsen === 1 ? question.zad_onoo || 0 : 0;
@@ -145,7 +143,6 @@ function ExamResultDetailPage() {
 
 		if (question.que_type_id === 5) {
 			let correctOrders = 0;
-			let incorrectOrders = 0;
 
 			questionAnswers.forEach((answer) => {
 				const userInput = userSelectedAnswers.find(
@@ -155,20 +152,15 @@ function ExamResultDetailPage() {
 				if (userInput) {
 					if (parseInt(userInput.answer, 10) === answer.refid) {
 						correctOrders++;
-					} else {
-						incorrectOrders++;
 					}
 				}
 			});
 
-			const basePoints =
+			// ✅ PENALTY БАЙХГҮЙ - зөвхөн зөв тооноос оноо тооцно
+			const points =
 				(correctOrders / questionAnswers.length) * question.que_onoo;
-			const penalty =
-				(incorrectOrders / questionAnswers.length) * question.que_onoo;
-
-			return Math.max(0, Math.round((basePoints - penalty) * 10) / 10);
+			return Math.round(points * 10) / 10;
 		}
-
 		if (question.que_type_id === 6) {
 			const questionsOnly = questionAnswers.filter(
 				(a) => a.ref_child_id === -1,
@@ -218,10 +210,27 @@ function ExamResultDetailPage() {
 		// 1. БҮГДЭД хариулаагүй
 		if (userSelectedAnswers.length === 0) return "unanswered";
 
-		// 2. Бүгдэд зөв хариулсан
+		// 2. ЗАДГАЙ ДААЛГАВАР - багшийн үнэлгээнээс хамаарна
+		if (question.que_type_id === 4) {
+			if (question.unelsen === 1) {
+				// Багш үнэлсэн
+				if (question.zad_onoo === question.que_onoo) {
+					return "correct"; // Бүтэн оноо авсан
+				} else if (question.zad_onoo > 0) {
+					return "partial"; // Хэсэгчлэн оноо авсан
+				} else {
+					return "incorrect"; // 0 оноо авсан
+				}
+			} else {
+				// Багш үнэлээгүй - "хариулаагүй" статус (filter дээр харагдахгүй байхын тулд)
+				return "unanswered";
+			}
+		}
+
+		// 3. Бүгдэд зөв хариулсан
 		if (isFullyCorrect === true) return "correct";
 
-		// 3. Хэсэгчилсэн хариулт шалгах
+		// 4. Хэсэгчилсэн хариулт шалгах
 		const answerCheck = (() => {
 			if (question.que_type_id === 2) {
 				const correctAnswers = questionAnswers.filter((a) => a.is_true === 1);
@@ -317,7 +326,7 @@ function ExamResultDetailPage() {
 			return { hasCorrect: false, hasUnanswered: false, allAnswered: true };
 		})();
 
-		// 4. Дутуу хариулсан (зарим хариулаагүй эсвэл зарим зөв)
+		// 5. Дутуу хариулсан (зарим хариулаагүй эсвэл зарим зөв)
 		if (
 			answerCheck.hasUnanswered ||
 			(answerCheck.hasCorrect && !isFullyCorrect)
@@ -325,9 +334,10 @@ function ExamResultDetailPage() {
 			return "partial";
 		}
 
-		// 5. Бүгдэд хариулсан гэхдээ бүгд буруу
+		// 6. Бүгдэд хариулсан гэхдээ бүгд буруу
 		return "incorrect";
 	};
+
 	if (!userId) {
 		return (
 			<div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-background to-muted/20 p-4">
@@ -774,10 +784,13 @@ function ExamResultDetailPage() {
 											return userInput.answer === correctAnswer;
 										});
 									} else if (question.que_type_id === 4) {
-										const userAnswer = userSelectedAnswers[0];
-										return (
-											userAnswer?.answer && userAnswer.answer.trim() !== ""
-										);
+										// ЗАДГАЙ ДААЛГАВАР - багшийн үнэлгээнээс хамаарна
+										if (question.unelsen === 1) {
+											// Багш үнэлсэн бол зөв эсэхийг оноогоор нь шалгах
+											return question.zad_onoo === question.que_onoo;
+										}
+										// Багш үнэлээгүй бол false (буюу partial гэж үзнэ)
+										return false;
 									} else if (question.que_type_id === 5) {
 										return questionAnswers.every((answer: Answer) => {
 											const userInput = userSelectedAnswers.find(
@@ -876,11 +889,27 @@ function ExamResultDetailPage() {
 														<Button size={"lg"} variant={"outline"}>
 															{answerStatus === "unanswered" ? (
 																<>
-																	<AlertCircle className="w-5 h-5" />
-																	<span>Хариулаагүй</span>
-																	<div className="ml-2 px-2 py-1 bg-white/20 rounded-lg">
-																		0/{question.que_onoo}
-																	</div>
+																	{/* Задгай даалгавар багш үнэлээгүй эсэхийг шалгах */}
+																	{question.que_type_id === 4 &&
+																	question.unelsen === 0 ? (
+																		<>
+																			<MinusCircle className="w-5 h-5 text-amber-500" />
+																			<span>
+																				Багшийн үнэлгээ хүлээгдэж байна
+																			</span>
+																			<div className="ml-2 px-2 py-1 bg-white/20 rounded-lg">
+																				-/{question.que_onoo}
+																			</div>
+																		</>
+																	) : (
+																		<>
+																			<AlertCircle className="w-5 h-5" />
+																			<span>Хариулаагүй</span>
+																			<div className="ml-2 px-2 py-1 bg-white/20 rounded-lg">
+																				0/{question.que_onoo}
+																			</div>
+																		</>
+																	)}
 																</>
 															) : answerStatus === "correct" ? (
 																<>
@@ -909,7 +938,6 @@ function ExamResultDetailPage() {
 															)}
 														</Button>
 													</div>
-
 													<div className="text-lg font-medium">
 														{/* 1. Асуултын үндсэн текст */}
 														{question.question_name &&
