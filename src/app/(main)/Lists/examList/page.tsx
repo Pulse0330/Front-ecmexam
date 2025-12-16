@@ -268,7 +268,7 @@ export default function ExamListPage() {
 
 // Skeleton Card Component
 const SkeletonCard = () => (
-	<div className="rounded-2xl border-2 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-md animate-pulse p-5">
+	<div className="rounded-2xl border-2 ">
 		<div className="space-y-3">
 			<div className="h-6 w-3/4 bg-gray-200 dark:bg-gray-800 rounded" />
 			<div className="h-4 w-1/2 bg-gray-200 dark:bg-gray-800 rounded" />
@@ -282,8 +282,8 @@ const SkeletonCard = () => (
 
 // Empty State Component
 const EmptyState = ({ searchTerm }: { searchTerm: string }) => (
-	<div className="col-span-full flex flex-col items-center justify-center py-16 space-y-4">
-		<div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+	<div className="col-span-full flex flex-col items-center justify-center py-16 space-y-4 bg-page-gradiant">
+		<div className="w-20 h-20 rounded-full flex items-center justify-center">
 			<Search className="w-10 h-10 text-gray-400 dark:text-gray-600" />
 		</div>
 		<div className="text-center space-y-2">

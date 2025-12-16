@@ -104,27 +104,21 @@ export default function ExamResultList() {
 
 	if (isResponseFailed || exams.length === 0) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50 p-4">
-				<Alert className="max-w-md border-none shadow-2xl bg-white/80 backdrop-blur-sm">
+			<div className="min-h-screen flex items-center justify-center bg-page-gradient p-4">
+				<Alert className="max-w-md border-none shadow-2xl flex items-center justify-center">
 					<div className="flex flex-col items-center text-center space-y-4 py-6">
 						<div className="relative">
-							<div className="absolute inset-0 bg-blue-400/20 blur-2xl rounded-full" />
-							<div className="relative w-20 h-20 bg-linear-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl">
-								<FileQuestion className="w-10 h-10 text-white" />
+							<div className="absolute inset-0 bg-blue-800/20  rounded-full flex items-center justify-center" />
+							<div className="relative w-20 h-20 bg-linear-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center">
+								<FileQuestion className="w-10 h-10 " />
 							</div>
 						</div>
-						<AlertDescription className="space-y-3">
-							<div>
-								<h3 className="text-xl font-bold text-gray-900 mb-2">
+						<AlertDescription className="space-y-3 flex items-center justify-center">
+							<div className="flex items-center justify-center">
+								<h3 className="text-xl font-bold  mb-2">
 									Шалгалтын үр дүн олдсонгүй
 								</h3>
-								<p className="text-sm text-gray-600">
-									Одоогоор дууссан шалгалт байхгүй байна.
-								</p>
 							</div>
-							<p className="text-xs text-gray-500">
-								Та эхлээд шалгалт өгснөөр энд үр дүн харагдах болно.
-							</p>
 						</AlertDescription>
 					</div>
 				</Alert>
