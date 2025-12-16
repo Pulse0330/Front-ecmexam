@@ -28,25 +28,50 @@ export default function TestGroupPage() {
 		new Set(),
 	);
 
+	// Console log хийх userId-г
+	console.log("📌 Current userId:", userId);
+
 	const { data, isLoading, isError, error } = useQuery<GetTestGroupResponse>({
 		queryKey: ["testGroup", userId],
-		queryFn: () => getTestGroup(userId || 0),
+		queryFn: () => {
+			console.log("🔍 GET Request - Fetching test groups for userId:", userId);
+			return getTestGroup(userId || 0);
+		},
 		enabled: !!userId,
 	});
 
 	const mutation = useMutation({
-		mutationFn: (tests: { testcnt: number; rlesson_id: number }[]) =>
-			getTestMixed(userId || 0, tests),
+		mutationFn: (tests: { testcnt: number; rlesson_id: number }[]) => {
+			console.log("📤 POST Request Payload:");
+			console.log("  userId:", userId);
+			console.log("  tests array:", tests);
+			console.log("  tests count:", tests.length);
+			console.log(
+				"  Full payload:",
+				JSON.stringify({ userId, tests }, null, 2),
+			);
+
+			return getTestMixed(userId || 0, tests);
+		},
 		onSuccess: (response) => {
+			console.log("✅ POST Response Success:");
+			console.log("  Full response:", response);
+			console.log("  ResponseType:", response.RetResponse?.ResponseType);
+			console.log("  ResponseMessage:", response.RetResponse?.ResponseMessage);
+
 			if (response.RetResponse?.ResponseType) {
+				console.log("✅ Redirecting to /exercise");
 				router.push("/exercise");
 			} else {
-				alert(
-					`Алдаа: ${response.RetResponse?.ResponseMessage || "Тодорхойгүй алдаа"}`,
-				);
+				const errorMsg = `Алдаа: ${response.RetResponse?.ResponseMessage || "Тодорхойгүй алдаа"}`;
+				console.log("❌ Response indicated failure:", errorMsg);
+				alert(errorMsg);
 			}
 		},
 		onError: (error: Error) => {
+			console.log("❌ POST Request Error:");
+			console.log("  Error message:", error.message);
+			console.log("  Error object:", error);
 			alert(`Алдаа гарлаа: ${error.message}`);
 		},
 	});
@@ -77,6 +102,8 @@ export default function TestGroupPage() {
 	}, [data, searchQuery]);
 
 	const handleTestCountChange = (id: number, testcnt: number) => {
+		console.log(`🔄 Test count changed - ID: ${id}, Count: ${testcnt}`);
+
 		if (testcnt > 0) {
 			setSelectedTests((prev) => ({ ...prev, [id]: testcnt }));
 		} else {
@@ -89,6 +116,9 @@ export default function TestGroupPage() {
 	};
 
 	const handleSubmit = () => {
+		console.log("🚀 Submit button clicked");
+		console.log("  Current selectedTests state:", selectedTests);
+
 		const tests = Object.entries(selectedTests).map(
 			([rlesson_id, testcnt]) => ({
 				testcnt,
@@ -96,11 +126,21 @@ export default function TestGroupPage() {
 			}),
 		);
 
+		console.log("  Transformed tests array:", tests);
+
 		if (tests.length === 0) {
+			console.log("⚠️ No tests selected");
 			alert("Та хамгийн багадаа нэг тест сонгоно уу!");
 			return;
 		}
 
+		if (!userId) {
+			console.log("⚠️ No userId available");
+			alert("Нэвтрэх шаардлагатай");
+			return;
+		}
+
+		console.log("✅ Validation passed, calling mutation...");
 		mutation.mutate(tests);
 	};
 
@@ -118,6 +158,14 @@ export default function TestGroupPage() {
 		(sum, count) => sum + count,
 		0,
 	);
+
+	// Console log хийх state-үүдийг
+	console.log("📊 Current state:", {
+		selectedCount,
+		totalQuestions,
+		selectedTests,
+		isLoading: mutation.isPending,
+	});
 
 	if (!userId || isLoading || isError) {
 		return (
@@ -176,7 +224,7 @@ export default function TestGroupPage() {
 
 				{/* Summary */}
 				{selectedCount > 0 && (
-					<div className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-6 shadow-lg">
+					<div className="mb-6 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-6 shadow-lg">
 						<div className="flex items-center justify-between flex-wrap gap-4">
 							<div className="flex items-center gap-6">
 								<div className="flex items-center gap-2">
@@ -204,7 +252,7 @@ export default function TestGroupPage() {
 								type="button"
 								onClick={handleSubmit}
 								disabled={mutation.isPending}
-								className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
+								className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
 							>
 								{mutation.isPending
 									? "Илгээж байна..."
@@ -428,7 +476,7 @@ export default function TestGroupPage() {
 							type="button"
 							onClick={handleSubmit}
 							disabled={mutation.isPending}
-							className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
+							className="px-8 py-3 font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
 						>
 							{mutation.isPending ? "Илгээж байна..." : `Тест эхлүүлэх →`}
 						</Button>

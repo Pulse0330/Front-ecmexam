@@ -150,7 +150,7 @@ export default function ExamListPage() {
 			<div className="max-w-7xl mx-auto w-full flex flex-col gap-6">
 				{/* Header */}
 				<header className="text-center space-y-1">
-					<h1 className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+					<h1 className="text-3xl sm:text-4xl font-extrabold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
 						Шалгалтын жагсаалт
 					</h1>
 					<p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
@@ -174,14 +174,14 @@ export default function ExamListPage() {
 							className="w-full pl-10 pr-8 py-2.5 rounded-2xl border-2 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-sm sm:text-base text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
 						/>
 						{searchTerm && (
-							<button
+							<Button
 								type="button"
 								onClick={clearSearch}
 								className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
 								aria-label="Хайлт цэвэрлэх"
 							>
 								<X size={16} />
-							</button>
+							</Button>
 						)}
 					</div>
 
@@ -334,7 +334,7 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(
 		};
 
 		return (
-			<button
+			<Button
 				type="button"
 				onClick={onClick}
 				className={cn(
@@ -357,7 +357,7 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(
 				>
 					{count}
 				</span>
-			</button>
+			</Button>
 		);
 	},
 );

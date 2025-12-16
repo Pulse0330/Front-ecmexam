@@ -76,9 +76,9 @@ export function BannerCarousel({ banners }: BannerProps) {
 													className="w-full h-64 md:h-96 object-cover transition-transform duration-500 group-hover:scale-105"
 													priority
 												/>
-												<div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+												<div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 											</div>
-											<div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+											<div className="absolute bottom-0 left-0 right-0 p-6 bg-linear-to-t from-black/80 to-transparent">
 												<h3 className="text-white font-bold text-xl md:text-2xl drop-shadow-lg">
 													{banner.title}
 												</h3>
@@ -125,7 +125,7 @@ export function BannerCarousel({ banners }: BannerProps) {
 											height={300}
 											className="w-full h-56 object-cover transition-transform duration-500 group-hover:scale-110"
 										/>
-										<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+										<div className="absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 									</div>
 									<div className="p-4 border-t border-border">
 										<h3 className="font-bold text-lg text-card-foreground group-hover:text-primary transition-colors line-clamp-1">

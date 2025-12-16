@@ -15,10 +15,10 @@ import {
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import FinishExamResultDialog, {
 	type FinishExamDialogHandle,
 } from "@/app/exam/component/finish";
-
 import ExamMinimap from "@/app/exam/component/minimap";
 import FillInTheBlankQuestion from "@/app/exam/component/question/fillblank";
 import MatchingByLine from "@/app/exam/component/question/matching";
@@ -42,10 +42,11 @@ interface PendingAnswer {
 	timestamp: number;
 }
 
-export default function ExamPage() {
+export default function SorilPage() {
 	const { userId } = useAuthStore();
 	const { id } = useParams();
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+	const [_visibleQuestionIndex, _setVisibleQuestionIndex] = useState(0);
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const [bookmarkedQuestions, setBookmarkedQuestions] = useState<Set<number>>(
 		new Set(),
@@ -57,21 +58,21 @@ export default function ExamPage() {
 	const [typingQuestions, setTypingQuestions] = useState<Set<number>>(
 		new Set(),
 	);
-	const [isTimeUp, setIsTimeUp] = useState(false);
+	const savingQuestions = useRef<Set<number>>(new Set());
+	const [isTimeUp, _setIsTimeUp] = useState(false);
 	const [showMobileMinimapOverlay, setShowMobileMinimapOverlay] =
 		useState(false);
-
 	// Auto-finish refs
 	const finishDialogRef = useRef<FinishExamDialogHandle>(null);
 	const hasAutoFinished = useRef(false);
 	const isAutoSubmitting = useRef(false);
-
+	const typingTimers = useRef<Map<number, NodeJS.Timeout>>(new Map());
 	const pendingAnswers = useRef<Map<number, PendingAnswer>>(new Map());
 	const saveTimer = useRef<NodeJS.Timeout | null>(null);
 	const lastSavedAnswers = useRef<Map<number, AnswerValue>>(new Map());
+	const _questionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 	const isSavingRef = useRef(false);
 	const AUTO_SAVE_DELAY = 1000;
-
 	const {
 		data: examData,
 		isLoading,
@@ -80,45 +81,61 @@ export default function ExamPage() {
 		queryKey: ["exam", userId, id],
 		queryFn: () => getExamById(userId || 0, Number(id)),
 		enabled: !!userId && !!id,
-		staleTime: 5 * 60 * 1000,
-		retry: 2,
 	});
 
 	const areAnswersEqual = useCallback(
 		(a: AnswerValue | undefined, b: AnswerValue | undefined): boolean => {
 			if (a === b) return true;
 			if (a === undefined || b === undefined) return false;
+
+			// ✅ Type check эхлээд
+			const aType = Array.isArray(a) ? "array" : typeof a;
+			const bType = Array.isArray(b) ? "array" : typeof b;
+			if (aType !== bType) return false;
+
 			if (Array.isArray(a) && Array.isArray(b)) {
-				return a.length === b.length && a.every((v, i) => v === b[i]);
+				if (a.length !== b.length) return false;
+				return a.every((v, i) => v === b[i]);
 			}
+
 			if (
 				typeof a === "object" &&
 				typeof b === "object" &&
 				a !== null &&
 				b !== null
 			) {
-				const aKeys = Object.keys(a).sort();
-				const bKeys = Object.keys(b).sort();
+				const aKeys = Object.keys(a);
+				const bKeys = Object.keys(b);
+				if (aKeys.length !== bKeys.length) return false;
+
 				const aRecord = a as Record<number, number>;
 				const bRecord = b as Record<number, number>;
-				return (
-					aKeys.length === bKeys.length &&
-					aKeys.every(
-						(key, i) =>
-							key === bKeys[i] && aRecord[Number(key)] === bRecord[Number(key)],
-					)
-				);
+				return aKeys.every((key) => {
+					const numKey = Number(key);
+					return aRecord[numKey] === bRecord[numKey];
+				});
 			}
+
 			return false;
 		},
 		[],
 	);
-
 	const saveQuestion = useCallback(
 		async (pending: PendingAnswer, examId: number): Promise<boolean> => {
 			const { questionId, answer, queTypeId, rowNum } = pending;
 
+			// ✅ Race condition шалгах - хэрэв хадгалагдаж байгаа бол skip
+			if (savingQuestions.current.has(questionId)) {
+				console.log(
+					`⚠️ Question ${questionId} is already being saved, skipping...`,
+				);
+				return false;
+			}
+
 			try {
+				// ✅ Хадгалалт эхлэх
+				savingQuestions.current.add(questionId);
+
 				const previousAnswer = lastSavedAnswers.current.get(questionId);
 
 				// ============================================
@@ -197,7 +214,6 @@ export default function ExamPage() {
 				// Type 4: Delete old fill-in-blank answer
 				if (queTypeId === 4 && previousAnswer !== undefined) {
 					try {
-						// ✅ Бодит answer_id ашиглах
 						const type4Answer = examData?.Answers?.find(
 							(ans) => ans.question_id === questionId && ans.answer_type === 4,
 						);
@@ -222,11 +238,21 @@ export default function ExamPage() {
 					previousAnswer.length > 0
 				) {
 					try {
-						await Promise.allSettled(
-							previousAnswer.map((answerId) =>
-								deleteExamAnswer(userId || 0, examId, questionId, answerId),
-							),
+						// ✅ Valid answer IDs шүүх
+						const validPrevAnswers = previousAnswer.filter(
+							(id) => id && id !== 0 && !Number.isNaN(id),
 						);
+
+						if (validPrevAnswers.length > 0) {
+							console.log(
+								`🗑️ Type 5 Q${questionId}: Deleting ${validPrevAnswers.length} old answers`,
+							);
+							await Promise.allSettled(
+								validPrevAnswers.map((answerId) =>
+									deleteExamAnswer(userId || 0, examId, questionId, answerId),
+								),
+							);
+						}
 					} catch (_error) {
 						console.log(
 							`Failed to delete old answers for type 5 question ${questionId}`,
@@ -343,8 +369,25 @@ export default function ExamPage() {
 
 				// Type 5: Save drag-and-drop order
 				if (queTypeId === 5 && Array.isArray(answer) && answer.length > 0) {
+					// ✅ Valid answer IDs шүүх
+					const validAnswers = answer.filter(
+						(id) =>
+							id && id !== 0 && !Number.isNaN(id) && typeof id === "number",
+					);
+
+					if (validAnswers.length === 0) {
+						console.warn(`⚠️ Type 5 Q${questionId}: No valid answers to save`);
+						lastSavedAnswers.current.set(questionId, answer);
+						return true;
+					}
+
+					console.log(
+						`💾 Type 5 Q${questionId}: Saving ${validAnswers.length} answers`,
+						validAnswers,
+					);
+
 					await Promise.all(
-						answer.map((answerId, index) =>
+						validAnswers.map((answerId, index) =>
 							saveExamAnswer(
 								userId || 0,
 								examId,
@@ -356,6 +399,8 @@ export default function ExamPage() {
 							),
 						),
 					);
+
+					console.log(`✅ Type 5 Q${questionId}: Saved successfully`);
 				}
 
 				// Type 6: Save matching answers
@@ -388,12 +433,25 @@ export default function ExamPage() {
 				lastSavedAnswers.current.set(questionId, answer);
 				return true;
 			} catch (error) {
-				console.error(`Failed to save question ${questionId}:`, error);
+				console.error(`❌ Failed to save question ${questionId}:`, error);
 				return false;
+			} finally {
+				// ✅ Хадгалалт дууссан - Set-с устгах
+				savingQuestions.current.delete(questionId);
 			}
 		},
 		[userId, examData],
 	);
+
+	useEffect(() => {
+		return () => {
+			for (const timer of typingTimers.current.values()) {
+				clearTimeout(timer);
+			}
+			typingTimers.current.clear();
+			savingQuestions.current.clear(); // ✅ НЭМЭХ
+		};
+	}, []);
 	const processPendingAnswers = useCallback(async () => {
 		if (
 			isSavingRef.current ||
@@ -440,12 +498,6 @@ export default function ExamPage() {
 		setIsSaving(false);
 	}, [examData, saveQuestion]);
 
-	// ========================
-	// AUTO SUBMIT HANDLER - одоо processPendingAnswers тодорхойлогдсоны дараа
-	// ========================
-	// ========================
-	// AUTO SUBMIT HANDLER - ЗАСВАРЛАСАН
-	// ========================
 	const _handleAutoSubmit = useCallback(async () => {
 		// Давхар дуудагдахаас сэргийлэх
 		if (hasAutoFinished.current || isAutoSubmitting.current) {
@@ -485,34 +537,8 @@ export default function ExamPage() {
 		}
 	}, [processPendingAnswers, examData]);
 
-	const formatTime = (sec: number) => {
-		const h = Math.floor(sec / 3600);
-		const m = Math.floor((sec % 3600) / 60);
-		const s = sec % 60;
-		return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-	};
-
-	const remainingSec = useMemo(() => {
-		if (!examData?.ExamInfo?.[0]) return 0;
-		const totalSec = examData.ExamInfo[0].minut * 60;
-		if (!examData.ExamInfo[0].starteddate) return totalSec;
-		const actualStartDate = new Date(examData.ExamInfo[0].starteddate);
-		const now = new Date();
-		const elapsed = Math.floor(
-			(now.getTime() - actualStartDate.getTime()) / 1000,
-		);
-		return Math.max(0, totalSec - elapsed);
-	}, [examData]);
-
 	useEffect(() => {
-		const interval = setInterval(() => {
-			setCurrentQuestionIndex((prev) => prev);
-		}, 1000);
-		return () => clearInterval(interval);
-	}, []);
-
-	useEffect(() => {
-		if (!examData?.ChoosedAnswer) return;
+		if (isLoading || !examData?.ChoosedAnswer) return;
 
 		const answersMap: Record<number, AnswerValue> = {};
 		const groupedAnswers = examData.ChoosedAnswer.reduce(
@@ -580,38 +606,68 @@ export default function ExamPage() {
 		lastSavedAnswers.current = new Map(
 			Object.entries(answersMap).map(([k, v]) => [Number(k), v]),
 		);
-	}, [examData]);
+	}, [examData, isLoading]);
 
 	const allQuestions = useMemo(() => {
 		if (!examData?.Questions || !examData?.Answers) return [];
+
+		const answersByQuestionId = new Map<number, typeof examData.Answers>();
+
+		for (const answer of examData.Answers) {
+			if (!answersByQuestionId.has(answer.question_id)) {
+				answersByQuestionId.set(answer.question_id, []);
+			}
+			answersByQuestionId.get(answer.question_id)?.push(answer);
+		}
+
 		return examData.Questions.filter((q) =>
 			[1, 2, 3, 4, 5, 6].includes(q.que_type_id),
-		).map((q) => ({
-			...q,
-			question_img: q.question_img || "",
-			answers: examData.Answers.filter(
-				(a) =>
-					a.question_id === q.question_id && a.answer_type === q.que_type_id,
-			).map((a) => ({
-				...a,
-				answer_img: a.answer_img || undefined,
-				is_true: false,
-			})),
-		}));
-	}, [examData]);
+		).map((q) => {
+			const questionAnswers = answersByQuestionId.get(q.question_id) || [];
+
+			const filteredAnswers = questionAnswers
+				.filter((a) => a.answer_type === q.que_type_id)
+				.map((a) => ({
+					...a,
+					answer_img: a.answer_img || undefined,
+					is_true: false,
+				}));
+
+			return {
+				...q,
+				question_img: q.question_img || "",
+				answers: filteredAnswers,
+			};
+		});
+	}, [examData?.Questions, examData?.Answers]);
 
 	const totalCount = allQuestions.length;
-	const answeredCount = useMemo(
-		() =>
-			Object.values(selectedAnswers).filter((ans) => {
-				if (Array.isArray(ans)) return ans.length > 0;
-				if (typeof ans === "string") return ans.trim() !== "";
-				if (typeof ans === "object" && ans !== null)
-					return Object.keys(ans).length > 0;
-				return typeof ans === "number" && !Number.isNaN(ans) && ans !== 0;
-			}).length,
-		[selectedAnswers],
-	);
+	const answeredCount = useMemo(() => {
+		let count = 0;
+
+		for (const key in selectedAnswers) {
+			if (!Object.hasOwn(selectedAnswers, key)) continue;
+
+			const ans = selectedAnswers[key];
+			if (ans == null) continue;
+
+			if (Array.isArray(ans)) {
+				if (ans.length > 0) count++;
+			} else if (typeof ans === "string") {
+				if (ans !== "" && ans.trim() !== "") count++;
+			} else if (typeof ans === "number") {
+				if (ans !== 0 && !Number.isNaN(ans)) count++;
+			} else {
+				// Object check
+				for (const _k in ans) {
+					count++;
+					break;
+				}
+			}
+		}
+
+		return count;
+	}, [selectedAnswers]);
 
 	const scheduleAutoSave = useCallback(() => {
 		if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -638,15 +694,22 @@ export default function ExamPage() {
 
 			const rowNum = Number(question.row_num);
 			const queTypeId = question.que_type_id;
+			const existingTimer = typingTimers.current.get(questionId);
+			if (existingTimer) {
+				clearTimeout(existingTimer);
+			}
 
 			setTypingQuestions((prev) => new Set(prev).add(questionId));
-			setTimeout(() => {
+			const timer = setTimeout(() => {
 				setTypingQuestions((prev) => {
 					const newSet = new Set(prev);
 					newSet.delete(questionId);
 					return newSet;
 				});
+				typingTimers.current.delete(questionId);
 			}, 1500);
+
+			typingTimers.current.set(questionId, timer);
 
 			setSelectedAnswers((prev) => ({ ...prev, [questionId]: answer }));
 			pendingAnswers.current.set(questionId, {
@@ -661,6 +724,15 @@ export default function ExamPage() {
 		},
 		[examData, scheduleAutoSave, areAnswersEqual],
 	);
+
+	useEffect(() => {
+		return () => {
+			for (const timer of typingTimers.current.values()) {
+				clearTimeout(timer);
+			}
+			typingTimers.current.clear();
+		};
+	}, []);
 
 	useEffect(
 		() => () => {
@@ -704,13 +776,21 @@ export default function ExamPage() {
 	const getCardBorderClass = useCallback(
 		(questionId: number) => {
 			const answer = selectedAnswers[questionId];
-			const isAnswered =
-				(Array.isArray(answer) && answer.length > 0) ||
-				(typeof answer === "string" && answer.trim() !== "") ||
-				(typeof answer === "number" && !Number.isNaN(answer) && answer !== 0) ||
-				(typeof answer === "object" &&
-					answer !== null &&
-					Object.keys(answer).length > 0);
+
+			let isAnswered = false;
+			if (Array.isArray(answer)) {
+				isAnswered = answer.length > 0;
+			} else if (typeof answer === "string") {
+				isAnswered = answer.trim() !== "";
+			} else if (typeof answer === "number") {
+				isAnswered = !Number.isNaN(answer) && answer !== 0;
+			} else if (typeof answer === "object" && answer !== null) {
+				for (const _key in answer) {
+					isAnswered = true;
+					break;
+				}
+			}
+
 			const isBookmarked = bookmarkedQuestions.has(questionId);
 			const isTypingNow = typingQuestions.has(questionId);
 
@@ -731,6 +811,28 @@ export default function ExamPage() {
 					{q.question_img && (
 						<QuestionImage src={q.question_img} alt="Асуултын зураг" />
 					)}
+					{(q.source_name || q.source_img) && (
+						<div className="mt-3 p-3 border rounded-lg bg-gray-50">
+							{/* Эх сурвалж зураг */}
+							{q.source_img && (
+								<img
+									src={q.source_img}
+									alt="source"
+									className="w-14 h-14 object-cover rounded-md mb-2"
+								/>
+							)}
+
+							{/* Эх сурвалж name (HTML-тэй учраас parse ашиглана) */}
+							{q.source_name && (
+								<div className="text-sm text-gray-700 leading-relaxed">
+									{" "}
+									<span className="font-semibold">Эх сурвалж:</span>{" "}
+									<div className="mt-1">{parse(q.source_name)}</div>{" "}
+								</div>
+							)}
+						</div>
+					)}
+
 					<SingleSelectQuestion
 						questionId={q.question_id}
 						questionText={q.question_name}
@@ -773,8 +875,8 @@ export default function ExamPage() {
 							selectedValues={
 								selectedAnswers[q.question_id] as Record<number, string>
 							}
-							onAnswerChange={
-								(qId, values) => handleAnswerChange(qId, values as AnswerValue) // ✅ Type assertion
+							onAnswerChange={(qId, values) =>
+								handleAnswerChange(qId, values as AnswerValue)
 							}
 						/>
 					)}
@@ -881,7 +983,6 @@ export default function ExamPage() {
 
 	return (
 		<div className="min-h-screen">
-			{/* Exam Proctor - Зөрчил хянагч */}
 			{/* <AdvancedExamProctor
 				maxViolations={3}
 				strictMode={true}
@@ -934,7 +1035,7 @@ export default function ExamPage() {
 								<Card className={getCardBorderClass(q.question_id)}>
 									<CardContent className="p-6">
 										<div className="flex gap-4">
-											<div className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center font-semibold">
+											<div className="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center font-semibold">
 												{index + 1}
 											</div>
 											<div className="flex-1 min-w-0">
@@ -942,7 +1043,7 @@ export default function ExamPage() {
 													<div className="font-semibold text-lg flex-1 leading-relaxed prose prose-sm max-w-none">
 														{parse(q.question_name)}
 													</div>
-													<div className="flex items-center gap-2 flex-shrink-0">
+													<div className="flex items-center gap-2 shrink-0">
 														<Button
 															variant="ghost"
 															size="icon"
@@ -970,22 +1071,6 @@ export default function ExamPage() {
 							</div>
 						))}
 					</main>
-
-					<aside className="col-span-1">
-						<div className="sticky top-6">
-							{examData?.ExamInfo?.[0] && (
-								<>
-									{/* 🔍 DEBUG LOG - Console дээр харах */}
-									{console.log("📊 ExamTimer Props:", {
-										examId: examData.ExamInfo[0].id,
-										startedDate: examData.ExamInfo[0].starteddate,
-										examMinutes: examData.ExamInfo[0].minut,
-										examStartTime: examData.ExamInfo[0].ognoo,
-									})}
-								</>
-							)}
-						</div>
-					</aside>
 				</div>
 			</div>
 
@@ -995,6 +1080,12 @@ export default function ExamPage() {
 					<div className="px-3 py-2">
 						{examData?.ExamInfo?.[0] && (
 							<div className="flex items-center justify-between mb-2">
+								<div className="flex items-center gap-2">
+									<div className="w-7 h-7 rounded-md bg-green-100 dark:bg-green-900/40 flex items-center justify-center shrink-0">
+										<Clock className="w-4 h-4 text-green-600 dark:text-green-400" />
+									</div>
+								</div>
+
 								<Button
 									onClick={() => setShowMobileMinimapOverlay(true)}
 									className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/40 rounded-lg border border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition"
@@ -1010,7 +1101,7 @@ export default function ExamPage() {
 						<div className="flex items-center gap-2">
 							<div className="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
 								<div
-									className="h-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all"
+									className="h-full bg-linear-to-r from-green-500 to-emerald-600 transition-all"
 									style={{ width: `${(answeredCount / totalCount) * 100}%` }}
 								/>
 							</div>
@@ -1029,7 +1120,7 @@ export default function ExamPage() {
 						>
 							<CardContent className="p-4">
 								<div className="flex items-start gap-3 mb-4">
-									<div className="flex-shrink-0 w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-md">
+									<div className="shrink-0 w-9 h-9 rounded-lg bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-md">
 										{currentQuestionIndex + 1}
 									</div>
 									<div className="flex-1 min-w-0">
@@ -1037,7 +1128,7 @@ export default function ExamPage() {
 											{parse(currentQuestion.question_name)}
 										</div>
 									</div>
-									<div className="flex items-center gap-2 flex-shrink-0">
+									<div className="flex items-center gap-2 shrink-0">
 										{typingQuestions.has(currentQuestion.question_id) && (
 											<div className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/40 rounded-md">
 												<div className="flex gap-0.5">
@@ -1062,7 +1153,7 @@ export default function ExamPage() {
 											onClick={() =>
 												toggleBookmark(currentQuestion.question_id)
 											}
-											className="flex-shrink-0 h-9 w-9"
+											className="shrink-0 h-9 w-9"
 										>
 											{bookmarkedQuestions.has(currentQuestion.question_id) ? (
 												<BookmarkCheck className="w-5 h-5 text-yellow-500 fill-yellow-500" />

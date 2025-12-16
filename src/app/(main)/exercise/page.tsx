@@ -309,7 +309,7 @@ export default function ExercisePage() {
 				{/* Question Header
 				 */}
 				<div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
-					<div className="w-8 h-8 sm:w-10 sm:h-10 bg-linear-to-br from-blue-600 to-purple-600 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm sm:text-lg shadow-lg">
+					<div className="w-8 h-8 sm:w-10 sm:h-10 bg-linear-to-br from-blue-600 to-purple-600 text-white rounded-full flex items-center justify-center shrink-0 font-bold text-sm sm:text-lg shadow-lg">
 						{index + 1}
 					</div>
 					<div className="flex-1 min-w-0">

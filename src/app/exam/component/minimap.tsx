@@ -86,7 +86,7 @@ const ExamMinimap = memo(function ExamMinimap({
 
 					<div className="p-4 space-y-4">
 						{/* Progress Card */}
-						<div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl border border-blue-200 dark:border-blue-800 p-4">
+						<div className="bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl border border-blue-200 dark:border-blue-800 p-4">
 							<div className="flex items-center justify-between mb-2">
 								<span className="text-sm font-bold text-blue-900 dark:text-blue-200">
 									Явц
@@ -97,7 +97,7 @@ const ExamMinimap = memo(function ExamMinimap({
 							</div>
 							<div className="h-2 bg-blue-200 dark:bg-blue-900/40 rounded-full overflow-hidden">
 								<div
-									className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-300"
+									className="h-full bg-linear-to-r from-blue-500 to-indigo-600 transition-all duration-300"
 									style={{ width: `${progressPercentage}%` }}
 								/>
 							</div>
@@ -105,7 +105,7 @@ const ExamMinimap = memo(function ExamMinimap({
 
 						{/* Stats Grid */}
 						<div className="grid grid-cols-2 gap-3">
-							<div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 text-center">
+							<div className="bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 text-center">
 								<div className="text-2xl font-black text-green-600 dark:text-green-400">
 									{stats.answered}
 								</div>
@@ -114,7 +114,7 @@ const ExamMinimap = memo(function ExamMinimap({
 								</div>
 							</div>
 
-							<div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3 text-center">
+							<div className="bg-linear-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3 text-center">
 								<div className="text-2xl font-black text-orange-600 dark:text-orange-400">
 									{stats.total - stats.answered}
 								</div>
@@ -151,7 +151,7 @@ const ExamMinimap = memo(function ExamMinimap({
 											className={`relative aspect-square rounded-lg transition-all active:scale-90 flex items-center justify-center text-sm font-bold
 												${
 													answered
-														? "bg-gradient-to-br from-green-500 to-green-600 text-white shadow-sm"
+														? "bg-linear-to-br from-green-500 to-green-600 text-white shadow-sm"
 														: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600"
 												}
 												${
@@ -182,7 +182,7 @@ const ExamMinimap = memo(function ExamMinimap({
 
 						{/* Bookmarks Section */}
 						{bookmarkedQuestionsArray.length > 0 && (
-							<div className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl border border-yellow-200 dark:border-yellow-800 p-4">
+							<div className="bg-linear-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl border border-yellow-200 dark:border-yellow-800 p-4">
 								<div className="flex items-center gap-2 mb-3">
 									<Bookmark className="w-4 h-4 fill-yellow-500 text-yellow-500" />
 									<span className="text-sm font-bold text-yellow-800 dark:text-yellow-200">
@@ -233,7 +233,7 @@ const ExamMinimap = memo(function ExamMinimap({
 					</div>
 					<div className="h-1.5 sm:h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mb-1.5 sm:mb-2">
 						<div
-							className="h-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all duration-300"
+							className="h-full bg-linear-to-r from-green-500 to-emerald-600 transition-all duration-300"
 							style={{ width: `${progressPercentage}%` }}
 						/>
 					</div>
@@ -271,7 +271,7 @@ const ExamMinimap = memo(function ExamMinimap({
 									className={`relative aspect-square rounded-lg transition-all active:scale-90 flex items-center justify-center text-[10px] sm:text-xs font-bold w-full
 										${
 											answered
-												? "bg-gradient-to-br from-green-500 to-green-600 text-white shadow-sm hover:shadow-md"
+												? "bg-linear-to-br from-green-500 to-green-600 text-white shadow-sm hover:shadow-md"
 												: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600"
 										}
 										${
@@ -285,8 +285,8 @@ const ExamMinimap = memo(function ExamMinimap({
 
 									{isBookmarked && (
 										<span className="absolute -top-0.5 -right-0.5 z-10">
-											<div className="bg-yellow-400 rounded-full p-[2px] shadow-md">
-												<Bookmark className="w-[6px] h-[6px] sm:w-2 sm:h-2 fill-white text-white" />
+											<div className="bg-yellow-400 rounded-full p-0.5 shadow-md">
+												<Bookmark className="w-1.5 h-1.5 sm:w-2 sm:h-2 fill-white text-white" />
 											</div>
 										</span>
 									)}
@@ -303,7 +303,7 @@ const ExamMinimap = memo(function ExamMinimap({
 
 			{/* Stats Grid */}
 			<div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-				<div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-2 sm:p-2.5 text-center">
+				<div className="bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-2 sm:p-2.5 text-center">
 					<div className="text-lg sm:text-xl md:text-2xl font-black text-green-600 dark:text-green-400">
 						{stats.answered}
 					</div>
@@ -312,7 +312,7 @@ const ExamMinimap = memo(function ExamMinimap({
 					</div>
 				</div>
 
-				<div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-2 sm:p-2.5 text-center">
+				<div className="bg-linear-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-2 sm:p-2.5 text-center">
 					<div className="text-lg sm:text-xl md:text-2xl font-black text-orange-600 dark:text-orange-400">
 						{stats.total - stats.answered}
 					</div>
@@ -324,7 +324,7 @@ const ExamMinimap = memo(function ExamMinimap({
 
 			{/* Bookmarks Section */}
 			{bookmarkedQuestionsArray.length > 0 && (
-				<div className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl shadow-sm border border-yellow-200 dark:border-yellow-800 overflow-hidden">
+				<div className="bg-linear-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl shadow-sm border border-yellow-200 dark:border-yellow-800 overflow-hidden">
 					<div className="p-2 sm:p-2.5">
 						<div className="flex items-center gap-1.5 mb-1.5">
 							<Bookmark className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-yellow-500 text-yellow-500" />

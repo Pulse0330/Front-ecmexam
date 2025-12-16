@@ -352,6 +352,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 		// Check if exam/soril paths are active
 		const isExamActive = pathname.includes("/Lists/exam");
 		const isSorilActive = pathname.includes("/Lists/soril");
+		const isCourseActive = pathname === "/Lists/courseList";
 
 		return (
 			<>
@@ -425,6 +426,23 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 											items={sorilDropdownLinks}
 											isActive={isSorilActive}
 										/>
+
+										{/* Цахим сургалт - Regular Link */}
+										<NavigationMenuItem>
+											<Link
+												href="/Lists/courseList"
+												className={cn(
+													"group inline-flex h-10 w-max items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300",
+													"hover:bg-linear-to-r hover:from-accent/90 hover:to-accent hover:text-accent-foreground hover:shadow-md hover:scale-105",
+													"active:scale-95",
+													isCourseActive
+														? "bg-linear-to-r from-accent/90 to-accent text-accent-foreground shadow-md scale-[1.02]"
+														: "text-foreground/80 hover:text-foreground",
+												)}
+											>
+												Цахим сургалт
+											</Link>
+										</NavigationMenuItem>
 									</NavigationMenuList>
 								</NavigationMenu>
 							</div>
@@ -512,6 +530,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 																onClick={handleMenuToggle}
 																className={cn(
 																	"flex w-full items-start gap-3 rounded-xl px-4 py-3 text-sm transition-all duration-300",
+																	"hover:bg-accent hover:text-accent-foreground hover:translate-x-1 hover:shadow-md",
 																	"active:scale-95",
 																	isActive
 																		? "bg-linear-to-r from-accent/90 to-accent text-accent-foreground shadow-md"
@@ -574,6 +593,29 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 														</NavigationMenuItem>
 													);
 												})}
+
+												{/* Mobile Цахим сургалт - Regular Link */}
+												<div className="w-full pt-4 pb-2">
+													<div className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
+														📚 Цахим сургалт
+													</div>
+												</div>
+												<NavigationMenuItem className="w-full">
+													<Link
+														href="/Lists/courseList"
+														onClick={handleMenuToggle}
+														className={cn(
+															"flex w-full items-center rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-300",
+															"hover:bg-accent hover:text-accent-foreground hover:translate-x-1 hover:shadow-md",
+															"active:scale-95",
+															isCourseActive
+																? "bg-linear-to-r from-accent/90 to-accent text-accent-foreground shadow-md"
+																: "text-foreground/80",
+														)}
+													>
+														Цахим сургалт
+													</Link>
+												</NavigationMenuItem>
 											</NavigationMenuList>
 										</NavigationMenu>
 									</PopoverContent>
@@ -710,9 +752,9 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 							</AlertDialogCancel>
 							<AlertDialogAction
 								onClick={confirmLogout}
-								className="bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-600 dark:to-red-700 dark:hover:from-red-700 dark:hover:to-red-800 transition-all duration-300 hover:scale-105 rounded-xl shadow-lg"
+								className="bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-600 dark:to-red-700 dark:hover:from-red-700 dark:hover:to-red-800 transition-all duration-300 hover:scale-105 rounded-xl"
 							>
-								Гарах
+								Тийм, Гарах
 							</AlertDialogAction>
 						</AlertDialogFooter>
 					</AlertDialogContent>

@@ -48,6 +48,7 @@ export default function ExamPage() {
 	const { userId } = useAuthStore();
 	const { id } = useParams();
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+	const [_visibleQuestionIndex, _setVisibleQuestionIndex] = useState(0);
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const [bookmarkedQuestions, setBookmarkedQuestions] = useState<Set<number>>(
 		new Set(),
@@ -71,6 +72,7 @@ export default function ExamPage() {
 	const pendingAnswers = useRef<Map<number, PendingAnswer>>(new Map());
 	const saveTimer = useRef<NodeJS.Timeout | null>(null);
 	const lastSavedAnswers = useRef<Map<number, AnswerValue>>(new Map());
+	const _questionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 	const isSavingRef = useRef(false);
 	const AUTO_SAVE_DELAY = 1000;
 	const {

@@ -425,7 +425,7 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 		<>
 			{/* Black screen overlay */}
 			{blackScreen && (
-				<div className="fixed inset-0 bg-black z-[9999] flex items-center justify-center pointer-events-auto">
+				<div className="fixed inset-0 bg-black flex items-center justify-center pointer-events-auto">
 					<div className="text-white text-center space-y-4 p-6">
 						<AlertTriangle className="w-16 h-16 sm:w-20 sm:h-20 mx-auto text-red-500 animate-pulse" />
 						<h1 className="text-2xl sm:text-4xl font-bold">

@@ -23,7 +23,6 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { useUserStore } from "@/stores/useUserStore";
 import type { HomeResponseType } from "@/types/home";
 import type { UserProfileResponseType } from "@/types/user";
-import { BannerCarousel } from "./banner";
 
 import ExamLists from "./examlists";
 import HomeSorilLists from "./sorillists";
@@ -244,9 +243,9 @@ export default function HomePage() {
 				</div>
 
 				{/* Banner Section */}
-				<div className="animate-in fade-in-0 duration-700 delay-100">
+				{/* <div className="animate-in fade-in-0 duration-700 delay-100">
 					<BannerCarousel banners={homeData?.RetDataFirst || []} />
-				</div>
+				</div> */}
 
 				{/* Exam Lists Section - Collapsible */}
 				<div className="animate-in fade-in-0 duration-700 delay-300">

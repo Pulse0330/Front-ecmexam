@@ -1,4 +1,6 @@
 import api from "@/lib/axios";
+import type { ContentViewResponse } from "@/types/course/contentView";
+import type { CourseListResponse } from "@/types/course/courseList";
 import type { ApiExamResponse } from "@/types/exam/exam";
 import type { ExamAnswerResponse } from "@/types/exam/examChoosed";
 import type { ExamChoosedAnswerDeleteResponse } from "@/types/exam/examChoosedAnswerDelete";
@@ -181,7 +183,6 @@ export const getExamDun = async (dun: number): Promise<ExamDunApiResponse> => {
 	);
 	return data;
 };
-
 // ===== Get Exam Rank =====
 export const getExamRank = async (
 	examId: number,
@@ -257,6 +258,28 @@ export const getTestMixed = async (
 	const { data } = await api.post<TestSavedMixedResponse>("/testsavedmixed", {
 		user_id: userId,
 		tests,
+	});
+	return data;
+};
+//-------------------------------Course---------------------------------//
+export const getCourseList = async (
+	userId: number,
+): Promise<CourseListResponse> => {
+	const { data } = await api.post<CourseListResponse>("/getcourse", {
+		user_id: userId,
+	});
+	return data;
+};
+
+// ===== Get ContentView =====
+export const getContentView = async (
+	content_id: number,
+	user_id: number,
+): Promise<ContentViewResponse> => {
+	const { data } = await api.post<ContentViewResponse>("/getcontentview", {
+		content_id,
+		possible_index: 1,
+		user_id,
 	});
 	return data;
 };

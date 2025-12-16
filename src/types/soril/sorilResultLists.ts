@@ -10,6 +10,12 @@ export interface SorilresultListItem {
 	isfinished: number;
 	Ognoo: string;
 	exam_minute: number;
+
+	test_ttl: number;
+	correct_ttl: number;
+	wrong_ttl: number;
+	ttl_point: number;
+	not_answer: number;
 }
 
 export interface SorilresultListResponseType {
