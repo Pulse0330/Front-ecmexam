@@ -167,9 +167,7 @@ function ExamResultCard({ exam, index, globalShowScore }: ExamResultCardProps) {
 						<div className="relative">
 							<div
 								className={`relative shrink-0 w-20 h-20 rounded-xl transition-all duration-300 group-hover:scale-105 ${
-									showScore
-										? `bg-gradient-to-br ${config.gradient}`
-										: "bg-gray-200"
+									showScore ? `bg-linear-to-br ` : ""
 								}`}
 							>
 								<div className="absolute inset-0 flex flex-col items-center justify-center">

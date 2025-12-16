@@ -15,10 +15,6 @@ import {
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-import FinishExamResultDialog, {
-	type FinishExamDialogHandle,
-} from "@/app/exam/component/finish";
 import ExamMinimap from "@/app/exam/component/minimap";
 import FillInTheBlankQuestion from "@/app/exam/component/question/fillblank";
 import MatchingByLine from "@/app/exam/component/question/matching";
@@ -33,6 +29,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { deleteExamAnswer, getExamById, saveExamAnswer } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { AnswerValue } from "@/types/exam/exam";
+import FinishExamResultDialog, { type FinishExamDialogHandle } from "../finish";
 
 interface PendingAnswer {
 	questionId: number;

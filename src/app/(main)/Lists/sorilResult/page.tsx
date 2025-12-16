@@ -134,7 +134,7 @@ export default function ExamResultList() {
 	}
 
 	return (
-		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+		<div className="min-h-screen flex flex-col py-4 px-3 sm:px-6 overflow-auto space-y-6">
 			{/* Ongoing Exams Alert */}
 			{ongoingExams.length > 0 && (
 				<Alert className="border-amber-200 bg-amber-50/50 animate-in fade-in-0 slide-in-from-top-4 duration-500">
@@ -249,7 +249,7 @@ export default function ExamResultList() {
 										</div>
 									</div>
 									<h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-										Бүх шалгалтууд
+										Бүх сорилууд
 									</h2>
 								</div>
 								<div className="flex items-center gap-3">
@@ -257,7 +257,7 @@ export default function ExamResultList() {
 										variant="secondary"
 										className="text-sm font-semibold shadow-sm"
 									>
-										{exams.length} шалгалт
+										{exams.length} сорил
 									</Badge>
 									<ChevronDown
 										className={`w-6 h-6 text-muted-foreground transition-transform duration-300 ${
