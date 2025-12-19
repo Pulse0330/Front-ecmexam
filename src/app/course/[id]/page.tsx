@@ -63,7 +63,7 @@ export default function CoursePage() {
 
 	if (isPending) {
 		return (
-			<div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/5">
+			<div className="flex items-center justify-center min-h-screen bg-linear-to-br from-primary/5 via-background to-primary/5">
 				<div className="text-center space-y-4">
 					<div className="relative">
 						<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />
@@ -149,7 +149,7 @@ export default function CoursePage() {
 	};
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background relative overflow-hidden">
+		<div className="min-h-screen bg-linear-to-br from-background via-primary/5 to-background relative overflow-hidden">
 			{/* Background decorative elements */}
 			<div className="absolute inset-0 pointer-events-none overflow-hidden">
 				<div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
@@ -157,8 +157,8 @@ export default function CoursePage() {
 			</div>
 
 			{/* Hero Section */}
-			<div className="relative border-b bg-gradient-to-r from-primary/10 via-primary/5 to-background backdrop-blur-sm">
-				<div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]" />
+			<div className="relative border-b bg-linear-to-r from-primary/10 via-primary/5 to-background backdrop-blur-sm">
+				<div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-linear(0deg,transparent,black)]" />
 				<div className="container mx-auto px-4 py-8 md:py-12 relative max-w-7xl">
 					<Button
 						variant="ghost"
@@ -177,7 +177,7 @@ export default function CoursePage() {
 							</span>
 						</div>
 
-						<h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text text-transparent leading-tight">
+						<h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 bg-linear-to-r from-foreground via-foreground to-foreground/60 bg-clip-text text-transparent leading-tight">
 							{contents[0]?.content_name || "Хичээлийн агуулга"}
 						</h1>
 
@@ -233,11 +233,11 @@ export default function CoursePage() {
 							</div>
 							<div className="relative h-4 bg-muted rounded-full overflow-hidden">
 								<div
-									className="absolute inset-0 bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 transition-all duration-700 ease-out"
+									className="absolute inset-0 bg-linear-to-r from-green-500 via-green-600 to-emerald-600 transition-all duration-700 ease-out"
 									style={{ width: `${progressPercent}%` }}
 								/>
 								<div
-									className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"
+									className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent animate-shimmer"
 									style={{
 										width: `${progressPercent}%`,
 										backgroundSize: "200% 100%",
@@ -258,9 +258,9 @@ export default function CoursePage() {
 			<div className="container mx-auto px-4 py-12 relative">
 				<div className="max-w-5xl mx-auto relative">
 					{/* Vertical Timeline Line */}
-					<div className="absolute left-8 top-0 bottom-0 w-1 bg-gradient-to-b from-border via-border to-transparent hidden md:block rounded-full" />
+					<div className="absolute left-8 top-0 bottom-0 w-1 bg-linear-to-b from-border via-border to-transparent hidden md:block rounded-full" />
 					<div
-						className="absolute left-8 top-0 w-1 bg-gradient-to-b from-primary via-emerald-500 to-green-500 hidden md:block transition-all duration-500 ease-out rounded-full"
+						className="absolute left-8 top-0 w-1 bg-linear-to-b from-primary via-emerald-500 to-green-500 hidden md:block transition-all duration-500 ease-out rounded-full"
 						style={{
 							height: `${(activeSection / Math.max(contents.length - 1, 1)) * 100}%`,
 							boxShadow: "0 0 20px rgba(34, 197, 94, 0.4)",
@@ -286,9 +286,9 @@ export default function CoursePage() {
 										<div
 											className={`relative z-10 flex items-center justify-center w-16 h-16 rounded-full border-4 transition-all duration-500 ${
 												isCompleted
-													? "bg-gradient-to-br from-green-500 to-emerald-600 border-green-400 shadow-xl shadow-green-500/50 scale-110"
+													? "bg-linear-to-br from-green-500 to-emerald-600 border-green-400 shadow-xl shadow-green-500/50 scale-110"
 													: isActive
-														? "bg-gradient-to-br from-primary to-primary/80 border-primary/60 shadow-xl shadow-primary/50 scale-110"
+														? "bg-linear-to-br from-primary to-primary/80 border-primary/60 shadow-xl shadow-primary/50 scale-110"
 														: "bg-background border-border shadow-md"
 											}`}
 										>
@@ -378,7 +378,7 @@ export default function CoursePage() {
 
 													{!isCompleted ? (
 														<Button
-															className="w-full md:w-auto group/btn bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg hover:scale-105 transition-all"
+															className="w-full md:w-auto group/btn bg-linear-to-r from-primary to-primary/80 hover:shadow-lg hover:scale-105 transition-all"
 															onClick={() => {
 																// Mark as complete logic here
 																// You can call an API to mark the lesson as complete
@@ -414,7 +414,7 @@ export default function CoursePage() {
 					{/* Completion Celebration */}
 					{completedCount === contents.length && (
 						<div className="mt-20 animate-fadeIn">
-							<Card className="border-2 border-green-500 bg-gradient-to-br from-green-50 via-emerald-50 to-green-100/50 dark:from-green-950/30 dark:to-emerald-900/20 shadow-2xl shadow-green-500/20 overflow-hidden relative">
+							<Card className="border-2 border-green-500 bg-linear-to-br from-green-50 via-emerald-50 to-green-100/50 dark:from-green-950/30 dark:to-emerald-900/20 shadow-2xl shadow-green-500/20 overflow-hidden relative">
 								{/* Background decoration */}
 								<div className="absolute inset-0 bg-grid-white/5" />
 								<div className="absolute top-0 right-0 w-64 h-64 bg-green-400/10 rounded-full blur-3xl" />
@@ -423,7 +423,7 @@ export default function CoursePage() {
 								<CardContent className="py-16 relative">
 									<div className="space-y-6 text-center">
 										<div className="relative inline-block">
-											<div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white mb-4 shadow-xl shadow-green-500/50 animate-bounce">
+											<div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-linear-to-br from-green-500 to-emerald-600 text-white mb-4 shadow-xl shadow-green-500/50 animate-bounce">
 												<Trophy className="h-14 w-14" />
 											</div>
 											<Sparkles className="absolute -top-2 -right-2 h-8 w-8 text-yellow-500 animate-pulse" />
@@ -431,7 +431,7 @@ export default function CoursePage() {
 										</div>
 
 										<div className="space-y-2">
-											<h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-600 via-emerald-600 to-green-600 bg-clip-text text-transparent">
+											<h2 className="text-4xl md:text-5xl font-bold bg-linear-to-r from-green-600 via-emerald-600 to-green-600 bg-clip-text text-transparent">
 												Баяр хүргэе! 🎉
 											</h2>
 											<p className="text-lg text-muted-foreground max-w-md mx-auto">
@@ -444,7 +444,7 @@ export default function CoursePage() {
 											<Button
 												size="lg"
 												onClick={() => router.push("/Lists/courseList")}
-												className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+												className="bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl hover:scale-105 transition-all"
 											>
 												<BookOpen className="mr-2 h-5 w-5" />
 												Бусад хичээл үзэх
@@ -470,7 +470,7 @@ export default function CoursePage() {
 			{/* Footer Navigation */}
 			<div className="container mx-auto px-4 py-8 relative">
 				<div className="max-w-5xl mx-auto">
-					<Card className="bg-gradient-to-r from-primary/5 via-background to-primary/5 border-border/50 shadow-lg">
+					<Card className="bg-linear-to-r from-primary/5 via-background to-primary/5 border-border/50 shadow-lg">
 						<CardContent className="p-6">
 							<div className="flex flex-col md:flex-row items-center justify-between gap-4">
 								<div className="flex items-center gap-3">
@@ -496,7 +496,7 @@ export default function CoursePage() {
 									</Button>
 									<Button
 										onClick={() => router.push("/Lists/courseList")}
-										className="bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg group"
+										className="bg-gralineardient-to-r from-primary to-primary/80 hover:shadow-lg group"
 									>
 										Бүх хичээл үзэх
 										<BookOpen className="ml-2 h-4 w-4 group-hover:scale-110 transition-transform" />
@@ -577,13 +577,7 @@ export default function CoursePage() {
 }
 
 // Аюулгүй HTML render component
-function SafeHtmlContent({
-	html,
-	contentType,
-}: {
-	html: string;
-	contentType: number;
-}) {
+function SafeHtmlContent({ html }: { html: string; contentType: number }) {
 	const contentRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -627,9 +621,9 @@ function SafeHtmlContent({
 		if (["mp3", "wav", "ogg", "aac"].includes(fileExtension || "")) {
 			return (
 				<div className="space-y-4">
-					<div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
+					<div className="bg-linear-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
 						<div className="flex items-center gap-3 mb-4">
-							<div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full shadow-lg">
+							<div className="p-3 bg-linear-to-br from-purple-500 to-pink-500 rounded-full shadow-lg">
 								<PlayCircle className="h-6 w-6 text-white" />
 							</div>
 							<div>
@@ -677,9 +671,9 @@ function SafeHtmlContent({
 		if (["ppt", "pptx"].includes(fileExtension || "")) {
 			return (
 				<div className="space-y-4">
-					<div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 rounded-xl overflow-hidden border border-orange-200 dark:border-orange-800">
+					<div className="bg-linear-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 rounded-xl overflow-hidden border border-orange-200 dark:border-orange-800">
 						<div className="flex items-center gap-3 p-4 bg-orange-100 dark:bg-orange-900/30 border-b border-orange-200 dark:border-orange-800">
-							<div className="p-2 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg shadow-md">
+							<div className="p-2 bg-linear-to-br from-orange-500 to-red-500 rounded-lg shadow-md">
 								<FileText className="h-5 w-5 text-white" />
 							</div>
 							<div>
@@ -712,9 +706,9 @@ function SafeHtmlContent({
 		if (["xls", "xlsx"].includes(fileExtension || "")) {
 			return (
 				<div className="space-y-4">
-					<div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-xl overflow-hidden border border-green-200 dark:border-green-800">
+					<div className="bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-xl overflow-hidden border border-green-200 dark:border-green-800">
 						<div className="flex items-center gap-3 p-4 bg-green-100 dark:bg-green-900/30 border-b border-green-200 dark:border-green-800">
-							<div className="p-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg shadow-md">
+							<div className="p-2 bg-linear-to-br from-green-500 to-emerald-500 rounded-lg shadow-md">
 								<FileText className="h-5 w-5 text-white" />
 							</div>
 							<div>
@@ -748,9 +742,9 @@ function SafeHtmlContent({
 		if (["doc", "docx"].includes(fileExtension || "")) {
 			return (
 				<div className="space-y-4">
-					<div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl overflow-hidden border border-blue-200 dark:border-blue-800">
+					<div className="bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl overflow-hidden border border-blue-200 dark:border-blue-800">
 						<div className="flex items-center gap-3 p-4 bg-blue-100 dark:bg-blue-900/30 border-b border-blue-200 dark:border-blue-800">
-							<div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg shadow-md">
+							<div className="p-2 bg-linear-to-br from-blue-500 to-indigo-500 rounded-lg shadow-md">
 								<FileText className="h-5 w-5 text-white" />
 							</div>
 							<div>

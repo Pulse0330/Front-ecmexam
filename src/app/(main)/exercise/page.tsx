@@ -36,13 +36,6 @@ export default function ExercisePage() {
 		enabled: !!userId,
 	});
 
-	// Debug logging
-	console.log("📊 Raw data:", data);
-	console.log("📝 Questions count:", data?.Questions?.length);
-	console.log("📋 All questions:", data?.Questions);
-	console.log("📋 All answers:", data?.Answers?.length);
-
-	// Type별 통계
 	if (data?.Questions) {
 		const typeStats = data.Questions.reduce(
 			(acc, q) => {

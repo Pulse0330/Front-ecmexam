@@ -1,18 +1,18 @@
 "use client";
 
 import {
+	ArrowRight,
 	Calendar,
 	Clock,
 	CreditCard,
 	PlayCircle,
+	Sparkles,
 	User,
 	XCircle,
-	ArrowRight,
-	Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -55,15 +55,15 @@ export default function ExamList({ exams }: ExamListProps) {
 							<div
 								className={`absolute -top-24 -right-24 w-56 h-56 rounded-full blur-3xl opacity-20 ${
 									isActive
-										? "bg-gradient-to-r from-green-500/50 via-emerald-500 to-teal-500/50"
-										: "bg-gradient-to-br from-destructive/10 to-destructive/5"
+										? "bg-linear-to-r from-green-500/50 via-emerald-500 to-teal-500/50"
+										: "bg-linear-to-br from-destructive/10 to-destructive/5"
 								}`}
 							/>
 							<div
 								className={`absolute -bottom-24 -left-24 w-48 h-48 rounded-full blur-3xl opacity-10 ${
 									isActive
-										? "bg-gradient-to-r from-green-500/50 via-emerald-500 to-teal-500/50"
-										: "bg-gradient-to-tr from-destructive/10 to-destructive/5"
+										? "bg-linear-to-r from-green-500/50 via-emerald-500 to-teal-500/50"
+										: "bg-linear-to-tr from-destructive/10 to-destructive/5"
 								}`}
 							/>
 						</div>
@@ -74,8 +74,8 @@ export default function ExamList({ exams }: ExamListProps) {
 								variant={isActive ? "default" : "destructive"}
 								className={`shadow-xl backdrop-blur-md px-4 py-2 rounded-none border-0 ${
 									isActive
-										? "bg-gradient-to-r from-green-500/50 via-emerald-500 to-teal-500/50"
-										: "bg-gradient-to-br from-destructive via-destructive/90 to-destructive/80"
+										? "bg-linear-to-r from-green-500/50 via-emerald-500 to-teal-500/50"
+										: "bg-linear-to-br from-destructive via-destructive/90 to-destructive/80"
 								}`}
 							>
 								{isActive ? (
@@ -106,15 +106,15 @@ export default function ExamList({ exams }: ExamListProps) {
 
 						{/* Divider */}
 						<div className="mx-6 mb-4">
-							<div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+							<div className="h-px bg-linear-to-r from-transparent via-border to-transparent" />
 						</div>
 
 						<CardContent className="relative z-10 space-y-3 pb-4">
 							{/* Date & Time */}
-							<div className="group/item relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-blue-900/30 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 p-3.5">
+							<div className="group/item relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-blue-900/30 bg-linear-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 p-3.5">
 								<div className="absolute top-0 right-0 w-20 h-20 bg-blue-400/10 rounded-full blur-2xl" />
 								<div className="relative flex items-center gap-3">
-									<div className="p-2.5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg transition-transform duration-300 group-hover/item:scale-110 group-hover/item:rotate-3">
+									<div className="p-2.5 bg-linear-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg transition-transform duration-300 group-hover/item:scale-110 group-hover/item:rotate-3">
 										<Calendar className="w-5 h-5 text-white" />
 									</div>
 									<div className="flex-1 min-w-0">
@@ -141,10 +141,10 @@ export default function ExamList({ exams }: ExamListProps) {
 							{/* Duration & Teacher Grid */}
 							<div className="grid grid-cols-2 gap-3">
 								{/* Duration */}
-								<div className="group/item relative overflow-hidden rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 p-3">
+								<div className="group/item relative overflow-hidden rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-linear-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 p-3">
 									<div className="absolute top-0 right-0 w-16 h-16 bg-purple-400/10 rounded-full blur-xl" />
 									<div className="relative">
-										<div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-md mb-2 inline-flex transition-transform duration-300 group-hover/item:scale-110 group-hover/item:rotate-3">
+										<div className="p-2 bg-linear-to-br from-purple-500 to-purple-600 rounded-lg shadow-md mb-2 inline-flex transition-transform duration-300 group-hover/item:scale-110 group-hover/item:rotate-3">
 											<Clock className="w-4 h-4 text-white" />
 										</div>
 										<p className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1">
@@ -160,10 +160,10 @@ export default function ExamList({ exams }: ExamListProps) {
 								</div>
 
 								{/* Teacher */}
-								<div className="group/item relative overflow-hidden rounded-xl border-2 border-indigo-100 dark:border-indigo-900/30 bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-950/30 dark:to-indigo-900/20 p-3">
+								<div className="group/item relative overflow-hidden rounded-xl border-2 border-indigo-100 dark:border-indigo-900/30 bg-linear-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-950/30 dark:to-indigo-900/20 p-3">
 									<div className="absolute top-0 right-0 w-16 h-16 bg-indigo-400/10 rounded-full blur-xl" />
 									<div className="relative">
-										<div className="p-2 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg shadow-md mb-2 inline-flex transition-transform duration-300 group-hover/item:scale-110 group-hover/item:rotate-3">
+										<div className="p-2 bg-linear-to-br from-indigo-500 to-indigo-600 rounded-lg shadow-md mb-2 inline-flex transition-transform duration-300 group-hover/item:scale-110 group-hover/item:rotate-3">
 											<User className="w-4 h-4 text-white" />
 										</div>
 										<p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">
@@ -180,10 +180,10 @@ export default function ExamList({ exams }: ExamListProps) {
 							</div>
 
 							{/* Payment */}
-							<div className="group/item relative overflow-hidden rounded-xl border-2 border-emerald-100 dark:border-emerald-900/30 bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 p-3.5">
+							<div className="group/item relative overflow-hidden rounded-xl border-2 border-emerald-100 dark:border-emerald-900/30 bg-linear-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 p-3.5">
 								<div className="absolute top-0 right-0 w-20 h-20 bg-emerald-400/10 rounded-full blur-2xl" />
 								<div className="relative flex items-center gap-3">
-									<div className="p-2.5 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-lg transition-transform duration-300 group-hover/item:scale-110 group-hover/item:rotate-3">
+									<div className="p-2.5 bg-linear-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-lg transition-transform duration-300 group-hover/item:scale-110 group-hover/item:rotate-3">
 										<CreditCard className="w-5 h-5 text-white" />
 									</div>
 									<div className="flex-1 min-w-0">
@@ -202,7 +202,7 @@ export default function ExamList({ exams }: ExamListProps) {
 							{isActive ? (
 								<Button
 									onClick={() => handleStartExam(exam.exam_id)}
-									className="group/button w-full h-14 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 text-white font-bold text-base shadow-lg rounded-xl"
+									className="group/button w-full h-14 bg-linear-to-r from-green-600 via-emerald-600 to-teal-600 text-white font-bold text-base shadow-lg rounded-xl"
 								>
 									<span className="flex items-center justify-center gap-2.5">
 										<PlayCircle className="w-5 h-5 transition-transform duration-300 group-hover/button:scale-110" />
@@ -228,8 +228,8 @@ export default function ExamList({ exams }: ExamListProps) {
 						<div
 							className={`absolute bottom-0 left-0 right-0 h-1.5 ${
 								isActive
-									? "bg-gradient-to-r from-green-500/50 via-emerald-500 to-teal-500/50"
-									: "bg-gradient-to-r from-destructive/30 via-destructive/50 to-destructive/30 opacity-40"
+									? "bg-linear-to-r from-green-500/50 via-emerald-500 to-teal-500/50"
+									: "bg-linear-to-r from-destructive/30 via-destructive/50 to-destructive/30 opacity-40"
 							}`}
 						/>
 					</Card>

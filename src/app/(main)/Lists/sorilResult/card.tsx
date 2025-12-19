@@ -264,7 +264,7 @@ function ExamResultCard({ exam, index, globalShowScore }: ExamResultCardProps) {
 				{isOngoing ? (
 					<Button
 						variant="outline"
-						className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 hover:from-amber-600 hover:to-orange-600 shadow-amber-200 font-semibold"
+						className="w-full bg-linear-to-r from-amber-500 to-orange-500 text-white border-0 hover:from-amber-600 hover:to-orange-600 shadow-amber-200 font-semibold"
 					>
 						⚡ Үргэлжлүүлэх
 						<ArrowRight className="w-4 h-4 ml-2" />
@@ -273,7 +273,7 @@ function ExamResultCard({ exam, index, globalShowScore }: ExamResultCardProps) {
 					<Button
 						onClick={handleDetailsClick}
 						variant="outline"
-						className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 border-0 font-semibold shadow-lg"
+						className="w-full bg-linear-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 border-0 font-semibold shadow-lg"
 					>
 						<FileText className="w-4 h-4 mr-2" />
 						Дэлгэрэнгүй үзэх

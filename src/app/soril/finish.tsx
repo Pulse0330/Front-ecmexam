@@ -259,7 +259,7 @@ const FinishExamResultDialog = forwardRef<
 							</div>
 
 							<div>
-								<DialogTitle className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+								<DialogTitle className="text-3xl sm:text-4xl font-extrabold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
 									Шалгалтын үр дүн
 								</DialogTitle>
 								<DialogDescription className="text-lg sm:text-xl font-semibold mt-2">
@@ -276,8 +276,8 @@ const FinishExamResultDialog = forwardRef<
 							<div
 								className={`relative overflow-hidden rounded-2xl p-6 ${
 									isPassed
-										? "bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-2 border-green-300 dark:border-green-700"
-										: "bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30 border-2 border-red-300 dark:border-red-700"
+										? "bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-2 border-green-300 dark:border-green-700"
+										: "bg-linear-to-br from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30 border-2 border-red-300 dark:border-red-700"
 								}`}
 							>
 								<div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -305,7 +305,7 @@ const FinishExamResultDialog = forwardRef<
 							</div>
 
 							<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-								<div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-4 rounded-xl border-2 border-blue-200 dark:border-blue-800 text-center">
+								<div className="bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-4 rounded-xl border-2 border-blue-200 dark:border-blue-800 text-center">
 									<Target className="w-6 h-6 mx-auto mb-2 text-blue-600 dark:text-blue-400" />
 									<p className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1">
 										Нийт
@@ -315,7 +315,7 @@ const FinishExamResultDialog = forwardRef<
 									</p>
 								</div>
 
-								<div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 p-4 rounded-xl border-2 border-green-200 dark:border-green-800 text-center">
+								<div className="bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 p-4 rounded-xl border-2 border-green-200 dark:border-green-800 text-center">
 									<CheckCircle className="w-6 h-6 mx-auto mb-2 text-green-600 dark:text-green-400" />
 									<p className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1">
 										Зөв
@@ -325,7 +325,7 @@ const FinishExamResultDialog = forwardRef<
 									</p>
 								</div>
 
-								<div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30 p-4 rounded-xl border-2 border-red-200 dark:border-red-800 text-center">
+								<div className="bg-linear-to-br from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30 p-4 rounded-xl border-2 border-red-200 dark:border-red-800 text-center">
 									<XCircle className="w-6 h-6 mx-auto mb-2 text-red-600 dark:text-red-400" />
 									<p className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1">
 										Буруу
@@ -378,7 +378,7 @@ const FinishExamResultDialog = forwardRef<
 
 				<DialogContent className="w-full sm:max-w-[550px] border-t-4 border-t-blue-500 p-4 sm:p-6">
 					<DialogHeader className="text-center space-y-3">
-						<div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 rounded-full flex items-center justify-center">
+						<div className="mx-auto w-16 h-16 bg-linear-to-br from-blue-100 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 rounded-full flex items-center justify-center">
 							<Flag className="w-8 h-8 text-blue-600 dark:text-blue-400" />
 						</div>
 						<DialogTitle className="text-2xl font-bold">
@@ -392,7 +392,7 @@ const FinishExamResultDialog = forwardRef<
 					</DialogHeader>
 
 					<div className="space-y-4 py-4">
-						<div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl p-4 border-2 border-blue-200 dark:border-blue-800 shadow-inner">
+						<div className="bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl p-4 border-2 border-blue-200 dark:border-blue-800 shadow-inner">
 							<div className="flex items-center justify-between mb-4">
 								<span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
 									<Target className="w-5 h-5 text-blue-600" />
@@ -452,7 +452,7 @@ const FinishExamResultDialog = forwardRef<
 
 						{unansweredCount > 0 && (
 							<div className="bg-amber-50 dark:bg-amber-950/20 border-2 border-amber-300 dark:border-amber-700 rounded-lg p-4 flex items-start gap-3">
-								<div className="bg-amber-100 dark:bg-amber-900/50 rounded-full p-1.5 flex-shrink-0">
+								<div className="bg-amber-100 dark:bg-amber-900/50 rounded-full p-1.5 shrink-0">
 									<XCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
 								</div>
 								<div className="flex-1">
@@ -480,7 +480,7 @@ const FinishExamResultDialog = forwardRef<
 						<Button
 							onClick={handleFinish}
 							disabled={finishMutation.isPending}
-							className="flex-1 font-semibold h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all"
+							className="flex-1 font-semibold h-12 bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all"
 						>
 							{finishMutation.isPending ? (
 								<>

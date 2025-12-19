@@ -101,7 +101,7 @@ const FinishExamResultDialog = forwardRef<
 		const [isAutoSubmitting, setIsAutoSubmitting] = useState(false);
 		const autoRedirectTimerRef = useRef<NodeJS.Timeout | null>(null); // ✅ Auto-redirect timer // ✅ Auto-submit state
 
-		const isDadlaga = examType === 1 || examType == 2;
+		const isDadlaga = examType === 1 || examType === 2;
 
 		const finishMutation = useMutation<
 			FinishExamResponse,
@@ -340,7 +340,7 @@ const FinishExamResultDialog = forwardRef<
 							</div>
 
 							<div>
-								<DialogTitle className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent px-2">
+								<DialogTitle className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent px-2">
 									Шалгалтын үр дүн
 								</DialogTitle>
 								<DialogDescription className="text-base sm:text-lg md:text-xl font-semibold mt-2 px-2">
@@ -358,8 +358,8 @@ const FinishExamResultDialog = forwardRef<
 							<div
 								className={`relative overflow-hidden rounded-xl sm:rounded-2xl p-4 sm:p-6 ${
 									isPassed
-										? "bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-2 border-green-300 dark:border-green-700"
-										: "bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30 border-2 border-red-300 dark:border-red-700"
+										? "bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-2 border-green-300 dark:border-green-700"
+										: "bg-linear-to-br from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30 border-2 border-red-300 dark:border-red-700"
 								}`}
 							>
 								<div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
@@ -388,7 +388,7 @@ const FinishExamResultDialog = forwardRef<
 
 							{/* Stats Grid */}
 							<div className="grid grid-cols-3 gap-2 sm:gap-3">
-								<div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 border-blue-200 dark:border-blue-800 text-center">
+								<div className="bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 border-blue-200 dark:border-blue-800 text-center">
 									<Target className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-blue-600 dark:text-blue-400" />
 									<p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 font-medium mb-1">
 										Нийт
@@ -398,7 +398,7 @@ const FinishExamResultDialog = forwardRef<
 									</p>
 								</div>
 
-								<div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 border-green-200 dark:border-green-800 text-center">
+								<div className="bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 border-green-200 dark:border-green-800 text-center">
 									<CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-green-600 dark:text-green-400" />
 									<p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 font-medium mb-1">
 										Зөв
@@ -408,7 +408,7 @@ const FinishExamResultDialog = forwardRef<
 									</p>
 								</div>
 
-								<div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30 p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 border-red-200 dark:border-red-800 text-center">
+								<div className="bg-linear-to-br from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30 p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 border-red-200 dark:border-red-800 text-center">
 									<XCircle className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-red-600 dark:text-red-400" />
 									<p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 font-medium mb-1">
 										Буруу
@@ -422,13 +422,13 @@ const FinishExamResultDialog = forwardRef<
 							{/* Additional Info */}
 							<div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg sm:rounded-xl border border-gray-200 dark:border-gray-700 text-xs sm:text-sm">
 								<div className="flex items-center justify-center sm:justify-start gap-2">
-									<Clock className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400 flex-shrink-0" />
+									<Clock className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400 shrink-0" />
 									<span className="text-gray-700 dark:text-gray-300">
 										{resultInfo.test_time}
 									</span>
 								</div>
 								<div className="flex items-center justify-center sm:justify-start gap-2">
-									<Zap className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400 flex-shrink-0" />
+									<Zap className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400 shrink-0" />
 									<span className="text-gray-700 dark:text-gray-300 text-center sm:text-left">
 										{resultInfo.unelgee}
 									</span>
@@ -465,7 +465,7 @@ const FinishExamResultDialog = forwardRef<
 
 				<DialogContent className="w-[95vw] max-w-[500px] sm:max-w-[600px] border-t-4 border-t-blue-500 p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
 					<DialogHeader className="text-center space-y-2 sm:space-y-3">
-						<div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 rounded-full flex items-center justify-center">
+						<div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 bg-linear-to-br from-blue-100 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 rounded-full flex items-center justify-center">
 							<Flag className="w-7 h-7 sm:w-8 sm:h-8 text-blue-600 dark:text-blue-400" />
 						</div>
 						<DialogTitle className="text-xl sm:text-2xl font-bold px-2">
@@ -479,7 +479,7 @@ const FinishExamResultDialog = forwardRef<
 					</DialogHeader>
 
 					<div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
-						<div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl p-3 sm:p-4 border-2 border-blue-200 dark:border-blue-800 shadow-inner">
+						<div className="bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl p-3 sm:p-4 border-2 border-blue-200 dark:border-blue-800 shadow-inner">
 							<div className="flex items-center justify-between mb-3 sm:mb-4">
 								<span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
 									<Target className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
@@ -493,7 +493,7 @@ const FinishExamResultDialog = forwardRef<
 
 							<div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
 								<div className="flex items-center gap-2 sm:gap-3 bg-white/70 dark:bg-gray-800/70 p-3 sm:p-4 rounded-lg shadow-sm border border-green-200 dark:border-green-800">
-									<div className="bg-green-100 dark:bg-green-900/50 rounded-full p-1.5 sm:p-2 flex-shrink-0">
+									<div className="bg-green-100 dark:bg-green-900/50 rounded-full p-1.5 sm:p-2 shrink-0">
 										<CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
 									</div>
 									<div className="min-w-0">
@@ -507,7 +507,7 @@ const FinishExamResultDialog = forwardRef<
 								</div>
 
 								<div className="flex items-center gap-2 sm:gap-3 bg-white/70 dark:bg-gray-800/70 p-3 sm:p-4 rounded-lg shadow-sm border border-red-200 dark:border-red-800">
-									<div className="bg-red-100 dark:bg-red-900/50 rounded-full p-1.5 sm:p-2 flex-shrink-0">
+									<div className="bg-red-100 dark:bg-red-900/50 rounded-full p-1.5 sm:p-2 shrink-0">
 										<XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 dark:text-red-400" />
 									</div>
 									<div className="min-w-0">
@@ -540,7 +540,7 @@ const FinishExamResultDialog = forwardRef<
 
 						{unansweredCount > 0 && (
 							<div className="bg-amber-50 dark:bg-amber-950/20 border-2 border-amber-300 dark:border-amber-700 rounded-lg p-3 sm:p-4 flex items-start gap-2 sm:gap-3">
-								<div className="bg-amber-100 dark:bg-amber-900/50 rounded-full p-1 sm:p-1.5 flex-shrink-0">
+								<div className="bg-amber-100 dark:bg-amber-900/50 rounded-full p-1 sm:p-1.5 shrink-0">
 									<XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 dark:text-amber-400" />
 								</div>
 								<div className="flex-1 min-w-0">
@@ -560,7 +560,7 @@ const FinishExamResultDialog = forwardRef<
 						<Button
 							onClick={handleFinish}
 							disabled={finishMutation.isPending}
-							className="w-full font-semibold h-11 sm:h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all order-1 sm:order-2"
+							className="w-full font-semibold h-11 sm:h-12 bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all order-1 sm:order-2"
 						>
 							{finishMutation.isPending ? (
 								<>
@@ -569,7 +569,7 @@ const FinishExamResultDialog = forwardRef<
 								</>
 							) : (
 								<>
-									<Send className="mr-2 h-4 w-4 sm:h-5 sm:h-5" />
+									<Send className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
 									<span className="text-sm sm:text-base">Тийм, дуусгах</span>
 								</>
 							)}

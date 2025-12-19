@@ -170,7 +170,7 @@ export default function ExamResultList() {
 
 					{globalShowScore && (
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in-0 slide-in-from-top-2 duration-500">
-							<Card className="border-none shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white overflow-hidden group hover:shadow-xl transition-all duration-300">
+							<Card className="border-none shadow-lg bg-linear-to-br from-blue-500 to-blue-600 text-white overflow-hidden group hover:shadow-xl transition-all duration-300">
 								<CardContent className="p-6 relative">
 									<div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500" />
 									<div className="relative flex items-center gap-4">
@@ -189,7 +189,7 @@ export default function ExamResultList() {
 								</CardContent>
 							</Card>
 
-							<Card className="border-none shadow-lg bg-gradient-to-br from-emerald-500 to-emerald-600 text-white overflow-hidden group hover:shadow-xl transition-all duration-300">
+							<Card className="border-none shadow-lg bg-linear-to-br from-emerald-500 to-emerald-600 text-white overflow-hidden group hover:shadow-xl transition-all duration-300">
 								<CardContent className="p-6 relative">
 									<div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500" />
 									<div className="relative flex items-center gap-4">
@@ -206,7 +206,7 @@ export default function ExamResultList() {
 								</CardContent>
 							</Card>
 
-							<Card className="border-none shadow-lg bg-gradient-to-br from-amber-500 to-orange-600 text-white overflow-hidden group hover:shadow-xl transition-all duration-300">
+							<Card className="border-none shadow-lg bg-linear-to-br from-amber-500 to-orange-600 text-white overflow-hidden group hover:shadow-xl transition-all duration-300">
 								<CardContent className="p-6 relative">
 									<div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500" />
 									<div className="relative flex items-center gap-4">
@@ -238,11 +238,11 @@ export default function ExamResultList() {
 								<div className="flex items-center gap-4">
 									<div className="relative">
 										<div className="absolute inset-0 bg-blue-400/20 blur-xl rounded-full" />
-										<div className="relative p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg transition-transform duration-300 hover:scale-110 hover:rotate-6">
+										<div className="relative p-3 bg-linear-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg transition-transform duration-300 hover:scale-110 hover:rotate-6">
 											<BookmarkCheck className="w-7 h-7 text-white" />
 										</div>
 									</div>
-									<h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+									<h2 className="text-2xl md:text-3xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
 										Бүх сорилууд
 									</h2>
 								</div>

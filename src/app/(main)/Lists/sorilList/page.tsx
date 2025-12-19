@@ -168,7 +168,7 @@ export default function SorilListPage() {
 			<div className="max-w-7xl mx-auto">
 				{/* Гарчиг */}
 				<div className="mb-8 text-center space-y-1">
-					<h1 className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+					<h1 className="text-3xl md:text-4xl font-extrabold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
 						Сорилын жагсаалт
 					</h1>
 					<p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">

@@ -122,7 +122,7 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam }) => {
 
 				{exam.flag === 1 && (
 					<div className="absolute inset-0 rounded-2xl">
-						<div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-400 opacity-0" />
+						<div className="absolute inset-0 rounded-2xl bg-linear-to-r from-emerald-400 via-teal-400 to-emerald-400 opacity-0" />
 					</div>
 				)}
 
@@ -217,7 +217,7 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam }) => {
 							"transition-all duration-300",
 							"group/btn relative overflow-hidden",
 							status.canStart
-								? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/30"
+								? "bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/30"
 								: "bg-gray-400 dark:bg-gray-700 text-gray-200 dark:text-gray-500 cursor-not-allowed",
 						)}
 					>
@@ -238,7 +238,7 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam }) => {
 							)}
 						</span>
 						{status.canStart && (
-							<div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-200%] group-hover/btn:translate-x-[200%] transition-transform duration-700" />
+							<div className="absolute inset-0 bg-linear-to-r from-white/0 via-white/20 to-white/0 translate-x-[-200%] group-hover/btn:translate-x-[200%] transition-transform duration-700" />
 						)}
 					</Button>
 				</div>

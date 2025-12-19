@@ -14,7 +14,7 @@ interface CourseCardProps {
 	userId: number;
 }
 
-export const CourseCard = ({ course, userId }: CourseCardProps) => {
+export const CourseCard = ({ course }: CourseCardProps) => {
 	const router = useRouter();
 	const [isNavigating, setIsNavigating] = useState(false);
 
@@ -31,7 +31,7 @@ export const CourseCard = ({ course, userId }: CourseCardProps) => {
 	return (
 		<Card className="overflow-hidden hover:shadow-xl transition-all duration-300 group border-border h-full flex flex-col">
 			{/* Зураг хэсэг */}
-			<div className="relative h-48 overflow-hidden bg-muted flex-shrink-0">
+			<div className="relative h-48 overflow-hidden bg-muted -shrink-0">
 				{course.filename ? (
 					<>
 						<Image
@@ -43,10 +43,10 @@ export const CourseCard = ({ course, userId }: CourseCardProps) => {
 							priority={false}
 						/>
 						{/* Gradient overlay */}
-						<div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+						<div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 					</>
 				) : (
-					<div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+					<div className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-primary/10 to-primary/5">
 						<div className="text-center">
 							<BookOpen className="w-16 h-16 mx-auto text-muted-foreground/50 mb-2" />
 							<p className="text-xs text-muted-foreground">Зураг байхгүй</p>
@@ -71,10 +71,10 @@ export const CourseCard = ({ course, userId }: CourseCardProps) => {
 				</div>
 			</div>
 
-			<CardContent className="p-5 space-y-4 flex-grow flex flex-col justify-between">
+			<CardContent className="p-5 space-y-4 -row flex flex-col justify-between">
 				<div>
 					{/* Хичээлийн нэр */}
-					<h3 className="text-lg font-bold text-card-foreground line-clamp-2 min-h-[3.5rem] group-hover:text-primary transition-colors">
+					<h3 className="text-lg font-bold text-card-foreground line-clamp-2 min-h-14 group-hover:text-primary transition-colors">
 						{course.course_name}
 					</h3>
 

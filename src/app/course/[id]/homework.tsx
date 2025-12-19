@@ -46,12 +46,12 @@ export function Homework({ content, onStartExam }: HomeworkProps) {
 	if (!isHomework) return null;
 
 	return (
-		<Card className="border-2 border-orange-500/50 bg-gradient-to-br from-orange-50/50 to-amber-50/30 dark:from-orange-950/20 dark:to-amber-950/10 shadow-lg">
+		<Card className="border-2 border-orange-500/50 bg-linear-to-br from-orange-50/50 to-amber-50/30 dark:from-orange-950/20 dark:to-amber-950/10 shadow-lg">
 			<CardHeader className="pb-4">
 				<div className="flex items-start justify-between gap-4">
 					<div className="flex-1 space-y-3">
 						<div className="flex items-center gap-3 flex-wrap">
-							<Badge className="bg-gradient-to-r from-orange-600 to-amber-600">
+							<Badge className="bg-linear-to-r from-orange-600 to-amber-600">
 								<BookOpen className="h-3.5 w-3.5 mr-1" />
 								Гэрийн даалгавар
 							</Badge>
@@ -153,7 +153,7 @@ export function Homework({ content, onStartExam }: HomeworkProps) {
 				{/* Action Button */}
 				{content.stu_worked === 0 ? (
 					<Button
-						className="w-full md:w-auto group bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+						className="w-full md:w-auto group bg-linear-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 shadow-lg hover:shadow-xl hover:scale-105 transition-all"
 						onClick={handleStartExam}
 						disabled={isStarting}
 					>
