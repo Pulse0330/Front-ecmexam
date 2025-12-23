@@ -1,9 +1,13 @@
 "use client";
 import Cookies from "js-cookie";
 import {
+	BarChart3, // Шинээр нэмэх
 	ChevronDown,
+	ClipboardList, // Шинээр нэмэх
+	FileText, // Шинээр нэмэх
 	LogOut,
 	School,
+	TrendingUp,
 	User,
 	UserCircle,
 	Users,
@@ -97,14 +101,29 @@ const examDropdownLinks = [
 	{
 		href: "/Lists/examList",
 		label: "Шалгалтын жагсаалт",
-		description: "",
-		icon: "",
+		description: "Бүх шалгалтын жагсаалтыг үзэх",
+		icon: <FileText className="h-5 w-5" />,
 	},
 	{
 		href: "/Lists/examResult",
 		label: "Шалгалтын үр дүн",
-		description: "",
-		icon: "",
+		description: "Шалгалтын үр дүнгээ шалгах",
+		icon: <BarChart3 className="h-5 w-5" />,
+	},
+];
+
+const _sorilDropdownLinks = [
+	{
+		href: "/Lists/sorilList",
+		label: "Сорилын жагсаалт",
+		description: "Бүх сорилын жагсаалтыг үзэх",
+		icon: <ClipboardList className="h-5 w-5" />,
+	},
+	{
+		href: "/Lists/sorilResult",
+		label: "Сорилын үр дүн",
+		description: "Сорилын үр дүнгээ шалгах",
+		icon: <TrendingUp className="h-5 w-5" />,
 	},
 ];
 
@@ -162,7 +181,12 @@ const MegaMenuItem = React.memo(
 		isActive,
 	}: {
 		label: string;
-		items: typeof examDropdownLinks;
+		items: Array<{
+			href: string;
+			label: string;
+			description: string;
+			icon: React.ReactNode; // Element-ээс ReactNode руу өөрчлөх
+		}>;
 		isActive: boolean;
 	}) => {
 		const [isOpen, setIsOpen] = useState(false);

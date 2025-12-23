@@ -17,7 +17,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
 				<div>
 					<FixedScrollButton />
 				</div>
-
 				{children}
 				<div className="fixed bottom-4 ">
 					<ServerDate />
