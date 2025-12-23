@@ -74,8 +74,16 @@ export default function MatchingByLine({
 				const aIdNum = Number(aId);
 				const isCorrect = correctAnswers[qIdNum] === aIdNum;
 
+				// Review mode-д эхлээд бүх холболтыг ногоон өнгөөр харуулна
+				// Зөв хариулт харуулах товч дарсны дараа л зөв/буруу өнгүүдийг харуулна
 				const color =
-					mode === "review" ? (isCorrect ? "#22c55e" : "#ef4444") : "#3b82f6";
+					mode === "review"
+						? showCorrectAnswers
+							? isCorrect
+								? "#22c55e"
+								: "#ef4444"
+							: "#3b82f6"
+						: "#3b82f6";
 
 				restored.push({
 					start: `q-${qId}`,
@@ -86,7 +94,7 @@ export default function MatchingByLine({
 			});
 			setConnections(restored);
 		}
-	}, [userAnswers, mode, correctAnswers]);
+	}, [userAnswers, mode, correctAnswers, showCorrectAnswers]);
 
 	const colorPalette = useRef<string[]>([
 		"#ef4444",

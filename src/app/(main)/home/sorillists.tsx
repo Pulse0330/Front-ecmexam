@@ -5,6 +5,7 @@ import {
 	Calendar,
 	CheckCircle2,
 	CircleDashed,
+	Clock,
 	HelpCircle,
 	Sparkles,
 } from "lucide-react";
@@ -13,10 +14,11 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import type { ContentCard } from "@/types/home";
+import type { PastExam } from "@/types/home";
+import { formatSorilDate, isSorilCompleted } from "@/types/home";
 
 interface HomeSorilListsProps {
-	pastExams: ContentCard[];
+	pastExams: PastExam[];
 }
 
 // Helper functions
@@ -88,14 +90,14 @@ const StatCard = ({
 
 	return (
 		<div
-			className={`group/item relative overflow-hidden rounded-xl border-2 ${colors.border} bg-linear-to-br ${colors.bg} p-3`}
+			className={`group/item relative overflow-hidden rounded-xl border-2 ${colors.border} bg-gradient-to-br ${colors.bg} p-3`}
 		>
 			<div
 				className={`absolute top-0 right-0 w-16 h-16 ${colors.orb} rounded-full blur-xl`}
 			/>
 			<div className="relative">
 				<div
-					className={`p-2 bg-linear-to-br ${colors.icon} rounded-lg shadow-md mb-2 inline-flex transition-transform duration-300 group-hover/item:scale-110 group-hover/item:rotate-3`}
+					className={`p-2 bg-gradient-to-br ${colors.icon} rounded-lg shadow-md mb-2 inline-flex transition-transform duration-300 group-hover/item:scale-110 group-hover/item:rotate-3`}
 				>
 					<Icon className="w-4 h-4 text-white" />
 				</div>
@@ -120,8 +122,8 @@ const StatCard = ({
 export default function HomeSorilLists({ pastExams }: HomeSorilListsProps) {
 	const router = useRouter();
 
-	const handleExamClick = (contentId: number) => {
-		router.push(`/soril/${contentId}`);
+	const handleExamClick = (examId: number) => {
+		router.push(`/soril/${examId}`);
 	};
 
 	if (!pastExams || pastExams.length === 0) {
@@ -139,15 +141,16 @@ export default function HomeSorilLists({ pastExams }: HomeSorilListsProps) {
 		<>
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 				{pastExams.map((exam, index) => {
-					const isCompleted = exam.ispay === 1;
-					const uniqueKey = `exam-${exam.content_id}-${index}`;
+					const isCompleted = isSorilCompleted(exam.isguitset);
+					const uniqueKey = `exam-${exam.exam_id}-${index}`;
 					const statusConfig = getStatusConfig(isCompleted);
 					const BadgeIcon = statusConfig.badge.icon;
+					const formattedDate = formatSorilDate(exam.sorildate);
 
 					return (
 						<Card
 							key={uniqueKey}
-							className="group relative overflow-hidden border-2 border-border animate-fadeInUp hover:shadow-2xl transition-all duration-300"
+							className="group relative overflow-hidden border border-border hover:shadow-2xl transition-all duration-300" // ✅ border-2 -> border
 							style={{
 								animationDelay: `${index * 100}ms`,
 								animationFillMode: "forwards",
@@ -159,20 +162,20 @@ export default function HomeSorilLists({ pastExams }: HomeSorilListsProps) {
 									<>
 										<Image
 											src={exam.filename}
-											alt={exam.content_name || "Шалгалтын зураг"}
+											alt={exam.soril_name || "Сорилын зураг"}
 											fill
 											className="object-cover transition-transform duration-500 group-hover:scale-110"
 											sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
 											priority={index < 3}
 										/>
-										<div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent" />
+										<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 										<div className="absolute inset-0 pointer-events-none">
 											<div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl" />
 											<div className="absolute -bottom-10 -left-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
 										</div>
 									</>
 								) : (
-									<div className="absolute inset-0 bg-linear-to-br from-muted via-muted/80 to-muted/60 flex items-center justify-center">
+									<div className="absolute inset-0 bg-gradient-to-br from-muted via-muted/80 to-muted/60 flex items-center justify-center">
 										<HelpCircle className="w-20 h-20 text-muted-foreground/30" />
 									</div>
 								)}
@@ -195,30 +198,27 @@ export default function HomeSorilLists({ pastExams }: HomeSorilListsProps) {
 								{/* Title */}
 								<div className="absolute bottom-0 left-0 right-0 p-5 z-10">
 									<h3 className="text-xl font-bold text-white line-clamp-2 leading-tight drop-shadow-lg">
-										{exam.content_name}
+										{exam.soril_name}
 									</h3>
-									{exam.teach_name && (
-										<p className="text-sm font-medium text-white/80 mt-1">
-											{exam.teach_name}
-										</p>
-									)}
 								</div>
 							</div>
 
 							<CardContent className="relative z-10 space-y-3 p-5">
-								{/* Course Name */}
-								<div className="group/item relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-blue-900/30 bg-linear-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 p-3.5">
+								{/* Date Card */}
+								<div className="group/item relative overflow-hidden rounded-xl border border-blue-100 dark:border-blue-900/30 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 p-3.5">
+									{" "}
+									{/* ✅ border-2 -> border */}
 									<div className="absolute top-0 right-0 w-20 h-20 bg-blue-400/10 rounded-full blur-2xl" />
 									<div className="relative flex items-center gap-3">
-										<div className="p-2.5 bg-linear-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg transition-transform duration-300 group-hover/item:scale-110">
+										<div className="p-2.5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg transition-transform duration-300 group-hover/item:scale-110">
 											<Calendar className="w-5 h-5 text-white" />
 										</div>
 										<div className="flex-1 min-w-0">
 											<p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">
-												Хичээл
+												Огноо
 											</p>
 											<p className="text-sm font-bold text-foreground truncate">
-												{exam.course_name}
+												{formattedDate}
 											</p>
 										</div>
 									</div>
@@ -228,47 +228,35 @@ export default function HomeSorilLists({ pastExams }: HomeSorilListsProps) {
 								<div className="grid grid-cols-2 gap-3">
 									<StatCard
 										icon={HelpCircle}
-										label="Үзсэн"
-										value={exam.views}
-										unit="удаа"
+										label="Асуулт"
+										value={exam.que_cnt}
+										unit="ш"
 										color="purple"
 									/>
 									<StatCard
-										icon={Sparkles}
-										label="Үнэлгээ"
-										value={exam.rate}
-										unit="⭐"
+										icon={Clock}
+										label="Хугацаа"
+										value={exam.minut > 0 ? exam.minut : "∞"}
+										unit={exam.minut > 0 ? "мин" : ""}
 										color="amber"
 									/>
-								</div>
-
-								{/* Content Count */}
-								<div className="text-center py-2 px-3 bg-muted rounded-lg">
-									<p className="text-sm font-semibold text-muted-foreground">
-										Нийт контент:{" "}
-										<span className="text-foreground font-bold">
-											{exam.contentcnt}
-										</span>
-									</p>
 								</div>
 							</CardContent>
 
 							<CardFooter className="relative z-10 p-5 pt-2">
 								<Button
-									onClick={() => handleExamClick(exam.content_id)}
+									onClick={() => handleExamClick(exam.exam_id)}
 									className={`group/button w-full h-14 font-bold text-base shadow-lg rounded-xl ${statusConfig.button} text-white hover:scale-105 transition-transform duration-300`}
 								>
 									<span className="flex items-center justify-center gap-2.5">
-										<span>{exam.paydescr || "Эхлүүлэх"}</span>
+										<span>Эхлүүлэх</span>
 										<ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover/button:translate-x-2" />
 									</span>
 								</Button>
 							</CardFooter>
 
-							{/* Bottom Accent */}
-							<div
-								className={`absolute bottom-0 left-0 right-0 h-1.5 ${statusConfig.accent}`}
-							/>
+							{/* Bottom Accent - Removed completely */}
+							{/* <div className={`absolute bottom-0 left-0 right-0 h-1.5 ${statusConfig.accent}`} /> */}
 
 							{/* Sparkles */}
 							{isCompleted && (

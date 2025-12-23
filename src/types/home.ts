@@ -6,7 +6,7 @@ export interface HomeResponseType {
 	RetDataFirst: Banner[] | null;
 	RetDataSecond: Course[] | null;
 	RetDataThirt: Exam[] | null;
-	RetDataFourth: ContentCard[] | null;
+	RetDataFourth: PastExam[] | null; // ✅ ContentCard -> PastExam
 	RetDataFifth: Purchased[] | null;
 	RetDataSixth: unknown | null;
 }
@@ -43,7 +43,7 @@ export interface Course {
 	bill_type: number;
 }
 
-// Шалгалт (Exam)
+// Шалгалт/Сорил (Exam) - RetDataThirt
 export interface Exam {
 	exam_id: number;
 	title: string;
@@ -63,7 +63,19 @@ export interface Exam {
 	bill_type: number;
 }
 
-// Контент карт (RetDataFourth)
+// Өмнөх жилийн сорил (RetDataFourth) - JSON response-тай таарч байгаа
+export interface PastExam {
+	exam_id: number;
+	soril_name: string; // Сорилын нэр
+	sorildate: string; // Сорилын огноо (ISO Date string)
+	minut: number; // Хугацаа (минут)
+	que_cnt: number; // Асуултын тоо
+	isguitset: 0 | 1; // 0 = Гүйцэтгээгүй, 1 = Гүйцэтгэсэн
+	test_resid: number; // Тестийн үр дүнгийн ID
+	filename: string; // Зургийн URL
+}
+
+// Цахим сургалтын контент карт
 export interface ContentCard {
 	content_id: number;
 	content_name: string;
@@ -89,13 +101,30 @@ export interface Purchased {
 export type PaymentStatus = 0 | 1;
 export type PurchaseStatus = 0 | 1;
 
-// Helper functions (optional)
+// Helper functions
 export const isPaid = (item: { ispay: PaymentStatus }): boolean =>
 	item.ispay === 1;
 export const isPurchased = (item: { ispurchased: PurchaseStatus }): boolean =>
 	item.ispurchased === 1;
+
 export const formatDate = (dateString: string): string => {
 	const date = new Date(dateString);
 	return date.toLocaleDateString("mn-MN");
 };
+
 export const parseRating = (rate: string): number => parseFloat(rate) || 0;
+
+// Сорилын огноо форматлах
+export const formatSorilDate = (dateString: string): string => {
+	if (dateString === "1900-01-01T00:00:00.000Z") {
+		return "Хугацаагүй";
+	}
+	const date = new Date(dateString);
+	const year = date.getFullYear();
+	const month = date.getMonth() + 1;
+	const day = date.getDate();
+	return `${year} оны ${month} сарын ${day}`;
+};
+
+// Сорилын статус шалгах
+export const isSorilCompleted = (isguitset: 0 | 1): boolean => isguitset === 1;
