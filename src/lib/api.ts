@@ -1,3 +1,5 @@
+// src/lib/api.ts
+import { AxiosError } from "axios";
 import api from "@/lib/axios";
 import type { ContentViewResponse } from "@/types/course/contentView";
 import type { CourseListResponse } from "@/types/course/courseList";
@@ -23,6 +25,11 @@ import type {
 } from "@/types/exercise/testSavedMixed";
 import type { HomeResponseType } from "@/types/home";
 import type { LoginResponseType } from "@/types/login";
+import type { VerificationCodeResponse } from "@/types/login/sign/getGeneratedCode";
+import type {
+	OTPVerificationRequest,
+	OTPVerificationResponse,
+} from "@/types/login/sign/smsCheck";
 import type { ApiSorillistsResponse } from "@/types/soril/sorilLists";
 import type { SorilresultListResponseType } from "@/types/soril/sorilResultLists";
 import type { UserProfileResponseType } from "@/types/user";
@@ -38,6 +45,96 @@ export const loginRequest = async (
 		devicemodel: "",
 	});
 	return data;
+};
+
+// ===== GeneratedCode otp request =====
+export const getGeneratedCodeWithValidation = async (
+	phoneNumber: number,
+	conftype: string = "1",
+	bundleid: string = "ikh_skuul.mn",
+	devicemodel?: string,
+): Promise<VerificationCodeResponse> => {
+	if (!phoneNumber) {
+		throw new Error("Утасны дугаар хоосон байна");
+	}
+	const { data } = await api.post<VerificationCodeResponse>(
+		`/getcode`,
+		{
+			phone: phoneNumber,
+			conftype,
+			bundleid,
+			devicemodel: devicemodel || "",
+			ismob: 0,
+		},
+		{
+			baseURL: "https://api-message.ecm.mn",
+			method: "POST",
+		},
+	);
+
+	// Validate response
+	if (!data.RetResponse.ResponseType) {
+		throw new Error(
+			data.RetResponse.ResponseMessage || "Код үүсгэхэд алдаа гарлаа",
+		);
+	}
+
+	return data;
+};
+// ===== SMS check otp request =====
+export const verifyOTPWithValidation = async (
+	phoneNumber: number,
+	code: number,
+): Promise<OTPVerificationResponse> => {
+	// Validate inputs
+	if (!phoneNumber) {
+		throw new Error("Утасны дугаар хоосон байна");
+	}
+
+	if (!code || code.toString().length !== 6) {
+		throw new Error("Баталгаажуулах код 6 оронтой байх ёстой");
+	}
+
+	try {
+		const requestPayload: OTPVerificationRequest = {
+			phone: phoneNumber,
+			code: code,
+		};
+
+		const { data } = await api.post<OTPVerificationResponse>(
+			`/smscheck`,
+			requestPayload,
+		);
+
+		// Check if verification was successful
+		if (!data.RetResponse.ResponseType) {
+			throw new Error(
+				data.RetResponse.ResponseMessage || "Баталгаажуулах код буруу байна",
+			);
+		}
+
+		return data;
+	} catch (error) {
+		if (error instanceof AxiosError) {
+			if (error.response) {
+				const errorMessage = error.response.data?.RetResponse?.ResponseMessage;
+
+				// Handle specific error codes
+				if (error.response.data?.RetResponse?.ResponseCode === "11") {
+					throw new Error("Баталгаажуулах кодоо илгээнэ үү!");
+				}
+
+				throw new Error(errorMessage || "Серверийн алдаа гарлаа");
+			}
+			if (error.request) {
+				throw new Error("Сүлжээний алдаа. Дахин оролдоно уу.");
+			}
+		}
+		if (error instanceof Error) {
+			throw error;
+		}
+		throw new Error("Тодорхойгүй алдаа гарлаа");
+	}
 };
 // ===== HomeScreen request =====
 export const getHomeScreen = async (
