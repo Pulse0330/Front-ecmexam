@@ -1,4 +1,6 @@
 "use client";
+
+import { Suspense } from "react";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import LoginAnimation from "../animation";
 import { LoginForm } from "./form";
@@ -29,7 +31,15 @@ export default function LoginPage() {
 			</div>
 
 			<div className="flex items-center justify-center p-6 relative overflow-hidden">
-				<LoginForm />
+				<Suspense
+					fallback={
+						<div className="flex items-center justify-center">
+							<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white" />
+						</div>
+					}
+				>
+					<LoginForm />
+				</Suspense>
 			</div>
 		</main>
 	);

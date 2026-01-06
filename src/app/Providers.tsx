@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
+import { SessionCheckerProvider } from "@/components/SessionCheckerProvider";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 
 const queryClient = new QueryClient({
@@ -17,7 +18,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 	return (
 		<ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
 			<QueryClientProvider client={queryClient}>
-				{children}
+				<SessionCheckerProvider>{children}</SessionCheckerProvider>
 				<Toaster position="top-right" richColors />
 			</QueryClientProvider>
 		</ThemeProvider>

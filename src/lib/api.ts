@@ -1,5 +1,5 @@
 // src/lib/api.ts
-import { AxiosError } from "axios";
+
 import api from "@/lib/axios";
 import type { ContentViewResponse } from "@/types/course/contentView";
 import type { CourseListResponse } from "@/types/course/courseList";
@@ -16,6 +16,7 @@ import type { LeaderboardResponse } from "@/types/exam/examRank";
 import type { ExamResultsResponse } from "@/types/exam/examResult";
 import type { ExamresultListResponseType } from "@/types/exam/examResultList";
 import type { ExamResponseMoreApiResponse } from "@/types/exam/examResultMore";
+import type { TestFilterResponse } from "@/types/exercise/testFilter";
 import type { ExamFinishResponse } from "@/types/exercise/testGetFill";
 import type { GetTestGroupResponse } from "@/types/exercise/testGroup";
 import type { ApiResponseWithNullData } from "@/types/exercise/testSaved";
@@ -24,117 +25,72 @@ import type {
 	TestSavedMixedResponse,
 } from "@/types/exercise/testSavedMixed";
 import type { HomeResponseType } from "@/types/home";
-import type { LoginResponseType } from "@/types/login";
-import type { VerificationCodeResponse } from "@/types/login/sign/getGeneratedCode";
 import type {
-	OTPVerificationRequest,
-	OTPVerificationResponse,
-} from "@/types/login/sign/smsCheck";
+	CheckTokenResponse,
+	StatusItem,
+} from "@/types/login/loginToken/checkToken";
+import type {
+	CreatedSeasonResponse,
+	SessionData,
+} from "@/types/login/loginToken/createSeason";
+import type {
+	LoginTokenResponse,
+	User,
+} from "@/types/login/loginToken/loginToken";
 import type { ApiSorillistsResponse } from "@/types/soril/sorilLists";
 import type { SorilresultListResponseType } from "@/types/soril/sorilResultLists";
 import type { UserProfileResponseType } from "@/types/user";
-// ===== Login request =====
-export const loginRequest = async (
+
+//-------------------------------Auth---------------------------------//
+
+// ===== LoginToken request =====
+export const loginTokenRequest = async (
 	username: string,
 	password: string,
-): Promise<LoginResponseType> => {
-	const { data } = await api.post<LoginResponseType>("/login", {
+	deviceid: string,
+	devicemodel: string,
+): Promise<LoginTokenResponse<User>> => {
+	const { data } = await api.post<LoginTokenResponse<User>>("/weblogin", {
 		username,
 		password,
-		deviceid: "",
-		devicemodel: "",
+		deviceid,
+		devicemodel,
 	});
 	return data;
 };
 
-// ===== GeneratedCode otp request =====
-export const getGeneratedCodeWithValidation = async (
-	phoneNumber: number,
-	conftype: string = "1",
-	bundleid: string = "ikh_skuul.mn",
-	devicemodel?: string,
-): Promise<VerificationCodeResponse> => {
-	if (!phoneNumber) {
-		throw new Error("Утасны дугаар хоосон байна");
-	}
-	const { data } = await api.post<VerificationCodeResponse>(
-		`/getcode`,
+// ===== CreateSession request =====
+export const createSessionRequest = async (
+	userId: number,
+	token: string,
+	ip: string,
+	browser: string,
+): Promise<CreatedSeasonResponse<SessionData | null>> => {
+	const { data } = await api.post<CreatedSeasonResponse<SessionData | null>>(
+		"/CreateSession",
 		{
-			phone: phoneNumber,
-			conftype,
-			bundleid,
-			devicemodel: devicemodel || "",
-			ismob: 0,
-		},
-		{
-			baseURL: "https://api-message.ecm.mn",
-			method: "POST",
+			UserId: userId,
+			Token: token,
+			Ip: ip,
+			Browser: browser,
 		},
 	);
-
-	// Validate response
-	if (!data.RetResponse.ResponseType) {
-		throw new Error(
-			data.RetResponse.ResponseMessage || "Код үүсгэхэд алдаа гарлаа",
-		);
-	}
-
 	return data;
 };
-// ===== SMS check otp request =====
-export const verifyOTPWithValidation = async (
-	phoneNumber: number,
-	code: number,
-): Promise<OTPVerificationResponse> => {
-	// Validate inputs
-	if (!phoneNumber) {
-		throw new Error("Утасны дугаар хоосон байна");
-	}
 
-	if (!code || code.toString().length !== 6) {
-		throw new Error("Баталгаажуулах код 6 оронтой байх ёстой");
-	}
-
-	try {
-		const requestPayload: OTPVerificationRequest = {
-			phone: phoneNumber,
-			code: code,
-		};
-
-		const { data } = await api.post<OTPVerificationResponse>(
-			`/smscheck`,
-			requestPayload,
-		);
-
-		// Check if verification was successful
-		if (!data.RetResponse.ResponseType) {
-			throw new Error(
-				data.RetResponse.ResponseMessage || "Баталгаажуулах код буруу байна",
-			);
-		}
-
-		return data;
-	} catch (error) {
-		if (error instanceof AxiosError) {
-			if (error.response) {
-				const errorMessage = error.response.data?.RetResponse?.ResponseMessage;
-
-				// Handle specific error codes
-				if (error.response.data?.RetResponse?.ResponseCode === "11") {
-					throw new Error("Баталгаажуулах кодоо илгээнэ үү!");
-				}
-
-				throw new Error(errorMessage || "Серверийн алдаа гарлаа");
-			}
-			if (error.request) {
-				throw new Error("Сүлжээний алдаа. Дахин оролдоно уу.");
-			}
-		}
-		if (error instanceof Error) {
-			throw error;
-		}
-		throw new Error("Тодорхойгүй алдаа гарлаа");
-	}
+// ===== CheckSession request =====
+export const checkSessionRequest = async (
+	userId: number,
+	token: string,
+): Promise<CheckTokenResponse<StatusItem[]>> => {
+	const { data } = await api.post<CheckTokenResponse<StatusItem[]>>(
+		"/CheckSession",
+		{
+			UserId: userId,
+			Token: token,
+		},
+	);
+	return data;
 };
 // ===== HomeScreen request =====
 export const getHomeScreen = async (
@@ -316,6 +272,7 @@ export const getSorilresultlists = async (
 	return data;
 };
 //-------------------------------Test---------------------------------//
+
 // ===== Get testGroup =====
 export const getTestGroup = async (
 	userId: number,
@@ -355,6 +312,16 @@ export const getTestMixed = async (
 	const { data } = await api.post<TestSavedMixedResponse>("/testsavedmixed", {
 		user_id: userId,
 		tests,
+	});
+	return data;
+};
+// ===== Get TestFilter =====
+export const getTestFilter = async (
+	userId: number,
+): Promise<TestFilterResponse> => {
+	const { data } = await api.post<TestFilterResponse>("/getlessons", {
+		user_id: userId,
+		optype: 0,
 	});
 	return data;
 };

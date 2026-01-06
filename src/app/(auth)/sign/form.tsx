@@ -1,13 +1,19 @@
+// ============================================
+// src/components/SignForm.tsx (ua-parser-js нэмсэн)
+// ============================================
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import axios from "axios";
+import { Loader2, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
+import { UAParser } from "ua-parser-js"; // 🔥 Шинэ
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -26,10 +32,6 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-	getGeneratedCodeWithValidation,
-	verifyOTPWithValidation,
-} from "@/lib/api";
 
 const formSchema = z
 	.object({
@@ -37,9 +39,6 @@ const formSchema = z
 			.string()
 			.min(8, { message: "Утасны дугаар 8 оронтой байх ёстой." })
 			.regex(/^[0-9]+$/, { message: "Зөвхөн тоо оруулна уу." }),
-		otp: z
-			.string()
-			.length(6, { message: "Баталгаажуулах код 6 оронтой байх ёстой." }),
 		username: z.string().min(1, { message: "Нэвтрэх нэр оруулна уу." }),
 		email: z.string().email({ message: "Хүчинтэй имэйл хаяг оруулна уу." }),
 		password: z
@@ -54,20 +53,41 @@ const formSchema = z
 		path: ["confirmPassword"],
 	});
 
+// 🔥 Төхөөрөмжийн мэдээлэл авах функц
+const getDeviceInfo = () => {
+	const parser = new UAParser();
+	const device = parser.getDevice();
+	const os = parser.getOS();
+	const browser = parser.getBrowser();
+
+	// Device model байвал түүнийг буцаах
+	if (device.model) {
+		return device.model;
+	}
+
+	// Үгүй бол OS + Browser
+	return `${os.name || "Unknown"} - ${browser.name || "Unknown"}`;
+};
+
+// 🔥 Mobile эсэхийг шалгах
+const isMobileDevice = () => {
+	const parser = new UAParser();
+	const device = parser.getDevice();
+	return device.type === "mobile" || device.type === "tablet" ? 1 : 0;
+};
+
 export function SignForm() {
 	const router = useRouter();
 	const [isPending, setIsPending] = useState(false);
-	const [isOTPSent, setIsOTPSent] = useState(false);
-	const [isOTPVerified, setIsOTPVerified] = useState(false);
-	const [isSendingOTP, setIsSendingOTP] = useState(false);
-	const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
-	const [countdown, setCountdown] = useState(0);
+	const [isWaitingForSMS, setIsWaitingForSMS] = useState(false);
+	const [isVerified, setIsVerified] = useState(false);
+	const [isChecking, setIsChecking] = useState(false);
+	const [verificationCode, setVerificationCode] = useState<string>("");
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			phone: "",
-			otp: "",
 			username: "",
 			email: "",
 			password: "",
@@ -76,96 +96,92 @@ export function SignForm() {
 		mode: "onSubmit",
 	});
 
-	// Start countdown timer
-	const startCountdown = () => {
-		setCountdown(180); // 3 minutes
-		const timer = setInterval(() => {
-			setCountdown((prev) => {
-				if (prev <= 1) {
-					clearInterval(timer);
-					return 0;
-				}
-				return prev - 1;
-			});
-		}, 1000);
-	};
-
-	// Send OTP
-	const handleSendOTP = async () => {
+	// Код үүсгэх
+	const handleRequestCode = async () => {
 		const phone = form.getValues("phone");
 
-		// Validate phone number
 		const phoneValidation = await form.trigger("phone");
 		if (!phoneValidation) {
 			return;
 		}
 
-		setIsSendingOTP(true);
+		setIsChecking(true);
 
 		try {
-			const response = await getGeneratedCodeWithValidation(
-				Number(phone),
-				"1",
-				"ikh_skuul.mn",
-			);
+			const response = await axios.post("/api/otp/getcode", {
+				phone: Number(phone),
+				conftype: "1",
+				bundleid: "ikh_skuul.mn",
+				devicemodel: getDeviceInfo(), // 🔥 Динамик утга
+				ismob: isMobileDevice(), // 🔥 Динамик утга
+			});
 
-			if (response.RetResponse.ResponseType) {
-				toast.success(response.RetResponse.ResponseMessage);
-				setIsOTPSent(true);
-				startCountdown();
+			if (response.data.RetResponse?.ResponseType) {
+				const code = response.data.RetResponse.RtrGenCode;
+				setVerificationCode(code);
+				setIsWaitingForSMS(true);
+				toast.success(response.data.RetResponse.ResponseMessage);
 			} else {
-				toast.error(response.RetResponse.ResponseMessage);
+				toast.error(
+					response.data.RetResponse?.ResponseMessage ||
+						"Код үүсгэхэд алдаа гарлаа",
+				);
 			}
 		} catch (error) {
+			console.error("Код үүсгэх алдаа:", error);
 			toast.error(
-				error instanceof Error ? error.message : "Код илгээхэд алдаа гарлаа",
+				axios.isAxiosError(error)
+					? error.response?.data?.RetResponse?.ResponseMessage ||
+							"Код үүсгэхэд алдаа гарлаа"
+					: "Код үүсгэхэд алдаа гарлаа",
 			);
 		} finally {
-			setIsSendingOTP(false);
+			setIsChecking(false);
 		}
 	};
 
-	// Verify OTP
-	const handleVerifyOTP = async () => {
+	// SMS баталгаажуулах
+	const handleCheckVerification = async () => {
 		const phone = form.getValues("phone");
-		const otp = form.getValues("otp");
 
-		// Validate OTP field
-		const otpValidation = await form.trigger("otp");
-		if (!otpValidation) {
+		if (!verificationCode) {
+			toast.error("Эхлээд код үүсгэнэ үү");
 			return;
 		}
 
-		setIsVerifyingOTP(true);
+		setIsChecking(true);
 
 		try {
-			const response = await verifyOTPWithValidation(
-				Number(phone),
-				Number(otp),
-			);
+			const response = await axios.post("/api/otp/smscheck", {
+				phone: Number(phone),
+				code: Number(verificationCode),
+			});
 
-			if (response.RetResponse.ResponseType) {
+			if (response.data.RetResponse?.ResponseType) {
 				toast.success("Утасны дугаар баталгаажлаа!");
-				setIsOTPVerified(true);
-				// Store token if needed
-				// localStorage.setItem("authToken", response.RetResponse.ResponseToken);
+				setIsVerified(true);
+				setIsWaitingForSMS(false);
 			} else {
-				toast.error(response.RetResponse.ResponseMessage);
+				toast.error(
+					"Баталгаажуулалт амжилтгүй. Мессеж илгээсэн эсэхээ шалгана уу.",
+				);
 			}
 		} catch (error) {
+			console.error("Баталгаажуулах алдаа:", error);
 			toast.error(
-				error instanceof Error
-					? error.message
+				axios.isAxiosError(error)
+					? error.response?.data?.RetResponse?.ResponseMessage ||
+							"Баталгаажуулахад алдаа гарлаа"
 					: "Баталгаажуулахад алдаа гарлаа",
 			);
 		} finally {
-			setIsVerifyingOTP(false);
+			setIsChecking(false);
 		}
 	};
 
-	// Final submission
+	// Бүртгэл хийх
 	const onSubmit = async (values: z.infer<typeof formSchema>) => {
-		if (!isOTPVerified) {
+		if (!isVerified) {
 			toast.error("Эхлээд утасны дугаараа баталгаажуулна уу!");
 			return;
 		}
@@ -173,7 +189,7 @@ export function SignForm() {
 		setIsPending(true);
 
 		try {
-			// TODO: Add your actual sign-up API call here
+			// TODO: Энд бүртгэлийн API дуудах
 			await new Promise((resolve) => setTimeout(resolve, 2000));
 
 			console.log("Sign up values:", values);
@@ -186,13 +202,6 @@ export function SignForm() {
 		}
 	};
 
-	// Format countdown timer
-	const formatTime = (seconds: number) => {
-		const mins = Math.floor(seconds / 60);
-		const secs = seconds % 60;
-		return `${mins}:${secs.toString().padStart(2, "0")}`;
-	};
-
 	return (
 		<Card className="w-full max-w-sm bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50">
 			<CardHeader className="space-y-1">
@@ -203,7 +212,7 @@ export function SignForm() {
 			<Form {...form}>
 				<form onSubmit={form.handleSubmit(onSubmit)}>
 					<CardContent className="grid gap-4">
-						{/* Phone Number */}
+						{/* Утасны дугаар */}
 						<FormField
 							control={form.control}
 							name="phone"
@@ -216,25 +225,21 @@ export function SignForm() {
 												placeholder="88888888"
 												type="tel"
 												{...field}
-												disabled={isPending || isOTPVerified}
+												disabled={isPending || isVerified}
 												maxLength={8}
 											/>
 										</FormControl>
 										<Button
 											type="button"
-											onClick={handleSendOTP}
-											disabled={isSendingOTP || isOTPVerified || countdown > 0}
+											onClick={handleRequestCode}
+											disabled={isChecking || isVerified || isWaitingForSMS}
 											variant="outline"
 											className="whitespace-nowrap"
 										>
-											{isSendingOTP && (
+											{isChecking && (
 												<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 											)}
-											{countdown > 0
-												? formatTime(countdown)
-												: isOTPSent
-													? "Дахин илгээх"
-													: "Код авах"}
+											{isWaitingForSMS ? "Код үүсгэсэн" : "Код үүсгэх"}
 										</Button>
 									</div>
 									<FormMessage />
@@ -242,52 +247,57 @@ export function SignForm() {
 							)}
 						/>
 
-						{/* OTP Code */}
-						{isOTPSent && !isOTPVerified && (
-							<FormField
-								control={form.control}
-								name="otp"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Баталгаажуулах код</FormLabel>
-										<div className="flex gap-2">
-											<FormControl>
-												<Input
-													placeholder="******"
-													type="text"
-													{...field}
-													disabled={isPending || isVerifyingOTP}
-													maxLength={6}
-												/>
-											</FormControl>
-											<Button
-												type="button"
-												onClick={handleVerifyOTP}
-												disabled={isVerifyingOTP}
-												variant="outline"
-											>
-												{isVerifyingOTP && (
-													<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-												)}
-												Шалгах
-											</Button>
-										</div>
-										<FormMessage />
-									</FormItem>
+						{/* SMS заавар */}
+						{isWaitingForSMS && !isVerified && (
+							<Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+								<MessageSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+								<AlertDescription className="text-sm text-blue-800 dark:text-blue-300">
+									<div className="space-y-2">
+										<p className="font-semibold">Дараах алхмуудыг дагана уу:</p>
+										<ol className="list-decimal list-inside space-y-1 ml-2">
+											<li>Утасны мессеж хэсгээ нээнэ үү</li>
+											<li>
+												<strong>142076</strong> дугаар руу мессеж бичнэ үү
+											</li>
+											<li>
+												Мессежийн агуулга:{" "}
+												<span className="font-mono bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded">
+													{verificationCode}
+												</span>
+											</li>
+											<li>Илгээсний дараа "Шалгах" товч дарна уу</li>
+										</ol>
+									</div>
+								</AlertDescription>
+							</Alert>
+						)}
+
+						{/* Шалгах товч */}
+						{isWaitingForSMS && !isVerified && (
+							<Button
+								type="button"
+								onClick={handleCheckVerification}
+								disabled={isChecking}
+								variant="outline"
+								className="w-full"
+							>
+								{isChecking && (
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 								)}
-							/>
+								{isChecking ? "Шалгаж байна..." : "Шалгах"}
+							</Button>
 						)}
 
-						{/* Success message */}
-						{isOTPVerified && (
-							<div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
-								<p className="text-sm text-green-800 dark:text-green-300 flex items-center gap-2">
+						{/* Амжилттай мессеж */}
+						{isVerified && (
+							<Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+								<AlertDescription className="text-sm text-green-800 dark:text-green-300 flex items-center gap-2">
 									✓ Утасны дугаар баталгаажлаа
-								</p>
-							</div>
+								</AlertDescription>
+							</Alert>
 						)}
 
-						{/* Username */}
+						{/* Нэвтрэх нэр */}
 						<FormField
 							control={form.control}
 							name="username"
@@ -299,7 +309,7 @@ export function SignForm() {
 											placeholder="ES40100****"
 											type="text"
 											{...field}
-											disabled={isPending || !isOTPVerified}
+											disabled={isPending || !isVerified}
 										/>
 									</FormControl>
 									<FormMessage />
@@ -307,7 +317,7 @@ export function SignForm() {
 							)}
 						/>
 
-						{/* Email */}
+						{/* Имэйл */}
 						<FormField
 							control={form.control}
 							name="email"
@@ -319,7 +329,7 @@ export function SignForm() {
 											placeholder="name@example.com"
 											type="email"
 											{...field}
-											disabled={isPending || !isOTPVerified}
+											disabled={isPending || !isVerified}
 										/>
 									</FormControl>
 									<FormMessage />
@@ -327,7 +337,7 @@ export function SignForm() {
 							)}
 						/>
 
-						{/* Password */}
+						{/* Нууц үг */}
 						<FormField
 							control={form.control}
 							name="password"
@@ -339,7 +349,7 @@ export function SignForm() {
 											placeholder="••••••••"
 											type="password"
 											{...field}
-											disabled={isPending || !isOTPVerified}
+											disabled={isPending || !isVerified}
 										/>
 									</FormControl>
 									<FormMessage />
@@ -347,7 +357,7 @@ export function SignForm() {
 							)}
 						/>
 
-						{/* Confirm Password */}
+						{/* Нууц үг давтах */}
 						<FormField
 							control={form.control}
 							name="confirmPassword"
@@ -359,7 +369,7 @@ export function SignForm() {
 											placeholder="••••••••"
 											type="password"
 											{...field}
-											disabled={isPending || !isOTPVerified}
+											disabled={isPending || !isVerified}
 										/>
 									</FormControl>
 									<FormMessage />
@@ -370,7 +380,7 @@ export function SignForm() {
 						<Button
 							type="submit"
 							className="w-full"
-							disabled={isPending || !isOTPVerified}
+							disabled={isPending || !isVerified}
 						>
 							{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
 							{isPending ? "Бүртгүүлж байна..." : "Бүртгүүлэх"}

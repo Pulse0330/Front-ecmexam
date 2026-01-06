@@ -1,14 +1,15 @@
-// (auth)/login/loginForm.tsx
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
+
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -27,7 +28,9 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { loginRequest } from "@/lib/api";
+import { notifyNewLogin } from "@/hooks/use-SessionCheker"; // ===== НЭМЭХ =====
+import { createSessionRequest, loginTokenRequest } from "@/lib/api";
+import { setCookie } from "@/lib/cookie";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 const formSchema = z.object({
@@ -38,8 +41,9 @@ const formSchema = z.object({
 });
 
 export function LoginForm() {
-	const router = useRouter();
-	const { setUserId } = useAuthStore();
+	const searchParams = useSearchParams();
+	const redirectUrl = searchParams.get("redirect") || "/home";
+	const { setUser, setToken } = useAuthStore();
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -47,20 +51,79 @@ export function LoginForm() {
 		mode: "onSubmit",
 	});
 
+	useEffect(() => {
+		const sessionExpired = searchParams.get("session");
+		if (sessionExpired === "expired") {
+			toast.error("Таны session дууссан байна. Дахин нэвтэрнэ үү.");
+		}
+	}, [searchParams]);
+
 	const { mutate, isPending } = useMutation({
 		mutationFn: async (values: z.infer<typeof formSchema>) => {
-			const res = await loginRequest(values.username, values.password);
-			return res;
+			// 1. Login
+			const loginRes = await loginTokenRequest(
+				values.username,
+				values.password,
+				"",
+				"",
+			);
+
+			if (
+				!loginRes?.RetResponse?.ResponseType ||
+				!loginRes?.Data?.[0] ||
+				!loginRes.Token
+			) {
+				throw new Error(
+					loginRes?.RetResponse?.ResponseMessage || "Нэвтрэх амжилтгүй",
+				);
+			}
+
+			const userData = loginRes.Data[0];
+			const token = loginRes.Token;
+
+			// 2. CreateSession
+			const sessionRes = await createSessionRequest(
+				userData.id,
+				token,
+				"", // IP хоосон
+				"", // Browser хоосон
+			);
+
+			if (!sessionRes?.RetResponse?.ResponseType) {
+				throw new Error(
+					sessionRes?.RetResponse?.ResponseMessage ||
+						"Session үүсгэх амжилтгүй",
+				);
+			}
+
+			return { userData, token };
 		},
-		onSuccess: async (res) => {
-			setUserId(res?.RetData ?? null);
+		onSuccess: ({ userData, token }) => {
+			// Store-д хадгалах
+			setUser(userData);
+			setToken(token);
+
+			// Cookies хадгалах
+			setCookie("auth-token", token, 7);
+			setCookie("user-id", userData.id.toString(), 7);
+
+			// ===== ШИНЭ: Бусад tab-д шинэ login мэдэгдэх =====
+			notifyNewLogin(userData.id);
+
+			// Амжилттай мэдэгдэл
 			toast.success("Амжилттай нэвтэрлээ");
 
-			// router.push-г await ашиглан ажиллуулах
-			await router.push("/home");
+			// Redirect
+			setTimeout(() => {
+				window.location.href = redirectUrl;
+			}, 300);
 		},
-		onError: () => {
-			toast.error("Нэвтрэх үед алдаа гарлаа");
+		onError: (error: Error) => {
+			toast.error(error.message || "Нэвтрэх үед алдаа гарлаа");
+			form.setError("root", {
+				type: "manual",
+				message: "Нэвтрэх нэр эсвэл нууц үг буруу байна",
+			});
 		},
 	});
 
@@ -80,6 +143,12 @@ export function LoginForm() {
 			<Form {...form}>
 				<form onSubmit={form.handleSubmit(onSubmit)}>
 					<CardContent className="grid gap-4">
+						{form.formState.errors.root && (
+							<div className="text-sm text-destructive">
+								{form.formState.errors.root.message}
+							</div>
+						)}
+
 						<FormField
 							control={form.control}
 							name="username"
@@ -88,8 +157,9 @@ export function LoginForm() {
 									<FormLabel>Нэвтрэх нэр</FormLabel>
 									<FormControl>
 										<Input
-											placeholder="ES40100****"
+											placeholder="96216878"
 											type="text"
+											autoComplete="username"
 											{...field}
 											disabled={isPending}
 										/>
@@ -98,18 +168,18 @@ export function LoginForm() {
 								</FormItem>
 							)}
 						/>
+
 						<FormField
 							control={form.control}
 							name="password"
 							render={({ field }) => (
 								<FormItem>
-									<div className="flex items-center">
-										<FormLabel>Нууц үг</FormLabel>
-									</div>
+									<FormLabel>Нууц үг</FormLabel>
 									<FormControl>
 										<Input
 											placeholder="••••••••"
 											type="password"
+											autoComplete="current-password"
 											{...field}
 											disabled={isPending}
 										/>
@@ -118,10 +188,12 @@ export function LoginForm() {
 								</FormItem>
 							)}
 						/>
+
 						<Button type="submit" className="w-full" disabled={isPending}>
 							{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
 							{isPending ? "Нэвтэрч байна..." : "Нэвтрэх"}
 						</Button>
+
 						<Button
 							asChild
 							variant="link"
