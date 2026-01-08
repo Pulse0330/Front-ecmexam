@@ -37,10 +37,14 @@ import type {
 	LoginTokenResponse,
 	User,
 } from "@/types/login/loginToken/loginToken";
+import type { RegisterSysUserResponse } from "@/types/login/sign/register";
+import type {} from "@/types/login/sign/registerChoose/aimag";
+import type {} from "@/types/login/sign/registerChoose/duureg";
+import type {} from "@/types/login/sign/registerChoose/sum";
+import type {} from "@/types/login/sign/registerChoose/surguuli";
 import type { ApiSorillistsResponse } from "@/types/soril/sorilLists";
 import type { SorilresultListResponseType } from "@/types/soril/sorilResultLists";
 import type { UserProfileResponseType } from "@/types/user";
-
 //-------------------------------Auth---------------------------------//
 
 // ===== LoginToken request =====
@@ -58,7 +62,6 @@ export const loginTokenRequest = async (
 	});
 	return data;
 };
-
 // ===== CreateSession request =====
 export const createSessionRequest = async (
 	userId: number,
@@ -77,7 +80,6 @@ export const createSessionRequest = async (
 	);
 	return data;
 };
-
 // ===== CheckSession request =====
 export const checkSessionRequest = async (
 	userId: number,
@@ -92,6 +94,28 @@ export const checkSessionRequest = async (
 	);
 	return data;
 };
+// ===== Register request =====
+export const registerSysUserRequest = async (
+	email: string,
+	firstname: string,
+	lastname: string,
+	phone: number,
+	password: string,
+): Promise<RegisterSysUserResponse> => {
+	const { data } = await api.post<RegisterSysUserResponse>(
+		"/register_sysuser",
+		{
+			email: email,
+			firstname: firstname,
+			lastname: lastname,
+			phone: phone,
+			password: password,
+		},
+	);
+
+	return data;
+};
+
 // ===== HomeScreen request =====
 export const getHomeScreen = async (
 	userId: number,
@@ -115,6 +139,7 @@ export const getServerDate = async (): Promise<string> => {
 	const { data } = await api.post("/getdate", {});
 	return data?.RetData?.[0]?.systemdate ?? "";
 };
+
 //-------------------------------Exam---------------------------------//
 // ===== Get Examlists  =====
 export const getExamlists = async (
