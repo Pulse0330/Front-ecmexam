@@ -62,8 +62,8 @@ export default function SorilPage() {
 		useState(false);
 	// Auto-finish refs
 	const finishDialogRef = useRef<FinishExamDialogHandle>(null);
-	const hasAutoFinished = useRef(false);
-	const isAutoSubmitting = useRef(false);
+	const _hasAutoFinished = useRef(false);
+	const _isAutoSubmitting = useRef(false);
 	const typingTimers = useRef<Map<number, NodeJS.Timeout>>(new Map());
 	const pendingAnswers = useRef<Map<number, PendingAnswer>>(new Map());
 	const saveTimer = useRef<NodeJS.Timeout | null>(null);
@@ -71,6 +71,7 @@ export default function SorilPage() {
 	const _questionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 	const [elapsedExamTime, setElapsedExamTime] = useState(0);
 	const isSavingRef = useRef(false);
+
 	const AUTO_SAVE_DELAY = 1000;
 	const {
 		data: examData,
@@ -501,45 +502,6 @@ export default function SorilPage() {
 		setIsSaving(false);
 	}, [examData, saveQuestion]);
 
-	const _handleAutoSubmit = useCallback(async () => {
-		// Давхар дуудагдахаас сэргийлэх
-		if (hasAutoFinished.current || isAutoSubmitting.current) {
-			console.log("⚠️ Auto-submit аль хэдийн явагдаж байна");
-			return;
-		}
-
-		hasAutoFinished.current = true;
-		isAutoSubmitting.current = true;
-
-		console.log("🔴 Цаг дууслаа - Автоматаар дуусгаж байна...");
-
-		try {
-			// ✅ STEP 1: Хадгалаагүй хариултуудыг эхлээд хадгална
-			if (pendingAnswers.current.size > 0) {
-				console.log(
-					`💾 ${pendingAnswers.current.size} хариулт хадгалж байна...`,
-				);
-				await processPendingAnswers();
-				console.log("✅ Бүх хариулт хадгалагдлаа");
-			}
-
-			// ✅ STEP 2: Exam type шалгаж, зөв параметр дамжуулах
-			const examInfo = examData?.ExamInfo?.[0];
-			if (!examInfo) {
-				console.error("❌ Exam info олдсонгүй");
-				return;
-			}
-
-			// ✅ STEP 3: Dialog-оор автомат дуусгах
-			console.log("📤 Шалгалт дуусгах API дуудаж байна...");
-			finishDialogRef.current?.triggerFinish();
-		} catch (error) {
-			console.error("❌ Auto submit error:", error);
-			hasAutoFinished.current = false;
-			isAutoSubmitting.current = false;
-		}
-	}, [processPendingAnswers, examData]);
-
 	useEffect(() => {
 		if (isLoading || !examData?.ChoosedAnswer) return;
 
@@ -727,6 +689,31 @@ export default function SorilPage() {
 		},
 		[examData, scheduleAutoSave, areAnswersEqual],
 	);
+	const _handleResetToSaved = useCallback((questionId: number) => {
+		const lastSaved = lastSavedAnswers.current.get(questionId);
+
+		// Pending answers-с устгах
+		pendingAnswers.current.delete(questionId);
+
+		// Typing state цэвэрлэх
+		setTypingQuestions((prev) => {
+			const newSet = new Set(prev);
+			newSet.delete(questionId);
+			return newSet;
+		});
+
+		// Timer цэвэрлэх
+		const timer = typingTimers.current.get(questionId);
+		if (timer) {
+			clearTimeout(timer);
+			typingTimers.current.delete(questionId);
+		}
+
+		// Сүүлд хадгалсан хариулт руу буцаах
+		if (lastSaved !== undefined) {
+			setSelectedAnswers((prev) => ({ ...prev, [questionId]: lastSaved }));
+		}
+	}, []);
 
 	useEffect(() => {
 		return () => {

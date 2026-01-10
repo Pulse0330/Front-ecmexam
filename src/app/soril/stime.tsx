@@ -4,22 +4,13 @@ import { Clock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface ExamTimerProps {
-	storageKey?: string;
 	onElapsedChange?: (minutes: number) => void;
 }
 
-export default function ExamTimer({
-	storageKey = "exam_timer",
-	onElapsedChange,
-}: ExamTimerProps) {
+export default function ExamTimer({ onElapsedChange }: ExamTimerProps) {
 	const [seconds, setSeconds] = useState(0);
 	const onElapsedChangeRef = useRef(onElapsedChange);
-
-	// Initial load
-	useEffect(() => {
-		const saved = localStorage.getItem(storageKey);
-		if (saved) setSeconds(parseInt(saved, 10));
-	}, [storageKey]);
+	const lastMinuteReported = useRef(0);
 
 	useEffect(() => {
 		onElapsedChangeRef.current = onElapsedChange;
@@ -27,21 +18,21 @@ export default function ExamTimer({
 
 	useEffect(() => {
 		const interval = setInterval(() => {
-			setSeconds((prev) => {
-				const newSec = prev + 1;
-				localStorage.setItem(storageKey, newSec.toString());
-
-				// Минут солигдох үед л callback дуудах (performance сайжруулалт)
-				if (newSec % 60 === 0) {
-					onElapsedChangeRef.current?.(Math.floor(newSec / 60));
-				}
-
-				return newSec;
-			});
+			setSeconds((prev) => prev + 1);
 		}, 1000);
 
 		return () => clearInterval(interval);
-	}, [storageKey]);
+	}, []);
+
+	// Минут солигдох үед callback дуудах
+	useEffect(() => {
+		const currentMinutes = Math.floor(seconds / 60);
+
+		if (currentMinutes !== lastMinuteReported.current) {
+			lastMinuteReported.current = currentMinutes;
+			onElapsedChangeRef.current?.(currentMinutes);
+		}
+	}, [seconds]);
 
 	const formatTime = (totalSeconds: number) => {
 		const hrs = Math.floor(totalSeconds / 3600);
@@ -58,31 +49,67 @@ export default function ExamTimer({
 	const { hrs, mins, secs } = formatTime(seconds);
 
 	return (
-		<div className="group relative">
-			{/* Арын гэрэлтэлт эффект (Glow) */}
-			<div className="absolute -inset-0.5 bg-linear-to-r from-blue-500 to-indigo-500 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+		<div className="relative group">
+			{/* Гэрэлтсэн арын эффект */}
+			<div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl blur-lg opacity-25 group-hover:opacity-40 animate-pulse"></div>
 
-			<div className="relative flex items-center gap-3 px-4 py-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm">
-				{/* Икон хэсэг */}
-				<div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400">
-					<Clock className="w-4.5 h-4.5 animate-pulse" />
+			{/* Үндсэн контейнер */}
+			<div className="relative bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-slate-800 border-2 border-blue-200 dark:border-blue-700 rounded-2xl shadow-xl overflow-hidden">
+				{/* Дээд хэсэг - Гарчиг */}
+				<div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 flex items-center gap-2">
+					<div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+						<Clock className="w-3.5 h-3.5 text-white animate-pulse" />
+					</div>
+					<span className="text-xs font-bold text-white uppercase tracking-wider">
+						Үргэлжилсэн хугацаа
+					</span>
 				</div>
 
-				{/* Цаг хэсэг */}
-				<div className="flex flex-col">
-					<span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold leading-none mb-1"></span>
-					<div className="flex items-baseline gap-1 font-mono text-lg font-black text-slate-800 dark:text-slate-100 tabular-nums">
+				{/* Цагийн харуулалт */}
+				<div className="px-6 py-5 flex items-center justify-center">
+					<div className="flex items-baseline gap-1 font-mono">
 						{hrs > 0 && (
 							<>
-								<span>{hrs}</span>
-								<span className="text-sm text-slate-400 font-normal">h</span>
+								<div className="flex flex-col items-center">
+									<span className="text-4xl font-black text-blue-600 dark:text-blue-400 tabular-nums">
+										{hrs}
+									</span>
+									<span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5">
+										ЦАГ
+									</span>
+								</div>
+								<span className="text-3xl text-slate-400 dark:text-slate-600 mx-1 mb-4">
+									:
+								</span>
 							</>
 						)}
-						<span>{mins}</span>
-						<span className="text-sm text-slate-400 font-normal">:</span>
-						<span className="text-blue-600 dark:text-blue-400">{secs}</span>
+
+						<div className="flex flex-col items-center">
+							<span className="text-4xl font-black text-indigo-600 dark:text-indigo-400 tabular-nums">
+								{mins}
+							</span>
+							<span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5">
+								МИНУТ
+							</span>
+						</div>
+
+						<span className="text-3xl text-slate-400 dark:text-slate-600 mx-1 mb-4 animate-pulse">
+							:
+						</span>
+
+						<div className="flex flex-col items-center">
+							<span className="text-4xl font-black text-purple-600 dark:text-purple-400 tabular-nums">
+								{secs}
+							</span>
+							<span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5">
+								СЕК
+							</span>
+						</div>
 					</div>
 				</div>
+
+				{/* Доод хэсэг - Өнгөт gradient accent */}
+				<div className="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
 			</div>
 		</div>
 	);
