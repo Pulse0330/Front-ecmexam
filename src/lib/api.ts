@@ -350,6 +350,23 @@ export const getTestFilter = async (
 	});
 	return data;
 };
+
+// ===== Get TestFiltered =====
+export const getTestFiltered = async (
+	userId: number,
+	lesson_id: number,
+): Promise<GetTestGroupResponse> => {
+	// GetTestGroupResponse байх ёстой
+	const { data } = await api.post<GetTestGroupResponse>(
+		"/gettestgroupbylesson",
+		{
+			user_id: userId,
+			lesson_id: lesson_id,
+		},
+	);
+	return data;
+};
+
 //-------------------------------Course---------------------------------//
 export const getCourseList = async (
 	userId: number,

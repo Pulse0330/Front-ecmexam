@@ -77,7 +77,7 @@ interface FinishExamResultDialogProps {
 	examId: number;
 	examType: number;
 	startEid: number;
-	examTime: number;
+	elapsedMinutes: number; // ✅ НЭМЭГДСЭН: Үргэлжилсэн хугацаа (минутаар)
 	answeredCount: number;
 	totalCount: number;
 }
@@ -91,7 +91,7 @@ const FinishExamResultDialog = forwardRef<
 	FinishExamResultDialogProps
 >(
 	(
-		{ examId, examType, startEid, examTime, answeredCount, totalCount },
+		{ examId, examType, startEid, elapsedMinutes, answeredCount, totalCount },
 		ref,
 	) => {
 		const { userId } = useAuthStore();
@@ -99,7 +99,7 @@ const FinishExamResultDialog = forwardRef<
 		const [open, setOpen] = useState(false);
 		const [finishedTestId, setFinishedTestId] = useState<number | null>(null);
 
-		const isDadlaga = examType === 1;
+		const isDadlaga = examType === 2;
 
 		const finishMutation = useMutation<
 			FinishExamResponse,
@@ -112,12 +112,12 @@ const FinishExamResultDialog = forwardRef<
 					const testId = res.RetData;
 
 					if (isDadlaga) {
-						toast.success("✅ Дадлага амжилттай дууслаа!");
+						toast.success("✅ Сорил амжилттай дууслаа!");
 						setTimeout(() => {
 							router.push("/home");
 						}, 1500);
 					} else {
-						toast.success("✅ Шалгалт амжилттай дууслаа");
+						toast.success("✅ Сорил амжилттай дууслаа");
 						if (testId) setFinishedTestId(testId);
 					}
 				} else {
@@ -128,8 +128,8 @@ const FinishExamResultDialog = forwardRef<
 			onError: () => {
 				toast.error(
 					isDadlaga
-						? "Дадлага дуусгах үед алдаа гарлаа"
-						: "Шалгалт дуусгах үед алдаа гарлаа",
+						? "Сорил дуусгах үед алдаа гарлаа"
+						: "Сорил дуусгах үед алдаа гарлаа",
 				);
 				setOpen(false);
 			},
@@ -153,11 +153,12 @@ const FinishExamResultDialog = forwardRef<
 				return;
 			}
 
+			// ✅ exam_time дээр үргэлжилсэн хугацааг (минутаар) явуулна
 			finishMutation.mutate({
 				exam_id: examId,
 				exam_type: examType,
 				start_eid: startEid,
-				exam_time: examTime,
+				exam_time: elapsedMinutes, // ✅ Үргэлжилсэн хугацааг явуулж байна
 				user_id: userId,
 			});
 		};
@@ -188,7 +189,7 @@ const FinishExamResultDialog = forwardRef<
 					<Dialog open={open} onOpenChange={setOpen}>
 						<DialogTrigger asChild>
 							<Button className="w-full sm:w-auto px-6 py-4 font-bold text-lg shadow-lg hover:shadow-xl transition-all flex justify-center items-center gap-2">
-								<span>Шалгалт дуусгах</span>
+								<span>Сорил дуусгах</span>
 								<Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
 							</Button>
 						</DialogTrigger>
@@ -260,13 +261,13 @@ const FinishExamResultDialog = forwardRef<
 
 							<div>
 								<DialogTitle className="text-3xl sm:text-4xl font-extrabold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-									Шалгалтын үр дүн
+									Сорилын үр дүн
 								</DialogTitle>
 								<DialogDescription className="text-lg sm:text-xl font-semibold mt-2">
 									{isExcellent
 										? "🌟 Гайхалтай! Та маш сайн өгүүлэв!"
 										: isPassed
-											? "🎉 Баяр хүргэе! Та шалгалтад тэнцлээ!"
+											? "🎉 Баяр хүргэе! Та сорилд тэнцлээ!"
 											: "💪 Дараагийн удаад амжилт хүсье!"}
 								</DialogDescription>
 							</div>
@@ -371,7 +372,7 @@ const FinishExamResultDialog = forwardRef<
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogTrigger asChild>
 					<Button className="w-full sm:w-auto px-6 py-4 font-bold text-lg shadow-lg hover:shadow-xl transition-all flex justify-center items-center gap-2">
-						<span>{isDadlaga ? "Дадлага дуусгах" : "Шалгалт дуусгах"}</span>
+						<span>{isDadlaga ? "Сорил дуусгах" : "Сорил дуусгах"}</span>
 						<Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
 					</Button>
 				</DialogTrigger>
@@ -382,7 +383,7 @@ const FinishExamResultDialog = forwardRef<
 							<Flag className="w-8 h-8 text-blue-600 dark:text-blue-400" />
 						</div>
 						<DialogTitle className="text-2xl font-bold">
-							{isDadlaga ? "Дадлага дуусгах уу?" : "Шалгалт дуусгах уу?"}
+							{isDadlaga ? "Дадлага дуусгах уу?" : "Сорилыг дуусгах уу?"}
 						</DialogTitle>
 						<DialogDescription>
 							{isDadlaga
@@ -447,6 +448,21 @@ const FinishExamResultDialog = forwardRef<
 									value={progressPercentage}
 									className="h-3 shadow-inner"
 								/>
+							</div>
+
+							{/* ✅ НЭМЭГДСЭН: Үргэлжилсэн хугацааг харуулах */}
+							<div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-700">
+								<div className="flex items-center justify-between">
+									<span className="text-xs font-semibold text-gray-600 dark:text-gray-400 flex items-center gap-2">
+										<Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+										Үргэлжилсэн хугацаа
+									</span>
+									<span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+										{Math.floor(elapsedMinutes / 60) > 0
+											? `${Math.floor(elapsedMinutes / 60)} цаг ${elapsedMinutes % 60} минут`
+											: `${elapsedMinutes} минут`}
+									</span>
+								</div>
 							</div>
 						</div>
 

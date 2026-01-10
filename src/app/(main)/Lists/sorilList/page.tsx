@@ -34,11 +34,7 @@ export default function SorilListPage() {
 	const [selectedStatus, setSelectedStatus] = useState<SorilCategory>("all");
 	const [selectedPlan, setSelectedPlan] = useState<string>("all");
 
-	const {
-		data: queryData,
-		isPending,
-		error,
-	} = useQuery<ApiSorillistsResponse>({
+	const { data: queryData, isPending } = useQuery<ApiSorillistsResponse>({
 		queryKey: ["examlists", userId],
 		queryFn: () => getSorillists(userId || 0),
 		enabled: !!userId,
@@ -176,7 +172,7 @@ export default function SorilListPage() {
 							</div>
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="all">Бүх төлөвлөгөө</SelectItem>
+							<SelectItem value="all"> Хөтөлбөр сонгох</SelectItem>
 							{planNames.map((plan) => (
 								<SelectItem key={plan} value={plan}>
 									{plan}

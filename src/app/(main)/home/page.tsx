@@ -92,24 +92,7 @@ export default function HomePage() {
 
 	if (!userId) {
 		return (
-			<div className="flex items-center justify-center min-h-[60vh]">
-				<Alert className="max-w-md border-destructive/50 bg-destructive/10">
-					<div className="flex flex-col items-center text-center space-y-4 py-6">
-						<div className="relative">
-							<div className="absolute inset-0 bg-destructive/20 blur-2xl rounded-full animate-pulse" />
-							<AlertCircle className="w-16 h-16 text-destructive relative" />
-						</div>
-						<AlertDescription className="space-y-2">
-							<p className="text-xl font-bold text-foreground">
-								Хэрэглэгч нэвтрээгүй байна
-							</p>
-							<p className="text-sm text-muted-foreground">
-								Та эхлээд системд нэвтэрч орно уу
-							</p>
-						</AlertDescription>
-					</div>
-				</Alert>
-			</div>
+			<div className="flex items-center justify-center min-h-[60vh]"></div>
 		);
 	}
 
@@ -221,7 +204,7 @@ export default function HomePage() {
 									isDay ? "text-White-700" : "text-white/90"
 								}`}
 							>
-								Танд өнөөдөр ямар шалгалт бэлтгэх вэ?
+								24/7 суралцах, хөгжих боломж
 							</p>
 						</div>
 

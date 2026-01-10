@@ -23,6 +23,34 @@ interface ExamListProps {
 	exams: Exam[];
 }
 
+// Монгол сарын нэрс
+const MONGOLIAN_MONTHS = [
+	"1-р сар",
+	"2-р сар",
+	"3-р сар",
+	"4-р сар",
+	"5-р сар",
+	"6-р сар",
+	"7-р сар",
+	"8-р сар",
+	"9-р сар",
+	"10-р сар",
+	"11-р сар",
+	"12-р сар",
+];
+
+// Огноо цагийг монголоор форматлах функц
+const formatMongolianDateTime = (dateString: string) => {
+	const date = new Date(dateString);
+	const year = date.getFullYear();
+	const month = MONGOLIAN_MONTHS[date.getMonth()];
+	const day = date.getDate();
+	const hours = date.getHours().toString().padStart(2, "0");
+	const minutes = date.getMinutes().toString().padStart(2, "0");
+
+	return `${year} оны ${month} ${day}, ${hours}:${minutes}`;
+};
+
 // Helper function
 const getStatusConfig = (isActive: boolean) => {
 	if (isActive) {
@@ -231,7 +259,7 @@ export default function ExamList({ exams }: ExamListProps) {
 								>
 									{/* Image Section - Placeholder with gradient */}
 									<div className="relative w-full h-40 overflow-hidden">
-										<div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 flex items-center justify-center">
+										<div className="absolute inset-0 bg-linear-to-br from-primary/20 via-primary/10 to-primary/5 flex items-center justify-center">
 											<div className="text-center space-y-2">
 												<Calendar className="w-12 h-12 text-primary/40 mx-auto" />
 												<p className="text-xs font-semibold text-muted-foreground">
@@ -239,7 +267,7 @@ export default function ExamList({ exams }: ExamListProps) {
 												</p>
 											</div>
 										</div>
-										<div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+										<div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
 
 										{/* Status Badge */}
 										<div className="absolute top-2 right-2 z-10">
@@ -276,15 +304,7 @@ export default function ExamList({ exams }: ExamListProps) {
 														Огноо & Цаг
 													</p>
 													<p className="text-xs font-semibold text-foreground truncate">
-														{new Date(exam.ognoo).toLocaleDateString("mn-MN", {
-															year: "numeric",
-															month: "short",
-															day: "numeric",
-														})}{" "}
-														{new Date(exam.ognoo).toLocaleTimeString("mn-MN", {
-															hour: "2-digit",
-															minute: "2-digit",
-														})}
+														{formatMongolianDateTime(exam.ognoo)}
 													</p>
 												</div>
 											</div>

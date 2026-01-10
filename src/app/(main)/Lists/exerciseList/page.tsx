@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
-	AlertCircle,
+	ArrowLeft,
 	ArrowRight,
 	BookOpen,
 	CheckCircle2,
@@ -12,14 +12,18 @@ import {
 	Plus,
 	Search,
 	Target,
-	TrendingUp,
 	X,
 	Zap,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { getTestFilter, getTestGroup, getTestMixed } from "@/lib/api";
+import {
+	getTestFilter,
+	getTestFiltered,
+	getTestGroup,
+	getTestMixed,
+} from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type {
 	GetTestGroupResponse,
@@ -46,18 +50,24 @@ export default function TestGroupPage() {
 	);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
+	const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-	// Fetch test groups
-	const { data, isLoading, isError, error } = useQuery<GetTestGroupResponse>({
-		queryKey: ["testGroup", userId],
-		queryFn: () => getTestGroup(userId || 0),
-		enabled: !!userId,
-	});
-
-	// Fetch filter options
+	// Fetch filter options (lessons list)
 	const { data: filterData } = useQuery({
 		queryKey: ["testFilter", userId],
 		queryFn: () => getTestFilter(userId || 0),
+		enabled: !!userId,
+	});
+
+	// Fetch test groups based on selected course
+	const { data, isLoading } = useQuery<GetTestGroupResponse>({
+		queryKey: ["testGroup", userId, selectedCourse],
+		queryFn: () => {
+			if (selectedCourse === null || selectedCourse === 0) {
+				return getTestGroup(userId || 0);
+			}
+			return getTestFiltered(userId || 0, selectedCourse);
+		},
 		enabled: !!userId,
 	});
 
@@ -86,15 +96,11 @@ export default function TestGroupPage() {
 
 		const filtered = data.RetData.filter((item) => {
 			const query = searchQuery.toLowerCase();
-			const matchesSearch =
+			return (
 				item.name.toLowerCase().includes(query) ||
 				item.coursename.toLowerCase().includes(query) ||
-				item.ulesson_name.toLowerCase().includes(query);
-
-			const matchesCourse =
-				selectedCourse === null || item.courseid === selectedCourse;
-
-			return matchesSearch && matchesCourse;
+				item.ulesson_name.toLowerCase().includes(query)
+			);
 		});
 
 		const grouped = new Map<string, CategoryGroup>();
@@ -114,7 +120,7 @@ export default function TestGroupPage() {
 		}
 
 		return grouped;
-	}, [data, searchQuery, selectedCourse]);
+	}, [data, searchQuery]);
 
 	// Calculate totals
 	const { selectedCount, totalQuestions } = useMemo(() => {
@@ -136,6 +142,20 @@ export default function TestGroupPage() {
 			delete newState[id];
 			return newState;
 		});
+	}, []);
+
+	const handleCourseFilterChange = useCallback((courseId: number | null) => {
+		setSelectedCourse(courseId);
+		setSelectedTests({});
+		setSelectedCategory(null);
+	}, []);
+
+	const handleCategoryClick = useCallback((categoryKey: string) => {
+		setSelectedCategory(categoryKey);
+	}, []);
+
+	const handleBackToCategories = useCallback(() => {
+		setSelectedCategory(null);
 	}, []);
 
 	const handleSubmit = useCallback(() => {
@@ -162,7 +182,7 @@ export default function TestGroupPage() {
 	// Loading/Error states
 	if (!userId || isLoading) {
 		return (
-			<div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 dark:bg-slate-950">
+			<div className="min-h-screen flex items-center justify-center p-4">
 				<div className="text-center space-y-4">
 					<Loader2 className="inline-block animate-spin w-12 h-12 text-emerald-600 dark:text-emerald-400" />
 					<p className="text-base font-medium text-slate-700 dark:text-slate-300">
@@ -173,61 +193,44 @@ export default function TestGroupPage() {
 		);
 	}
 
-	if (isError) {
-		return (
-			<div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 dark:bg-slate-950">
-				<div className="text-center space-y-4 max-w-md">
-					<AlertCircle className="inline-block w-12 h-12 text-rose-500" />
-					<p className="text-base font-medium text-rose-600 dark:text-rose-400">
-						{(error as Error).message}
-					</p>
-					<Button
-						onClick={() => window.location.reload()}
-						className="bg-rose-600 hover:bg-rose-700 text-white"
-					>
-						Дахин оролдох
-					</Button>
-				</div>
-			</div>
-		);
-	}
-
 	return (
-		<div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-6 px-4 sm:px-6 lg:px-8 pb-32">
-			<div className="max-w-5xl mx-auto">
+		<div className="min-h-screen bg-page-gradient py-6 px-4 sm:px-6 lg:px-8 pb-32">
+			<div className="max-w-full mx-auto">
 				{/* Header */}
 				<div className="mb-8">
-					<div className="bg-white dark:bg-slate-900 rounded-lg p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+					<div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-slate-200 dark:border-slate-800">
 						<div className="flex items-center gap-3 mb-2">
-							<div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
-								<BookOpen className="w-5 h-5 text-white" />
+							<div className="w-12 h-12 bg-linear-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+								<BookOpen className="w-6 h-6 text-white" />
 							</div>
-							<h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-								Тестийн бүлгүүд
-							</h1>
+							<div>
+								<h1 className="text-2xl sm:text-3xl font-bold bg-linear-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+									Тестийн бүлгүүд
+								</h1>
+								<p className="text-sm text-slate-600 dark:text-slate-400">
+									Хичээл сонгож, амжилтаа дээшлүүлээрэй
+								</p>
+							</div>
 						</div>
-						<p className="text-sm text-slate-600 dark:text-slate-400">
-							Хичээл сонгож, амжилтаа дээшлүүлээрэй
-						</p>
 					</div>
 				</div>
 
 				{/* Search Bar */}
 				<div className="mb-6">
-					<div className="relative">
-						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+					<div className="relative max-w-2xl">
+						<Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
 						<input
 							type="text"
 							placeholder="Хайх..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="w-full pl-10 pr-10 py-3 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+							className="w-full pl-12 pr-12 py-3.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:border-emerald-500 dark:focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all shadow-sm"
 						/>
 						{searchQuery && (
 							<button
 								type="button"
 								onClick={() => setSearchQuery("")}
-								className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+								className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
 							>
 								<X className="w-5 h-5" />
 							</button>
@@ -237,31 +240,28 @@ export default function TestGroupPage() {
 
 				{/* Course Filter */}
 				{filterData?.RetData && filterData.RetData.length > 0 && (
-					<div className="mb-6">
-						<div className="flex items-center gap-2 mb-3">
-							<Filter className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-							<span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+					<div className="mb-8">
+						<div className="flex items-center gap-2 mb-4">
+							<Filter className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+							<span className="text-base font-bold text-slate-900 dark:text-white">
 								Хичээл шүүх
 							</span>
 						</div>
-						<div className="flex items-center gap-2 overflow-x-auto pb-2">
-							{filterData.RetData.filter(
-								(course: CourseFilterItem) => course.lesson_id !== 0,
-							).map((course: CourseFilterItem) => (
+						<div className="flex flex-wrap gap-2">
+							{filterData.RetData.map((course: CourseFilterItem) => (
 								<button
 									key={course.lesson_id}
 									type="button"
 									onClick={() =>
-										setSelectedCourse(
-											selectedCourse === course.lesson_id
-												? null
-												: course.lesson_id,
+										handleCourseFilterChange(
+											course.lesson_id === 0 ? null : course.lesson_id,
 										)
 									}
-									className={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap text-sm ${
+									className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+										(course.lesson_id === 0 && selectedCourse === null) ||
 										selectedCourse === course.lesson_id
-											? "bg-emerald-600 text-white shadow-md"
-											: "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500"
+											? "bg-linear-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 scale-105"
+											: "bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm text-slate-700 dark:text-slate-300 border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 hover:shadow-md"
 									}`}
 								>
 									{course.lesson_name}
@@ -271,91 +271,89 @@ export default function TestGroupPage() {
 					</div>
 				)}
 
-				{/* Stats Cards */}
-				{selectedCount > 0 && (
-					<div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-						<div className="bg-white dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-800">
-							<div className="flex items-center justify-between mb-1">
-								<Zap className="w-6 h-6 text-emerald-600" />
-								<span className="text-2xl font-bold text-emerald-600">
-									{selectedCount}
-								</span>
-							</div>
-							<p className="text-xs font-medium text-slate-600 dark:text-slate-400">
-								Сонгосон бүлэг
-							</p>
-						</div>
+				{/* Category Grid OR Item Details */}
+				{!selectedCategory ? (
+					// Show category grid
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+						{[...groupedData.entries()].map(([key, category]) => {
+							const categorySelectedCount = category.items.filter(
+								(item) => selectedTests[item.id],
+							).length;
 
-						<div className="bg-white dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-800">
-							<div className="flex items-center justify-between mb-1">
-								<Target className="w-6 h-6 text-sky-600" />
-								<span className="text-2xl font-bold text-sky-600">
-									{totalQuestions}
-								</span>
-							</div>
-							<p className="text-xs font-medium text-slate-600 dark:text-slate-400">
-								Нийт асуулт
-							</p>
-						</div>
+							const categoryTotalQuestions = category.items.reduce(
+								(sum, item) => sum + (selectedTests[item.id] || 0),
+								0,
+							);
 
-						<div className="bg-white dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-800">
-							<div className="flex items-center justify-between mb-1">
-								<TrendingUp className="w-6 h-6 text-amber-600" />
-								<span className="text-2xl font-bold text-amber-600">
-									{Math.round(totalQuestions / selectedCount) || 0}
-								</span>
-							</div>
-							<p className="text-xs font-medium text-slate-600 dark:text-slate-400">
-								Дундаж
-							</p>
-						</div>
-					</div>
-				)}
+							return (
+								<button
+									key={key}
+									type="button"
+									onClick={() => handleCategoryClick(key)}
+									className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-2xl p-5 shadow-lg border-2 border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all hover:shadow-xl text-left"
+								>
+									<div className="flex flex-col h-full">
+										<div className="flex-1">
+											<h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+												{category.ulesson_name}
+											</h3>
+											<div className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
+												<p>{category.coursename}</p>
+												<p className="font-semibold">
+													{category.items.length} тест
+												</p>
+											</div>
+										</div>
 
-				{/* Category List */}
-				<div className="space-y-6">
-					{[...groupedData.entries()].map(([key, category]) => {
-						const categorySelectedCount = category.items.filter(
-							(item) => selectedTests[item.id],
-						).length;
-
-						const categoryTotalQuestions = category.items.reduce(
-							(sum, item) => sum + (selectedTests[item.id] || 0),
-							0,
-						);
-
-						return (
-							<div key={key} className="space-y-3">
-								{/* Category Header */}
-								<div className="bg-white dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-800">
-									<div className="flex items-center justify-between mb-1">
-										<h3 className="text-lg font-bold text-slate-900 dark:text-white">
-											{category.ulesson_name}
-										</h3>
 										{categorySelectedCount > 0 && (
-											<div className="flex items-center gap-2">
-												<div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/30 rounded-md">
-													<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-													<span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-														{categorySelectedCount} бүлэг
+											<div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex items-center gap-2">
+												<div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg border border-emerald-200 dark:border-emerald-800">
+													<CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+													<span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+														{categorySelectedCount}
 													</span>
 												</div>
-												<div className="flex items-center gap-1.5 px-2.5 py-1 bg-sky-100 dark:bg-sky-900/30 rounded-md">
-													<Target className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-													<span className="text-xs font-semibold text-sky-700 dark:text-sky-300">
-														{categoryTotalQuestions} асуулт
+												<div className="flex items-center gap-2 px-3 py-1.5 bg-sky-100 dark:bg-sky-900/30 rounded-lg border border-sky-200 dark:border-sky-800">
+													<Target className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+													<span className="text-sm font-bold text-sky-700 dark:text-sky-300">
+														{categoryTotalQuestions}
 													</span>
 												</div>
 											</div>
 										)}
 									</div>
-									<p className="text-sm text-slate-600 dark:text-slate-400">
+								</button>
+							);
+						})}
+					</div>
+				) : (
+					// Show selected category items
+					(() => {
+						const category = groupedData.get(selectedCategory);
+						if (!category) return null;
+
+						return (
+							<div className="space-y-6">
+								{/* Back button and category header */}
+								<div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-2xl p-5 shadow-lg border-2 border-slate-200 dark:border-slate-800">
+									<button
+										type="button"
+										onClick={handleBackToCategories}
+										className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 mb-4 transition-colors"
+									>
+										<ArrowLeft className="w-5 h-5" />
+										<span className="font-semibold">Буцах</span>
+									</button>
+									<h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+										{category.ulesson_name}
+									</h2>
+									<p className="text-slate-600 dark:text-slate-400">
 										{category.coursename} • {category.items.length} тест
 									</p>
 								</div>
 
-								{/* Test Items */}
-								<div className="grid gap-3">
+								{/* Items grid */}
+								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 									{category.items.map((item) => {
 										const itemSelectedCount = selectedTests[item.id] || 0;
 										const isSelected = itemSelectedCount > 0;
@@ -363,89 +361,103 @@ export default function TestGroupPage() {
 										return (
 											<div
 												key={item.id}
-												className={`p-4 rounded-lg border-2 transition-all ${
+												className={`group relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-2xl p-5 shadow-lg transition-all hover:shadow-xl ${
 													isSelected
-														? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
-														: "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700"
+														? "border-2 border-emerald-500 ring-4 ring-emerald-500/10"
+														: "border-2 border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700"
 												}`}
 											>
-												{/* Item Header */}
-												<div className="flex items-start justify-between gap-3 mb-3">
-													<div className="flex-1">
-														<h4 className="text-base font-semibold text-slate-900 dark:text-white mb-1">
-															{item.name}
-														</h4>
-														<p className="text-sm text-slate-600 dark:text-slate-400">
-															Нийт: {item.cnt} тест
-														</p>
+												{/* Selected Badge */}
+												{isSelected && (
+													<div className="absolute -top-2 -right-2 flex items-center gap-1.5 px-3 py-1.5 bg-linear-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-bold text-sm shadow-lg">
+														<CheckCircle2 className="w-4 h-4" />
+														{itemSelectedCount}
 													</div>
-													{isSelected && (
-														<div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-md font-semibold text-sm">
-															<CheckCircle2 className="w-4 h-4" />
-															{itemSelectedCount}
-														</div>
-													)}
+												)}
+
+												{/* Card Header */}
+												<div className="mb-4">
+													<h4 className="text-base font-bold text-slate-900 dark:text-white mb-2 line-clamp-2 min-h-12">
+														{item.name}
+													</h4>
+													<p className="text-sm text-slate-600 dark:text-slate-400">
+														Нийт:{" "}
+														<span className="font-semibold">{item.cnt}</span>{" "}
+														тест
+													</p>
 												</div>
 
 												{/* Controls */}
-												<div className="flex items-center gap-3">
-													<button
-														type="button"
-														onClick={() =>
-															handleTestCountChange(
-																item.id,
-																Math.max(0, itemSelectedCount - 1),
-															)
-														}
-														disabled={itemSelectedCount === 0}
-														className="w-9 h-9 rounded-lg flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-all bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
-														aria-label="Тоо хасах"
-													>
-														<Minus className="w-4 h-4" />
-													</button>
-
-													<div className="flex-1">
-														<input
-															type="range"
-															min="0"
-															max={item.cnt}
-															value={itemSelectedCount}
-															onChange={(e) =>
+												<div className="space-y-3">
+													<div className="flex items-center gap-2">
+														<button
+															type="button"
+															onClick={() =>
 																handleTestCountChange(
 																	item.id,
-																	Number(e.target.value),
+																	Math.max(0, itemSelectedCount - 1),
 																)
 															}
-															className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-slate-200 dark:bg-slate-800 accent-emerald-600"
-															aria-label={`${item.name} тестийн тоо`}
-														/>
-														<div className="flex justify-between text-xs mt-1.5">
-															<span className="text-slate-500 dark:text-slate-400">
-																0
-															</span>
-															<span className="font-semibold text-emerald-600 dark:text-emerald-400">
-																{itemSelectedCount} / {item.cnt}
-															</span>
-															<span className="text-slate-500 dark:text-slate-400">
-																{item.cnt}
-															</span>
+															disabled={itemSelectedCount === 0}
+															className="w-10 h-10 rounded-xl flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition-all bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:scale-105 active:scale-95"
+															aria-label="Тоо хасах"
+														>
+															<Minus className="w-5 h-5" />
+														</button>
+
+														<div className="flex-1">
+															<input
+																type="range"
+																min="0"
+																max={item.cnt}
+																value={itemSelectedCount}
+																onChange={(e) =>
+																	handleTestCountChange(
+																		item.id,
+																		Number(e.target.value),
+																	)
+																}
+																className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-slate-200 dark:bg-slate-700 accent-emerald-600"
+																style={{
+																	background: `linear-gradient(to right, rgb(5 150 105) 0%, rgb(5 150 105) ${(itemSelectedCount / item.cnt) * 100}%, rgb(226 232 240) ${(itemSelectedCount / item.cnt) * 100}%, rgb(226 232 240) 100%)`,
+																}}
+																aria-label={`${item.name} тестийн тоо`}
+															/>
 														</div>
+
+														<button
+															type="button"
+															onClick={() =>
+																handleTestCountChange(
+																	item.id,
+																	Math.min(item.cnt, itemSelectedCount + 1),
+																)
+															}
+															disabled={itemSelectedCount >= item.cnt}
+															className="w-10 h-10 rounded-xl flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition-all bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/30"
+															aria-label="Тоо нэмэх"
+														>
+															<Plus className="w-5 h-5" />
+														</button>
 													</div>
 
-													<button
-														type="button"
-														onClick={() =>
-															handleTestCountChange(
-																item.id,
-																Math.min(item.cnt, itemSelectedCount + 1),
-															)
-														}
-														disabled={itemSelectedCount >= item.cnt}
-														className="w-9 h-9 rounded-lg flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-all bg-emerald-600 hover:bg-emerald-700 text-white"
-														aria-label="Тоо нэмэх"
-													>
-														<Plus className="w-4 h-4" />
-													</button>
+													<div className="flex justify-between text-xs font-semibold">
+														<span className="text-slate-500 dark:text-slate-400">
+															0
+														</span>
+														<span
+															className={`${
+																isSelected
+																	? "text-emerald-600 dark:text-emerald-400"
+																	: "text-slate-600 dark:text-slate-400"
+															}`}
+														>
+															{itemSelectedCount} / {item.cnt}
+														</span>
+														<span className="text-slate-500 dark:text-slate-400">
+															{item.cnt}
+														</span>
+													</div>
 												</div>
 											</div>
 										);
@@ -453,59 +465,39 @@ export default function TestGroupPage() {
 								</div>
 							</div>
 						);
-					})}
-				</div>
-
-				{/* Empty State */}
-				{groupedData.size === 0 && (
-					<div className="bg-white dark:bg-slate-900 rounded-lg p-12 text-center border border-slate-200 dark:border-slate-800">
-						<AlertCircle className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-						<p className="text-base font-medium text-slate-600 dark:text-slate-400">
-							{searchQuery
-								? `"${searchQuery}" хайлтад тохирох үр дүн олдсонгүй`
-								: "Тестийн бүлэг байхгүй байна"}
-						</p>
-					</div>
+					})()
 				)}
 			</div>
 
 			{/* Floating Action Button */}
 			{selectedCount > 0 && (
-				<div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-t border-slate-200 dark:border-slate-800 p-4 shadow-lg">
-					<div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
-						<div className="flex items-center gap-4">
-							<div className="text-center px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
-								<p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-0.5">
-									Бүлэг
-								</p>
-								<p className="text-xl font-bold text-slate-900 dark:text-white">
-									{selectedCount}
-								</p>
+				<div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t-2 border-slate-200 dark:border-slate-800 p-4 shadow-2xl">
+					<div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+						<div className="flex items-center gap-3 sm:gap-4 justify-center sm:justify-start">
+							<div className="text-center px-4 py-2 bg-linear-to-br from-emerald-500 to-emerald-600 rounded-xl text-white shadow-lg">
+								<p className="text-xs font-medium opacity-90 mb-0.5">Бүлэг</p>
+								<p className="text-2xl font-bold">{selectedCount}</p>
 							</div>
-							<div className="text-center px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
-								<p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-0.5">
-									Нийт асуулт
-								</p>
-								<p className="text-xl font-bold text-slate-900 dark:text-white">
-									{totalQuestions}
-								</p>
+							<div className="text-center px-4 py-2 bg-linear-to-br from-sky-500 to-sky-600 rounded-xl text-white shadow-lg">
+								<p className="text-xs font-medium opacity-90 mb-0.5">Асуулт</p>
+								<p className="text-2xl font-bold">{totalQuestions}</p>
 							</div>
 						</div>
 						<Button
 							onClick={handleSubmit}
 							disabled={mutation.isPending}
-							className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+							className="px-8 py-6 bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-emerald-500/30 hover:scale-105 active:scale-95 text-base"
 						>
 							{mutation.isPending ? (
 								<>
-									<Loader2 className="w-4 h-4 animate-spin mr-2" />
+									<Loader2 className="w-5 h-5 animate-spin mr-2" />
 									Илгээж байна...
 								</>
 							) : (
 								<>
-									<Zap className="w-4 h-4 mr-2" />
+									<Zap className="w-5 h-5 mr-2" />
 									Тест эхлүүлэх
-									<ArrowRight className="w-4 h-4 ml-2" />
+									<ArrowRight className="w-5 h-5 ml-2" />
 								</>
 							)}
 						</Button>

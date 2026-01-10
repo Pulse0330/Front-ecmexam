@@ -30,6 +30,7 @@ import { deleteExamAnswer, getExamById, saveExamAnswer } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { AnswerValue } from "@/types/exam/exam";
 import FinishExamResultDialog, { type FinishExamDialogHandle } from "../finish";
+import ExamTimer from "../stime";
 
 interface PendingAnswer {
 	questionId: number;
@@ -68,6 +69,7 @@ export default function SorilPage() {
 	const saveTimer = useRef<NodeJS.Timeout | null>(null);
 	const lastSavedAnswers = useRef<Map<number, AnswerValue>>(new Map());
 	const _questionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+	const [elapsedExamTime, setElapsedExamTime] = useState(0);
 	const isSavingRef = useRef(false);
 	const AUTO_SAVE_DELAY = 1000;
 	const {
@@ -117,6 +119,10 @@ export default function SorilPage() {
 		},
 		[],
 	);
+	const handleElapsedTimeChange = useCallback((minutes: number) => {
+		setElapsedExamTime(minutes);
+		console.log(`⏱️ Үргэлжилсэн хугацаа: ${minutes} минут`);
+	}, []);
 	const saveQuestion = useCallback(
 		async (pending: PendingAnswer, examId: number): Promise<boolean> => {
 			const { questionId, answer, queTypeId, rowNum } = pending;
@@ -980,16 +986,6 @@ export default function SorilPage() {
 
 	return (
 		<div className="min-h-screen">
-			{/* <AdvancedExamProctor
-				maxViolations={3}
-				strictMode={true}
-				enableFullscreen={true}
-				onSubmit={handleAutoSubmit}
-				onLogout={() => {
-					console.log("Хэрэглэгч гарлаа");
-				}}
-			/> */}
-
 			{saveError && (
 				<div className="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">
 					{saveError}
@@ -1001,6 +997,10 @@ export default function SorilPage() {
 				<div className="grid grid-cols-6 gap-6 max-w-[1800px] mx-auto p-6 xl:p-8">
 					<aside className="col-span-1">
 						<div className="sticky top-6 space-y-4">
+							{/* ✅ НЭМЭХ: ExamTimer */}
+							{examData?.ExamInfo?.[0]?.starteddate && (
+								<ExamTimer onElapsedChange={handleElapsedTimeChange} />
+							)}
 							<ExamMinimap
 								totalCount={totalCount}
 								answeredCount={answeredCount}
@@ -1010,6 +1010,7 @@ export default function SorilPage() {
 								onQuestionClick={goToQuestion}
 								bookmarkedQuestions={bookmarkedQuestions}
 							/>
+
 							{examData?.ExamInfo?.[0] && !isTimeUp && (
 								<div className="pt-6 flex justify-center">
 									<FinishExamResultDialog
@@ -1017,7 +1018,7 @@ export default function SorilPage() {
 										examId={examData.ExamInfo[0].id}
 										examType={examData.ExamInfo[0].exam_type}
 										startEid={examData.ExamInfo[0].start_eid}
-										examTime={examData.ExamInfo[0].minut}
+										elapsedMinutes={elapsedExamTime}
 										answeredCount={answeredCount}
 										totalCount={totalCount}
 									/>
@@ -1077,9 +1078,15 @@ export default function SorilPage() {
 					<div className="px-3 py-2">
 						{examData?.ExamInfo?.[0] && (
 							<div className="flex items-center justify-between mb-2">
+								{/* ✅ НЭМЭХ: Timer icon болон elapsed time */}
 								<div className="flex items-center gap-2">
-									<div className="w-7 h-7 rounded-md bg-green-100 dark:bg-green-900/40 flex items-center justify-center shrink-0">
-										<Clock className="w-4 h-4 text-green-600 dark:text-green-400" />
+									<div className="w-7 h-7 rounded-md bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
+										<Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+									</div>
+									<div className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400">
+										{Math.floor(elapsedExamTime / 60) > 0
+											? `${Math.floor(elapsedExamTime / 60)}:${(elapsedExamTime % 60).toString().padStart(2, "0")}`
+											: `${elapsedExamTime}м`}
 									</div>
 								</div>
 
@@ -1095,6 +1102,7 @@ export default function SorilPage() {
 							</div>
 						)}
 
+						{/* Progress bar */}
 						<div className="flex items-center gap-2">
 							<div className="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
 								<div
@@ -1108,6 +1116,13 @@ export default function SorilPage() {
 							</div>
 						</div>
 					</div>
+
+					{/* ✅ НЭМЭХ: Mobile-д ExamTimer харуулах (optional, хэрэв том харуулмаар бол) */}
+					{examData?.ExamInfo?.[0] && (
+						<div className="px-3 pb-2">
+							<ExamTimer onElapsedChange={handleElapsedTimeChange} />
+						</div>
+					)}
 				</div>
 
 				<div className="flex-1 overflow-y-auto px-3 py-3">
@@ -1216,7 +1231,7 @@ export default function SorilPage() {
 									examId={examData.ExamInfo[0].id}
 									examType={examData.ExamInfo[0].exam_type}
 									startEid={examData.ExamInfo[0].start_eid}
-									examTime={examData.ExamInfo[0].minut}
+									elapsedMinutes={elapsedExamTime}
 									answeredCount={answeredCount}
 									totalCount={totalCount}
 								/>

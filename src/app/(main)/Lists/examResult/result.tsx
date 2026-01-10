@@ -188,7 +188,7 @@ export default function ExamAnswersDialog({
 									<CardContent className="p-4 text-center">
 										<Target className="w-8 h-8 mx-auto mb-2 text-purple-600" />
 										<div className="text-3xl font-black text-purple-600">
-											{result.point_perc}%
+											{result.point_perc?.toFixed(1)}%
 										</div>
 										<div className="text-xs text-muted-foreground mt-1 font-medium">
 											Амжилт

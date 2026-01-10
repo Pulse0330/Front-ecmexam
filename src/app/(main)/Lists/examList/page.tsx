@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
 	AlertCircle,
-	Clock,
 	DollarSign,
 	Search,
 	Sparkles,
@@ -200,12 +199,7 @@ export default function ExamListPage() {
 								icon: <Zap size={14} />,
 								count: categorizedData.active.length,
 							},
-							{
-								key: "upcoming",
-								label: "Удахгүй",
-								icon: <Clock size={14} />,
-								count: categorizedData.upcoming.length,
-							},
+
 							{
 								key: "free",
 								label: "Төлбөргүй",

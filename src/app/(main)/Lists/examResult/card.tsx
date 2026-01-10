@@ -148,7 +148,7 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 											showScore ? "" : "blur-md select-none"
 										}`}
 									>
-										{exam.test_perc}
+										{exam.test_perc?.toFixed(1)}%
 									</div>
 
 									<div
