@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock } from "lucide-react";
+import { Timer } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface ExamTimerProps {
@@ -20,96 +20,88 @@ export default function ExamTimer({ onElapsedChange }: ExamTimerProps) {
 		const interval = setInterval(() => {
 			setSeconds((prev) => prev + 1);
 		}, 1000);
-
 		return () => clearInterval(interval);
 	}, []);
 
-	// Минут солигдох үед callback дуудах
 	useEffect(() => {
 		const currentMinutes = Math.floor(seconds / 60);
-
 		if (currentMinutes !== lastMinuteReported.current) {
 			lastMinuteReported.current = currentMinutes;
 			onElapsedChangeRef.current?.(currentMinutes);
 		}
 	}, [seconds]);
 
-	const formatTime = (totalSeconds: number) => {
-		const hrs = Math.floor(totalSeconds / 3600);
-		const mins = Math.floor((totalSeconds % 3600) / 60);
-		const secs = totalSeconds % 60;
-
-		return {
-			hrs,
-			mins: mins.toString().padStart(2, "0"),
-			secs: secs.toString().padStart(2, "0"),
-		};
-	};
-
-	const { hrs, mins, secs } = formatTime(seconds);
+	const hrs = Math.floor(seconds / 3600);
+	const mins = Math.floor((seconds % 3600) / 60);
+	const secs = seconds % 60;
 
 	return (
-		<div className="relative group">
-			{/* Гэрэлтсэн арын эффект */}
-			<div className="absolute -inset-1 bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl blur-lg opacity-25 group-hover:opacity-40 animate-pulse"></div>
+		<div className="relative inline-block min-w-60">
+			{/* Soft Outer Glow */}
+			<div className="absolute -inset-0.5 bg-slate-200 dark:bg-slate-800 rounded-2xl blur-sm opacity-50"></div>
 
-			{/* Үндсэн контейнер */}
-			<div className="relative bg-linear-to-br from-white to-blue-50 dark:from-slate-900 dark:to-slate-800 border-2 border-blue-200 dark:border-blue-700 rounded-2xl shadow-xl overflow-hidden">
-				{/* Дээд хэсэг - Гарчиг */}
-				<div className="bg-linear-to-r from-blue-600 to-indigo-600 px-4 py-2.5 flex items-center gap-2">
-					<div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
-						<Clock className="w-3.5 h-3.5 text-white animate-pulse" />
+			<div className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+				{/* Header Section - Minimalist */}
+				<div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+					<div className="flex items-center gap-2">
+						<Timer className="w-4 h-4 text-indigo-500" />
+						<span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+							Хугацаа
+						</span>
 					</div>
-					<span className="text-xs font-bold text-white uppercase tracking-wider">
-						Үргэлжилсэн хугацаа
-					</span>
+					{/* Active Status Indicator */}
 				</div>
 
-				{/* Цагийн харуулалт */}
-				<div className="px-6 py-5 flex items-center justify-center">
-					<div className="flex items-baseline gap-1 font-mono">
+				{/* Timer Display Section */}
+				<div className="px-6 py-6 flex items-center justify-center bg-white dark:bg-slate-900">
+					<div className="flex items-center font-mono">
 						{hrs > 0 && (
 							<>
-								<div className="flex flex-col items-center">
-									<span className="text-4xl font-black text-blue-600 dark:text-blue-400 tabular-nums">
-										{hrs}
-									</span>
-									<span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5">
-										ЦАГ
-									</span>
+								<div className="text-center group">
+									<div className="text-3xl font-bold text-slate-800 dark:text-slate-100 tabular-nums">
+										{hrs.toString().padStart(2, "0")}
+									</div>
+									<div className="text-[9px] font-bold text-slate-400 uppercase mt-1">
+										Цаг
+									</div>
 								</div>
-								<span className="text-3xl text-slate-400 dark:text-slate-600 mx-1 mb-4">
+								<div className="text-2xl text-slate-300 dark:text-slate-700 px-2 self-start mt-1">
 									:
-								</span>
+								</div>
 							</>
 						)}
 
-						<div className="flex flex-col items-center">
-							<span className="text-4xl font-black text-indigo-600 dark:text-indigo-400 tabular-nums">
-								{mins}
-							</span>
-							<span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5">
-								МИНУТ
-							</span>
+						<div className="text-center">
+							<div className="text-3xl font-bold text-slate-800 dark:text-slate-100 tabular-nums leading-none">
+								{mins.toString().padStart(2, "0")}
+							</div>
+							<div className="text-[9px] font-bold text-slate-400 uppercase mt-2">
+								минут
+							</div>
 						</div>
 
-						<span className="text-3xl text-slate-400 dark:text-slate-600 mx-1 mb-4 animate-pulse">
+						<div className="text-2xl text-slate-300 dark:text-slate-700 px-2 self-start mt-1">
 							:
-						</span>
+						</div>
 
-						<div className="flex flex-col items-center">
-							<span className="text-4xl font-black text-purple-600 dark:text-purple-400 tabular-nums">
-								{secs}
-							</span>
-							<span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5">
-								СЕК
-							</span>
+						<div className="text-center">
+							<div className="text-3xl font-bold text-indigo-500 dark:text-indigo-400 tabular-nums leading-none">
+								{secs.toString().padStart(2, "0")}
+							</div>
+							<div className="text-[9px] font-bold text-slate-400 uppercase mt-2">
+								секунд
+							</div>
 						</div>
 					</div>
 				</div>
 
-				{/* Доод хэсэг - Өнгөт gradient accent */}
-				<div className="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
+				{/* Progress Bar (Subtle) */}
+				<div className="absolute bottom-0 left-0 right-0 h-0,5 bg-slate-100 dark:bg-slate-800">
+					<div
+						className="h-full bg-indigo-500/40 transition-all duration-1000 ease-linear"
+						style={{ width: `${(secs / 60) * 100}%` }}
+					></div>
+				</div>
 			</div>
 		</div>
 	);

@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import parse from "html-react-parser";
 import {
+	ArrowLeft,
 	Bookmark,
 	BookmarkCheck,
 	CheckCircle2,
@@ -13,7 +14,7 @@ import {
 	Menu,
 	Save,
 } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ExamMinimap from "@/app/exam/component/minimap";
 import FillInTheBlankQuestion from "@/app/exam/component/question/fillblank";
@@ -71,8 +72,9 @@ export default function SorilPage() {
 	const _questionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 	const [elapsedExamTime, setElapsedExamTime] = useState(0);
 	const isSavingRef = useRef(false);
-
+	const router = useRouter();
 	const AUTO_SAVE_DELAY = 1000;
+	const [_isNavigating, setIsNavigating] = useState(false);
 	const {
 		data: examData,
 		isLoading,
@@ -446,7 +448,10 @@ export default function SorilPage() {
 		},
 		[userId, examData],
 	);
-
+	const _handleBack = useCallback(() => {
+		setIsNavigating(true);
+		router.push("/Lists/sorilList");
+	}, [router]);
 	useEffect(() => {
 		return () => {
 			for (const timer of typingTimers.current.values()) {
@@ -689,31 +694,6 @@ export default function SorilPage() {
 		},
 		[examData, scheduleAutoSave, areAnswersEqual],
 	);
-	const _handleResetToSaved = useCallback((questionId: number) => {
-		const lastSaved = lastSavedAnswers.current.get(questionId);
-
-		// Pending answers-с устгах
-		pendingAnswers.current.delete(questionId);
-
-		// Typing state цэвэрлэх
-		setTypingQuestions((prev) => {
-			const newSet = new Set(prev);
-			newSet.delete(questionId);
-			return newSet;
-		});
-
-		// Timer цэвэрлэх
-		const timer = typingTimers.current.get(questionId);
-		if (timer) {
-			clearTimeout(timer);
-			typingTimers.current.delete(questionId);
-		}
-
-		// Сүүлд хадгалсан хариулт руу буцаах
-		if (lastSaved !== undefined) {
-			setSelectedAnswers((prev) => ({ ...prev, [questionId]: lastSaved }));
-		}
-	}, []);
 
 	useEffect(() => {
 		return () => {
@@ -984,10 +964,15 @@ export default function SorilPage() {
 				<div className="grid grid-cols-6 gap-6 max-w-[1800px] mx-auto p-6 xl:p-8">
 					<aside className="col-span-1">
 						<div className="sticky top-6 space-y-4">
-							{/* ✅ НЭМЭХ: ExamTimer */}
-							{examData?.ExamInfo?.[0]?.starteddate && (
-								<ExamTimer onElapsedChange={handleElapsedTimeChange} />
-							)}
+							<button
+								type="button"
+								onClick={() => router.back()}
+								className="group flex items-center gap-3 pl-2 pr-5 py-6 duration-300 cursor-pointer bg-transparent border-none"
+							>
+								<div className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 transition-colors duration-300">
+									<ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:-translate-x-0.5 transition-all duration-300" />
+								</div>
+							</button>
 							<ExamMinimap
 								totalCount={totalCount}
 								answeredCount={answeredCount}
@@ -1056,6 +1041,11 @@ export default function SorilPage() {
 							</div>
 						))}
 					</main>
+					<aside className="col-span-1">
+						{examData?.ExamInfo?.[0]?.starteddate && (
+							<ExamTimer onElapsedChange={handleElapsedTimeChange} />
+						)}
+					</aside>
 				</div>
 			</div>
 

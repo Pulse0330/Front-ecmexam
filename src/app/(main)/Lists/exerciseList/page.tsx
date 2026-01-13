@@ -6,20 +6,23 @@ import {
 	ArrowRight,
 	BookOpen,
 	CheckCircle2,
-	CheckSquare,
 	Loader2,
 	Minus,
 	Plus,
 	Search,
 	Sparkles,
-	Trash2,
 	Zap,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
 import AnimatedBackground from "@/components/animated-bg";
 import { Button } from "@/components/ui/button";
-import { getTestFilter, getTestFiltered, getTestMixed } from "@/lib/api";
+import {
+	getTestFilter,
+	getTestFiltered,
+	getTestMixed,
+	gettTestFill,
+} from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type {
 	GetTestGroupResponse,
@@ -290,9 +293,7 @@ export default function TestGroupPage() {
 	const [selectedTests, setSelectedTests] = useState<Record<number, number>>(
 		{},
 	);
-	const [testLessonMap, setTestLessonMap] = useState<Record<number, number>>(
-		{},
-	);
+
 	const [searchQuery, setSearchQuery] = useState("");
 	const deferredSearch = useDeferredValue(searchQuery);
 	const [selectedLesson, setSelectedLesson] = useState<number | null>(null);
@@ -311,12 +312,40 @@ export default function TestGroupPage() {
 	});
 
 	const mutation = useMutation({
-		mutationFn: (tests: { testcnt: number; rlesson_id: number }[]) =>
-			getTestMixed(userId || 0, tests),
-		onSuccess: (res) =>
-			res.RetResponse?.ResponseType
-				? router.push("/exercise")
-				: alert(res.RetResponse?.ResponseMessage),
+		mutationFn: async (tests: { testcnt: number; rlesson_id: number }[]) => {
+			console.log("🚀 1️⃣ /testsavedmixed дуудаж байна...");
+			console.log("📦 Payload:", tests);
+
+			// Эхлээд тестүүдийг холих
+			const mixedResponse = await getTestMixed(userId || 0, tests);
+			console.log("✅ Холих амжилттай:", mixedResponse);
+
+			// Холих амжилттай бол тестүүдийг татах
+			if (mixedResponse.RetResponse?.ResponseType) {
+				console.log("🚀 2️⃣ /gettestfill дуудаж байна...");
+				const fillResponse = await gettTestFill(userId || 0);
+				console.log("✅ Тест татах амжилттай:", fillResponse);
+				return fillResponse;
+			}
+
+			return mixedResponse;
+		},
+		onSuccess: (res) => {
+			console.log("✅ Бүх үйл явц амжилттай!");
+			console.log("📥 Final Response:", res);
+
+			if (res.RetResponse?.ResponseType) {
+				console.log("✈️ /exercise руу шилжиж байна...");
+				router.push("/exercise");
+			} else {
+				console.log("❌ Алдаа:", res.RetResponse?.ResponseMessage);
+				alert(res.RetResponse?.ResponseMessage || "Алдаа гарлаа");
+			}
+		},
+		onError: (error) => {
+			console.error("💥 API алдаа:", error);
+			alert("Алдаа гарлаа. Дахин оролдоно уу.");
+		},
 	});
 
 	const lessonGroups = useMemo(() => {
@@ -367,84 +396,45 @@ export default function TestGroupPage() {
 		};
 	}, [selectedTests]);
 
-	const handleTestChange = useCallback(
-		(id: number, count: number) => {
-			setSelectedTests((prev) => {
-				const next = { ...prev };
-				if (count > 0) {
-					next[id] = count;
-				} else {
-					delete next[id];
-				}
-				return next;
-			});
+	const handleTestChange = useCallback((id: number, count: number) => {
+		console.log(`📝 Тест өөрчлөгдөж байна: ID=${id}, Count=${count}`);
 
-			// selectedLesson-г шууд хадгалах
-			if (count > 0 && selectedLesson) {
-				setTestLessonMap((prev) => ({
-					...prev,
-					[id]: selectedLesson,
-				}));
-			} else if (count === 0) {
-				setTestLessonMap((prev) => {
-					const next = { ...prev };
-					delete next[id];
-					return next;
-				});
+		setSelectedTests((prev) => {
+			const next = { ...prev };
+			if (count > 0) {
+				next[id] = count;
+			} else {
+				delete next[id];
 			}
-		},
-		[selectedLesson],
-	);
-
-	const handleSelectAllInCategory = useCallback(() => {
-		if (!selectedCategory || !selectedLesson) return;
-		const categoryItems = groupedData.get(selectedCategory)?.items || [];
-
-		setSelectedTests((prev) => {
-			const next = { ...prev };
-			categoryItems.forEach((item) => {
-				if (!next[item.id]) {
-					next[item.id] = item.cnt;
-				}
-			});
+			console.log("📊 Сонгосон тестүүд:", next);
 			return next;
 		});
-
-		// selectedLesson-г ашиглах
-		categoryItems.forEach((item) => {
-			setTestLessonMap((prev) => ({
-				...prev,
-				[item.id]: selectedLesson,
-			}));
-		});
-	}, [selectedCategory, groupedData, selectedLesson]);
-
-	const handleClearAllInCategory = useCallback(() => {
-		if (!selectedCategory) return;
-		const categoryItems = groupedData.get(selectedCategory)?.items || [];
-
-		setSelectedTests((prev) => {
-			const next = { ...prev };
-			categoryItems.forEach((item) => {
-				delete next[item.id];
-			});
-			return next;
-		});
-
-		setTestLessonMap((prev) => {
-			const next = { ...prev };
-			categoryItems.forEach((item) => {
-				delete next[item.id];
-			});
-			return next;
-		});
-	}, [selectedCategory, groupedData]);
+	}, []);
 
 	const handleBackToLessons = () => {
 		setSelectedLesson(null);
 		setSelectedCategory(null);
 	};
 
+	const handleStartTest = () => {
+		console.log("🎯 ЭХЛЭХ товч дарагдлаа!");
+		console.log("👤 User ID:", userId);
+		console.log("📊 Сонгосон тестүүд:", selectedTests);
+
+		const payload = Object.entries(selectedTests).map(([id, count]) => {
+			const testId = Number(id);
+			return {
+				testcnt: count,
+				rlesson_id: testId,
+			};
+		});
+
+		console.log("📦 Бэлдсэн payload:", payload);
+		console.log("📈 Нийт асуулт:", totals.questionCount);
+		console.log("📚 Нийт бүлэг:", totals.groupCount);
+
+		mutation.mutate(payload);
+	};
 	if (!userId)
 		return (
 			<div className="h-screen flex items-center justify-center font-bold text-slate-400">
@@ -508,11 +498,16 @@ export default function TestGroupPage() {
 				) : !selectedLesson ? (
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in slide-in-from-bottom-4 duration-500">
 						{lessonGroups.map((lesson) => {
+							// data?.RetData-аас тухайн хичээлийн тестүүдийг олох
+							const lessonTests =
+								data?.RetData?.filter(
+									(item: TestGroupItem) => item.ulessonid === lesson.lesson_id,
+								) || [];
+
+							const lessonTestIds = lessonTests.map((t: TestGroupItem) => t.id);
+
 							const lessonSelectedTests = Object.entries(selectedTests).filter(
-								([testId]) => {
-									const lessonId = testLessonMap[Number(testId)];
-									return lessonId === lesson.lesson_id;
-								},
+								([testId]) => lessonTestIds.includes(Number(testId)),
 							);
 
 							const selectedCount = lessonSelectedTests.length;
@@ -569,22 +564,6 @@ export default function TestGroupPage() {
 									{groupedData.get(selectedCategory)?.ulesson_name}
 								</h2>
 							</div>
-
-							<div className="flex items-center gap-2 w-full sm:w-auto">
-								<Button
-									onClick={handleClearAllInCategory}
-									variant="outline"
-									className="flex-1 sm:flex-none gap-2 text-xs font-bold border-red-100 text-red-500 hover:bg-red-50 hover:text-red-600 transition-all"
-								>
-									<Trash2 className="w-3.5 h-3.5" /> Сонголт арилгах
-								</Button>
-								<Button
-									onClick={handleSelectAllInCategory}
-									className="flex-1 sm:flex-none gap-2 text-xs font-bold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border-none transition-all"
-								>
-									<CheckSquare className="w-3.5 h-3.5" /> Бүгдийг сонгох
-								</Button>
-							</div>
 						</div>
 
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -621,14 +600,8 @@ export default function TestGroupPage() {
 								<span className="text-2xl font-black">{totals.groupCount}</span>
 							</div>
 						</div>
-
 						<Button
-							onClick={() => {
-								const payload = Object.entries(selectedTests).map(
-									([id, count]) => ({ testcnt: count, rlesson_id: Number(id) }),
-								);
-								mutation.mutate(payload);
-							}}
+							onClick={handleStartTest}
 							disabled={mutation.isPending}
 							className="bg-emerald-500 hover:bg-emerald-400 text-white rounded-3xl px-8 py-7 font-black text-lg transition-all active:scale-95 shadow-xl shadow-emerald-500/20"
 						>
