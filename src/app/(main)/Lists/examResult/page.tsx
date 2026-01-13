@@ -141,8 +141,8 @@ export default function ExamResultList() {
 
 	return (
 		<>
-			<div className="min-h-screen bg-page-gradient">
-				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+			<div className="min-h-screen flex flex-col overflow-auto">
+				<div className="max-w-[1600px] mx-auto w-full flex flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 					{/* Stats Section */}
 					{finishedExams.length > 0 && (
 						<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700">

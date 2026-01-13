@@ -1,254 +1,248 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, CheckCircle, Clock, Filter, Search, X } from "lucide-react";
+import { AlertCircle, BookOpen, Search, Sparkles, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-
-import type React from "react";
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getSorillists } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/useAuthStore";
-import type {
-	ApiSorillistsResponse,
-	SorillistsData,
-} from "@/types/soril/sorilLists";
+import type { ApiSorillistsResponse } from "@/types/soril/sorilLists";
 import { SorilCard } from "./sorilcard";
 
 type SorilCategory = "all" | "completed" | "notstarted";
 
-export default function SorilListPage() {
+export default function Sorillists() {
 	const { userId } = useAuthStore();
 	const router = useRouter();
-	const [searchQuery, setSearchQuery] = useState("");
-	const [selectedStatus, setSelectedStatus] = useState<SorilCategory>("all");
-	const [selectedPlan, setSelectedPlan] = useState<string>("all");
+	const [searchTerm, setSearchTerm] = useState("");
+	const [selectedCategory, setSelectedCategory] =
+		useState<SorilCategory>("all");
 
-	const { data: queryData, isPending } = useQuery<ApiSorillistsResponse>({
-		queryKey: ["examlists", userId],
+	const {
+		data: queryData,
+		isPending,
+		isError,
+		error,
+	} = useQuery<ApiSorillistsResponse>({
+		queryKey: ["sorillists", userId],
 		queryFn: () => getSorillists(userId || 0),
-		enabled: !!userId,
+		enabled: !!userId && userId !== 0,
 	});
 
-	const planNames = useMemo(() => {
-		if (!queryData?.RetData) return [];
-		return Array.from(
-			new Set(queryData.RetData.map((e) => e.plan_name || "Төлөвлөгөөгүй")),
-		);
-	}, [queryData]);
+	const data = useMemo(() => queryData?.RetData || [], [queryData]);
 
 	const categorizedData = useMemo(() => {
-		if (!queryData?.RetData) return { total: 0, completed: [], notstarted: [] };
-		const allData = queryData.RetData;
 		return {
-			total: allData.length,
-			completed: allData.filter((e) => e.isguitset === 1 && e.test_resid > 0),
-			notstarted: allData.filter(
-				(e) => e.isguitset === 0 && e.test_resid === 0,
-			),
+			completed: data.filter((e) => e.isguitset === 1),
+			notstarted: data.filter((e) => e.isguitset === 0),
 		};
-	}, [queryData]);
+	}, [data]);
 
 	const filteredData = useMemo(() => {
-		if (!queryData?.RetData) return [];
-		let filtered = [...queryData.RetData];
-		if (selectedStatus !== "all") filtered = categorizedData[selectedStatus];
-		if (searchQuery) {
-			filtered = filtered.filter(
-				(exam) =>
-					exam.soril_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-					(exam.plan_name || "")
-						.toLowerCase()
-						.includes(searchQuery.toLowerCase()),
-			);
-		}
-		if (selectedPlan !== "all") {
-			filtered = filtered.filter(
-				(e) => (e.plan_name || "Төлөвлөгөөгүй") === selectedPlan,
-			);
-		}
-		return filtered;
-	}, [queryData, searchQuery, selectedStatus, selectedPlan, categorizedData]);
+		let sorils = data;
 
-	const groupedExams = useMemo(() => {
-		return filteredData.reduce<Record<string, SorillistsData[]>>(
-			(acc, exam) => {
-				const planName = exam.plan_name || "Бусад сорилууд";
-				if (!acc[planName]) acc[planName] = [];
-				acc[planName].push(exam);
-				return acc;
-			},
-			{},
+		switch (selectedCategory) {
+			case "all":
+				sorils = data;
+				break;
+			case "completed":
+				sorils = categorizedData.completed;
+				break;
+			case "notstarted":
+				sorils = categorizedData.notstarted;
+				break;
+			default:
+				sorils = data;
+		}
+
+		if (!searchTerm.trim()) return sorils;
+
+		return sorils.filter(
+			(soril) =>
+				soril.soril_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				(soril.plan_name || "")
+					.toLowerCase()
+					.includes(searchTerm.toLowerCase()),
 		);
-	}, [filteredData]);
+	}, [data, categorizedData, selectedCategory, searchTerm]);
 
-	const clearFilters = () => {
-		setSearchQuery("");
-		setSelectedStatus("all");
-		setSelectedPlan("all");
-	};
+	const clearSearch = () => setSearchTerm("");
 
-	const hasActiveFilters =
-		searchQuery || selectedStatus !== "all" || selectedPlan !== "all";
+	if (isError) {
+		return (
+			<div className="min-h-screen flex items-center justify-center">
+				<div className="text-center space-y-4">
+					<BookOpen className="w-12 h-12 mx-auto text-gray-400" />
+					<h3 className="text-xl font-bold">Алдаа гарлаа</h3>
+					<p className="text-gray-600 dark:text-gray-400">
+						{error instanceof Error
+							? error.message
+							: "Жагсаалт татахад алдаа гарлаа"}
+					</p>
+					<Button
+						onClick={() => window.location.reload()}
+						className="rounded-full"
+					>
+						Дахин оролдох
+					</Button>
+				</div>
+			</div>
+		);
+	}
 
 	return (
-		<div className="min-h-screen bg-[#fafafa] dark:bg-zinc-950 p-4 md:p-8">
-			<div className="max-w-7xl mx-auto space-y-6">
-				{/* --- Header: Жижиг бөгөөд цэгцтэй --- */}
-				<div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b pb-6 border-zinc-200 dark:border-zinc-800">
-					<div>
-						<h1 className="text-2xl md:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-							Сорилын жагсаалт
-						</h1>
-						<p className="text-sm text-zinc-500 mt-1">
-							Нийт {queryData?.RetData?.length || 0} сорил байна
-						</p>
+		<div className="min-h-screen flex flex-col overflow-auto">
+			<div className="max-w-[1600px] mx-auto w-full flex flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+				{/* Header */}
+				<header className="text-center space-y-1">
+					<h1 className="text-3xl sm:text-4xl font-extrabold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+						Сорилын жагсаалт
+					</h1>
+					<p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
+						Та өөрийн сорилуудыг энд харж, эхлүүлэх боломжтой
+					</p>
+				</header>
+
+				{/* Search & Filter */}
+				<div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+					{/* Search */}
+					<div className="relative w-full sm:max-w-md">
+						<Search
+							className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+							size={18}
+						/>
+						<input
+							type="text"
+							placeholder="Сорилын нэрээр хайх..."
+							value={searchTerm}
+							onChange={(e) => setSearchTerm(e.target.value)}
+							className="w-full pl-10 pr-8 py-2.5 rounded-2xl border-2 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-sm sm:text-base text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+						/>
+						{searchTerm && (
+							<Button
+								type="button"
+								onClick={clearSearch}
+								className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
+								aria-label="Хайлт цэвэрлэх"
+							>
+								<X size={16} />
+							</Button>
+						)}
 					</div>
 
-					{/* Төлөвөөр шүүх (Badges) - Header-ийн баруун талд */}
-					<div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
-						{(
-							[
-								{
-									key: "all",
-									label: "Бүгд",
-									icon: <BookOpen size={14} />,
-									count: queryData?.RetData?.length || 0,
-								},
-								{
-									key: "notstarted",
-									label: "Эхлээгүй",
-									icon: <Clock size={14} />,
-									count: categorizedData.notstarted.length,
-								},
-								{
-									key: "completed",
-									label: "Дууссан",
-									icon: <CheckCircle size={14} />,
-									count: categorizedData.completed.length,
-								},
-							] as const
-						).map((cat) => (
+					{/* Filter Badges */}
+					<div className="flex flex-wrap gap-2 justify-center sm:justify-end">
+						{[
+							{
+								key: "all",
+								label: "Бүгд",
+								icon: null,
+								count: data.length,
+							},
+							{
+								key: "notstarted",
+								label: "Шинэ",
+								icon: <Sparkles size={14} />,
+								count: categorizedData.notstarted.length,
+							},
+							{
+								key: "completed",
+								label: "Дууссан",
+								icon: <BookOpen size={14} />,
+								count: categorizedData.completed.length,
+							},
+						].map((cat) => (
 							<CategoryBadge
 								key={cat.key}
-								active={selectedStatus === cat.key}
-								onClick={() => setSelectedStatus(cat.key)}
+								active={selectedCategory === cat.key}
+								onClick={() => setSelectedCategory(cat.key as SorilCategory)}
 								count={cat.count}
 								label={cat.label}
-								icon={cat.icon}
-								variant={cat.key}
+								icon={cat.icon || undefined}
+								variant={cat.key as SorilCategory}
 							/>
 						))}
 					</div>
 				</div>
 
-				{/* --- Search & Plan Filter Row --- */}
-				<div className="flex flex-col sm:flex-row items-center gap-3">
-					<div className="relative w-full sm:max-w-sm">
-						<Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
-						<Input
-							placeholder="Сорил хайх..."
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							className="pl-9 h-9 text-sm bg-white dark:bg-zinc-900 shadow-sm"
-						/>
+				{/* Results Info */}
+				{searchTerm && (
+					<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+						<AlertCircle size={16} />
+						<span>
+							<strong>{filteredData.length}</strong> сорил олдлоо &ldquo;
+							<strong>{searchTerm}</strong>&rdquo; гэсэн хайлтаар
+						</span>
 					</div>
+				)}
 
-					<Select value={selectedPlan} onValueChange={setSelectedPlan}>
-						<SelectTrigger className="h-9 w-full sm:w-[200px] bg-white dark:bg-zinc-900 shadow-sm text-sm">
-							<div className="flex items-center gap-2">
-								<Filter className="w-3.5 h-3.5 text-zinc-400" />
-								<SelectValue placeholder="Төлөвлөгөө" />
-							</div>
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all"> Хөтөлбөр сонгох</SelectItem>
-							{planNames.map((plan) => (
-								<SelectItem key={plan} value={plan}>
-									{plan}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-
-					{hasActiveFilters && (
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={clearFilters}
-							className="h-9 text-xs text-zinc-500"
-						>
-							<X className="w-3.5 h-3.5 mr-1" /> Цэвэрлэх
-						</Button>
+				{/* Soril Grid */}
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-4 items-stretch">
+					{isPending ? (
+						[1, 2, 3, 4, 5, 6, 7, 8].map((id) => <SkeletonCard key={id} />)
+					) : filteredData.length > 0 ? (
+						filteredData.map((soril) => (
+							<SorilCard
+								key={soril.exam_id}
+								exam={soril}
+								onClick={() => router.push(`/soril/${soril.exam_id}`)}
+							/>
+						))
+					) : (
+						<div className="col-span-full flex flex-col items-center justify-center py-20 text-center opacity-60">
+							<BookOpen className="w-12 h-12 mb-4 stroke-[1.5px]" />
+							<h3 className="text-lg font-bold">Илэрц олдсонгүй</h3>
+							<p className="text-sm text-muted-foreground">
+								Хайлт эсвэл шүүлтүүрт тохирох сорил байхгүй байна.
+							</p>
+						</div>
 					)}
 				</div>
-
-				{/* --- Content Area --- */}
-				{isPending ? (
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-						{[1, 2, 3, 4].map((i) => (
-							<Skeleton key={i} className="h-[280px] rounded-xl" />
-						))}
-					</div>
-				) : (
-					<div className="space-y-12">
-						{Object.entries(groupedExams).map(([planName, exams]) => (
-							<section key={planName} className="space-y-4">
-								<div className="flex items-center gap-2">
-									<div className="h-4 w-1 bg-primary rounded-full" />
-									<h2 className="text-lg font-semibold tracking-tight">
-										{planName}
-									</h2>
-									<span className="text-xs text-zinc-400 font-medium">
-										({exams.length})
-									</span>
-								</div>
-
-								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-									{exams.map((exam) => (
-										<SorilCard
-											key={exam.exam_id}
-											exam={exam}
-											onClick={() => router.push(`/soril/${exam.exam_id}`)}
-										/>
-									))}
-								</div>
-							</section>
-						))}
-					</div>
-				)}
-
-				{/* --- Empty State --- */}
-				{!isPending && filteredData.length === 0 && (
-					<div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed rounded-2xl border-zinc-100 dark:border-zinc-800">
-						<div className="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-full mb-4">
-							<BookOpen className="w-8 h-8 text-zinc-300" />
-						</div>
-						<h3 className="text-lg font-medium">Илэрц олдсонгүй</h3>
-						<p className="text-sm text-zinc-500 max-w-xs mx-auto mt-1">
-							Таны хайсан сорил олдсонгүй. Өөр түлхүүр үгээр хайж үзнэ үү.
-						</p>
-					</div>
-				)}
 			</div>
 		</div>
 	);
 }
 
-// ----------------------------------------------------------------------
-// 🏆 Compact Category Badge
-// ----------------------------------------------------------------------
+// Skeleton Card Component
+const SkeletonCard = () => (
+	<div className="h-[430px] w-full flex flex-col overflow-hidden rounded-[28px] border border-border/40 bg-card/50 backdrop-blur-md animate-pulse">
+		{/* Header Section Skeleton */}
+		<div className="h-40 w-full bg-slate-200 dark:bg-slate-800 relative">
+			<div className="absolute top-4 left-4 flex flex-col gap-2">
+				<div className="h-6 w-20 bg-slate-300 dark:bg-slate-700 rounded-full" />
+				<div className="h-6 w-24 bg-slate-300 dark:bg-slate-700 rounded-full" />
+			</div>
+		</div>
 
+		{/* Content Area Skeleton */}
+		<div className="flex flex-col grow p-5 gap-4">
+			<div className="space-y-3">
+				<div className="flex justify-between items-center">
+					<div className="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
+					<div className="h-4 w-4 bg-slate-200 dark:bg-slate-800 rounded-full" />
+				</div>
+				<div className="space-y-2">
+					<div className="h-5 w-full bg-slate-200 dark:bg-slate-800 rounded" />
+					<div className="h-5 w-2/3 bg-slate-200 dark:bg-slate-800 rounded" />
+				</div>
+			</div>
+
+			{/* Stats Grid Skeleton */}
+			<div className="mt-auto pt-4 border-t border-border/50 flex items-center justify-between">
+				<div className="flex gap-4">
+					<div className="h-4 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
+					<div className="h-4 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
+					<div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
+				</div>
+				<div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-800" />
+			</div>
+		</div>
+	</div>
+);
+
+// Category Badge Component
 interface CategoryBadgeProps {
 	active: boolean;
 	onClick: () => void;
@@ -258,46 +252,49 @@ interface CategoryBadgeProps {
 	icon?: React.ReactNode;
 }
 
-const CategoryBadge: React.FC<CategoryBadgeProps> = ({
-	active,
-	onClick,
-	count,
-	label,
-	variant,
-	icon,
-}) => {
-	const styles = {
-		all: active
-			? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-			: "bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50",
-		notstarted: active
-			? "bg-orange-500 text-white border-orange-500"
-			: "bg-white text-orange-600 border-orange-100 hover:bg-orange-50",
-		completed: active
-			? "bg-emerald-600 text-white border-emerald-600"
-			: "bg-white text-emerald-600 border-emerald-100 hover:bg-emerald-50",
-	};
+const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(
+	function CategoryBadge({ active, onClick, count, label, variant, icon }) {
+		const getStyle = () => {
+			if (!active)
+				return "bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700";
 
-	return (
-		<Button
-			onClick={onClick}
-			className={cn(
-				"flex items-center gap-2 px-3 h-8 rounded-lg text-xs font-semibold transition-all border shadow-sm",
-				styles[variant],
-			)}
-		>
-			<span className={cn("shrink-0", active ? "text-current" : "opacity-70")}>
-				{icon}
-			</span>
-			<span className="whitespace-nowrap">{label}</span>
-			<span
+			switch (variant) {
+				case "all":
+					return "bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-2 border-blue-500 shadow-lg shadow-blue-500/30";
+				case "notstarted":
+					return "bg-gradient-to-r from-emerald-500 to-green-500 text-white border-2 border-emerald-500 shadow-lg shadow-emerald-500/30";
+				case "completed":
+					return "bg-gradient-to-r from-purple-500 to-violet-500 text-white border-2 border-purple-500 shadow-lg shadow-purple-500/30";
+				default:
+					return "";
+			}
+		};
+
+		return (
+			<Button
+				type="button"
+				onClick={onClick}
 				className={cn(
-					"flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded text-[10px] font-bold",
-					active ? "bg-white/20 text-white" : "bg-zinc-100 text-zinc-500",
+					"inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200",
+					getStyle(),
+					active ? "scale-105" : "hover:scale-102",
 				)}
+				aria-label={`${label} категори сонгох`}
+				aria-pressed={active}
 			>
-				{count}
-			</span>
-		</Button>
-	);
-};
+				{icon && <span className="shrink-0">{icon}</span>}
+				<span>{label}</span>
+				<span
+					className={cn(
+						"ml-1 px-2 py-0.5 rounded-full text-xs font-bold",
+						active
+							? "bg-white/30 text-white"
+							: "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300",
+					)}
+				>
+					{count}
+				</span>
+			</Button>
+		);
+	},
+);

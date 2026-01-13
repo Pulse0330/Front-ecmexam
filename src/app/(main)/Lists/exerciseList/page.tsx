@@ -6,30 +6,27 @@ import {
 	ArrowRight,
 	BookOpen,
 	CheckCircle2,
-	Filter,
+	CheckSquare,
 	Loader2,
 	Minus,
 	Plus,
 	Search,
-	Target,
-	X,
+	Sparkles,
+	Trash2,
 	Zap,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
+import AnimatedBackground from "@/components/animated-bg";
 import { Button } from "@/components/ui/button";
-import {
-	getTestFilter,
-	getTestFiltered,
-	getTestGroup,
-	getTestMixed,
-} from "@/lib/api";
+import { getTestFilter, getTestFiltered, getTestMixed } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type {
 	GetTestGroupResponse,
 	TestGroupItem,
 } from "@/types/exercise/testGroup";
 
+// --- Types ---
 interface CourseFilterItem {
 	lesson_id: number;
 	lesson_name: string;
@@ -42,72 +39,314 @@ interface CategoryGroup {
 	items: TestGroupItem[];
 }
 
+interface LessonGroup {
+	lesson_id: number;
+	lesson_name: string;
+	totalTests: number;
+}
+
+// --- Sub-components ---
+
+const SkeletonCard = () => (
+	<div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-2xl p-5 shadow-lg border-2 border-slate-200 dark:border-slate-800 animate-pulse">
+		<div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-3"></div>
+		<div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2 mb-2"></div>
+		<div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3"></div>
+	</div>
+);
+
+const EmptyState = ({ searchQuery }: { searchQuery: string }) => (
+	<div className="text-center py-20 animate-in fade-in zoom-in duration-500 w-full col-span-full">
+		<div className="relative inline-block mb-6">
+			<BookOpen className="w-20 h-20 text-slate-300 dark:text-slate-600" />
+			<div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center animate-bounce">
+				<Search className="w-4 h-4 text-white" />
+			</div>
+		</div>
+		<h3 className="text-2xl font-bold text-slate-700 dark:text-slate-300 mb-2">
+			{searchQuery ? "Хайлт олдсонгүй" : "Тест олдсонгүй"}
+		</h3>
+		<p className="text-slate-500 dark:text-slate-400">
+			{searchQuery
+				? "Өөр түлхүүр үг ашиглан дахин оролдоно уу"
+				: "Тестийн бүлгүүд удахгүй нэмэгдэх болно"}
+		</p>
+	</div>
+);
+
+const LessonCard = memo(
+	({
+		lesson,
+		selectedCount,
+		totalQuestions,
+		onClick,
+	}: {
+		lesson: LessonGroup;
+		selectedCount: number;
+		totalQuestions: number;
+		onClick: () => void;
+	}) => (
+		<button
+			type="button"
+			onClick={onClick}
+			className="group bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl p-6 shadow-lg border-2 border-slate-200/50 dark:border-slate-800/50 hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] text-left relative overflow-hidden active:scale-95"
+		>
+			<div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+			<div className="relative flex flex-col h-full">
+				<div className="flex-1">
+					<div className="flex items-start justify-between mb-3">
+						<h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors flex-1 pr-2">
+							{lesson.lesson_name}
+						</h3>
+						{selectedCount > 0 && (
+							<div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg shadow-lg animate-pulse shrink-0">
+								<Sparkles className="w-3 h-3 text-white" />
+								<span className="text-[10px] font-bold text-white uppercase tracking-wider">
+									{selectedCount} тест
+								</span>
+							</div>
+						)}
+					</div>
+				</div>
+				{selectedCount > 0 && (
+					<div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+						<div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 dark:bg-emerald-900/30 rounded-md border border-emerald-100 dark:border-emerald-800">
+							<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+							<span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
+								{totalQuestions} асуулт
+							</span>
+						</div>
+					</div>
+				)}
+				<div className="absolute bottom-0 right-0 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+					<ArrowRight className="w-5 h-5 text-emerald-500" />
+				</div>
+			</div>
+		</button>
+	),
+);
+LessonCard.displayName = "LessonCard";
+
+const CategoryCard = memo(
+	({
+		category,
+		categorySelectedCount,
+		categoryTotalQuestions,
+		onClick,
+	}: {
+		category: CategoryGroup;
+		categorySelectedCount: number;
+		categoryTotalQuestions: number;
+		onClick: () => void;
+	}) => (
+		<button
+			type="button"
+			onClick={onClick}
+			className="group bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl p-6 shadow-lg border-2 border-slate-200/50 dark:border-slate-800/50 hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] text-left relative overflow-hidden active:scale-95"
+		>
+			<div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+			<div className="relative flex flex-col h-full">
+				<div className="flex-1">
+					<div className="flex items-start justify-between mb-3">
+						<h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors flex-1 pr-2">
+							{category.ulesson_name}
+						</h3>
+						{categorySelectedCount > 0 && (
+							<div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg shadow-lg animate-pulse shrink-0">
+								<Sparkles className="w-3 h-3 text-white" />
+								<span className="text-[10px] font-bold text-white uppercase tracking-wider">
+									Сонгосон
+								</span>
+							</div>
+						)}
+					</div>
+					<div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+						<p className="flex items-center gap-2">
+							<span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+							{category.coursename}
+						</p>
+						<p className="font-semibold text-slate-700 dark:text-slate-300">
+							{category.items.length} бүлэг тест
+						</p>
+					</div>
+				</div>
+				{categorySelectedCount > 0 && (
+					<div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+						<div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 dark:bg-emerald-900/30 rounded-md border border-emerald-100 dark:border-emerald-800">
+							<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+							<span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
+								{categoryTotalQuestions} асуулт
+							</span>
+						</div>
+					</div>
+				)}
+				<div className="absolute bottom-0 right-0 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+					<ArrowRight className="w-5 h-5 text-emerald-500" />
+				</div>
+			</div>
+		</button>
+	),
+);
+CategoryCard.displayName = "CategoryCard";
+
+const TestItemCard = memo(
+	({
+		item,
+		selectedCount,
+		onCountChange,
+	}: {
+		item: TestGroupItem;
+		selectedCount: number;
+		onCountChange: (id: number, count: number) => void;
+	}) => {
+		const isSelected = selectedCount > 0;
+
+		const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+			let val = parseInt(e.target.value, 10);
+			if (Number.isNaN(val)) val = 0;
+			if (val > item.cnt) val = item.cnt;
+			if (val < 0) val = 0;
+			onCountChange(item.id, val);
+		};
+
+		return (
+			<div
+				className={`group relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-2xl p-6 shadow-md transition-all duration-300 ${
+					isSelected
+						? "border-2 border-emerald-500 ring-4 ring-emerald-500/5 scale-[1.02] shadow-emerald-200/50 dark:shadow-emerald-900/20"
+						: "border-2 border-slate-100/50 dark:border-slate-800/50 hover:border-emerald-300"
+				}`}
+			>
+				{isSelected && (
+					<div className="absolute -top-3 -right-2 flex items-center gap-1.5 px-3 py-1 bg-emerald-500 text-white rounded-full font-bold text-xs shadow-lg animate-bounce-subtle z-10">
+						{selectedCount} асуулт
+					</div>
+				)}
+
+				<h4 className="text-base font-bold text-slate-800 dark:text-slate-100 mb-4 line-clamp-2 min-h-12">
+					{item.name}
+				</h4>
+
+				<div className="space-y-5">
+					<div className="flex items-center justify-between gap-2">
+						<Button
+							onClick={() =>
+								onCountChange(item.id, Math.max(0, selectedCount - 1))
+							}
+							disabled={selectedCount === 0}
+							className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 active:scale-90 transition-transform"
+						>
+							<Minus className="w-5 h-5" />
+						</Button>
+
+						<div className="relative flex-1 group/input">
+							<input
+								type="number"
+								min="0"
+								max={item.cnt}
+								value={selectedCount === 0 ? "" : selectedCount}
+								onChange={handleInputChange}
+								placeholder="0"
+								className="w-full text-center text-xl font-black bg-slate-50/50 dark:bg-slate-800/50 border-2 border-transparent focus:border-emerald-500 focus:ring-0 rounded-xl py-2 transition-all appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+							/>
+							<span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 pointer-events-none">
+								/ {item.cnt}
+							</span>
+						</div>
+
+						<Button
+							onClick={() =>
+								onCountChange(item.id, Math.min(item.cnt, selectedCount + 1))
+							}
+							disabled={selectedCount >= item.cnt}
+							className="w-10 h-10 rounded-xl bg-emerald-500 text-white shadow-md active:scale-90 transition-transform"
+						>
+							<Plus className="w-5 h-5" />
+						</Button>
+					</div>
+
+					<div className="px-1">
+						<input
+							type="range"
+							min="0"
+							max={item.cnt}
+							value={selectedCount}
+							onChange={(e) => onCountChange(item.id, Number(e.target.value))}
+							className="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-emerald-500 bg-slate-200 dark:bg-slate-700"
+						/>
+					</div>
+				</div>
+			</div>
+		);
+	},
+);
+TestItemCard.displayName = "TestItemCard";
+
+// --- Main Page ---
+
 export default function TestGroupPage() {
 	const { userId } = useAuthStore();
 	const router = useRouter();
 	const [selectedTests, setSelectedTests] = useState<Record<number, number>>(
 		{},
 	);
+	const [testLessonMap, setTestLessonMap] = useState<Record<number, number>>(
+		{},
+	);
 	const [searchQuery, setSearchQuery] = useState("");
-	const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
+	const deferredSearch = useDeferredValue(searchQuery);
+	const [selectedLesson, setSelectedLesson] = useState<number | null>(null);
 	const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-	// Fetch filter options (lessons list)
-	const { data: filterData } = useQuery({
-		queryKey: ["testFilter", userId],
+	const { data: lessonData, isLoading: isLoadingLessons } = useQuery({
+		queryKey: ["testGroupByLesson", userId],
 		queryFn: () => getTestFilter(userId || 0),
-		enabled: !!userId,
+		enabled: !!userId && !selectedLesson,
 	});
 
-	// Fetch test groups based on selected course
-	const { data, isLoading } = useQuery<GetTestGroupResponse>({
-		queryKey: ["testGroup", userId, selectedCourse],
-		queryFn: () => {
-			if (selectedCourse === null || selectedCourse === 0) {
-				return getTestGroup(userId || 0);
-			}
-			return getTestFiltered(userId || 0, selectedCourse);
-		},
-		enabled: !!userId,
+	const { data, isLoading: isLoadingDetails } = useQuery<GetTestGroupResponse>({
+		queryKey: ["testFiltered", userId, selectedLesson],
+		queryFn: () => getTestFiltered(userId || 0, selectedLesson!),
+		enabled: !!userId && !!selectedLesson,
 	});
 
-	// Submit mutation
 	const mutation = useMutation({
-		mutationFn: (tests: { testcnt: number; rlesson_id: number }[]) => {
-			return getTestMixed(userId || 0, tests);
-		},
-		onSuccess: (response) => {
-			if (response.RetResponse?.ResponseType) {
-				router.push("/exercise");
-			} else {
-				alert(
-					`Алдаа: ${response.RetResponse?.ResponseMessage || "Тодорхойгүй алдаа"}`,
-				);
-			}
-		},
-		onError: (error: Error) => {
-			alert(`Алдаа гарлаа: ${error.message}`);
-		},
+		mutationFn: (tests: { testcnt: number; rlesson_id: number }[]) =>
+			getTestMixed(userId || 0, tests),
+		onSuccess: (res) =>
+			res.RetResponse?.ResponseType
+				? router.push("/exercise")
+				: alert(res.RetResponse?.ResponseMessage),
 	});
 
-	// Group and filter data
+	const lessonGroups = useMemo(() => {
+		if (!lessonData?.RetData) return [];
+		const query = deferredSearch.toLowerCase();
+
+		return lessonData.RetData.filter(
+			(item: CourseFilterItem) =>
+				item.lesson_id !== 0 && item.lesson_name.toLowerCase().includes(query),
+		).map((item: CourseFilterItem) => ({
+			lesson_id: item.lesson_id,
+			lesson_name: item.lesson_name,
+			totalTests: 0,
+		}));
+	}, [lessonData, deferredSearch]);
+
 	const groupedData = useMemo(() => {
 		if (!data?.RetData) return new Map<string, CategoryGroup>();
+		const query = deferredSearch.toLowerCase();
 
-		const filtered = data.RetData.filter((item) => {
-			const query = searchQuery.toLowerCase();
-			return (
-				item.name.toLowerCase().includes(query) ||
-				item.coursename.toLowerCase().includes(query) ||
-				item.ulesson_name.toLowerCase().includes(query)
-			);
-		});
+		const filtered = data.RetData.filter(
+			(i: TestGroupItem) =>
+				i.name.toLowerCase().includes(query) ||
+				i.coursename.toLowerCase().includes(query) ||
+				i.ulesson_name.toLowerCase().includes(query),
+		);
 
 		const grouped = new Map<string, CategoryGroup>();
-
-		for (const item of filtered) {
+		filtered.forEach((item: TestGroupItem) => {
 			const key = `${item.coursename}-${item.ulessonid}`;
-
 			if (!grouped.has(key)) {
 				grouped.set(key, {
 					coursename: item.coursename,
@@ -115,395 +354,308 @@ export default function TestGroupPage() {
 					items: [],
 				});
 			}
-
 			grouped.get(key)?.items.push(item);
-		}
-
+		});
 		return grouped;
-	}, [data, searchQuery]);
+	}, [data, deferredSearch]);
 
-	// Calculate totals
-	const { selectedCount, totalQuestions } = useMemo(() => {
-		const count = Object.keys(selectedTests).length;
-		const total = Object.values(selectedTests).reduce(
-			(sum, val) => sum + val,
-			0,
-		);
-		return { selectedCount: count, totalQuestions: total };
+	const totals = useMemo(() => {
+		const selectedKeys = Object.keys(selectedTests);
+		return {
+			groupCount: selectedKeys.length,
+			questionCount: Object.values(selectedTests).reduce((a, b) => a + b, 0),
+		};
 	}, [selectedTests]);
 
-	// Handlers
-	const handleTestCountChange = useCallback((id: number, testcnt: number) => {
-		setSelectedTests((prev) => {
-			if (testcnt > 0) {
-				return { ...prev, [id]: testcnt };
+	const handleTestChange = useCallback(
+		(id: number, count: number) => {
+			setSelectedTests((prev) => {
+				const next = { ...prev };
+				if (count > 0) {
+					next[id] = count;
+				} else {
+					delete next[id];
+				}
+				return next;
+			});
+
+			// selectedLesson-г шууд хадгалах
+			if (count > 0 && selectedLesson) {
+				setTestLessonMap((prev) => ({
+					...prev,
+					[id]: selectedLesson,
+				}));
+			} else if (count === 0) {
+				setTestLessonMap((prev) => {
+					const next = { ...prev };
+					delete next[id];
+					return next;
+				});
 			}
-			const newState = { ...prev };
-			delete newState[id];
-			return newState;
+		},
+		[selectedLesson],
+	);
+
+	const handleSelectAllInCategory = useCallback(() => {
+		if (!selectedCategory || !selectedLesson) return;
+		const categoryItems = groupedData.get(selectedCategory)?.items || [];
+
+		setSelectedTests((prev) => {
+			const next = { ...prev };
+			categoryItems.forEach((item) => {
+				if (!next[item.id]) {
+					next[item.id] = item.cnt;
+				}
+			});
+			return next;
 		});
-	}, []);
 
-	const handleCourseFilterChange = useCallback((courseId: number | null) => {
-		setSelectedCourse(courseId);
-		setSelectedTests({});
+		// selectedLesson-г ашиглах
+		categoryItems.forEach((item) => {
+			setTestLessonMap((prev) => ({
+				...prev,
+				[item.id]: selectedLesson,
+			}));
+		});
+	}, [selectedCategory, groupedData, selectedLesson]);
+
+	const handleClearAllInCategory = useCallback(() => {
+		if (!selectedCategory) return;
+		const categoryItems = groupedData.get(selectedCategory)?.items || [];
+
+		setSelectedTests((prev) => {
+			const next = { ...prev };
+			categoryItems.forEach((item) => {
+				delete next[item.id];
+			});
+			return next;
+		});
+
+		setTestLessonMap((prev) => {
+			const next = { ...prev };
+			categoryItems.forEach((item) => {
+				delete next[item.id];
+			});
+			return next;
+		});
+	}, [selectedCategory, groupedData]);
+
+	const handleBackToLessons = () => {
+		setSelectedLesson(null);
 		setSelectedCategory(null);
-	}, []);
+	};
 
-	const handleCategoryClick = useCallback((categoryKey: string) => {
-		setSelectedCategory(categoryKey);
-	}, []);
-
-	const handleBackToCategories = useCallback(() => {
-		setSelectedCategory(null);
-	}, []);
-
-	const handleSubmit = useCallback(() => {
-		const tests = Object.entries(selectedTests).map(
-			([rlesson_id, testcnt]) => ({
-				testcnt,
-				rlesson_id: Number(rlesson_id),
-			}),
-		);
-
-		if (tests.length === 0) {
-			alert("Та хамгийн багадаа нэг тест сонгоно уу!");
-			return;
-		}
-
-		if (!userId) {
-			alert("Нэвтрэх шаардлагатай");
-			return;
-		}
-
-		mutation.mutate(tests);
-	}, [selectedTests, userId, mutation]);
-
-	// Loading/Error states
-	if (!userId || isLoading) {
+	if (!userId)
 		return (
-			<div className="min-h-screen flex items-center justify-center p-4">
-				<div className="text-center space-y-4">
-					<Loader2 className="inline-block animate-spin w-12 h-12 text-emerald-600 dark:text-emerald-400" />
-					<p className="text-base font-medium text-slate-700 dark:text-slate-300">
-						{!userId ? "Нэвтрэх шаардлагатай" : "Өгөгдөл уншиж байна..."}
-					</p>
-				</div>
+			<div className="h-screen flex items-center justify-center font-bold text-slate-400">
+				Нэвтэрнэ үү...
 			</div>
 		);
-	}
+
+	const isLoading = selectedLesson ? isLoadingDetails : isLoadingLessons;
 
 	return (
-		<div className="min-h-screen bg-page-gradient py-6 px-4 sm:px-6 lg:px-8 pb-32">
-			<div className="max-w-full mx-auto">
-				{/* Header */}
-				<div className="mb-8">
-					<div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-slate-200 dark:border-slate-800">
-						<div className="flex items-center gap-3 mb-2">
-							<div className="w-12 h-12 bg-linear-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
-								<BookOpen className="w-6 h-6 text-white" />
+		<div className="min-h-screen bg-slate-50/50 dark:bg-slate-950/50 relative overflow-hidden pb-40">
+			<AnimatedBackground />
+
+			<div className="container mx-auto px-4 pt-8 relative z-10">
+				<div className="mb-10 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-8 rounded-4xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100/50 dark:border-slate-800/50 relative overflow-hidden">
+					<div className="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl" />
+					<div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+						<div className="flex items-center gap-5">
+							{selectedLesson && (
+								<Button
+									onClick={handleBackToLessons}
+									variant="ghost"
+									className="flex items-center gap-2 text-slate-500 font-bold hover:text-emerald-500 transition-colors"
+								>
+									<ArrowLeft className="w-5 h-5" />
+								</Button>
+							)}
+							<div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-200">
+								<Zap className="text-white w-7 h-7 fill-white" />
 							</div>
 							<div>
-								<h1 className="text-2xl sm:text-3xl font-bold bg-linear-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-									Тестийн бүлгүүд
+								<h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+									{selectedLesson ? "Тест сонгох" : "Хичээл сонгох"}
 								</h1>
-								<p className="text-sm text-slate-600 dark:text-slate-400">
-									Хичээл сонгож, амжилтаа дээшлүүлээрэй
+								<p className="text-slate-500 font-medium">
+									{selectedLesson
+										? "Өөртөө тохирсон дасгалаа бэлдээрэй"
+										: "Хичээлээ сонгоод эхэлцгээе"}
 								</p>
 							</div>
 						</div>
+
+						<div className="relative w-full md:w-72">
+							<Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+							<input
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
+								placeholder={selectedLesson ? "Тест хайх..." : "Хичээл хайх..."}
+								className="w-full pl-11 pr-4 py-3 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border-none rounded-2xl text-sm focus:ring-2 ring-emerald-500 transition-all"
+							/>
+						</div>
 					</div>
 				</div>
 
-				{/* Search Bar */}
-				<div className="mb-6">
-					<div className="relative max-w-2xl">
-						<Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-						<input
-							type="text"
-							placeholder="Хайх..."
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							className="w-full pl-12 pr-12 py-3.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:border-emerald-500 dark:focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all shadow-sm"
-						/>
-						{searchQuery && (
-							<button
-								type="button"
-								onClick={() => setSearchQuery("")}
-								className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-							>
-								<X className="w-5 h-5" />
-							</button>
-						)}
+				{isLoading ? (
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+						{[1, 2, 3, 4].map((i) => (
+							<SkeletonCard key={i} />
+						))}
 					</div>
-				</div>
+				) : !selectedLesson ? (
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in slide-in-from-bottom-4 duration-500">
+						{lessonGroups.map((lesson) => {
+							const lessonSelectedTests = Object.entries(selectedTests).filter(
+								([testId]) => {
+									const lessonId = testLessonMap[Number(testId)];
+									return lessonId === lesson.lesson_id;
+								},
+							);
 
-				{/* Course Filter */}
-				{filterData?.RetData && filterData.RetData.length > 0 && (
-					<div className="mb-8">
-						<div className="flex items-center gap-2 mb-4">
-							<Filter className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-							<span className="text-base font-bold text-slate-900 dark:text-white">
-								Хичээл шүүх
-							</span>
-						</div>
-						<div className="flex flex-wrap gap-2">
-							{filterData.RetData.map((course: CourseFilterItem) => (
-								<button
-									key={course.lesson_id}
-									type="button"
-									onClick={() =>
-										handleCourseFilterChange(
-											course.lesson_id === 0 ? null : course.lesson_id,
-										)
-									}
-									className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
-										(course.lesson_id === 0 && selectedCourse === null) ||
-										selectedCourse === course.lesson_id
-											? "bg-linear-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 scale-105"
-											: "bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm text-slate-700 dark:text-slate-300 border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 hover:shadow-md"
-									}`}
-								>
-									{course.lesson_name}
-								</button>
-							))}
-						</div>
-					</div>
-				)}
-
-				{/* Category Grid OR Item Details */}
-				{!selectedCategory ? (
-					// Show category grid
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-						{[...groupedData.entries()].map(([key, category]) => {
-							const categorySelectedCount = category.items.filter(
-								(item) => selectedTests[item.id],
-							).length;
-
-							const categoryTotalQuestions = category.items.reduce(
-								(sum, item) => sum + (selectedTests[item.id] || 0),
+							const selectedCount = lessonSelectedTests.length;
+							const totalQuestions = lessonSelectedTests.reduce(
+								(sum, [, count]) => sum + count,
 								0,
 							);
 
 							return (
-								<button
-									key={key}
-									type="button"
-									onClick={() => handleCategoryClick(key)}
-									className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-2xl p-5 shadow-lg border-2 border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all hover:shadow-xl text-left"
-								>
-									<div className="flex flex-col h-full">
-										<div className="flex-1">
-											<h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-												{category.ulesson_name}
-											</h3>
-											<div className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
-												<p>{category.coursename}</p>
-												<p className="font-semibold">
-													{category.items.length} тест
-												</p>
-											</div>
-										</div>
-
-										{categorySelectedCount > 0 && (
-											<div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex items-center gap-2">
-												<div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg border border-emerald-200 dark:border-emerald-800">
-													<CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-													<span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
-														{categorySelectedCount}
-													</span>
-												</div>
-												<div className="flex items-center gap-2 px-3 py-1.5 bg-sky-100 dark:bg-sky-900/30 rounded-lg border border-sky-200 dark:border-sky-800">
-													<Target className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-													<span className="text-sm font-bold text-sky-700 dark:text-sky-300">
-														{categoryTotalQuestions}
-													</span>
-												</div>
-											</div>
-										)}
-									</div>
-								</button>
+								<LessonCard
+									key={lesson.lesson_id}
+									lesson={lesson}
+									selectedCount={selectedCount}
+									totalQuestions={totalQuestions}
+									onClick={() => setSelectedLesson(lesson.lesson_id)}
+								/>
 							);
 						})}
+						{lessonGroups.length === 0 && (
+							<EmptyState searchQuery={searchQuery} />
+						)}
+					</div>
+				) : !selectedCategory ? (
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in slide-in-from-bottom-4 duration-500">
+						{[...groupedData.entries()].map(([key, category]) => (
+							<CategoryCard
+								key={key}
+								category={category}
+								categorySelectedCount={
+									category.items.filter((i) => selectedTests[i.id]).length
+								}
+								categoryTotalQuestions={category.items.reduce(
+									(sum, i) => sum + (selectedTests[i.id] || 0),
+									0,
+								)}
+								onClick={() => setSelectedCategory(key)}
+							/>
+						))}
+						{groupedData.size === 0 && <EmptyState searchQuery={searchQuery} />}
 					</div>
 				) : (
-					// Show selected category items
-					(() => {
-						const category = groupedData.get(selectedCategory);
-						if (!category) return null;
-
-						return (
-							<div className="space-y-6">
-								{/* Back button and category header */}
-								<div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-2xl p-5 shadow-lg border-2 border-slate-200 dark:border-slate-800">
-									<button
-										type="button"
-										onClick={handleBackToCategories}
-										className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 mb-4 transition-colors"
-									>
-										<ArrowLeft className="w-5 h-5" />
-										<span className="font-semibold">Буцах</span>
-									</button>
-									<h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-										{category.ulesson_name}
-									</h2>
-									<p className="text-slate-600 dark:text-slate-400">
-										{category.coursename} • {category.items.length} тест
-									</p>
-								</div>
-
-								{/* Items grid */}
-								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-									{category.items.map((item) => {
-										const itemSelectedCount = selectedTests[item.id] || 0;
-										const isSelected = itemSelectedCount > 0;
-
-										return (
-											<div
-												key={item.id}
-												className={`group relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-2xl p-5 shadow-lg transition-all hover:shadow-xl ${
-													isSelected
-														? "border-2 border-emerald-500 ring-4 ring-emerald-500/10"
-														: "border-2 border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700"
-												}`}
-											>
-												{/* Selected Badge */}
-												{isSelected && (
-													<div className="absolute -top-2 -right-2 flex items-center gap-1.5 px-3 py-1.5 bg-linear-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-bold text-sm shadow-lg">
-														<CheckCircle2 className="w-4 h-4" />
-														{itemSelectedCount}
-													</div>
-												)}
-
-												{/* Card Header */}
-												<div className="mb-4">
-													<h4 className="text-base font-bold text-slate-900 dark:text-white mb-2 line-clamp-2 min-h-12">
-														{item.name}
-													</h4>
-													<p className="text-sm text-slate-600 dark:text-slate-400">
-														Нийт:{" "}
-														<span className="font-semibold">{item.cnt}</span>{" "}
-														тест
-													</p>
-												</div>
-
-												{/* Controls */}
-												<div className="space-y-3">
-													<div className="flex items-center gap-2">
-														<button
-															type="button"
-															onClick={() =>
-																handleTestCountChange(
-																	item.id,
-																	Math.max(0, itemSelectedCount - 1),
-																)
-															}
-															disabled={itemSelectedCount === 0}
-															className="w-10 h-10 rounded-xl flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition-all bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:scale-105 active:scale-95"
-															aria-label="Тоо хасах"
-														>
-															<Minus className="w-5 h-5" />
-														</button>
-
-														<div className="flex-1">
-															<input
-																type="range"
-																min="0"
-																max={item.cnt}
-																value={itemSelectedCount}
-																onChange={(e) =>
-																	handleTestCountChange(
-																		item.id,
-																		Number(e.target.value),
-																	)
-																}
-																className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-slate-200 dark:bg-slate-700 accent-emerald-600"
-																style={{
-																	background: `linear-gradient(to right, rgb(5 150 105) 0%, rgb(5 150 105) ${(itemSelectedCount / item.cnt) * 100}%, rgb(226 232 240) ${(itemSelectedCount / item.cnt) * 100}%, rgb(226 232 240) 100%)`,
-																}}
-																aria-label={`${item.name} тестийн тоо`}
-															/>
-														</div>
-
-														<button
-															type="button"
-															onClick={() =>
-																handleTestCountChange(
-																	item.id,
-																	Math.min(item.cnt, itemSelectedCount + 1),
-																)
-															}
-															disabled={itemSelectedCount >= item.cnt}
-															className="w-10 h-10 rounded-xl flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition-all bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/30"
-															aria-label="Тоо нэмэх"
-														>
-															<Plus className="w-5 h-5" />
-														</button>
-													</div>
-
-													<div className="flex justify-between text-xs font-semibold">
-														<span className="text-slate-500 dark:text-slate-400">
-															0
-														</span>
-														<span
-															className={`${
-																isSelected
-																	? "text-emerald-600 dark:text-emerald-400"
-																	: "text-slate-600 dark:text-slate-400"
-															}`}
-														>
-															{itemSelectedCount} / {item.cnt}
-														</span>
-														<span className="text-slate-500 dark:text-slate-400">
-															{item.cnt}
-														</span>
-													</div>
-												</div>
-											</div>
-										);
-									})}
-								</div>
+					<div className="space-y-6 animate-in fade-in duration-300 relative z-10">
+						<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-4 rounded-2xl shadow-sm border border-slate-100/50 dark:border-slate-800/50">
+							<div className="flex items-center gap-2">
+								<Button
+									onClick={() => setSelectedCategory(null)}
+									variant="ghost"
+									className="flex items-center gap-2 text-slate-500 font-bold hover:text-emerald-500 transition-colors"
+								>
+									<ArrowLeft className="w-4 h-4" /> Буцах
+								</Button>
+								<div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2 hidden sm:block" />
+								<h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">
+									{groupedData.get(selectedCategory)?.ulesson_name}
+								</h2>
 							</div>
-						);
-					})()
+
+							<div className="flex items-center gap-2 w-full sm:w-auto">
+								<Button
+									onClick={handleClearAllInCategory}
+									variant="outline"
+									className="flex-1 sm:flex-none gap-2 text-xs font-bold border-red-100 text-red-500 hover:bg-red-50 hover:text-red-600 transition-all"
+								>
+									<Trash2 className="w-3.5 h-3.5" /> Сонголт арилгах
+								</Button>
+								<Button
+									onClick={handleSelectAllInCategory}
+									className="flex-1 sm:flex-none gap-2 text-xs font-bold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border-none transition-all"
+								>
+									<CheckSquare className="w-3.5 h-3.5" /> Бүгдийг сонгох
+								</Button>
+							</div>
+						</div>
+
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+							{groupedData.get(selectedCategory)?.items.map((item) => (
+								<TestItemCard
+									key={item.id}
+									item={item}
+									selectedCount={selectedTests[item.id] || 0}
+									onCountChange={handleTestChange}
+								/>
+							))}
+						</div>
+					</div>
 				)}
 			</div>
 
-			{/* Floating Action Button */}
-			{selectedCount > 0 && (
-				<div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t-2 border-slate-200 dark:border-slate-800 p-4 shadow-2xl">
-					<div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-						<div className="flex items-center gap-3 sm:gap-4 justify-center sm:justify-start">
-							<div className="text-center px-4 py-2 bg-linear-to-br from-emerald-500 to-emerald-600 rounded-xl text-white shadow-lg">
-								<p className="text-xs font-medium opacity-90 mb-0.5">Бүлэг</p>
-								<p className="text-2xl font-bold">{selectedCount}</p>
+			{totals.questionCount > 0 && (
+				<div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-2xl z-50">
+					<div className="bg-slate-900/90 dark:bg-emerald-950/90 text-white rounded-4xl p-4 shadow-2xl flex items-center justify-between border border-white/10 backdrop-blur-xl">
+						<div className="flex items-center gap-6 pl-4">
+							<div className="flex flex-col">
+								<span className="text-[10px] uppercase font-black text-emerald-400 leading-none mb-1">
+									Нийт асуулт
+								</span>
+								<span className="text-2xl font-black">
+									{totals.questionCount}
+								</span>
 							</div>
-							<div className="text-center px-4 py-2 bg-linear-to-br from-sky-500 to-sky-600 rounded-xl text-white shadow-lg">
-								<p className="text-xs font-medium opacity-90 mb-0.5">Асуулт</p>
-								<p className="text-2xl font-bold">{totalQuestions}</p>
+							<div className="w-px h-8 bg-white/10" />
+							<div className="flex flex-col">
+								<span className="text-[10px] uppercase font-black text-emerald-400 leading-none mb-1">
+									Сонгосон бүлэг
+								</span>
+								<span className="text-2xl font-black">{totals.groupCount}</span>
 							</div>
 						</div>
+
 						<Button
-							onClick={handleSubmit}
+							onClick={() => {
+								const payload = Object.entries(selectedTests).map(
+									([id, count]) => ({ testcnt: count, rlesson_id: Number(id) }),
+								);
+								mutation.mutate(payload);
+							}}
 							disabled={mutation.isPending}
-							className="px-8 py-6 bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-emerald-500/30 hover:scale-105 active:scale-95 text-base"
+							className="bg-emerald-500 hover:bg-emerald-400 text-white rounded-3xl px-8 py-7 font-black text-lg transition-all active:scale-95 shadow-xl shadow-emerald-500/20"
 						>
 							{mutation.isPending ? (
-								<>
-									<Loader2 className="w-5 h-5 animate-spin mr-2" />
-									Илгээж байна...
-								</>
+								<Loader2 className="animate-spin" />
 							) : (
-								<>
-									<Zap className="w-5 h-5 mr-2" />
-									Тест эхлүүлэх
-									<ArrowRight className="w-5 h-5 ml-2" />
-								</>
+								<div className="flex items-center gap-2">
+									ЭХЛЭХ <ArrowRight className="w-5 h-5" />
+								</div>
 							)}
 						</Button>
 					</div>
 				</div>
 			)}
+
+			<style jsx global>{`
+                .no-scrollbar::-webkit-scrollbar { display: none; }
+                .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                
+                @keyframes bounce-subtle {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-4px); }
+                }
+                .animate-bounce-subtle {
+                    animation: bounce-subtle 2s infinite ease-in-out;
+                }
+            `}</style>
 		</div>
 	);
 }

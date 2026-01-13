@@ -1,10 +1,10 @@
 "use client";
 import Cookies from "js-cookie";
 import {
-	BarChart3, // Шинээр нэмэх
+	BarChart3,
 	ChevronDown,
-	ClipboardList, // Шинээр нэмэх
-	FileText, // Шинээр нэмэх
+	ClipboardList,
+	FileText,
 	LogOut,
 	School,
 	TrendingUp,
@@ -51,6 +51,82 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/stores/useUserStore";
+
+// ⭐ UNIFIED User Avatar Component
+const UserAvatar = React.memo(
+	({
+		userImage,
+		userName,
+		size = "md",
+		showOnlineStatus = false,
+		className = "",
+	}: {
+		userImage: string;
+		userName: string;
+		size?: "sm" | "md" | "lg";
+		showOnlineStatus?: boolean;
+		className?: string;
+	}) => {
+		const sizeClasses = {
+			sm: "w-9 h-9",
+			md: "w-11 h-11",
+			lg: "w-13 h-13",
+		};
+
+		const iconSizes = {
+			sm: "h-4 w-4",
+			md: "h-5 w-5",
+			lg: "h-6 w-6",
+		};
+
+		const statusSizes = {
+			sm: "w-2.5 h-2.5",
+			md: "w-3.5 h-3.5",
+			lg: "w-4 h-4",
+		};
+
+		if (userImage) {
+			return (
+				<div className={cn("relative shrink-0", className)}>
+					<Image
+						src={userImage}
+						alt={userName}
+						width={size === "sm" ? 36 : size === "md" ? 44 : 52}
+						height={size === "sm" ? 36 : size === "md" ? 44 : 52}
+						className={cn(
+							"rounded-full object-cover ring-2 ring-primary/40 ring-offset-2 ring-offset-background shadow-sm",
+							sizeClasses[size],
+						)}
+					/>
+					{showOnlineStatus && (
+						<div
+							className={cn(
+								"absolute -bottom-0.5 -right-0.5 bg-linear-to-br from-green-400 to-green-500 rounded-full border-2 border-background shadow-sm",
+								statusSizes[size],
+							)}
+						>
+							<div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-75" />
+						</div>
+					)}
+				</div>
+			);
+		}
+
+		return (
+			<div
+				className={cn(
+					"rounded-full bg-linear-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0 shadow-sm",
+					sizeClasses[size],
+					className,
+				)}
+			>
+				<User className={`${iconSizes[size]} text-primary`} />
+			</div>
+		);
+	},
+);
+
+UserAvatar.displayName = "UserAvatar";
 
 // NavbarAction Component
 const NavbarAction = React.memo(
@@ -112,7 +188,7 @@ const examDropdownLinks = [
 	},
 ];
 
-const _sorilDropdownLinks = [
+const sorilDropdownLinks = [
 	{
 		href: "/Lists/sorilList",
 		label: "Сорилын жагсаалт",
@@ -127,52 +203,6 @@ const _sorilDropdownLinks = [
 	},
 ];
 
-const sorilDropdownLinks = [
-	{
-		href: "/Lists/sorilList",
-		label: "Сорилын жагсаалт",
-		description: "",
-		icon: "",
-	},
-	{
-		href: "/Lists/sorilResult",
-		label: "Сорилын үр дүн",
-		description: "",
-		icon: "",
-	},
-];
-
-// User Info Component
-const UserInfo = React.memo(
-	({ userName, userImage }: { userName: string; userImage: string }) => (
-		<div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-linear-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 transition-all duration-300 hover:shadow-md hover:border-primary/30 hover:scale-[1.02]">
-			{userImage ? (
-				<div className="relative shrink-0">
-					<Image
-						src={userImage}
-						alt={userName}
-						width={36}
-						height={36}
-						className="rounded-full object-cover ring-2 ring-primary/40 ring-offset-2 ring-offset-background shadow-sm"
-					/>
-					<div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-linear-to-br from-green-400 to-green-500 rounded-full border-2 border-background shadow-sm">
-						<div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-75" />
-					</div>
-				</div>
-			) : (
-				<div className="w-9 h-9 rounded-full bg-linear-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0 shadow-sm">
-					<User className="h-5 w-5 text-primary" />
-				</div>
-			)}
-			<span className="text-sm font-semibold text-foreground leading-tight truncate max-w-[150px]">
-				{userName}
-			</span>
-		</div>
-	),
-);
-
-UserInfo.displayName = "UserInfo";
-
 // Mega Menu Component
 const MegaMenuItem = React.memo(
 	({
@@ -185,7 +215,7 @@ const MegaMenuItem = React.memo(
 			href: string;
 			label: string;
 			description: string;
-			icon: React.ReactNode; // Element-ээс ReactNode руу өөрчлөх
+			icon: React.ReactNode;
 		}>;
 		isActive: boolean;
 	}) => {
@@ -474,14 +504,6 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 
 						{/* Right side - Actions */}
 						<div className="flex items-center gap-3">
-							{/* User name display - Desktop only */}
-							{!isMobile && profile && (
-								<UserInfo
-									userName={userInfo.userName}
-									userImage={userInfo.userImage}
-								/>
-							)}
-
 							{/* Mobile menu */}
 							{isMobile && (
 								<Popover open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -618,7 +640,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 													);
 												})}
 
-												{/* Mobile Цахим сургалт - Regular Link */}
+												{/* Mobile Цахим сургалт */}
 												<div className="w-full pt-4 pb-2">
 													<div className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
 														📚 Цахим сургалт
@@ -646,31 +668,45 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 								</Popover>
 							)}
 
-							{/* User dropdown */}
+							{/* ⭐ UNIFIED User dropdown - Desktop shows name + avatar, Mobile shows only avatar */}
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									{userInfo.userImage ? (
-										<Button
-											variant="ghost"
-											className={cn(
-												"p-0 rounded-xl backdrop-blur-md border-2 transition-all duration-300",
-												"bg-linear-to-br from-white/95 to-white/90 dark:from-gray-800/80 dark:to-gray-800/60",
-												"border-gray-200/60 dark:border-gray-700/60",
-												"hover:shadow-lg hover:scale-105 hover:border-primary/40",
-												"active:scale-95 h-11 w-11 overflow-hidden",
-											)}
-										>
-											<Image
-												src={userInfo.userImage}
-												alt={userInfo.userName}
-												width={44}
-												height={44}
-												className="rounded-xl object-cover"
+									<Button
+										variant="ghost"
+										className={cn(
+											"rounded-xl backdrop-blur-md border-2 transition-all duration-300",
+											"bg-linear-to-br from-white/95 to-white/90 dark:from-gray-800/80 dark:to-gray-800/60",
+											"border-gray-200/60 dark:border-gray-700/60",
+											"hover:shadow-lg hover:scale-105 hover:border-primary/40",
+											"active:scale-95",
+											// Desktop: padding for name + avatar
+											!isMobile && "px-4 py-2 gap-3 h-auto",
+											// Mobile: square button with just avatar
+											isMobile && "p-0 h-11 w-11 overflow-hidden",
+										)}
+									>
+										{!isMobile ? (
+											// Desktop: Show avatar + name with online status
+											<>
+												<UserAvatar
+													userImage={userInfo.userImage}
+													userName={userInfo.userName}
+													size="sm"
+													showOnlineStatus={true}
+												/>
+												<span className="text-sm font-semibold text-foreground leading-tight truncate max-w-[150px]">
+													{userInfo.userName}
+												</span>
+											</>
+										) : (
+											// Mobile: Show only avatar
+											<UserAvatar
+												userImage={userInfo.userImage}
+												userName={userInfo.userName}
+												size="md"
 											/>
-										</Button>
-									) : (
-										<NavbarAction icon={<User className="h-5 w-5" />} />
-									)}
+										)}
+									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent
 									align="end"
@@ -678,22 +714,12 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 								>
 									<DropdownMenuLabel className="pb-3">
 										<div className="flex items-center space-x-3.5">
-											{userInfo.userImage ? (
-												<div className="relative">
-													<Image
-														src={userInfo.userImage}
-														alt={userInfo.userName}
-														width={52}
-														height={52}
-														className="rounded-xl object-cover border-2 border-primary/30 ring-2 ring-primary/10 shadow-md"
-													/>
-													<div className="absolute -bottom-1 -right-1 w-4 h-4 bg-linear-to-br from-green-400 to-green-500 rounded-full border-2 border-background shadow-sm" />
-												</div>
-											) : (
-												<div className="w-13 h-13 rounded-xl bg-linear-to-br from-primary/20 to-primary/10 flex items-center justify-center shadow-md">
-													<User className="h-6 w-6 text-primary" />
-												</div>
-											)}
+											<UserAvatar
+												userImage={userInfo.userImage}
+												userName={userInfo.userName}
+												size="lg"
+												showOnlineStatus={true}
+											/>
 
 											<div className="flex flex-col space-y-2 flex-1 min-w-0">
 												<p className="text-base font-bold leading-none truncate">

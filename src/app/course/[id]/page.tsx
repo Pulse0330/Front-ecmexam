@@ -158,7 +158,7 @@ export default function CoursePage() {
 
 			{/* Hero Section */}
 			<div className="relative border-b bg-linear-to-r from-primary/10 via-primary/5 to-background backdrop-blur-sm">
-				<div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-linear(0deg,transparent,black)]" />
+				<div className="absolute inset-0 bg-grid-white/5 [mask:linear-linear(0deg,transparent,black)]" />
 				<div className="container mx-auto px-4 py-8 md:py-12 relative max-w-7xl">
 					<Button
 						variant="ghost"

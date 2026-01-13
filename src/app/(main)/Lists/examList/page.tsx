@@ -10,6 +10,7 @@ import {
 	Zap,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { useServerTime } from "@/hooks/useServerTime";
 import { getExamlists } from "@/lib/api";
@@ -145,8 +146,8 @@ export default function ExamListPage() {
 	}
 
 	return (
-		<div className="min-h-screen flex flex-col py-4 px-3 sm:px-6 overflow-auto">
-			<div className="max-w-7xl mx-auto w-full flex flex-col gap-6">
+		<div className="min-h-screen flex flex-col overflow-auto">
+			<div className="max-w-[1600px] mx-auto w-full flex flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 				{/* Header */}
 				<header className="text-center space-y-1">
 					<h1 className="text-3xl sm:text-4xl font-extrabold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -244,16 +245,12 @@ export default function ExamListPage() {
 				)}
 
 				{/* Exam Grid */}
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
-					{isPending ? (
-						skeletonIds.map((id) => <SkeletonCard key={id} />)
-					) : filteredData.length === 0 ? (
-						<EmptyState searchTerm={searchTerm} />
-					) : (
-						filteredData.map((exam) => (
-							<ExamCard key={exam.exam_id} exam={exam} />
-						))
-					)}
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-4 items-stretch">
+					{isPending
+						? skeletonIds.map((id) => <SkeletonCard key={id} />)
+						: filteredData.map((exam, index) => (
+								<ExamCard key={exam.exam_id} exam={exam} index={index} />
+							))}
 				</div>
 			</div>
 		</div>
@@ -262,33 +259,37 @@ export default function ExamListPage() {
 
 // Skeleton Card Component
 const SkeletonCard = () => (
-	<div className="rounded-2xl border-2 ">
-		<div className="space-y-3">
-			<div className="h-6 w-3/4 bg-gray-200 dark:bg-gray-800 rounded" />
-			<div className="h-4 w-1/2 bg-gray-200 dark:bg-gray-800 rounded" />
-			<div className="space-y-2 pt-2">
-				<div className="h-10 w-full bg-gray-200 dark:bg-gray-800 rounded-lg" />
-				<div className="h-10 w-full bg-gray-200 dark:bg-gray-800 rounded-lg" />
+	<div className="h-[430px] w-full flex flex-col overflow-hidden rounded-[28px] border border-border/40 bg-card/50 backdrop-blur-md animate-pulse">
+		{/* Header Section Skeleton */}
+		<div className="h-40 w-full bg-slate-200 dark:bg-slate-800 relative">
+			<div className="absolute top-4 left-4 flex flex-col gap-2">
+				<div className="h-6 w-20 bg-slate-300 dark:bg-slate-700 rounded-full" />
+				<div className="h-6 w-24 bg-slate-300 dark:bg-slate-700 rounded-full" />
 			</div>
 		</div>
-	</div>
-);
 
-// Empty State Component
-const EmptyState = ({ searchTerm }: { searchTerm: string }) => (
-	<div className="col-span-full flex flex-col items-center justify-center py-16 space-y-4 bg-page-gradiant">
-		<div className="w-20 h-20 rounded-full flex items-center justify-center">
-			<Search className="w-10 h-10 text-gray-400 dark:text-gray-600" />
-		</div>
-		<div className="text-center space-y-2">
-			<h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-				Шалгалт олдсонгүй
-			</h3>
-			<p className="text-gray-500 dark:text-gray-400 max-w-md">
-				{searchTerm
-					? `"${searchTerm}" гэсэн хайлтаар шалгалт олдсонгүй. Өөр түлхүүр үг ашиглаж үзнэ үү.`
-					: "Энэ категорид шалгалт байхгүй байна."}
-			</p>
+		{/* Content Area Skeleton */}
+		<div className="flex flex-col grow p-5 gap-4">
+			<div className="space-y-3">
+				<div className="flex justify-between items-center">
+					<div className="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
+					<div className="h-4 w-4 bg-slate-200 dark:bg-slate-800 rounded-full" />
+				</div>
+				<div className="space-y-2">
+					<div className="h-5 w-full bg-slate-200 dark:bg-slate-800 rounded" />
+					<div className="h-5 w-2/3 bg-slate-200 dark:bg-slate-800 rounded" />
+				</div>
+			</div>
+
+			{/* Stats Grid Skeleton */}
+			<div className="mt-auto pt-4 border-t border-border/50 flex items-center justify-between">
+				<div className="flex gap-4">
+					<div className="h-4 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
+					<div className="h-4 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
+					<div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
+				</div>
+				<div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-800" />
+			</div>
 		</div>
 	</div>
 );

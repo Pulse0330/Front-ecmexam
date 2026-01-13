@@ -51,12 +51,12 @@ export default function ExamTimer({ onElapsedChange }: ExamTimerProps) {
 	return (
 		<div className="relative group">
 			{/* Гэрэлтсэн арын эффект */}
-			<div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl blur-lg opacity-25 group-hover:opacity-40 animate-pulse"></div>
+			<div className="absolute -inset-1 bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl blur-lg opacity-25 group-hover:opacity-40 animate-pulse"></div>
 
 			{/* Үндсэн контейнер */}
-			<div className="relative bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-slate-800 border-2 border-blue-200 dark:border-blue-700 rounded-2xl shadow-xl overflow-hidden">
+			<div className="relative bg-linear-to-br from-white to-blue-50 dark:from-slate-900 dark:to-slate-800 border-2 border-blue-200 dark:border-blue-700 rounded-2xl shadow-xl overflow-hidden">
 				{/* Дээд хэсэг - Гарчиг */}
-				<div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 flex items-center gap-2">
+				<div className="bg-linear-to-r from-blue-600 to-indigo-600 px-4 py-2.5 flex items-center gap-2">
 					<div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
 						<Clock className="w-3.5 h-3.5 text-white animate-pulse" />
 					</div>
