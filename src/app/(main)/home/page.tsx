@@ -190,7 +190,7 @@ export default function HomePage() {
 
 				{/* Grid Pattern */}
 				<div
-					className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.03)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size[100px_100px] [mask-:radial-gradient(ellipse_80%_50%_at_50%_0%,black,transparent)]"
+					className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.03)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size[100px_100px] mask[radial-gradient(ellipse_80%_50%_at_50%_0%,black,transparent)]"
 					style={{
 						transform: `translate(${mousePosition.x * 0.2}px, ${mousePosition.y * 0.2}px)`,
 						transition: "transform 0.3s ease-out",

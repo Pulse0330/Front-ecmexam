@@ -5,7 +5,7 @@ import { AlertCircle, BookOpen, Search, Sparkles, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { getSorillists } from "@/lib/api";
+import { getSorilFilteredlists, getTestFilter } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { ApiSorillistsResponse } from "@/types/soril/sorilLists";
@@ -13,25 +13,48 @@ import { SorilCard } from "./sorilcard";
 
 type SorilCategory = "all" | "completed" | "notstarted";
 
+interface Lesson {
+	lesson_id: number;
+	lesson_name: string;
+	sort: number;
+}
+
+interface TestFilterResponse {
+	RetResponse: {
+		ResponseMessage: string;
+		StatusCode: string;
+		ResponseCode: string;
+		ResponseType: boolean;
+	};
+	RetData: Lesson[];
+}
+
 export default function Sorillists() {
 	const { userId } = useAuthStore();
 	const router = useRouter();
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedCategory, setSelectedCategory] =
 		useState<SorilCategory>("all");
+	const [selectedLessonId, setSelectedLessonId] = useState<number>(0); // 0 = Бүгд
 
-	const {
-		data: queryData,
-		isPending,
-		isError,
-		error,
-	} = useQuery<ApiSorillistsResponse>({
-		queryKey: ["sorillists", userId],
-		queryFn: () => getSorillists(userId || 0),
-		enabled: !!userId && userId !== 0,
+	// Lesson filter API - хичээлийн жагсаалт
+	const { data: lessonData } = useQuery<TestFilterResponse>({
+		queryKey: ["testFilter", userId],
+		queryFn: () => getTestFilter(userId || 0),
+		enabled: !!userId,
+	});
+
+	// Soril list API - сонгосон хичээлээр шүүсэн сорилууд
+	const { data: queryData, isPending } = useQuery<ApiSorillistsResponse>({
+		queryKey: ["sorillists", userId, selectedLessonId],
+		queryFn: () => getSorilFilteredlists(userId || 0, selectedLessonId),
+		enabled: !!userId,
 	});
 
 	const data = useMemo(() => queryData?.RetData || [], [queryData]);
+	const lessons = useMemo(() => lessonData?.RetData || [], [lessonData]);
+
+	const skeletonIds = [1, 2, 3, 4, 5, 6];
 
 	const categorizedData = useMemo(() => {
 		return {
@@ -40,9 +63,11 @@ export default function Sorillists() {
 		};
 	}, [data]);
 
+	// Filter логик: Category + Search (Lesson нь API-аас шууд ирнэ)
 	const filteredData = useMemo(() => {
 		let sorils = data;
 
+		// 1. Сонгосон категорийн дагуу шүүх
 		switch (selectedCategory) {
 			case "all":
 				sorils = data;
@@ -57,36 +82,28 @@ export default function Sorillists() {
 				sorils = data;
 		}
 
-		if (!searchTerm.trim()) return sorils;
+		// 2. Хайлтын шүүлтүүр
+		if (searchTerm.trim()) {
+			sorils = sorils.filter(
+				(soril) =>
+					soril.soril_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+					(soril.plan_name || "")
+						.toLowerCase()
+						.includes(searchTerm.toLowerCase()),
+			);
+		}
 
-		return sorils.filter(
-			(soril) =>
-				soril.soril_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				(soril.plan_name || "")
-					.toLowerCase()
-					.includes(searchTerm.toLowerCase()),
-		);
+		return sorils;
 	}, [data, categorizedData, selectedCategory, searchTerm]);
 
 	const clearSearch = () => setSearchTerm("");
 
-	if (isError) {
+	if (isPending) {
 		return (
 			<div className="min-h-screen flex items-center justify-center">
-				<div className="text-center space-y-4">
-					<BookOpen className="w-12 h-12 mx-auto text-gray-400" />
-					<h3 className="text-xl font-bold">Алдаа гарлаа</h3>
-					<p className="text-gray-600 dark:text-gray-400">
-						{error instanceof Error
-							? error.message
-							: "Жагсаалт татахад алдаа гарлаа"}
-					</p>
-					<Button
-						onClick={() => window.location.reload()}
-						className="rounded-full"
-					>
-						Дахин оролдох
-					</Button>
+				<div className="text-center space-y-2">
+					<div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+					<p className="text-gray-600 dark:text-gray-400">Уншиж байна...</p>
 				</div>
 			</div>
 		);
@@ -167,39 +184,100 @@ export default function Sorillists() {
 					</div>
 				</div>
 
+				{/* Lesson Filter - Хичээлийн сонголт */}
+				{lessons.length > 0 && (
+					<div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-thin">
+						<div className="flex items-center gap-2 shrink-0">
+							<BookOpen
+								className="text-gray-500 dark:text-gray-400"
+								size={18}
+							/>
+							<span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+								Хичээл:
+							</span>
+						</div>
+						<div className="flex gap-2 flex-wrap">
+							{lessons.map((lesson) => (
+								<Button
+									key={lesson.lesson_id}
+									type="button"
+									onClick={() => setSelectedLessonId(lesson.lesson_id)}
+									className={cn(
+										"px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap",
+										selectedLessonId === lesson.lesson_id
+											? "bg-linear-to-r from-blue-500 to-blue-600 text-white border-2 border-blue-500 shadow-lg shadow-blue-500/30"
+											: "bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600",
+									)}
+									aria-label={`${lesson.lesson_name} хичээл сонгох`}
+									aria-pressed={selectedLessonId === lesson.lesson_id}
+								>
+									{lesson.lesson_name}
+								</Button>
+							))}
+						</div>
+					</div>
+				)}
+
 				{/* Results Info */}
-				{searchTerm && (
+				{(searchTerm || selectedLessonId !== 0) && (
 					<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
 						<AlertCircle size={16} />
 						<span>
-							<strong>{filteredData.length}</strong> сорил олдлоо &ldquo;
-							<strong>{searchTerm}</strong>&rdquo; гэсэн хайлтаар
+							<strong>{filteredData.length}</strong> сорил олдлоо
+							{searchTerm && (
+								<>
+									{" "}
+									&ldquo;<strong>{searchTerm}</strong>&rdquo; гэсэн хайлтаар
+								</>
+							)}
+							{selectedLessonId !== 0 && (
+								<>
+									{" "}
+									<strong>
+										{
+											lessons.find((l) => l.lesson_id === selectedLessonId)
+												?.lesson_name
+										}
+									</strong>{" "}
+									хичээлд
+								</>
+							)}
 						</span>
 					</div>
 				)}
 
 				{/* Soril Grid */}
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-4 items-stretch">
-					{isPending ? (
-						[1, 2, 3, 4, 5, 6, 7, 8].map((id) => <SkeletonCard key={id} />)
-					) : filteredData.length > 0 ? (
-						filteredData.map((soril) => (
-							<SorilCard
-								key={soril.exam_id}
-								exam={soril}
-								onClick={() => router.push(`/soril/${soril.exam_id}`)}
-							/>
-						))
-					) : (
-						<div className="col-span-full flex flex-col items-center justify-center py-20 text-center opacity-60">
-							<BookOpen className="w-12 h-12 mb-4 stroke-[1.5px]" />
-							<h3 className="text-lg font-bold">Илэрц олдсонгүй</h3>
-							<p className="text-sm text-muted-foreground">
-								Хайлт эсвэл шүүлтүүрт тохирох сорил байхгүй байна.
-							</p>
-						</div>
-					)}
+					{isPending
+						? skeletonIds.map((id) => <SkeletonCard key={id} />)
+						: filteredData.map((soril) => (
+								<SorilCard
+									key={soril.exam_id}
+									exam={soril}
+									onClick={() => router.push(`/soril/${soril.exam_id}`)}
+								/>
+							))}
 				</div>
+
+				{/* Empty State */}
+				{!isPending && filteredData.length === 0 && (
+					<div className="text-center py-12 space-y-3">
+						<AlertCircle
+							className="mx-auto text-gray-400 dark:text-gray-600"
+							size={48}
+						/>
+						<p className="text-lg font-medium text-gray-700 dark:text-gray-300">
+							Сорил олдсонгүй
+						</p>
+						<p className="text-sm text-gray-500 dark:text-gray-400">
+							{searchTerm
+								? `"${searchTerm}" хайлтад тохирох сорил олдсонгүй.`
+								: selectedLessonId === 0
+									? "Танд одоогоор сорил байхгүй байна."
+									: `${lessons.find((l) => l.lesson_id === selectedLessonId)?.lesson_name || "Энэ хичээл"}-д сорил байхгүй байна.`}
+						</p>
+					</div>
+				)}
 			</div>
 		</div>
 	);
@@ -208,15 +286,12 @@ export default function Sorillists() {
 // Skeleton Card Component
 const SkeletonCard = () => (
 	<div className="h-[430px] w-full flex flex-col overflow-hidden rounded-[28px] border border-border/40 bg-card/50 backdrop-blur-md animate-pulse">
-		{/* Header Section Skeleton */}
 		<div className="h-40 w-full bg-slate-200 dark:bg-slate-800 relative">
 			<div className="absolute top-4 left-4 flex flex-col gap-2">
 				<div className="h-6 w-20 bg-slate-300 dark:bg-slate-700 rounded-full" />
 				<div className="h-6 w-24 bg-slate-300 dark:bg-slate-700 rounded-full" />
 			</div>
 		</div>
-
-		{/* Content Area Skeleton */}
 		<div className="flex flex-col grow p-5 gap-4">
 			<div className="space-y-3">
 				<div className="flex justify-between items-center">
@@ -228,8 +303,6 @@ const SkeletonCard = () => (
 					<div className="h-5 w-2/3 bg-slate-200 dark:bg-slate-800 rounded" />
 				</div>
 			</div>
-
-			{/* Stats Grid Skeleton */}
 			<div className="mt-auto pt-4 border-t border-border/50 flex items-center justify-between">
 				<div className="flex gap-4">
 					<div className="h-4 w-12 bg-slate-200 dark:bg-slate-800 rounded" />

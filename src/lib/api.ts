@@ -203,7 +203,6 @@ export const deleteExamAnswer = async (
 	questionId: number,
 	answerId: number,
 ): Promise<ExamChoosedAnswerDeleteResponse> => {
-	// POST method ашиглах
 	const { data } = await api.post<ExamChoosedAnswerDeleteResponse>(
 		"/examdeletedanswer",
 		{
@@ -272,6 +271,36 @@ export const getExamRank = async (
 	});
 	return data;
 };
+// ===== Get Exam Filter =====
+
+export const getexamfiltertlists = async (
+	userId: number,
+	lesson_id: number,
+): Promise<ApiExamlistsResponse> => {
+	const { data } = await api.post<ApiExamlistsResponse>("/webgetexamlists", {
+		optype: 0,
+		user_id: userId,
+		lesson_id: lesson_id,
+	});
+	return data;
+};
+// ===== Get ExamFinishlist Filter =====
+export const getexamFinishFiltertLists = async (
+	userId: number,
+	lesson_id: number,
+): Promise<ExamresultListResponseType> => {
+	// ← Засах
+	const { data } = await api.post<ExamresultListResponseType>(
+		// ← Засах
+		"/webgetexamresultlists",
+		{
+			exam_type: 2,
+			user_id: userId,
+			lesson_id: lesson_id,
+		},
+	);
+	return data;
+};
 //-------------------------------Soril---------------------------------//
 // ===== Get Sorillists  =====
 export const getSorillists = async (
@@ -279,6 +308,19 @@ export const getSorillists = async (
 ): Promise<ApiSorillistsResponse> => {
 	const { data } = await api.post<ApiSorillistsResponse>("/getexamlists", {
 		user_id: userId,
+		optype: 1,
+	});
+	return data;
+};
+
+// ===== Get sorilFilteredlists  =====
+export const getSorilFilteredlists = async (
+	userId: number,
+	lesson_id: number,
+): Promise<ApiSorillistsResponse> => {
+	const { data } = await api.post<ApiSorillistsResponse>("/webgetexamlists", {
+		user_id: userId,
+		lesson_id: lesson_id,
 		optype: 1,
 	});
 	return data;
@@ -292,6 +334,22 @@ export const getSorilresultlists = async (
 		{
 			exam_type: 3,
 			user_id: userId,
+		},
+	);
+	return data;
+};
+
+//===== Get SorilFilterdresultlists =====
+export const getSorilFilterdresultlists = async (
+	userId: number,
+	lesson_id: number,
+): Promise<SorilresultListResponseType> => {
+	const { data } = await api.post<SorilresultListResponseType>(
+		"/webgetexamresultlists",
+		{
+			exam_type: 3,
+			user_id: userId,
+			lesson_id: lesson_id,
 		},
 	);
 	return data;

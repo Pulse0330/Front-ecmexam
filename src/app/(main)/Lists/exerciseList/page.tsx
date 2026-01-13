@@ -59,7 +59,7 @@ const EmptyState = ({ searchQuery }: { searchQuery: string }) => (
 	<div className="text-center py-20 animate-in fade-in zoom-in duration-500 w-full col-span-full">
 		<div className="relative inline-block mb-6">
 			<BookOpen className="w-20 h-20 text-slate-300 dark:text-slate-600" />
-			<div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center animate-bounce">
+			<div className="absolute -top-2 -right-2 w-8 h-8 bg-linear-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center animate-bounce">
 				<Search className="w-4 h-4 text-white" />
 			</div>
 		</div>
@@ -91,7 +91,7 @@ const LessonCard = memo(
 			onClick={onClick}
 			className="group bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl p-6 shadow-lg border-2 border-slate-200/50 dark:border-slate-800/50 hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] text-left relative overflow-hidden active:scale-95"
 		>
-			<div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+			<div className="absolute inset-0 bg-linear-to-r from-transparent via-emerald-500/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
 			<div className="relative flex flex-col h-full">
 				<div className="flex-1">
 					<div className="flex items-start justify-between mb-3">
@@ -99,7 +99,7 @@ const LessonCard = memo(
 							{lesson.lesson_name}
 						</h3>
 						{selectedCount > 0 && (
-							<div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg shadow-lg animate-pulse shrink-0">
+							<div className="flex items-center gap-1 px-2 py-1 bg-linear-to-r from-emerald-500 to-emerald-600 rounded-lg shadow-lg animate-pulse shrink-0">
 								<Sparkles className="w-3 h-3 text-white" />
 								<span className="text-[10px] font-bold text-white uppercase tracking-wider">
 									{selectedCount} тест
@@ -144,7 +144,7 @@ const CategoryCard = memo(
 			onClick={onClick}
 			className="group bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl p-6 shadow-lg border-2 border-slate-200/50 dark:border-slate-800/50 hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] text-left relative overflow-hidden active:scale-95"
 		>
-			<div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+			<div className="absolute inset-0 bg-linear-to-r from-transparent via-emerald-500/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
 			<div className="relative flex flex-col h-full">
 				<div className="flex-1">
 					<div className="flex items-start justify-between mb-3">
@@ -152,7 +152,7 @@ const CategoryCard = memo(
 							{category.ulesson_name}
 						</h3>
 						{categorySelectedCount > 0 && (
-							<div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg shadow-lg animate-pulse shrink-0">
+							<div className="flex items-center gap-1 px-2 py-1 bg-linear-to-r from-emerald-500 to-emerald-600 rounded-lg shadow-lg animate-pulse shrink-0">
 								<Sparkles className="w-3 h-3 text-white" />
 								<span className="text-[10px] font-bold text-white uppercase tracking-wider">
 									Сонгосон
@@ -306,7 +306,7 @@ export default function TestGroupPage() {
 
 	const { data, isLoading: isLoadingDetails } = useQuery<GetTestGroupResponse>({
 		queryKey: ["testFiltered", userId, selectedLesson],
-		queryFn: () => getTestFiltered(userId || 0, selectedLesson!),
+		queryFn: () => getTestFiltered(userId || 0, selectedLesson || 0),
 		enabled: !!userId && !!selectedLesson,
 	});
 
