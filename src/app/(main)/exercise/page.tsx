@@ -22,7 +22,7 @@ interface SelectedAnswer {
 	order?: number[];
 }
 
-type QuestionType = 1 | 2 | 4 | 5 | 6;
+type QuestionType = 1 | 2 | 3 | 4 | 5 | 6;
 
 const QUESTION_TYPE_CONFIG: Record<
 	QuestionType,
@@ -40,6 +40,11 @@ const QUESTION_TYPE_CONFIG: Record<
 		name: "Олон сонголттой",
 		color:
 			"bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800",
+	},
+	3: {
+		name: "Тоо оруулах",
+		color:
+			"bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800",
 	},
 	4: {
 		name: "Нөхөх",
@@ -88,18 +93,26 @@ export default function ExercisePage() {
 		[selectedAnswers],
 	);
 
-	// Helper functions
 	const getQuestionAnswers = useCallback(
 		(questionId: number) => {
-			return answers.filter((a) => a.question_id === questionId);
+			const filtered = answers.filter((a) => a.question_id === questionId);
+
+			// ⚠️ ЭНЭ ХЭСГИЙГ УСТГААРАЙ - Type 6-д давхардал байх ёстой!
+			// const seen = new Map<number, (typeof filtered)[0]>();
+			// ...
+
+			// Зүгээр л refid-аар sort хий, duplicate устгах хэрэггүй
+			return filtered.sort((a, b) => {
+				if (a.refid === undefined || b.refid === undefined) return 0;
+				return a.refid - b.refid;
+			});
 		},
 		[answers],
 	);
 
 	const getSelectedAnswer = useCallback(
-		(questionId: number) => {
-			return selectedAnswers.find((a) => a.questionId === questionId);
-		},
+		(questionId: number) =>
+			selectedAnswers.find((a) => a.questionId === questionId),
 		[selectedAnswers],
 	);
 
@@ -112,9 +125,8 @@ export default function ExercisePage() {
 	);
 
 	const getBodolt = useCallback(
-		(questionId: number) => {
-			return choosedAnswers.find((c) => c.question_id === questionId);
-		},
+		(questionId: number) =>
+			choosedAnswers.find((c) => c.question_id === questionId),
 		[choosedAnswers],
 	);
 
@@ -136,17 +148,10 @@ export default function ExercisePage() {
 	const handleSingleSelect = useCallback(
 		(questionId: number, answerId: number | null) => {
 			setSelectedAnswers((prev) => {
-				const existing = prev.find((a) => a.questionId === questionId);
-				if (existing) {
-					return prev.map((a) =>
-						a.questionId === questionId
-							? { ...a, answerIds: answerId ? [answerId] : [] }
-							: a,
-					);
-				}
+				const filtered = prev.filter((a) => a.questionId !== questionId);
 				return answerId
-					? [...prev, { questionId, answerIds: [answerId] }]
-					: prev;
+					? [...filtered, { questionId, answerIds: [answerId] }]
+					: filtered;
 			});
 		},
 		[],
@@ -155,13 +160,10 @@ export default function ExercisePage() {
 	const handleMultiSelect = useCallback(
 		(questionId: number, answerIds: number[]) => {
 			setSelectedAnswers((prev) => {
-				const existing = prev.find((a) => a.questionId === questionId);
-				if (existing) {
-					return prev.map((a) =>
-						a.questionId === questionId ? { ...a, answerIds } : a,
-					);
-				}
-				return [...prev, { questionId, answerIds }];
+				const filtered = prev.filter((a) => a.questionId !== questionId);
+				return answerIds.length > 0
+					? [...filtered, { questionId, answerIds }]
+					: filtered;
 			});
 		},
 		[],
@@ -169,26 +171,20 @@ export default function ExercisePage() {
 
 	const handleFillInBlank = useCallback((questionId: number, text: string) => {
 		setSelectedAnswers((prev) => {
-			const existing = prev.find((a) => a.questionId === questionId);
-			if (existing) {
-				return prev.map((a) =>
-					a.questionId === questionId ? { ...a, textAnswer: text } : a,
-				);
-			}
-			return [...prev, { questionId, answerIds: [], textAnswer: text }];
+			const filtered = prev.filter((a) => a.questionId !== questionId);
+			return text.trim()
+				? [...filtered, { questionId, answerIds: [], textAnswer: text }]
+				: filtered;
 		});
 	}, []);
 
 	const handleOrdering = useCallback(
 		(questionId: number, orderedIds: number[]) => {
 			setSelectedAnswers((prev) => {
-				const existing = prev.find((a) => a.questionId === questionId);
-				if (existing) {
-					return prev.map((a) =>
-						a.questionId === questionId ? { ...a, order: orderedIds } : a,
-					);
-				}
-				return [...prev, { questionId, answerIds: [], order: orderedIds }];
+				const filtered = prev.filter((a) => a.questionId !== questionId);
+				return orderedIds.length > 0
+					? [...filtered, { questionId, answerIds: [], order: orderedIds }]
+					: filtered;
 			});
 		},
 		[],
@@ -197,13 +193,10 @@ export default function ExercisePage() {
 	const handleMatching = useCallback(
 		(questionId: number, matches: Record<number, number>) => {
 			setSelectedAnswers((prev) => {
-				const existing = prev.find((a) => a.questionId === questionId);
-				if (existing) {
-					return prev.map((a) =>
-						a.questionId === questionId ? { ...a, matches } : a,
-					);
-				}
-				return [...prev, { questionId, answerIds: [], matches }];
+				const filtered = prev.filter((a) => a.questionId !== questionId);
+				return Object.keys(matches).length > 0
+					? [...filtered, { questionId, answerIds: [], matches }]
+					: filtered;
 			});
 		},
 		[],
@@ -264,7 +257,7 @@ export default function ExercisePage() {
 				>
 					{/* Question Header */}
 					<div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
-						<div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-full flex items-center justify-center shrink-0 font-bold text-sm sm:text-lg shadow-lg">
+						<div className="w-8 h-8 sm:w-10 sm:h-10 bg-linear-to-br from-blue-600 to-purple-600 text-white rounded-full flex items-center justify-center shrink-0 font-bold text-sm sm:text-lg shadow-lg">
 							{index + 1}
 						</div>
 						<div className="flex-1 min-w-0">
@@ -359,52 +352,28 @@ export default function ExercisePage() {
 
 						{/* Type 2: Multi Select */}
 						{questionType === 2 && (
-							<>
-								<MultiSelectQuestion
-									questionId={question.question_id}
-									questionText={question.question_name}
-									answers={convertedAnswers}
-									mode="exam"
-									selectedAnswers={selected?.answerIds || []}
-									onAnswerChange={handleMultiSelect}
-								/>
-
-								{showAnswerFeedback && selected && (
-									<div className="mt-4">
-										<div className="bg-purple-50 dark:bg-purple-900/20 border-l-4 border-purple-500 p-3 sm:p-4 rounded-lg">
-											<p className="text-purple-800 dark:text-purple-300 font-semibold text-sm sm:text-base">
-												Таны сонголт хадгалагдсан: {selected.answerIds.length}{" "}
-												хариулт
-											</p>
-										</div>
-									</div>
-								)}
-							</>
+							<MultiSelectQuestion
+								questionId={question.question_id}
+								questionText={question.question_name}
+								answers={convertedAnswers}
+								mode="exam"
+								selectedAnswers={selected?.answerIds || []}
+								onAnswerChange={handleMultiSelect}
+							/>
 						)}
 
 						{/* Type 4: Fill in Blank */}
 						{questionType === 4 && (
-							<>
-								<FillInTheBlankQuestion
-									questionId={question.question_id}
-									questionText={question.question_name}
-									value={selected?.textAnswer || ""}
-									mode="exam"
-									onAnswerChange={handleFillInBlank}
-								/>
-
-								{showAnswerFeedback && selected?.textAnswer && (
-									<div className="mt-4">
-										<div className="bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500 p-3 sm:p-4 rounded-lg">
-											<p className="text-orange-800 dark:text-orange-300 font-semibold text-sm sm:text-base">
-												Таны хариулт хадгалагдсан: "{selected.textAnswer}"
-											</p>
-										</div>
-									</div>
-								)}
-							</>
+							<FillInTheBlankQuestion
+								questionId={question.question_id}
+								questionText={question.question_name}
+								value={selected?.textAnswer || ""}
+								mode="exam"
+								onAnswerChange={handleFillInBlank}
+							/>
 						)}
 
+						{/* Type 5: Ordering - ДАВХАРДСАН ХЭСЭГ УСТГАСАН */}
 						{questionType === 5 && (
 							<>
 								<DragAndDropWrapper
@@ -431,7 +400,7 @@ export default function ExercisePage() {
 												onClick={() =>
 													handleSubmitQuestion(question.question_id)
 												}
-												className="w-full sm:w-auto bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+												className="w-full sm:w-auto bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
 											>
 												Хариултаа илгээх
 											</Button>
@@ -440,53 +409,23 @@ export default function ExercisePage() {
 							</>
 						)}
 
-						{questionType === 5 && (
-							<>
-								<DragAndDropWrapper
-									questionId={question.question_id}
-									answers={convertedAnswers.map((a) => ({
-										answer_id: a.answer_id,
-										answer_name_html: a.answer_name_html || a.answer_name,
-									}))}
-									mode={isSubmitted ? "review" : "exam"}
-									userAnswers={selected?.order || []}
-									correctAnswers={convertedAnswers
-										.sort((a, b) => a.refid - b.refid)
-										.map((a) => a.answer_id)}
-									onOrderChange={(orderedIds) =>
-										handleOrdering(question.question_id, orderedIds)
-									}
-								/>
-
-								{!isSubmitted &&
-									selected?.order &&
-									selected.order.length > 0 && (
-										<div className="mt-4">
-											<Button
-												onClick={() =>
-													handleSubmitQuestion(question.question_id)
-												}
-												className="w-full sm:w-auto bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-											>
-												Хариултаа илгээх
-											</Button>
-										</div>
-									)}
-							</>
-						)}
-						{/* Type 6: Matching */}
 						{questionType === 6 && (
 							<>
 								<MatchingByLine
 									answers={convertedAnswers.map((a) => ({
-										...a,
+										refid: a.refid,
+										answer_id: a.answer_id,
+										question_id: a.question_id,
+										answer_name_html: a.answer_name_html,
+										answer_descr: a.answer_descr,
 										answer_img: a.answer_img || null,
+										ref_child_id: a.ref_child_id || null,
+										is_true: a.is_true,
 									}))}
-									mode={isSubmitted ? "review" : "exam"}
-									userAnswers={selected?.matches || {}}
 									onMatchChange={(matches) =>
 										handleMatching(question.question_id, matches)
 									}
+									userAnswers={selected?.matches || {}}
 								/>
 
 								{!isSubmitted &&
@@ -497,7 +436,7 @@ export default function ExercisePage() {
 												onClick={() =>
 													handleSubmitQuestion(question.question_id)
 												}
-												className="w-full sm:w-auto bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700"
+												className="w-full sm:w-auto bg-linear-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700"
 											>
 												Хариултаа илгээх
 											</Button>
@@ -538,7 +477,7 @@ export default function ExercisePage() {
 	// Loading/Error states
 	if (!userId) {
 		return (
-			<div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+			<div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
 				<div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
 					<h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
 						Нэвтрэх шаардлагатай
@@ -553,7 +492,7 @@ export default function ExercisePage() {
 
 	if (isLoading) {
 		return (
-			<div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+			<div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
 				<div className="text-center">
 					<div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mb-4" />
 					<p className="text-lg font-medium text-gray-700 dark:text-gray-300">
@@ -566,7 +505,7 @@ export default function ExercisePage() {
 
 	if (isError) {
 		return (
-			<div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+			<div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
 				<div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
 					<h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
 						Алдаа гарлаа
@@ -581,7 +520,7 @@ export default function ExercisePage() {
 
 	if (!examInfo || questions.length === 0) {
 		return (
-			<div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+			<div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
 				<div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-12 max-w-md w-full text-center">
 					<h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
 						Дасгал олдсонгүй
@@ -591,7 +530,7 @@ export default function ExercisePage() {
 					</p>
 					<Button
 						onClick={() => router.push("/Lists/testGroup")}
-						className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+						className="bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
 					>
 						Тест сонгох
 					</Button>
@@ -601,10 +540,10 @@ export default function ExercisePage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-4 sm:py-8 px-4 sm:px-6 lg:px-8">
+		<div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-4 sm:py-8 px-4 sm:px-6 lg:px-8">
 			<div className="max-w-5xl mx-auto">
 				{/* Sticky Header */}
-				<div className="sticky top-0 z-10 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 pb-4 mb-2">
+				<div className="sticky top-0 z-10 bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 pb-4 mb-2">
 					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-3">
 						<h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
 							{examInfo.title}

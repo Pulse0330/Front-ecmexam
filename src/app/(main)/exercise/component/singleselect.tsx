@@ -3,7 +3,7 @@
 import parse from "html-react-parser";
 import { CheckCircle2, XCircle } from "lucide-react";
 import Image from "next/image";
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 
 interface AnswerData {
@@ -34,43 +34,7 @@ function SingleSelectQuestion({
 	onAnswerChange,
 }: SingleSelectQuestionProps) {
 	const isReviewMode = mode === "review";
-
-	// ⭐ Remove duplicates based on refid
-	const uniqueAnswers = useMemo(() => {
-		const seen = new Map<number, AnswerData>();
-
-		answers.forEach((answer) => {
-			const key = answer.refid ?? answer.answer_id;
-			if (!seen.has(key)) {
-				seen.set(key, answer);
-			}
-		});
-
-		const unique = Array.from(seen.values());
-
-		// Sort by refid if available
-		if (unique.length > 0 && unique[0].refid !== undefined) {
-			unique.sort((a, b) => (a.refid ?? 0) - (b.refid ?? 0));
-		}
-
-		console.log("=== Single Select Debug ===");
-		console.log("Question ID:", questionId);
-		console.log("Total answers:", answers.length);
-		console.log("Unique answers:", unique.length);
-		console.log("Selected:", selectedAnswer);
-		console.log(
-			"Answers:",
-			unique.map((a) => ({
-				id: a.answer_id,
-				refid: a.refid,
-				is_true: a.is_true,
-				text: a.answer_name_html?.substring(0, 30),
-			})),
-		);
-		console.log("=========================");
-
-		return unique;
-	}, [answers, questionId, selectedAnswer]);
+	const showAnswerFeedback = mode === "exam" && selectedAnswer !== null;
 
 	const handleSelect = useCallback(
 		(answerId: number) => {
@@ -81,21 +45,18 @@ function SingleSelectQuestion({
 		[questionId, selectedAnswer, isReviewMode, onAnswerChange],
 	);
 
-	// ⭐ Show feedback in exam mode
-	const showAnswerFeedback = mode === "exam" && selectedAnswer !== null;
-
 	return (
 		<div className="space-y-3 sm:space-y-4">
 			<div className="space-y-2 sm:space-y-3">
 				<p className="text-sm text-gray-600 dark:text-gray-400">
 					Нэг хариулт сонгох боломжтой
 				</p>
-				{uniqueAnswers.map((option) => {
+				{answers.map((option) => {
 					const isSelected = selectedAnswer === option.answer_id;
 					const isCorrect =
 						option.is_true || correctAnswerId === option.answer_id;
 
-					// ⭐ Updated color logic
+					// Color logic based on mode and selection state
 					const colorClass = isReviewMode
 						? isCorrect
 							? "border-green-500 bg-green-50 dark:bg-green-900/20"
@@ -169,9 +130,9 @@ function SingleSelectQuestion({
 								{option.answer_name_html ? parse(option.answer_name_html) : ""}
 							</span>
 
-							{/* ⭐ Correct answer badge in exam mode */}
+							{/* Correct answer badge in exam mode */}
 							{showAnswerFeedback && isCorrect && (
-								<span className="text-green-600 dark:text-green-400 font-medium text-xs sm:text-sm flex items-center gap-1 flex-shrink-0">
+								<span className="text-green-600 dark:text-green-400 font-medium text-xs sm:text-sm flex items-center gap-1 shrink-0">
 									<CheckCircle2 className="w-4 h-4" />
 									Зөв
 								</span>

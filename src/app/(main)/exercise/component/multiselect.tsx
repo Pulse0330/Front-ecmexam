@@ -289,7 +289,7 @@ export default function MultiSelectQuestion({
 
 							{/* ⭐ Show correct badge in review mode */}
 							{isReviewMode && isCorrect && (
-								<span className="text-green-600 dark:text-green-400 font-medium text-xs sm:text-sm flex items-center gap-1 flex-shrink-0">
+								<span className="text-green-600 dark:text-green-400 font-medium text-xs sm:text-sm flex items-center gap-1 shrink-0">
 									<CheckCircle2 className="w-4 h-4" />
 									Зөв
 								</span>

@@ -39,7 +39,7 @@ export interface ExamFinishResponse {
 		answer_name: string;
 		answer_name_html: string;
 		answer_descr: string;
-		answer_img: string;
+		answer_img: string | null;
 		is_true: number;
 		answer_type: number;
 		refid: number;

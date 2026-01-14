@@ -20,7 +20,7 @@ interface NumberInputQuestionProps {
 
 const NumberInputQuestion: React.FC<NumberInputQuestionProps> = ({
 	questionId,
-	questionText,
+
 	answers,
 	selectedValues = {},
 	onAnswerChange,
@@ -45,13 +45,12 @@ const NumberInputQuestion: React.FC<NumberInputQuestionProps> = ({
 
 	return (
 		<div className="space-y-3">
-			{questionText && <p className="text-sm font-medium">{questionText}</p>}
 			<div className="flex flex-col gap-2">
 				{answers.map((ans, idx) => (
 					<div key={ans.answer_id} className="flex items-center gap-2">
 						<label
 							htmlFor={`number-input-${ans.answer_id}`}
-							className="text-sm text-gray-600 min-w-[2rem]"
+							className="text-sm text-gray-600 min-w-8"
 						>
 							{String.fromCharCode(97 + idx)}=
 						</label>
