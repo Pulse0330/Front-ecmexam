@@ -143,6 +143,9 @@ export default function ExamList({ exams }: ExamListProps) {
 										<h3 className="font-bold text-foreground leading-snug line-clamp-2 text-[17px] group-hover:text-primary transition-colors duration-300">
 											{exam.title}
 										</h3>
+										<h3 className="font-bold text-foreground leading-snug line-clamp-2 text-[17px] group-hover:text-primary transition-colors duration-300">
+											{exam.lesson_name}
+										</h3>
 									</div>
 
 									{/* Stats Footer */}

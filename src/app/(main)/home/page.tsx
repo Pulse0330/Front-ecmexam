@@ -246,21 +246,21 @@ export default function HomePage() {
 										{[
 											{
 												id: "learn",
-												icon: "🚀",
+												icon: "",
 												text: "24/7 Суралцах",
-												color: "from-violet-500 to-purple-500",
+												color: "",
 											},
 											{
 												id: "grow",
-												icon: "💎",
+												icon: "",
 												text: "Хөгжих",
-												color: "from-purple-500 to-pink-500",
+												color: "",
 											},
 											{
 												id: "succeed",
-												icon: "⚡",
+												icon: "",
 												text: "Амжилт олох",
-												color: "from-pink-500 to-rose-500",
+												color: "",
 											},
 										].map((pill) => (
 											<div

@@ -52,7 +52,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/stores/useUserStore";
 
-// ⭐ UNIFIED User Avatar Component
+// ⭐ UNIFIED User Avatar Component - FIXED
 const UserAvatar = React.memo(
 	({
 		userImage,
@@ -177,13 +177,13 @@ const examDropdownLinks = [
 	{
 		href: "/Lists/examList",
 		label: "Шалгалтын жагсаалт",
-		description: "Бүх шалгалтын жагсаалтыг үзэх",
+		description: "",
 		icon: <FileText className="h-5 w-5" />,
 	},
 	{
 		href: "/Lists/examResult",
 		label: "Шалгалтын үр дүн",
-		description: "Шалгалтын үр дүнгээ шалгах",
+		description: "",
 		icon: <BarChart3 className="h-5 w-5" />,
 	},
 ];
@@ -192,13 +192,13 @@ const sorilDropdownLinks = [
 	{
 		href: "/Lists/sorilList",
 		label: "Сорилын жагсаалт",
-		description: "Бүх сорилын жагсаалтыг үзэх",
+		description: "",
 		icon: <ClipboardList className="h-5 w-5" />,
 	},
 	{
 		href: "/Lists/sorilResult",
 		label: "Сорилын үр дүн",
-		description: "Сорилын үр дүнгээ шалгах",
+		description: "",
 		icon: <TrendingUp className="h-5 w-5" />,
 	},
 ];

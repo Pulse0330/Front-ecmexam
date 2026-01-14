@@ -118,13 +118,6 @@ export function LoginForm() {
 				window.location.href = redirectUrl;
 			}, 300);
 		},
-		onError: (error: Error) => {
-			toast.error(error.message || "Нэвтрэх үед алдаа гарлаа");
-			form.setError("root", {
-				type: "manual",
-				message: "Нэвтрэх нэр эсвэл нууц үг буруу байна",
-			});
-		},
 	});
 
 	const onSubmit = (values: z.infer<typeof formSchema>) => {
@@ -157,7 +150,7 @@ export function LoginForm() {
 									<FormLabel>Нэвтрэх нэр</FormLabel>
 									<FormControl>
 										<Input
-											placeholder="96216878"
+											placeholder="••••••••"
 											type="text"
 											autoComplete="username"
 											{...field}

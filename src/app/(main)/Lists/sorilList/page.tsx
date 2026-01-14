@@ -186,7 +186,7 @@ export default function Sorillists() {
 
 				{/* Lesson Filter - Хичээлийн сонголт */}
 				{lessons.length > 0 && (
-					<div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-thin">
+					<div className="flex items-center gap-3 pb-2">
 						<div className="flex items-center gap-2 shrink-0">
 							<BookOpen
 								className="text-gray-500 dark:text-gray-400"
@@ -196,16 +196,18 @@ export default function Sorillists() {
 								Хичээл:
 							</span>
 						</div>
-						<div className="flex gap-2 flex-wrap">
+
+						{/* Desktop - Horizontal buttons */}
+						<div className="hidden md:flex gap-2 flex-nowrap overflow-x-auto scrollbar-thin">
 							{lessons.map((lesson) => (
 								<Button
 									key={lesson.lesson_id}
 									type="button"
 									onClick={() => setSelectedLessonId(lesson.lesson_id)}
 									className={cn(
-										"px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap",
+										"px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap shrink-0",
 										selectedLessonId === lesson.lesson_id
-											? "bg-linear-to-r from-blue-500 to-blue-600 text-white border-2 border-blue-500 shadow-lg shadow-blue-500/30"
+											? "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-2 border-blue-500 shadow-lg shadow-blue-500/30"
 											: "bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600",
 									)}
 									aria-label={`${lesson.lesson_name} хичээл сонгох`}
@@ -215,6 +217,27 @@ export default function Sorillists() {
 								</Button>
 							))}
 						</div>
+
+						{/* Mobile - Combobox/Select */}
+						<select
+							value={selectedLessonId ?? ""}
+							onChange={(e) => {
+								const value = e.target.value;
+								if (value) {
+									setSelectedLessonId(Number(value));
+								}
+								// эсвэл анхны утга тохируулах
+								// else { setSelectedLessonId(lessons[0]?.lesson_id || 0); }
+							}}
+							className="md:hidden flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+							aria-label="Хичээл сонгох"
+						>
+							{lessons.map((lesson) => (
+								<option key={lesson.lesson_id} value={lesson.lesson_id}>
+									{lesson.lesson_name}
+								</option>
+							))}
+						</select>
 					</div>
 				)}
 

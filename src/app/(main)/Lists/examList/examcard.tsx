@@ -24,6 +24,7 @@ interface ExamlistsData {
 	exam_minute: number;
 	help: string;
 	teach_name: string;
+	lesson_name: string;
 	exam_type: number;
 	flag_name: string;
 	flag: number;
@@ -143,6 +144,9 @@ export default function ExamCard({ exam, index }: ExamCardProps) {
 							</div>
 							<h3 className="font-bold text-foreground leading-snug line-clamp-2 text-[16px] group-hover:text-primary transition-colors duration-300 min-h-11">
 								{exam.title}
+							</h3>
+							<h3 className="font-bold text-foreground leading-snug line-clamp-2 text-[16px] group-hover:text-primary transition-colors duration-300 min-h-11">
+								{exam.lesson_name}
 							</h3>
 						</div>
 

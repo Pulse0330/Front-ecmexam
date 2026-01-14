@@ -12,6 +12,7 @@ export interface ExamlistsData {
 	title: string;
 	ognoo: string; // ISO date string format
 	exam_minute: number;
+	lesson_name: string;
 	help: string;
 	teach_name: string;
 	exam_type: number;

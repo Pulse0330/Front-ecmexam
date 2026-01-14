@@ -425,6 +425,10 @@ function ExamResultDetailPage() {
 	const dunInfo = dunData?.RetData?.[0];
 	return (
 		<div className="min-h-screen bg-linear-to-br from-background via-background to-muted/20 py-8 px-4">
+			<Button onClick={() => router.back()} variant="outline" className="gap-2">
+				<ArrowLeft className="w-5 h-5" />
+				Буцах
+			</Button>
 			<div className="max-w-6xl mx-auto space-y-6">
 				{examSummary && (
 					<div className="bg-linear-to-br from-card to-card/50 border border-border/50 rounded-3xl p-8 shadow-xl backdrop-blur-sm">
@@ -675,15 +679,6 @@ function ExamResultDetailPage() {
 						</div>
 					</div>
 				)}
-
-				<Button
-					onClick={() => router.back()}
-					variant="outline"
-					className="gap-2"
-				>
-					<ArrowLeft className="w-5 h-5" />
-					Буцах
-				</Button>
 
 				{/* Filter buttons - Global for all questions */}
 				<div className="bg-card border rounded-2xl p-4 shadow-lg">

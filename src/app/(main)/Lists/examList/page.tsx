@@ -254,23 +254,25 @@ export default function ExamListPage() {
 				</div>
 
 				{/* Lesson Filter - Хичээлийн сонголт */}
-				<div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-thin">
+				<div className="flex items-center gap-3 pb-2">
 					<div className="flex items-center gap-2 shrink-0">
 						<BookOpen className="text-gray-500 dark:text-gray-400" size={18} />
 						<span className="text-sm font-medium text-gray-700 dark:text-gray-300">
 							Хичээл:
 						</span>
 					</div>
-					<div className="flex gap-2 flex-wrap">
+
+					{/* Desktop - Horizontal buttons */}
+					<div className="hidden md:flex gap-2 flex-nowrap overflow-x-auto scrollbar-thin">
 						{lessons.map((lesson) => (
 							<Button
 								key={lesson.lesson_id}
 								type="button"
 								onClick={() => setSelectedLessonId(lesson.lesson_id)}
 								className={cn(
-									"px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap hover:scale-3d",
+									"px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap shrink-0",
 									selectedLessonId === lesson.lesson_id
-										? "bg-linear-to-r from-blue-500 to-blue-500 shadow-lg shadow-purple-500/30"
+										? "bg-linear-to-r from-blue-500 to-purple-500 text-white shadow-lg shadow-purple-500/30"
 										: "bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700",
 								)}
 								aria-label={`${lesson.lesson_name} хичээл сонгох`}
@@ -280,6 +282,20 @@ export default function ExamListPage() {
 							</Button>
 						))}
 					</div>
+
+					{/* Mobile - Combobox/Select */}
+					<select
+						value={selectedLessonId}
+						onChange={(e) => setSelectedLessonId(Number(e.target.value))}
+						className="md:hidden flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
+						aria-label="Хичээл сонгох"
+					>
+						{lessons.map((lesson) => (
+							<option key={lesson.lesson_id} value={lesson.lesson_id}>
+								{lesson.lesson_name}
+							</option>
+						))}
+					</select>
 				</div>
 
 				{/* Results Info */}

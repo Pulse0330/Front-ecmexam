@@ -39,7 +39,7 @@ api.interceptors.response.use(
 		const data = response.data;
 
 		// ResponseCode шалгах
-		if (data.RetResponse && data.RetResponse.ResponseCode !== "10") {
+		if (data.RetResponse && data.RetResponse.StatusCode !== "200") {
 			// CheckSession endpoint-д алдаа шидэхгүй, response буцаа
 			if (response.config.url?.includes("/CheckSession")) {
 				console.warn(

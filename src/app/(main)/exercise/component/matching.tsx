@@ -65,7 +65,6 @@ export default function MatchingByLine({
 		"#8b5cf6", // Violet
 		"#d946ef", // Fuchsia
 		"#ec4899", // Pink
-
 		"#06b6d4", // Cyan
 		"#3b82f6", // Blue
 		"#64748b", // Slate
@@ -197,12 +196,18 @@ export default function MatchingByLine({
 						fill
 						className="object-contain p-2 transition-transform group-hover/img:scale-105"
 					/>
-					<Button
-						onClick={(e) => handleImageClick(e, item.answer_img as string)}
-						className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 dark:bg-slate-900/80 shadow-sm opacity-0 group-hover/img:opacity-100 transition-opacity"
+					<div
+						onPointerDown={(e) => {
+							e.stopPropagation();
+							handleImageClick(
+								e as unknown as React.MouseEvent,
+								item.answer_img as string,
+							);
+						}}
+						className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 dark:bg-slate-900/80 shadow-sm opacity-0 group-hover/img:opacity-100 transition-opacity cursor-pointer hover:bg-white dark:hover:bg-slate-900 pointer-events-auto"
 					>
 						<Maximize2 className="w-4 h-4 text-slate-600" />
-					</Button>
+					</div>
 				</div>
 			)}
 			{item.answer_name_html && (
@@ -303,7 +308,7 @@ export default function MatchingByLine({
 							const id = `q-${q.answer_id}`;
 							const color = getConnectionColor(id);
 							return (
-								<Button
+								<button
 									key={id}
 									id={id}
 									type="button"
@@ -332,7 +337,7 @@ export default function MatchingByLine({
 											/>
 										)}
 									</div>
-								</Button>
+								</button>
 							);
 						})}
 					</div>

@@ -95,7 +95,7 @@ export interface SaveAnswerRequest {
 	examId: number;
 	questionId: number;
 	queTypeId: number;
-	answerValue: AnswerValue; // ✅ Now includes Record<number, string>
+	answerValue: AnswerValue;
 }
 
 export interface SaveAnswerResponse {
