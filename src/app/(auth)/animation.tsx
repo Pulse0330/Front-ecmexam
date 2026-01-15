@@ -97,11 +97,11 @@ export default function LoginAnimation() {
 			{/* Main Content */}
 			<div className="relative z-10 text-center space-y-6 max-w-md">
 				<div
-					className="inline-flex items-center justify-center w-28 h-28 rounded-full mb-6 bg-white dark:bg-gray-800 shadow-2xl shadow-indigo-500/50 dark:shadow-purple-600/50 overflow-hidden p-3"
+					className="inline-flex items-center justify-center w-30 h-30 rounded-full mb-6 bg-white dark:bg-gray-800 shadow-2xl shadow-indigo-500/50 dark:shadow-purple-600/50 overflow-hidden p-3"
 					style={{ animation: "pulse-scale 3s ease-in-out infinite" }}
 				>
 					<Image
-						src="/image/ECM.png"
+						src="/image/logoLogin.png"
 						alt="ECM Logo"
 						width={88}
 						height={88}

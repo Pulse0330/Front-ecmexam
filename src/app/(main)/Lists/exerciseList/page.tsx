@@ -130,55 +130,6 @@ const LessonCard = memo(
 );
 LessonCard.displayName = "LessonCard";
 
-const LessonListItem = memo(
-	({
-		lesson,
-		selectedCount,
-		totalQuestions,
-		onClick,
-	}: {
-		lesson: LessonGroup;
-		selectedCount: number;
-		totalQuestions: number;
-		onClick: () => void;
-	}) => (
-		<button
-			type="button"
-			onClick={onClick}
-			className="group w-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-xl p-4 shadow-sm border-2 border-slate-100/50 dark:border-slate-800/50 hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex items-center justify-between active:scale-[0.99]"
-		>
-			<div className="flex items-center gap-4 flex-1">
-				{/* Жижиг дүрс эсвэл дугаар байж болно */}
-				<div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-					<BookOpen className="w-5 h-5" />
-				</div>
-
-				<div className="flex flex-col text-left">
-					<h3 className="font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-						{lesson.lesson_name}
-					</h3>
-					<p className="text-xs text-slate-500 dark:text-slate-400">
-						Хичээлийн бүлэг
-					</p>
-				</div>
-			</div>
-
-			<div className="flex items-center gap-3">
-				{selectedCount > 0 && (
-					<div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 rounded-full border border-emerald-100 dark:border-emerald-800">
-						<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-						<span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
-							{totalQuestions} асуулт
-						</span>
-					</div>
-				)}
-				<ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all" />
-			</div>
-		</button>
-	),
-);
-LessonListItem.displayName = "LessonListItem";
-/////////////////////////////////////////////
 const CategoryCard = memo(
 	({
 		category,
@@ -240,7 +191,7 @@ const CategoryCard = memo(
 	),
 );
 CategoryCard.displayName = "CategoryCard";
-/////////////////////////////////////////////
+
 const TestItemCard = memo(
 	({
 		item,
@@ -333,7 +284,6 @@ const TestItemCard = memo(
 	},
 );
 TestItemCard.displayName = "TestItemCard";
-/////////////////////////////////////////////
 const TestListItem = memo(
 	({
 		item,
@@ -386,7 +336,7 @@ const TestListItem = memo(
 	),
 );
 TestListItem.displayName = "TestListItem";
-/////////////////////////////////////////////
+
 // --- Main Page ---
 
 export default function TestGroupPage() {
@@ -395,10 +345,11 @@ export default function TestGroupPage() {
 	const [selectedTests, setSelectedTests] = useState<Record<number, number>>(
 		{},
 	);
-	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
 	const [searchQuery, setSearchQuery] = useState("");
 	const deferredSearch = useDeferredValue(searchQuery);
 	const [selectedLesson, setSelectedLesson] = useState<number | null>(null);
+	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 	const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
 	const { data: lessonData, isLoading: isLoadingLessons } = useQuery({
@@ -588,33 +539,6 @@ export default function TestGroupPage() {
 								className="w-full pl-11 pr-4 py-3 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border-none rounded-2xl text-sm focus:ring-2 ring-emerald-500 transition-all"
 							/>
 						</div>
-						<div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl gap-1">
-							<Button
-								variant={viewMode === "grid" ? "secondary" : "ghost"} // "white"-ийг "secondary" эсвэл "outline" болгов
-								size="sm"
-								onClick={() => setViewMode("grid")}
-								className={`rounded-lg px-3 ${viewMode === "grid" ? "bg-white dark:bg-slate-700 shadow-sm" : ""}`}
-							>
-								<div className="grid grid-cols-2 gap-0.5 w-4 h-4 mr-1">
-									<div className="bg-current rounded-sm opacity-60" />
-									<div className="bg-current rounded-sm opacity-60" />
-									<div className="bg-current rounded-sm opacity-60" />
-									<div className="bg-current rounded-sm opacity-60" />
-								</div>
-							</Button>
-							<Button
-								variant={viewMode === "list" ? "secondary" : "ghost"}
-								size="sm"
-								onClick={() => setViewMode("list")}
-								className={`rounded-lg px-3 ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm" : ""}`}
-							>
-								<div className="flex flex-col gap-1 w-4 mr-1">
-									<div className="h-1 w-full bg-current rounded-full opacity-60" />
-									<div className="h-1 w-full bg-current rounded-full opacity-60" />
-									<div className="h-1 w-full bg-current rounded-full opacity-60" />
-								</div>
-							</Button>
-						</div>
 					</div>
 				</div>
 
@@ -645,16 +569,8 @@ export default function TestGroupPage() {
 								0,
 							);
 
-							return viewMode === "grid" ? (
+							return (
 								<LessonCard
-									key={lesson.lesson_id}
-									lesson={lesson}
-									selectedCount={selectedCount}
-									totalQuestions={totalQuestions}
-									onClick={() => setSelectedLesson(lesson.lesson_id)}
-								/>
-							) : (
-								<LessonListItem
 									key={lesson.lesson_id}
 									lesson={lesson}
 									selectedCount={selectedCount}
@@ -701,12 +617,39 @@ export default function TestGroupPage() {
 									{groupedData.get(selectedCategory)?.ulesson_name}
 								</h2>
 							</div>
+							<div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl gap-1">
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => setViewMode("grid")}
+									className={`rounded-lg px-3 ${viewMode === "grid" ? "bg-white dark:bg-slate-700 shadow-sm" : ""}`}
+								>
+									<div className="grid grid-cols-2 gap-0.5 w-4 h-4">
+										<div className="bg-current rounded-sm opacity-60" />
+										<div className="bg-current rounded-sm opacity-60" />
+										<div className="bg-current rounded-sm opacity-60" />
+										<div className="bg-current rounded-sm opacity-60" />
+									</div>
+								</Button>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => setViewMode("list")}
+									className={`rounded-lg px-3 ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm" : ""}`}
+								>
+									<div className="flex flex-col gap-1 w-4">
+										<div className="h-1 w-full bg-current rounded-full opacity-60" />
+										<div className="h-1 w-full bg-current rounded-full opacity-60" />
+										<div className="h-1 w-full bg-current rounded-full opacity-60" />
+									</div>
+								</Button>
+							</div>
 						</div>
 
 						<div
 							className={
 								viewMode === "grid"
-									? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+									? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
 									: "flex flex-col gap-3"
 							}
 						>

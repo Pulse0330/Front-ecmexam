@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
-import { Copy, Loader2, MessageSquare, ShieldCheck } from "lucide-react";
+import { Loader2, MessageSquare, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -143,12 +143,6 @@ export function SignForm() {
 		}
 	};
 
-	// OTP Copy Code
-	const handleCopyCode = () => {
-		navigator.clipboard.writeText(verificationCode);
-		toast.success("Код хуулагдлаа");
-	};
-
 	// OTP Check Verification
 	const handleCheckVerification = async () => {
 		const phone = form.getValues("phone");
@@ -284,49 +278,67 @@ export function SignForm() {
 								</Button>
 
 								{isWaitingForSMS && verificationCode && (
-									<Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-										<AlertDescription className="space-y-3">
-											<div className="flex items-center justify-between">
-												<span className="text-sm font-medium">
-													Таны баталгаажуулах код:
-												</span>
-												<span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-													{verificationCode}
-												</span>
+									<Alert className="bg-blue-50/50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 shadow-sm">
+										<AlertDescription className="py-2">
+											<div className="space-y-4">
+												{/* Зааварчилгаа */}
+												<div className="flex gap-3">
+													<div className="shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+														1
+													</div>
+													<p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+														Доорх кодыг{" "}
+														<span className="font-bold text-blue-700 dark:text-blue-400">
+															142076
+														</span>{" "}
+														дугаарт мессежээр илгээнэ үү.
+													</p>
+												</div>
+
+												{/* Код харуулах болон Хуулах хэсэг */}
+												<div className="relative group">
+													<div className="bg-white dark:bg-slate-900 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all group-hover:border-blue-400">
+														<span className="text-3xl font-black tracking-widest text-blue-600 dark:text-blue-400 select-all">
+															{verificationCode}
+														</span>
+													</div>
+												</div>
+
+												{/* Шалгах алхам */}
+												<div className="flex gap-3 pt-2">
+													<div className="shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+														2
+													</div>
+													<div className="flex-1 space-y-3">
+														<p className="text-sm text-slate-700 dark:text-slate-300">
+															Мессеж илгээсний дараа доорх товчийг дарж
+															баталгаажуулна уу.
+														</p>
+														<Button
+															type="button"
+															className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-200 dark:shadow-none transition-all active:scale-[0.98]"
+															onClick={handleCheckVerification}
+															disabled={isChecking}
+														>
+															{isChecking ? (
+																<>
+																	<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+																	Шалгаж байна...
+																</>
+															) : (
+																"Баталгаажуулалт шалгах"
+															)}
+														</Button>
+													</div>
+												</div>
 											</div>
-											<div className="flex gap-2">
-												<Button
-													type="button"
-													variant="outline"
-													size="sm"
-													className="flex-1"
-													onClick={handleCopyCode}
-												>
-													<Copy className="mr-2 h-4 w-4" />
-													Хуулах
-												</Button>
-												<Button
-													type="button"
-													size="sm"
-													className="flex-1"
-													onClick={handleCheckVerification}
-													disabled={isChecking}
-												>
-													{isChecking && (
-														<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-													)}
-													Баталгаажуулах
-												</Button>
-											</div>
-											<p className="text-xs text-muted-foreground">
-												142076 дугаарт SMS-ээр баталгаажуулна уу.
-											</p>
 										</AlertDescription>
 									</Alert>
 								)}
 							</div>
 						)}
 
+						{/* Баталгаажсан мэдэгдэл */}
 						{isVerified && (
 							<Alert className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
 								<ShieldCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -336,109 +348,115 @@ export function SignForm() {
 							</Alert>
 						)}
 
-						{/* Бусад талбарууд */}
-						<FormField
-							control={form.control}
-							name="lastname"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Овог</FormLabel>
-									<FormControl>
-										<Input
-											placeholder="Овог"
-											{...field}
-											disabled={isPending || !isVerified}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+						{/* ✅ Бусад талбарууд - зөвхөн баталгаажсаны дараа харагдана */}
+						{isVerified && (
+							<>
+								<FormField
+									control={form.control}
+									name="lastname"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Овог</FormLabel>
+											<FormControl>
+												<Input
+													placeholder="Овог"
+													{...field}
+													disabled={isPending}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
 
-						<FormField
-							control={form.control}
-							name="firstname"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Нэр</FormLabel>
-									<FormControl>
-										<Input
-											placeholder="Нэр"
-											{...field}
-											disabled={isPending || !isVerified}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+								<FormField
+									control={form.control}
+									name="firstname"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Нэр</FormLabel>
+											<FormControl>
+												<Input
+													placeholder="Нэр"
+													{...field}
+													disabled={isPending}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
 
-						<FormField
-							control={form.control}
-							name="email"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Имэйл хаяг</FormLabel>
-									<FormControl>
-										<Input
-											placeholder="example@email.com"
-											type="email"
-											{...field}
-											disabled={isPending || !isVerified}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+								<FormField
+									control={form.control}
+									name="email"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Имэйл хаяг</FormLabel>
+											<FormControl>
+												<Input
+													placeholder="example@email.com"
+													type="email"
+													{...field}
+													disabled={isPending}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
 
-						<FormField
-							control={form.control}
-							name="password"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Нууц үг</FormLabel>
-									<FormControl>
-										<Input
-											placeholder="••••••"
-											type="password"
-											{...field}
-											disabled={isPending || !isVerified}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+								<FormField
+									control={form.control}
+									name="password"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Нууц үг</FormLabel>
+											<FormControl>
+												<Input
+													placeholder="••••••"
+													type="password"
+													{...field}
+													disabled={isPending}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
 
-						<FormField
-							control={form.control}
-							name="confirmPassword"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Нууц үг давтах</FormLabel>
-									<FormControl>
-										<Input
-											placeholder="••••••"
-											type="password"
-											{...field}
-											disabled={isPending || !isVerified}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+								<FormField
+									control={form.control}
+									name="confirmPassword"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Нууц үг давтах</FormLabel>
+											<FormControl>
+												<Input
+													placeholder="••••••"
+													type="password"
+													{...field}
+													disabled={isPending}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
 
-						{/* Бүртгүүлэх товч */}
-						<Button
-							type="submit"
-							className="w-full h-11"
-							disabled={isPending || !isVerified}
-						>
-							{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-							{isPending ? "Бүртгүүлж байна..." : "Бүртгүүлэх"}
-						</Button>
+								{/* Бүртгүүлэх товч */}
+								<Button
+									type="submit"
+									className="w-full h-11"
+									disabled={isPending}
+								>
+									{isPending && (
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									)}
+									{isPending ? "Бүртгүүлж байна..." : "Бүртгүүлэх"}
+								</Button>
+							</>
+						)}
 					</CardContent>
 				</form>
 			</Form>
