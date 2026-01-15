@@ -23,7 +23,7 @@ export interface FinishExamRequest {
 	exam_id: number;
 	exam_type: number;
 	start_eid: number;
-	exam_time: number;
+	exam_time: string;
 	user_id: number;
 	conn?: ExamFinishConn;
 }

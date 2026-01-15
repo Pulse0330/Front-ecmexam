@@ -149,6 +149,27 @@ function ExamResultCard({ exam, index, globalShowScore }: ExamResultCardProps) {
 
 		return `${hours}:${minutes}`;
 	};
+	const formatTestTime = (testTime: string | null): string => {
+		if (!testTime || testTime === "0" || testTime === "null") {
+			return "00:00:00";
+		}
+
+		// HH:MM:SS формат бол шууд буцаа
+		if (testTime.includes(":")) {
+			return testTime; // "00:00:05"
+		}
+
+		// Зөвхөн тоо бол (минут гэж үзнэ)
+		const minutes = parseInt(testTime, 10);
+		if (Number.isNaN(minutes)) return "00:00:00";
+
+		if (minutes === 0) return "00:00:00";
+		if (minutes < 60) return `${minutes} мин`;
+
+		const hours = Math.floor(minutes / 60);
+		const mins = minutes % 60;
+		return `${hours} цаг ${mins} мин`;
+	};
 
 	const handleDetailsClick = () => {
 		if (!isOngoing) {
@@ -321,11 +342,10 @@ function ExamResultCard({ exam, index, globalShowScore }: ExamResultCardProps) {
 
 				{/* Time Spent */}
 
-				{!isOngoing && exam.test_time && (
+				{!isOngoing && (
 					<div className="flex items-center justify-between text-sm px-1">
-						<span className="font-medium ">Зарцуулсан хугацаа:</span>
-
-						<span className=" font-bold">{exam.test_time}</span>
+						<span className="font-medium">Зарцуулсан хугацаа:</span>
+						<span className="font-bold">{formatTestTime(exam.test_time)}</span>
 					</div>
 				)}
 

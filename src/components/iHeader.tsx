@@ -430,7 +430,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 								className="flex items-center text-primary hover:text-primary/90 transition-all duration-300 hover:scale-105 active:scale-95"
 							>
 								<Image
-									src="/image/IkhNuudel.png"
+									src="/image/logoLogin.png"
 									alt="ECM Logo"
 									width={96}
 									height={96}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 import {
 	Award,
 	CheckCircle,
@@ -34,7 +35,7 @@ interface FinishExamRequest {
 	exam_id: number;
 	exam_type: number;
 	start_eid: number;
-	exam_time: number;
+	exam_time: string;
 	user_id: number;
 }
 
@@ -188,7 +189,7 @@ const FinishExamResultDialog = forwardRef<
 				exam_id: examId,
 				exam_type: examType,
 				start_eid: startEid,
-				exam_time: examTime,
+				exam_time: format(examTime, "HH:mm:ss"),
 				user_id: userId,
 			});
 		};

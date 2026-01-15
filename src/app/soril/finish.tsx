@@ -29,24 +29,10 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { finishExam, getExamResults } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
-
-interface FinishExamRequest {
-	exam_id: number;
-	exam_type: number;
-	start_eid: number;
-	exam_time: number;
-	user_id: number;
-}
-
-interface FinishExamResponse {
-	RetResponse: {
-		ResponseMessage: string;
-		StatusCode: string;
-		ResponseCode: string;
-		ResponseType: boolean;
-	};
-	RetData: number;
-}
+import type {
+	FinishExamRequest,
+	FinishExamResponse,
+} from "@/types/exam/examFinish";
 
 interface ExamResultData {
 	test_id: number;
@@ -77,7 +63,7 @@ interface FinishExamResultDialogProps {
 	examId: number;
 	examType: number;
 	startEid: number;
-	elapsedMinutes: number; // ✅ НЭМЭГДСЭН: Үргэлжилсэн хугацаа (минутаар)
+	elapsedSeconds: number; // ✅ секундээр
 	answeredCount: number;
 	totalCount: number;
 }
@@ -91,7 +77,7 @@ const FinishExamResultDialog = forwardRef<
 	FinishExamResultDialogProps
 >(
 	(
-		{ examId, examType, startEid, elapsedMinutes, answeredCount, totalCount },
+		{ examId, examType, startEid, elapsedSeconds, answeredCount, totalCount },
 		ref,
 	) => {
 		const { userId } = useAuthStore();
@@ -147,22 +133,31 @@ const FinishExamResultDialog = forwardRef<
 				retryDelay: 1000,
 			});
 
+		// ✅ finish.tsx дээр console.log нэмээд шалгах
 		const handleFinish = () => {
 			if (!userId) {
 				toast.error("Хэрэглэгчийн мэдээлэл олдсонгүй");
 				return;
 			}
 
-			// ✅ exam_time дээр үргэлжилсэн хугацааг (минутаар) явуулна
-			finishMutation.mutate({
+			// ✅ elapsedSeconds нь одоо үнэхээр секунд байна
+			const hours = Math.floor(elapsedSeconds / 3600);
+			const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+			const seconds = elapsedSeconds % 60;
+
+			const formattedTime = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
+			const payload = {
 				exam_id: examId,
 				exam_type: examType,
 				start_eid: startEid,
-				exam_time: elapsedMinutes, // ✅ Үргэлжилсэн хугацааг явуулж байна
+				exam_time: formattedTime, // ✅ Одоо зөв утгатай байх болно
 				user_id: userId,
-			});
-		};
+			};
 
+			console.log("📤 Илгээж буй payload:", payload);
+			finishMutation.mutate(payload);
+		};
 		// Expose triggerFinish method to parent via ref
 		useImperativeHandle(ref, () => ({
 			triggerFinish: () => {
@@ -339,12 +334,6 @@ const FinishExamResultDialog = forwardRef<
 
 							<div className="flex flex-col sm:flex-row justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 text-sm">
 								<div className="flex items-center gap-2">
-									<Clock className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-									<span className="text-gray-700 dark:text-gray-300">
-										Хугацаа: {resultInfo.test_time}
-									</span>
-								</div>
-								<div className="flex items-center gap-2">
 									<Zap className="w-5 h-5 text-gray-600 dark:text-gray-400" />
 									<span className="text-gray-700 dark:text-gray-300">
 										{resultInfo.unelgee}
@@ -458,9 +447,14 @@ const FinishExamResultDialog = forwardRef<
 										Үргэлжилсэн хугацаа
 									</span>
 									<span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-										{Math.floor(elapsedMinutes / 60) > 0
-											? `${Math.floor(elapsedMinutes / 60)} цаг ${elapsedMinutes % 60} минут`
-											: `${elapsedMinutes} минут`}
+										{(() => {
+											const h = Math.floor(elapsedSeconds / 3600);
+											const m = Math.floor((elapsedSeconds % 3600) / 60);
+											const s = elapsedSeconds % 60;
+											if (h > 0) return `${h} цаг ${m} минут ${s} секунд`;
+											if (m > 0) return `${m} минут ${s} секунд`;
+											return `${s} секунд`;
+										})()}
 									</span>
 								</div>
 							</div>

@@ -4,18 +4,19 @@ import { Timer } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface ExamTimerProps {
-	onElapsedChange?: (minutes: number) => void;
+	onElapsedChange?: (seconds: number) => void;
 }
 
 export default function ExamTimer({ onElapsedChange }: ExamTimerProps) {
 	const [seconds, setSeconds] = useState(0);
 	const onElapsedChangeRef = useRef(onElapsedChange);
-	const lastMinuteReported = useRef(0);
 
+	// ✅ Ref-г update хийх
 	useEffect(() => {
 		onElapsedChangeRef.current = onElapsedChange;
 	}, [onElapsedChange]);
 
+	// ✅ Timer effect
 	useEffect(() => {
 		const interval = setInterval(() => {
 			setSeconds((prev) => prev + 1);
@@ -23,13 +24,12 @@ export default function ExamTimer({ onElapsedChange }: ExamTimerProps) {
 		return () => clearInterval(interval);
 	}, []);
 
+	// ✅ ШИНЭ: Секунд өөрчлөгдөх бүрт callback дуудах (тусдаа effect)
 	useEffect(() => {
-		const currentMinutes = Math.floor(seconds / 60);
-		if (currentMinutes !== lastMinuteReported.current) {
-			lastMinuteReported.current = currentMinutes;
-			onElapsedChangeRef.current?.(currentMinutes);
+		if (seconds > 0) {
+			onElapsedChangeRef.current?.(seconds);
 		}
-	}, [seconds]);
+	}, [seconds]); // ✅ seconds өөрчлөгдөх бүрт л дуудагдана
 
 	const hrs = Math.floor(seconds / 3600);
 	const mins = Math.floor((seconds % 3600) / 60);
@@ -37,11 +37,8 @@ export default function ExamTimer({ onElapsedChange }: ExamTimerProps) {
 
 	return (
 		<div className="relative inline-block min-w-60">
-			{/* Soft Outer Glow */}
 			<div className="absolute -inset-0.5 bg-slate-200 dark:bg-slate-800 rounded-2xl blur-sm opacity-50"></div>
-
 			<div className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
-				{/* Header Section - Minimalist */}
 				<div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
 					<div className="flex items-center gap-2">
 						<Timer className="w-4 h-4 text-indigo-500" />
@@ -49,10 +46,8 @@ export default function ExamTimer({ onElapsedChange }: ExamTimerProps) {
 							Хугацаа
 						</span>
 					</div>
-					{/* Active Status Indicator */}
 				</div>
 
-				{/* Timer Display Section */}
 				<div className="px-6 py-6 flex items-center justify-center bg-white dark:bg-slate-900">
 					<div className="flex items-center font-mono">
 						{hrs > 0 && (
@@ -95,8 +90,7 @@ export default function ExamTimer({ onElapsedChange }: ExamTimerProps) {
 					</div>
 				</div>
 
-				{/* Progress Bar (Subtle) */}
-				<div className="absolute bottom-0 left-0 right-0 h-0,5 bg-slate-100 dark:bg-slate-800">
+				<div className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-100 dark:bg-slate-800">
 					<div
 						className="h-full bg-indigo-500/40 transition-all duration-1000 ease-linear"
 						style={{ width: `${(secs / 60) * 100}%` }}

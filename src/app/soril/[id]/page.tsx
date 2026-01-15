@@ -122,9 +122,9 @@ export default function SorilPage() {
 		},
 		[],
 	);
-	const handleElapsedTimeChange = useCallback((minutes: number) => {
-		setElapsedExamTime(minutes);
-		console.log(`⏱️ Үргэлжилсэн хугацаа: ${minutes} минут`);
+	const handleElapsedTimeChange = useCallback((seconds: number) => {
+		console.log("📥 soril.tsx: хүлээн авсан секунд =", seconds); // ✅ Энийг нэмнэ үү
+		setElapsedExamTime(seconds);
 	}, []);
 	const saveQuestion = useCallback(
 		async (pending: PendingAnswer, examId: number): Promise<boolean> => {
@@ -990,7 +990,7 @@ export default function SorilPage() {
 										examId={examData.ExamInfo[0].id}
 										examType={examData.ExamInfo[0].exam_type}
 										startEid={examData.ExamInfo[0].start_eid}
-										elapsedMinutes={elapsedExamTime}
+										elapsedSeconds={elapsedExamTime}
 										answeredCount={answeredCount}
 										totalCount={totalCount}
 									/>
@@ -1042,9 +1042,11 @@ export default function SorilPage() {
 						))}
 					</main>
 					<aside className="col-span-1">
-						{examData?.ExamInfo?.[0]?.starteddate && (
-							<ExamTimer onElapsedChange={handleElapsedTimeChange} />
-						)}
+						<div className="sticky top-6 space-y-4">
+							{examData?.ExamInfo?.[0]?.starteddate && (
+								<ExamTimer onElapsedChange={handleElapsedTimeChange} />
+							)}
+						</div>
 					</aside>
 				</div>
 			</div>
@@ -1060,11 +1062,16 @@ export default function SorilPage() {
 									<div className="w-7 h-7 rounded-md bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
 										<Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
 									</div>
-									<div className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400">
-										{Math.floor(elapsedExamTime / 60) > 0
-											? `${Math.floor(elapsedExamTime / 60)}:${(elapsedExamTime % 60).toString().padStart(2, "0")}`
-											: `${elapsedExamTime}м`}
-									</div>
+									<span className="text-lg font-bold text-blue-600 dark:text-blue-400 font-mono">
+										{(() => {
+											const h = Math.floor(elapsedExamTime / 3600);
+											const m = Math.floor((elapsedExamTime % 3600) / 60);
+											const s = elapsedExamTime % 60;
+											if (h > 0)
+												return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+											return `${m}:${s.toString().padStart(2, "0")}`;
+										})()}
+									</span>
 								</div>
 
 								<Button
@@ -1208,7 +1215,7 @@ export default function SorilPage() {
 									examId={examData.ExamInfo[0].id}
 									examType={examData.ExamInfo[0].exam_type}
 									startEid={examData.ExamInfo[0].start_eid}
-									elapsedMinutes={elapsedExamTime}
+									elapsedSeconds={elapsedExamTime}
 									answeredCount={answeredCount}
 									totalCount={totalCount}
 								/>

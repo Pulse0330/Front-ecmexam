@@ -223,6 +223,7 @@ export default function ExercisePage() {
 				que_type_id: number;
 				question_name: string;
 				que_onoo: number;
+				question_img: string | null;
 			},
 			index: number,
 		) => {
@@ -264,6 +265,16 @@ export default function ExercisePage() {
 							<div className="text-base sm:text-lg md:text-xl text-gray-900 dark:text-white font-semibold mb-3">
 								{parse(question.question_name)}
 							</div>
+							{question.question_img && (
+								<div className="mt-4 mb-6 relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50">
+									<img
+										src={question.question_img}
+										alt="Асуултын зураг"
+										className="max-w-full h-auto object-contain mx-auto transition-transform hover:scale-[1.02] duration-300"
+										loading="lazy"
+									/>
+								</div>
+							)}
 							<div className="flex flex-wrap items-center gap-2 sm:gap-3">
 								<span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
 									Оноо: {question.que_onoo}
@@ -548,13 +559,6 @@ export default function ExercisePage() {
 						<h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
 							{examInfo.title}
 						</h1>
-						<Button
-							variant="ghost"
-							onClick={() => router.push("/Lists/exerciseList")}
-							className="self-start sm:self-auto"
-						>
-							← Буцах
-						</Button>
 					</div>
 					<div className="flex flex-wrap items-center gap-2 sm:gap-4">
 						<span className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-medium text-xs sm:text-sm border border-blue-200 dark:border-blue-800">
