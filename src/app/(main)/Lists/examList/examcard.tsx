@@ -1,207 +1,200 @@
-"use client";
-
 import { motion } from "framer-motion";
 import {
 	ArrowRight,
-	Calendar,
-	ClipboardCheck,
+	CheckCircle2,
 	Clock,
+	CreditCard,
+	FileText,
+	Loader2,
 	Lock,
-	Sparkles,
 	User,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import ExamRulesDialog from "./dialog";
-
-interface ExamlistsData {
-	exam_id: number;
-	title: string;
-	ognoo: string;
-	exam_minute: number;
-	help: string;
-	teach_name: string;
-	lesson_name: string;
-	exam_type: number;
-	flag_name: string;
-	flag: number;
-	que_cnt: number;
-	ispaydescr: string;
-	amount: number;
-	ispay: number;
-	ispurchased: number;
-	ispurchaseddescr: string;
-	bill_type: number;
-	plan_id: number | null;
-	plan_name: string | null;
-}
+import type { ExamlistsData } from "@/types/exam/examList";
 
 interface ExamCardProps {
 	exam: ExamlistsData;
 	index: number;
+	isPaid: boolean;
+	isExpired: boolean;
+	onPayClick?: () => void;
+	isCreatingInvoice?: boolean;
 }
 
-export default function ExamCard({ exam, index }: ExamCardProps) {
-	const router = useRouter();
-	const [showRulesDialog, setShowRulesDialog] = useState(false);
-	const [isMobile, setIsMobile] = useState(false);
-
-	useEffect(() => {
-		const updateWidth = () => setIsMobile(window.innerWidth < 640);
-		updateWidth();
-		window.addEventListener("resize", updateWidth);
-		return () => window.removeEventListener("resize", updateWidth);
-	}, []);
-
-	const isActive = exam.flag === 1;
-
-	const handleCardClick = () => {
-		if (isActive) {
-			setShowRulesDialog(true);
-		}
-	};
-
-	const handleStartExam = () => {
-		router.push(`/exam/${exam.exam_id}`);
-	};
+export default function ExamCard({
+	exam,
+	index,
+	isPaid,
+	isExpired,
+	onPayClick,
+	isCreatingInvoice,
+}: ExamCardProps) {
+	const canTakeExam = !isPaid && !isExpired && exam.flag === 1;
 
 	return (
-		<>
-			<motion.div
-				initial={{ opacity: 0, y: 20 }}
-				animate={{ opacity: 1, y: 0 }}
-				transition={{ duration: 0.4, delay: index * 0.05 }}
-				whileHover={isActive ? { scale: 0.98 } : {}}
-				className="h-full"
+		<motion.div
+			initial={{ opacity: 0, y: 20 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.4, delay: index * 0.1 }}
+			className="h-full"
+		>
+			<Card
+				className={cn(
+					"group h-full relative overflow-hidden rounded-xl border border-border/40 bg-card/50 backdrop-blur-md transition-all duration-500 ease-out hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20",
+					isExpired && "opacity-60",
+				)}
 			>
-				<Card
-					onClick={handleCardClick}
-					className={cn(
-						"group relative flex flex-col h-full overflow-hidden rounded-[28px] border border-border/40 bg-card/50 backdrop-blur-md transition-all duration-500 ease-out",
-						isActive
-							? "cursor-pointer hover:shadow-2xl hover:shadow-primary/10 hover:border-primary/20"
-							: "opacity-70 grayscale-[0.5] cursor-not-allowed",
-					)}
-				>
-					{/* Header Section with Gradient */}
-					<div
-						className={cn(
-							"relative h-40 w-full overflow-hidden transition-all duration-700",
-							isActive
-								? "bg-linear-to-br from-slate-800 via-slate-700 to-slate-600"
-								: "bg-slate-700",
-						)}
-					>
-						{/* Decorative Patterns */}
-						<div className="absolute inset-0 bg-white/5 opacity-10 bg-[radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] bg-size[20px_20px] group-hover:scale-110 transition-transform duration-700" />
-						<div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent" />
+				{/* Header Section */}
+				<div className="relative w-full h-20 overflow-hidden bg-linear-to-br from-primary/20 via-primary/10 to-background">
+					{/* Decorative Pattern */}
+					<div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.1),rgba(255,255,255,0))]" />
 
-						{/* Badges */}
-						<div className="absolute top-4 left-4 flex flex-col gap-2">
-							<Badge
-								className={cn(
-									"px-3 py-1 rounded-full text-[10px] font-bold border-none shadow-lg w-fit transition-colors",
-									isActive
-										? "bg-emerald-500 text-white"
-										: "bg-slate-600 text-white",
-								)}
-							>
-								<span
-									className={cn(
-										"mr-1.5 h-1.5 w-1.5 rounded-full bg-white inline-block",
-										isActive && "animate-pulse",
-									)}
-								/>
-								{exam.flag_name}
-							</Badge>
-							<Badge className="px-3 py-1 rounded-full text-[10px] font-bold border-none shadow-lg bg-white/10 backdrop-blur-md text-white w-fit">
-								{exam.ispaydescr}
-							</Badge>
+					{/* Gradient Overlay */}
+					<div className="absolute inset-0 bg-linear-to-t from-background/80 via-background/20 to-transparent" />
+
+					{/* Badges */}
+					<div className="absolute top-1.5 left-1.5 z-10 flex flex-col gap-1">
+						{/* Payment Status Badge */}
+						<span
+							className={cn(
+								"px-1.5 py-0 rounded-full text-[10px] font-semibold backdrop-blur-sm border-0 shadow-lg w-fit",
+								isPaid && "bg-orange-500/90 text-white",
+								!isPaid &&
+									exam.ispurchased === 1 &&
+									"bg-green-500/90 text-white",
+								!isPaid &&
+									exam.ispaydescr === "Төлбөргүй" &&
+									"bg-blue-500/90 text-white",
+							)}
+						>
+							{exam.ispaydescr}
+							{isPaid &&
+								exam.amount > 0 &&
+								` - ${exam.amount.toLocaleString()}₮`}
+						</span>
+
+						{/* Flag Status Badge */}
+						<span
+							className={cn(
+								"px-1.5 py-0 rounded-full text-[10px] font-semibold backdrop-blur-sm border-0 shadow-lg w-fit",
+								exam.flag === 1 && "bg-green-500/90 text-white",
+								exam.flag === 2 && "bg-yellow-500/90 text-white",
+								exam.flag === 3 && "bg-red-500/90 text-white",
+							)}
+						>
+							{exam.flag_name}
+						</span>
+					</div>
+
+					{/* Lock icon for paid exams */}
+					{isPaid && (
+						<div className="absolute top-1.5 right-1.5 z-10">
+							<Lock className="w-5 h-5 text-foreground/70" />
 						</div>
+					)}
 
-						{/* Date/Time Overlay */}
-						<div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-							<div className="flex items-center gap-1.5 text-white/90 text-[11px] font-semibold">
-								<Calendar className="w-3.5 h-3.5 text-blue-300" />
-								{exam.ognoo}
-							</div>
+					{/* Lesson name overlay */}
+					<div className="absolute bottom-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-background/80 backdrop-blur-md border border-border/40 shadow-sm">
+						<FileText className="w-2.5 h-2.5 text-muted-foreground" />
+						<span className="text-[10px] font-medium text-foreground">
+							{exam.lesson_name}
+						</span>
+					</div>
+				</div>
+
+				{/* Card Content */}
+				<CardContent className="p-3 pb-11 space-y-2">
+					{/* Title */}
+					<div className="relative group/title">
+						<h3
+							className="text-sm font-semibold text-foreground line-clamp-2 leading-tight group-hover:text-primary transition-colors duration-300"
+							title={exam.title}
+						>
+							{exam.title}
+						</h3>
+
+						{/* Tooltip on hover */}
+						<div className="absolute left-0 top-full mt-2 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-lg shadow-lg border border-border z-50 opacity-0 invisible group-hover/title:opacity-100 group-hover/title:visible transition-all duration-200 pointer-events-none whitespace-normal max-w-xs">
+							{exam.title}
+							<div className="absolute -top-1 left-4 w-2 h-2 bg-popover border-l border-t border-border rotate-45"></div>
 						</div>
 					</div>
 
-					{/* Content Area */}
-					<CardContent className="flex flex-col grow p-5 gap-4">
-						<div className="space-y-2">
-							<div className="flex items-center justify-between">
-								<p className="text-[10px] font-black text-primary/80 uppercase tracking-[0.15em]">
-									{exam.plan_name || "Шалгалт"}
-								</p>
-								{isActive && (
-									<Sparkles className="w-4 h-4 text-yellow-500 animate-pulse" />
+					{/* Stats Footer */}
+					<div className="flex items-center gap-3 pt-1.5 border-t border-border/40">
+						<div className="flex items-center gap-1 text-muted-foreground">
+							<Clock className="w-3 h-3" />
+							<span className="text-[10px] font-medium">
+								{exam.exam_minute}м
+							</span>
+						</div>
+						<div className="flex items-center gap-1 text-muted-foreground">
+							<User className="w-3 h-3" />
+							<span className="text-[10px] font-medium truncate max-w-[60px]">
+								{exam.teach_name}
+							</span>
+						</div>
+						<div className="flex items-center gap-1 text-muted-foreground">
+							<FileText className="w-3 h-3" />
+							<span className="text-[10px] font-medium">{exam.que_cnt}</span>
+						</div>
+					</div>
+
+					{/* Action Buttons */}
+					<div className="space-y-2">
+						{isPaid ? (
+							<Button
+								onClick={onPayClick}
+								disabled={isCreatingInvoice}
+								size="sm"
+								className={cn(
+									"w-full bg-primary hover:bg-primary/90",
+									"text-primary-foreground font-semibold rounded-lg h-7",
+									"transition-all duration-200 shadow-sm",
+									"flex items-center justify-center gap-1.5 text-xs",
 								)}
+							>
+								{isCreatingInvoice ? (
+									<>
+										<Loader2 className="w-3 h-3 animate-spin" />
+										<span>Уншиж байна...</span>
+									</>
+								) : (
+									<>
+										<CreditCard className="w-3 h-3" />
+										<span>Төлбөр төлөх</span>
+									</>
+								)}
+							</Button>
+						) : exam.ispurchased === 1 ? (
+							<div className="flex items-center justify-center gap-1.5 p-1.5 bg-green-500/10 rounded-lg">
+								<CheckCircle2 className="w-3 h-3 text-green-600 dark:text-green-400" />
+								<span className="text-[10px] font-medium text-green-600 dark:text-green-400">
+									Төлбөр төлөгдсөн
+								</span>
 							</div>
-							<h3 className="font-bold text-foreground leading-snug line-clamp-2 text-[16px] group-hover:text-primary transition-colors duration-300 min-h-11">
-								{exam.title}
-							</h3>
-							<h3 className="font-bold text-foreground leading-snug line-clamp-2 text-[16px] group-hover:text-primary transition-colors duration-300 min-h-11">
-								{exam.lesson_name}
-							</h3>
-						</div>
+						) : null}
 
-						{/* Stats Grid */}
-						<div className="grid grid-cols-1 gap-2 mt-auto pt-4 border-t border-border/50">
-							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-4">
-									<div className="flex items-center gap-1.5" title="Хугацаа">
-										<Clock className="w-4 h-4 text-orange-500/80" />
-										<span className="text-xs font-bold text-muted-foreground">
-											{exam.exam_minute}м
-										</span>
-									</div>
-									<div className="flex items-center gap-1.5" title="Асуулт">
-										<ClipboardCheck className="w-4 h-4 text-blue-500/80" />
-										<span className="text-xs font-bold text-muted-foreground">
-											{exam.que_cnt}
-										</span>
-									</div>
-									<div className="flex items-center gap-1.5" title="Багш">
-										<User className="w-4 h-4 text-purple-500/80" />
-										<span className="text-xs font-bold text-muted-foreground truncate max-w-20">
-											{exam.teach_name?.split(".").pop() ?? ""}
-										</span>
-									</div>
-								</div>
-
-								<div
-									className={cn(
-										"flex items-center justify-center min-w-8 h-8 rounded-full transition-all duration-300",
-										isActive
-											? "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white group-hover:scale-110"
-											: "bg-muted text-muted-foreground",
-									)}
-								>
-									{isActive ? (
-										<ArrowRight className="w-4 h-4" />
-									) : (
-										<Lock className="w-4 h-4" />
-									)}
-								</div>
+						{isExpired && (
+							<div className="text-center text-[10px] text-muted-foreground py-1">
+								Хугацаа дууссан
 							</div>
-						</div>
-					</CardContent>
-				</Card>
-			</motion.div>
+						)}
+					</div>
 
-			{isActive && (
-				<ExamRulesDialog
-					open={showRulesDialog}
-					onOpenChange={setShowRulesDialog}
-					onConfirm={handleStartExam}
-					isMobile={isMobile}
-				/>
-			)}
-		</>
+					{/* Action Circle */}
+					{canTakeExam && (
+						<Link href={`/exam/${exam.exam_id}`} className="block">
+							<div className="absolute bottom-3 right-3 w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:scale-110 transition-all duration-300 shadow-sm">
+								<ArrowRight className="w-3 h-3 text-primary group-hover:text-primary-foreground group-hover:translate-x-0.5 transition-all" />
+							</div>
+						</Link>
+					)}
+				</CardContent>
+			</Card>
+		</motion.div>
 	);
 }

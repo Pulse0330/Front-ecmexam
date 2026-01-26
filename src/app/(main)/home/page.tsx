@@ -261,7 +261,7 @@ export default function HomePage() {
 							</div>
 						</div>
 
-						<div className="animate-in fade-in-0 duration-700 delay-500">
+						<div className="animate-in fade-in-0 duration-700 delay-50">
 							<div className="relative">
 								<HomeSorilLists pastExams={homeData.RetDataFourth} />
 							</div>

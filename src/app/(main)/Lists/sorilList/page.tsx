@@ -207,7 +207,7 @@ export default function Sorillists() {
 									className={cn(
 										"px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap shrink-0",
 										selectedLessonId === lesson.lesson_id
-											? "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-2 border-blue-500 shadow-lg shadow-blue-500/30"
+											? "bg-linear-to-r from-blue-500 to-blue-600 text-white border-2 border-blue-500 shadow-lg shadow-blue-500/30"
 											: "bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600",
 									)}
 									aria-label={`${lesson.lesson_name} хичээл сонгох`}
@@ -270,7 +270,7 @@ export default function Sorillists() {
 				)}
 
 				{/* Soril Grid */}
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-4 items-stretch">
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 pb-4 items-stretch">
 					{isPending
 						? skeletonIds.map((id) => <SkeletonCard key={id} />)
 						: filteredData.map((soril) => (

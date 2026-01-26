@@ -1,15 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import {
-	AlertCircle,
-	BookOpen,
-	DollarSign,
-	Search,
-	Sparkles,
-	X,
-	Zap,
-} from "lucide-react";
+import axios from "axios";
+import { AlertCircle, BookOpen, Search, X } from "lucide-react";
 import React, { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -21,7 +14,9 @@ import type {
 	ApiExamlistsResponse,
 	ExamlistsData,
 } from "@/types/exam/examList";
+import type { QPayInvoiceResponse } from "@/types/Qpay/qpayinvoice";
 import ExamCard from "./examcard";
+import QPayDialog from "./qpayDialog"; // Import QPayDialog
 
 type ExamCategory = "all" | "active" | "upcoming" | "free" | "paid" | "expired";
 
@@ -46,17 +41,24 @@ export default function ExamListPage() {
 	const { currentTime, isLoading: isTimeLoading } = useServerTime();
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedCategory, setSelectedCategory] = useState<ExamCategory>("all");
-	const [selectedLessonId, setSelectedLessonId] = useState<number>(0); // 0 = Бүгд
+	const [selectedLessonId, setSelectedLessonId] = useState<number>(0);
 
-	// Lesson filter API - хичээлийн жагсаалт
+	// QPay states
+	const [qpayDialogOpen, setQpayDialogOpen] = useState(false);
+	const [qpayData, setQpayData] = useState<QPayInvoiceResponse | null>(null);
+	const [isCreatingInvoice, setIsCreatingInvoice] = useState(false);
+
 	const { data: lessonData } = useQuery<TestFilterResponse>({
 		queryKey: ["testFilter", userId],
 		queryFn: () => getTestFilter(userId || 0),
 		enabled: !!userId,
 	});
 
-	// Exam list API - сонгосон хичээлээр шүүсэн шалгалтууд
-	const { data: queryData, isPending } = useQuery<ApiExamlistsResponse>({
+	const {
+		data: queryData,
+		isPending,
+		refetch,
+	} = useQuery<ApiExamlistsResponse>({
 		queryKey: ["examlists", userId, selectedLessonId],
 		queryFn: () => getexamfiltertlists(userId || 0, selectedLessonId),
 		enabled: !!userId,
@@ -65,7 +67,6 @@ export default function ExamListPage() {
 	const data = useMemo(() => queryData?.RetData || [], [queryData]);
 	const lessons = useMemo(() => lessonData?.RetData || [], [lessonData]);
 
-	// Дубликат exam_id-уудыг арилгах
 	const uniqueData = useMemo(() => {
 		const seen = new Set<number>();
 		return data.filter((exam) => {
@@ -77,7 +78,6 @@ export default function ExamListPage() {
 
 	const skeletonIds = [1, 2, 3, 4, 5, 6];
 
-	// Server time ашиглан category-д зөв ангилах
 	const categorizedData = useMemo(() => {
 		if (!currentTime)
 			return {
@@ -118,11 +118,9 @@ export default function ExamListPage() {
 		};
 	}, [uniqueData, currentTime]);
 
-	// Filter логик: Category + Search (Lesson нь API-аас шууд ирнэ)
 	const filteredData = useMemo(() => {
 		let exams: ExamlistsData[] = [];
 
-		// 1. Сонгосон категорийн дагуу шүүх
 		switch (selectedCategory) {
 			case "all":
 				exams = uniqueData;
@@ -146,7 +144,6 @@ export default function ExamListPage() {
 				exams = uniqueData;
 		}
 
-		// 2. Хайлтын шүүлтүүр
 		if (searchTerm.trim()) {
 			exams = exams.filter((exam) =>
 				exam.title.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -157,6 +154,45 @@ export default function ExamListPage() {
 	}, [uniqueData, categorizedData, selectedCategory, searchTerm]);
 
 	const clearSearch = () => setSearchTerm("");
+
+	// QPay invoice үүсгэх функц
+	const handleCreateInvoice = async (exam: ExamlistsData) => {
+		if (!userId) {
+			alert("Нэвтрэх шаардлагатай");
+			return;
+		}
+
+		try {
+			setIsCreatingInvoice(true);
+
+			const response = await axios.post("/api/examqpay/invoice", {
+				amount: exam.amount?.toString() || "0",
+				userid: userId.toString(), // useAuthStore-оос авсан userId
+				device_token: "", // Хоосон утга
+				orderid: exam.bill_type?.toString() || "0", // bill_type буюу 6
+				bilid: exam.exam_id.toString(), // exam_id буюу 8802
+				classroom_id: "0", // Хоосон утга
+			});
+
+			console.log("QPay Invoice Created:", response.data);
+
+			if (response.data) {
+				setQpayData(response.data);
+				setQpayDialogOpen(true);
+			}
+		} catch (error) {
+			console.error("Error creating QPay invoice:", error);
+			alert("Төлбөрийн QR код үүсгэхэд алдаа гарлаа. Дахин оролдоно уу.");
+		} finally {
+			setIsCreatingInvoice(false);
+		}
+	};
+
+	// Төлбөр амжилттай төлөгдсөний дараа
+	const handlePaymentSuccess = () => {
+		// Exam list-ийг дахин уншуулах
+		refetch();
+	};
 
 	if (isTimeLoading) {
 		return (
@@ -170,192 +206,198 @@ export default function ExamListPage() {
 	}
 
 	return (
-		<div className="min-h-screen flex flex-col overflow-auto">
-			<div className="max-w-[1600px] mx-auto w-full flex flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-				{/* Header */}
-				<header className="text-center space-y-1">
-					<h1 className="text-3xl sm:text-4xl font-extrabold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-						Шалгалтын жагсаалт
-					</h1>
-				</header>
+		<>
+			<div className="min-h-screen flex flex-col overflow-auto">
+				<div className="max-w-[1600px] mx-auto w-full flex flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+					<header className="text-center space-y-1">
+						<h1 className="text-3xl sm:text-4xl font-extrabold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+							Шалгалтын жагсаалт
+						</h1>
+					</header>
 
-				{/* Search & Filter */}
-				<div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-					{/* Search */}
-					<div className="relative w-full sm:max-w-md">
-						<Search
-							className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-							size={18}
-						/>
-						<input
-							type="text"
-							placeholder="Шалгалтын нэрээр хайх..."
-							value={searchTerm}
-							onChange={(e) => setSearchTerm(e.target.value)}
-							className="w-full pl-10 pr-8 py-2.5 rounded-2xl border-2 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-sm sm:text-base text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-						/>
-						{searchTerm && (
-							<Button
-								type="button"
-								onClick={clearSearch}
-								className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
-								aria-label="Хайлт цэвэрлэх"
-							>
-								<X size={16} />
-							</Button>
-						)}
-					</div>
-
-					{/* Filter Badges */}
-					<div className="flex flex-wrap gap-2 justify-center sm:justify-end">
-						{[
-							{
-								key: "all",
-								label: "Бүгд",
-								icon: null,
-								count: uniqueData.length,
-							},
-							{
-								key: "active",
-								label: "Идэвхтэй",
-								icon: <Zap size={14} />,
-								count: categorizedData.active.length,
-							},
-							{
-								key: "free",
-								label: "Төлбөргүй",
-								icon: <Sparkles size={14} />,
-								count: categorizedData.free.length,
-							},
-							{
-								key: "paid",
-								label: "Төлбөртэй",
-								icon: <DollarSign size={14} />,
-								count: categorizedData.paid.length,
-							},
-							{
-								key: "expired",
-								label: "Дууссан",
-								icon: <X size={14} />,
-								count: categorizedData.expired.length,
-							},
-						].map((cat) => (
-							<CategoryBadge
-								key={cat.key}
-								active={selectedCategory === cat.key}
-								onClick={() => setSelectedCategory(cat.key as ExamCategory)}
-								count={cat.count}
-								label={cat.label}
-								icon={cat.icon || undefined}
-								variant={cat.key as ExamCategory}
+					<div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+						<div className="relative w-full sm:max-w-md">
+							<Search
+								className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+								size={18}
 							/>
-						))}
-					</div>
-				</div>
-
-				{/* Lesson Filter - Хичээлийн сонголт */}
-				<div className="flex items-center gap-3 pb-2">
-					<div className="flex items-center gap-2 shrink-0">
-						<BookOpen className="text-gray-500 dark:text-gray-400" size={18} />
-						<span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-							Хичээл:
-						</span>
-					</div>
-
-					{/* Desktop - Horizontal buttons */}
-					<div className="hidden md:flex gap-2 flex-nowrap overflow-x-auto scrollbar-thin">
-						{lessons.map((lesson) => (
-							<Button
-								key={lesson.lesson_id}
-								type="button"
-								onClick={() => setSelectedLessonId(lesson.lesson_id)}
-								className={cn(
-									"px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap shrink-0",
-									selectedLessonId === lesson.lesson_id
-										? "bg-linear-to-r from-blue-500 to-purple-500 text-white shadow-lg shadow-purple-500/30"
-										: "bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700",
-								)}
-								aria-label={`${lesson.lesson_name} хичээл сонгох`}
-								aria-pressed={selectedLessonId === lesson.lesson_id}
-							>
-								{lesson.lesson_name}
-							</Button>
-						))}
-					</div>
-
-					{/* Mobile - Combobox/Select */}
-					<select
-						value={selectedLessonId}
-						onChange={(e) => setSelectedLessonId(Number(e.target.value))}
-						className="md:hidden flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
-						aria-label="Хичээл сонгох"
-					>
-						{lessons.map((lesson) => (
-							<option key={lesson.lesson_id} value={lesson.lesson_id}>
-								{lesson.lesson_name}
-							</option>
-						))}
-					</select>
-				</div>
-
-				{/* Results Info */}
-				{(searchTerm || selectedLessonId !== 0) && (
-					<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-						<AlertCircle size={16} />
-						<span>
-							<strong>{filteredData.length}</strong> шалгалт олдлоо
+							<input
+								type="text"
+								placeholder="Шалгалтын нэрээр хайх..."
+								value={searchTerm}
+								onChange={(e) => setSearchTerm(e.target.value)}
+								className="w-full pl-10 pr-8 py-2.5 rounded-2xl border-2 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-sm sm:text-base text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+							/>
 							{searchTerm && (
-								<>
-									{" "}
-									&ldquo;<strong>{searchTerm}</strong>&rdquo; гэсэн хайлтаар
-								</>
+								<Button
+									type="button"
+									onClick={clearSearch}
+									className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
+									aria-label="Хайлт цэвэрлэх"
+								>
+									<X size={16} />
+								</Button>
 							)}
-							{selectedLessonId !== 0 && (
-								<>
-									{" "}
-									<strong>
-										{
-											lessons.find((l) => l.lesson_id === selectedLessonId)
-												?.lesson_name
-										}
-									</strong>{" "}
-									хичээлд
-								</>
-							)}
-						</span>
-					</div>
-				)}
+						</div>
 
-				{/* Exam Grid */}
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-4 items-stretch">
-					{isPending
-						? skeletonIds.map((id) => <SkeletonCard key={id} />)
-						: filteredData.map((exam, index) => (
-								<ExamCard key={exam.exam_id} exam={exam} index={index} />
+						<div className="flex flex-wrap gap-2 justify-center sm:justify-end">
+							{[
+								{
+									key: "all",
+									label: "Бүгд",
+									icon: null,
+									count: uniqueData.length,
+								},
+								{
+									key: "active",
+									label: "Идэвхтэй",
+									count: categorizedData.active.length,
+								},
+								{
+									key: "paid",
+									label: "Төлбөртэй",
+									count: categorizedData.paid.length,
+								},
+								{
+									key: "expired",
+									label: "Дууссан",
+									count: categorizedData.expired.length,
+								},
+							].map((cat) => (
+								<CategoryBadge
+									key={cat.key}
+									active={selectedCategory === cat.key}
+									onClick={() => setSelectedCategory(cat.key as ExamCategory)}
+									count={cat.count}
+									label={cat.label}
+									icon={cat.icon || undefined}
+									variant={cat.key as ExamCategory}
+								/>
 							))}
-				</div>
-
-				{/* Empty State */}
-				{!isPending && filteredData.length === 0 && (
-					<div className="text-center py-12 space-y-3">
-						<AlertCircle
-							className="mx-auto text-gray-400 dark:text-gray-600"
-							size={48}
-						/>
-						<p className="text-lg font-medium text-gray-700 dark:text-gray-300">
-							Шалгалт олдсонгүй
-						</p>
-						<p className="text-sm text-gray-500 dark:text-gray-400">
-							Өөр хайлт эсвэл шүүлтүүр ашиглан дахин оролдоно уу
-						</p>
+						</div>
 					</div>
-				)}
+
+					<div className="flex items-center gap-3 pb-2">
+						<div className="flex items-center gap-2 shrink-0">
+							<BookOpen
+								className="text-gray-500 dark:text-gray-400"
+								size={18}
+							/>
+							<span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+								Хичээл:
+							</span>
+						</div>
+
+						<div className="hidden md:flex gap-2 flex-nowrap overflow-x-auto scrollbar-thin">
+							{lessons.map((lesson) => (
+								<Button
+									key={lesson.lesson_id}
+									type="button"
+									onClick={() => setSelectedLessonId(lesson.lesson_id)}
+									className={cn(
+										"px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap shrink-0",
+										selectedLessonId === lesson.lesson_id
+											? "bg-linear-to-r from-blue-500 to-purple-500 text-white shadow-lg shadow-purple-500/30"
+											: "bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700",
+									)}
+									aria-label={`${lesson.lesson_name} хичээл сонгох`}
+									aria-pressed={selectedLessonId === lesson.lesson_id}
+								>
+									{lesson.lesson_name}
+								</Button>
+							))}
+						</div>
+
+						<select
+							value={selectedLessonId}
+							onChange={(e) => setSelectedLessonId(Number(e.target.value))}
+							className="md:hidden flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
+							aria-label="Хичээл сонгох"
+						>
+							{lessons.map((lesson) => (
+								<option key={lesson.lesson_id} value={lesson.lesson_id}>
+									{lesson.lesson_name}
+								</option>
+							))}
+						</select>
+					</div>
+
+					{(searchTerm || selectedLessonId !== 0) && (
+						<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+							<AlertCircle size={16} />
+							<span>
+								<strong>{filteredData.length}</strong> шалгалт олдлоо
+								{searchTerm && (
+									<>
+										{" "}
+										&ldquo;<strong>{searchTerm}</strong>&rdquo; гэсэн хайлтаар
+									</>
+								)}
+								{selectedLessonId !== 0 && (
+									<>
+										{" "}
+										<strong>
+											{
+												lessons.find((l) => l.lesson_id === selectedLessonId)
+													?.lesson_name
+											}
+										</strong>{" "}
+										хичээлд
+									</>
+								)}
+							</span>
+						</div>
+					)}
+
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 pb-4 items-stretch">
+						{isPending
+							? skeletonIds.map((id) => <SkeletonCard key={id} />)
+							: filteredData.map((exam, index) => (
+									<ExamCard
+										key={exam.exam_id}
+										exam={exam}
+										index={index}
+										isPaid={
+											exam.ispaydescr === "Төлбөртэй" && exam.ispurchased === 0
+										}
+										isExpired={
+											exam.flag === 3 || exam.flag_name === "Хугацаа дууссан"
+										}
+										onPayClick={() => handleCreateInvoice(exam)}
+										isCreatingInvoice={isCreatingInvoice}
+									/>
+								))}
+					</div>
+
+					{!isPending && filteredData.length === 0 && (
+						<div className="text-center py-12 space-y-3">
+							<AlertCircle
+								className="mx-auto text-gray-400 dark:text-gray-600"
+								size={48}
+							/>
+							<p className="text-lg font-medium text-gray-700 dark:text-gray-300">
+								Шалгалт олдсонгүй
+							</p>
+							<p className="text-sm text-gray-500 dark:text-gray-400">
+								Өөр хайлт эсвэл шүүлтүүр ашиглан дахин оролдоно уу
+							</p>
+						</div>
+					)}
+				</div>
 			</div>
-		</div>
+
+			{/* QPay Dialog */}
+			<QPayDialog
+				open={qpayDialogOpen}
+				onOpenChange={setQpayDialogOpen}
+				qpayData={qpayData}
+				userId={userId}
+				onPaymentSuccess={handlePaymentSuccess}
+			/>
+		</>
 	);
 }
 
-// Skeleton Card Component
 const SkeletonCard = () => (
 	<div className="h-[430px] w-full flex flex-col overflow-hidden rounded-[28px] border border-border/40 bg-card/50 backdrop-blur-md animate-pulse">
 		<div className="h-40 w-full bg-slate-200 dark:bg-slate-800 relative">
@@ -389,7 +431,6 @@ const SkeletonCard = () => (
 	</div>
 );
 
-// Category Badge Component
 interface CategoryBadgeProps {
 	active: boolean;
 	onClick: () => void;

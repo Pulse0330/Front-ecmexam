@@ -69,21 +69,27 @@ const UserAvatar = React.memo(
 		className?: string;
 	}) => {
 		const sizeClasses = {
-			sm: "w-9 h-9",
-			md: "w-11 h-11",
-			lg: "w-13 h-13",
+			sm: "w-8 h-8 sm:w-9 sm:h-9",
+			md: "w-10 h-10 sm:w-11 sm:h-11",
+			lg: "w-12 h-12 sm:w-14 sm:h-14", // w-13 байхгүй
 		};
 
 		const iconSizes = {
-			sm: "h-4 w-4",
-			md: "h-5 w-5",
-			lg: "h-6 w-6",
+			sm: "h-3.5 w-3.5 sm:h-4 sm:w-4",
+			md: "h-4 w-4 sm:h-5 sm:w-5",
+			lg: "h-5 w-5 sm:h-6 sm:w-6",
 		};
 
 		const statusSizes = {
-			sm: "w-2.5 h-2.5",
-			md: "w-3.5 h-3.5",
-			lg: "w-4 h-4",
+			sm: "w-2 h-2 sm:w-2.5 sm:h-2.5",
+			md: "w-3 h-3 sm:w-3.5 sm:h-3.5",
+			lg: "w-3.5 h-3.5 sm:w-4 sm:h-4",
+		};
+
+		const imgSizes = {
+			sm: { width: 32, height: 32, smWidth: 36, smHeight: 36 },
+			md: { width: 40, height: 40, smWidth: 44, smHeight: 44 },
+			lg: { width: 48, height: 48, smWidth: 52, smHeight: 52 },
 		};
 
 		if (userImage) {
@@ -92,8 +98,8 @@ const UserAvatar = React.memo(
 					<Image
 						src={userImage}
 						alt={userName}
-						width={size === "sm" ? 36 : size === "md" ? 44 : 52}
-						height={size === "sm" ? 36 : size === "md" ? 44 : 52}
+						width={imgSizes[size].smWidth}
+						height={imgSizes[size].smHeight}
 						className={cn(
 							"rounded-full object-cover ring-2 ring-primary/40 ring-offset-2 ring-offset-background shadow-sm",
 							sizeClasses[size],
@@ -204,7 +210,6 @@ const sorilDropdownLinks = [
 	},
 ];
 
-// ⭐ НЭМСЭН: Цахим сургалтын dropdown links
 const courseDropdownLinks = [
 	{
 		href: "/Lists/courseList",
@@ -269,7 +274,7 @@ const MegaMenuItem = React.memo(
 				<button
 					type="button"
 					className={cn(
-						"group inline-flex h-10 items-center justify-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300",
+						"group inline-flex h-9 sm:h-10 items-center justify-center gap-1 sm:gap-1.5 rounded-xl px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all duration-300",
 						"hover:bg-linear-to-r hover:from-accent/90 hover:to-accent hover:text-accent-foreground hover:shadow-md hover:scale-105",
 						"active:scale-95",
 						isActive
@@ -280,16 +285,15 @@ const MegaMenuItem = React.memo(
 					{label}
 					<ChevronDown
 						className={cn(
-							"h-4 w-4 transition-transform duration-300",
+							"h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform duration-300",
 							isOpen && "rotate-180",
 						)}
 					/>
 				</button>
 
-				{/* Mega Menu Dropdown */}
 				<div
 					className={cn(
-						"absolute left-0 top-full mt-3 w-80 rounded-2xl border bg-popover/98 backdrop-blur-xl shadow-2xl transition-all duration-300",
+						"absolute left-0 top-full mt-3 w-72 sm:w-80 rounded-2xl border bg-popover/98 backdrop-blur-xl shadow-2xl transition-all duration-300",
 						"transform origin-top overflow-hidden",
 						isOpen
 							? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
@@ -421,7 +425,6 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 			setIsMenuOpen(false);
 		}, []);
 
-		// ⭐ ӨӨРЧИЛСӨН: Цахим сургалтын хуудаснууд идэвхтэй эсэхийг шалгах
 		const isExamActive = pathname.includes("/Lists/exam");
 		const isSorilActive = pathname.includes("/Lists/soril");
 		const isCourseActive =
@@ -442,7 +445,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 					)}
 					{...props}
 				>
-					<div className="flex h-20 items-center justify-between px-6 md:px-12">
+					<div className="flex h-16 sm:h-18 md:h-20 items-center justify-between px-4 sm:px-6 md:px-8 lg:px-12">
 						{/* Left side - Logo */}
 						<div className="flex items-center shrink-0">
 							<Link
@@ -454,7 +457,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 									alt="ECM Logo"
 									width={96}
 									height={96}
-									className="object-contain drop-shadow-md"
+									className="object-contain drop-shadow-md w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24"
 									priority
 									unoptimized
 								/>
@@ -473,7 +476,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 													<Link
 														href={link.href}
 														className={cn(
-															"group inline-flex h-10 w-max items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300",
+															"group inline-flex h-9 sm:h-10 w-max items-center justify-center rounded-xl px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all duration-300",
 															"hover:bg-linear-to-r hover:from-accent/90 hover:to-accent hover:text-accent-foreground hover:shadow-md hover:scale-105",
 															"active:scale-95",
 															isActive
@@ -487,21 +490,18 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 											);
 										})}
 
-										{/* Шалгалт Mega Menu */}
 										<MegaMenuItem
 											label="Шалгалт"
 											items={examDropdownLinks}
 											isActive={isExamActive}
 										/>
 
-										{/* Сорил Mega Menu */}
 										<MegaMenuItem
 											label="Сорил"
 											items={sorilDropdownLinks}
 											isActive={isSorilActive}
 										/>
 
-										{/* ⭐ ӨӨРЧИЛСӨН: Цахим сургалт - Mega Menu болгосон */}
 										<MegaMenuItem
 											label="Цахим сургалт"
 											items={courseDropdownLinks}
@@ -521,25 +521,26 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 										<Button
 											variant="ghost"
 											className={cn(
-												"p-2.5 rounded-xl backdrop-blur-md border transition-all duration-300",
+												"p-2 sm:p-2.5 rounded-xl backdrop-blur-md border transition-all duration-300",
 												"bg-linear-to-br from-white/95 to-white/90 dark:from-gray-800/80 dark:to-gray-800/60",
 												"border-gray-200/60 dark:border-gray-700/60",
 												"text-gray-700 dark:text-yellow-400",
 												"hover:shadow-lg hover:scale-105 active:scale-95",
-												"h-10 w-10",
+												"h-9 w-9 sm:h-10 sm:w-10",
 											)}
 										>
 											<UseAnimations
 												animation={menu3}
-												size={24}
+												size={20}
 												reverse={isMenuOpen}
 												strokeColor="currentColor"
+												className="sm:scale-110"
 											/>
 										</Button>
 									</PopoverTrigger>
 									<PopoverContent
 										align="end"
-										className="w-72 p-3 animate-in fade-in-0 zoom-in-95 rounded-2xl shadow-2xl border-2"
+										className="w-[90vw] max-w-72 sm:w-72 p-3 animate-in fade-in-0 zoom-in-95 rounded-2xl shadow-2xl border-2"
 									>
 										<NavigationMenu className="max-w-none">
 											<NavigationMenuList className="flex-col items-start gap-1.5">
@@ -554,7 +555,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 																href={link.href}
 																onClick={handleMenuToggle}
 																className={cn(
-																	"flex w-full items-center rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-300",
+																	"flex w-full items-center rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold transition-all duration-300",
 																	"hover:bg-accent hover:text-accent-foreground hover:translate-x-1 hover:shadow-md",
 																	"active:scale-95",
 																	isActive
@@ -568,7 +569,6 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 													);
 												})}
 
-												{/* Mobile Шалгалт Section */}
 												<div className="w-full pt-4 pb-2">
 													<div className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
 														📝 Шалгалт
@@ -609,7 +609,6 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 													);
 												})}
 
-												{/* Mobile Сорил Section */}
 												<div className="w-full pt-4 pb-2">
 													<div className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
 														🎯 Сорил
@@ -650,7 +649,6 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 													);
 												})}
 
-												{/* ⭐ НЭМСЭН: Mobile Цахим сургалт Section */}
 												<div className="w-full pt-4 pb-2">
 													<div className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
 														📚 Цахим сургалт
@@ -702,13 +700,9 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 									<Button
 										variant="ghost"
 										className={cn(
-											"rounded-xl backdrop-blur-md border-2 transition-all duration-300",
-											"bg-linear-to-br from-white/95 to-white/90 dark:from-gray-800/80 dark:to-gray-800/60",
-											"border-gray-200/60 dark:border-gray-700/60",
-											"hover:shadow-lg hover:scale-105 hover:border-primary/40",
-											"active:scale-95",
-											!isMobile && "px-4 py-2 gap-3 h-auto",
-											isMobile && "p-0 h-11 w-11 overflow-hidden",
+											!isMobile && "px-3 sm:px-4 py-2 gap-2 sm:gap-3 h-auto",
+											isMobile &&
+												"p-0 h-10 w-10 sm:h-11 sm:w-11 overflow-hidden",
 										)}
 									>
 										{!isMobile ? (
@@ -719,7 +713,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 													size="sm"
 													showOnlineStatus={true}
 												/>
-												<span className="text-sm font-semibold text-foreground leading-tight truncate max-w-[150px]">
+												<span className="text-xs sm:text-sm font-semibold text-foreground leading-tight truncate max-w-[120px] sm:max-w-[150px]">
 													{userInfo.userName}
 												</span>
 											</>
@@ -734,7 +728,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 								</DropdownMenuTrigger>
 								<DropdownMenuContent
 									align="end"
-									className="w-72 animate-in fade-in-0 zoom-in-95 rounded-2xl shadow-2xl border-2"
+									className="w-[90vw] max-w-72 sm:w-72 animate-in fade-in-0 zoom-in-95 rounded-2xl shadow-2xl border-2"
 								>
 									<DropdownMenuLabel className="pb-3">
 										<div className="flex items-center space-x-3.5">
@@ -755,8 +749,8 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 														className="flex items-center gap-2 min-w-0 cursor-help group"
 														title={userInfo.schoolName}
 													>
-														<School className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400 transition-transform group-hover:scale-110" />
-														<span className="text-xs font-medium text-blue-600 dark:text-blue-400 truncate">
+														<School className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0 text-blue-600 dark:text-blue-400 transition-transform group-hover:scale-110" />
+														<span className="text-[10px] sm:text-xs font-medium text-blue-600 dark:text-blue-400 truncate">
 															{userInfo.schoolName}
 														</span>
 													</div>
@@ -776,6 +770,11 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 										</div>
 									</DropdownMenuLabel>
 									<DropdownMenuSeparator />
+									<div className="px-2 py-1.5">
+										<div className="">
+											<AnimatedThemeToggler />
+										</div>
+									</div>
 									<DropdownMenuItem
 										onClick={handleProfileClick}
 										className="cursor-pointer transition-all duration-300 rounded-xl py-2.5 my-1"
@@ -783,6 +782,8 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 										<UserCircle className="mr-2.5 h-4 w-4" />
 										<span className="font-medium">Профайл</span>
 									</DropdownMenuItem>
+									<DropdownMenuSeparator />
+
 									<DropdownMenuSeparator />
 									<DropdownMenuItem
 										onClick={handleLogoutClick}
@@ -793,29 +794,19 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 									</DropdownMenuItem>
 								</DropdownMenuContent>
 							</DropdownMenu>
-
-							{/* Theme toggler */}
-							<AnimatedThemeToggler
-								className={cn(
-									"p-2 md:p-3 rounded-full backdrop-blur-sm border transition-all duration-200",
-									"bg-white/90 dark:bg-gray-800/60 border-gray-200/80 dark:border-gray-700/80",
-									"text-gray-900 dark:text-yellow-400",
-									"active:scale-95 shadow-sm h-auto w-auto",
-								)}
-							/>
 						</div>
 					</div>
 				</header>
 
 				{/* Logout Confirmation Dialog */}
 				<AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
-					<AlertDialogContent className="sm:max-w-md rounded-2xl border-2">
+					<AlertDialogContent className="w-[90vw] max-w-md sm:max-w-md rounded-2xl border-2">
 						<AlertDialogHeader>
-							<AlertDialogTitle className="flex items-center gap-2.5 text-lg">
-								<LogOut className="h-5 w-5 text-red-600" />
+							<AlertDialogTitle className="flex items-center gap-2 sm:gap-2.5 text-base sm:text-lg">
+								<LogOut className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
 								Гарахдаа итгэлтэй байна уу?
 							</AlertDialogTitle>
-							<AlertDialogDescription className="text-sm leading-relaxed pt-2">
+							<AlertDialogDescription className="text-xs sm:text-sm leading-relaxed pt-2">
 								Та системээс гарахдаа итгэлтэй байна уу? Дахин нэвтрэхийн тулд
 								нэвтрэх нэр болон нууц үгээ оруулах шаардлагатай.
 							</AlertDialogDescription>

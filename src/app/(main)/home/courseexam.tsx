@@ -3,7 +3,6 @@ import {
 	Award,
 	Crown,
 	Lock,
-	Sparkles,
 	Target,
 	TrendingUp,
 } from "lucide-react";
@@ -76,13 +75,13 @@ export default function UnifiedHeroSection({
 							{/* Right Section - Premium Info */}
 							<div className="relative w-full lg:w-auto">
 								{/* Subtle glow effect */}
-								<div className="absolute -inset-1 bg-linear-to-r from-purple-500/20 via-violet-500/20 to-purple-600/20 rounded-2xl blur-xl opacity-60" />
+								<div className="absolute -inset-1 rounded-2xl blur-xl opacity-60" />
 
 								<div className="relative flex flex-row items-center gap-6 bg-linear-to-br from-secondary/40 via-secondary/30 to-secondary/40 dark:from-purple-950/20 dark:via-violet-950/15 dark:to-purple-900/20 p-5 sm:p-6 rounded-2xl border border-purple-500/30 dark:border-purple-500/20 backdrop-blur-md lg:min-w-[420px] shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-purple-500/50">
 									{/* Lock Icon */}
 									<div className="relative shrink-0">
-										<div className="absolute  bg-purple-500/20 blur-lg rounded-full" />
-										<div className="relative w-16 h-16 rounded-xl bg-linear-to-br from-purple-500/90 via-violet-500/90 to-purple-600/90 flex items-center justify-center shadow-lg border border-white/10">
+										<div className="absolute    rounded-full" />
+										<div className="relative w-16 h-16 rounded-xl  flex items-center justify-center shadow-lg border">
 											<Lock className="w-7 h-7 text-white" strokeWidth={2} />
 										</div>
 										<div className="absolute -top-1 -right-1 bg-linear-to-br from-purple-400 to-violet-500 rounded-lg p-1.5 shadow-lg animate-bounce">
@@ -92,17 +91,7 @@ export default function UnifiedHeroSection({
 
 									{/* CTA Content */}
 									<div className="flex flex-col gap-3 flex-1 text-left">
-										<div className="space-y-1">
-											<div className="flex items-center gap-2">
-												<Sparkles className="w-4 h-4 text-purple-500 dark:text-purple-400" />
-												<h4 className="text-base font-bold text-foreground">
-													Төлбөртэй хи
-												</h4>
-											</div>
-											<p className="text-xs text-muted-foreground font-medium">
-												Мэргэжлийн түвшний сургалтууд
-											</p>
-										</div>
+										<div className="space-y-1"></div>
 										<Link href="/Lists/paymentCoureList" className="w-full">
 											<Button
 												size="sm"
