@@ -1,24 +1,35 @@
 "use client";
 
-import { BookOpen, Eye, Loader2, Star, User } from "lucide-react";
+import { motion } from "framer-motion";
+import {
+	ArrowRight,
+	BookOpen,
+	Eye,
+	Loader2,
+	Sparkles,
+	Star,
+	User,
+} from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import type { CourseContent } from "@/types/course/courseList";
 
 interface CourseCardProps {
 	course: CourseContent;
 	userId: number;
+	index?: number;
 }
 
-export const CourseCard = ({ course }: CourseCardProps) => {
+export const CourseCard = ({ course, index = 0 }: CourseCardProps) => {
 	const router = useRouter();
 	const [isNavigating, setIsNavigating] = useState(false);
 
-	const handleViewCourse = async () => {
+	const handleCardClick = async () => {
+		if (isNavigating) return;
 		setIsNavigating(true);
 		try {
 			await router.push(`/course/${course.content_id}`);
@@ -28,153 +39,136 @@ export const CourseCard = ({ course }: CourseCardProps) => {
 		}
 	};
 
+	const isPaid = course.ispay === 1;
+
 	return (
-		<Card className="overflow-hidden hover:shadow-xl transition-all duration-300 group border-border h-full flex flex-col">
-			{/* Зураг хэсэг */}
-			<div className="relative h-48 overflow-hidden bg-muted -shrink-0">
-				{course.filename ? (
-					<>
-						<Image
-							src={course.filename}
-							alt={course.course_name}
-							fill
-							className="object-cover group-hover:scale-105 transition-transform duration-300"
-							sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-							priority={false}
-						/>
-						{/* Gradient overlay */}
-						<div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-					</>
-				) : (
-					<div className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-primary/10 to-primary/5">
-						<div className="text-center">
-							<BookOpen className="w-16 h-16 mx-auto text-muted-foreground/50 mb-2" />
-							<p className="text-xs text-muted-foreground">Зураг байхгүй</p>
-						</div>
-					</div>
+		<motion.div
+			initial={{ opacity: 0, y: 20 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.4, delay: index * 0.05 }}
+			whileHover={{ scale: 0.98 }}
+			className="h-full"
+		>
+			<Card
+				onClick={handleCardClick}
+				className={cn(
+					"group relative flex flex-col h-full overflow-hidden rounded-[28px] border border-border/40 bg-card/50 backdrop-blur-md transition-all duration-500 ease-out cursor-pointer hover:shadow-2xl hover:shadow-primary/10 hover:border-primary/20",
+					isNavigating && "opacity-70 pointer-events-none",
 				)}
-
-				{/* Төлбөрийн badge */}
-				<div className="absolute top-3 right-3">
-					{course.ispay === 1 ? (
-						<Badge className="bg-green-600 hover:bg-green-700 border-0 shadow-lg">
-							✓ Төлбөр төлсөн
-						</Badge>
+			>
+				{/* Header Section with Image/Gradient */}
+				<div className="relative h-28 w-full overflow-hidden transition-all duration-700">
+					{course.filename ? (
+						<>
+							<Image
+								src={course.filename}
+								alt={course.course_name}
+								fill
+								className="object-cover group-hover:scale-110 transition-transform duration-700"
+								sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+								priority={false}
+							/>
+							{/* Overlay */}
+							<div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent" />
+						</>
 					) : (
+						<>
+							<div className="absolute inset-0 bg-linear-to-br from-slate-800 via-slate-700 to-slate-600" />
+							<div className="absolute inset-0 bg-white/5 opacity-10 bg-[radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] bg-size[20px_20px] group-hover:scale-110 transition-transform duration-700" />
+							<div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent" />
+							<div className="absolute inset-0 flex items-center justify-center">
+								<BookOpen className="w-12 h-12 text-white/50" />
+							</div>
+						</>
+					)}
+
+					{/* Badges */}
+					<div className="absolute top-2 left-2 flex flex-col gap-1.5">
 						<Badge
-							variant="secondary"
-							className="bg-white/90 backdrop-blur-sm shadow-lg font-semibold"
+							className={cn(
+								"px-3 py-1 rounded-full text-[10px] font-bold border-none shadow-lg w-fit transition-colors",
+								isPaid
+									? "bg-emerald-500 text-white"
+									: "bg-orange-500 text-white",
+							)}
 						>
-							{course.amount.toLocaleString()}₮
+							{isPaid ? (
+								<>
+									<span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-white inline-block animate-pulse" />
+									✓ Төлбөр төлсөн
+								</>
+							) : (
+								`${course.amount.toLocaleString()}₮`
+							)}
 						</Badge>
-					)}
-				</div>
-			</div>
+						{course.content_name && (
+							<Badge className="px-3 py-1 rounded-full text-[10px] font-bold border-none shadow-lg bg-white/10 backdrop-blur-md text-white max-w-[180px] whitespace-normal text-center leading-tight">
+								{course.content_name}
+							</Badge>
+						)}
+					</div>
 
-			<CardContent className="p-5 space-y-4 -row flex flex-col justify-between">
-				<div>
-					{/* Хичээлийн нэр */}
-					<h3 className="text-lg font-bold text-card-foreground line-clamp-2 min-h-14 group-hover:text-primary transition-colors">
-						{course.course_name}
-					</h3>
-
-					{/* Контент нэр */}
-					{course.content_name && (
-						<p className="text-sm text-muted-foreground line-clamp-1 mt-1">
-							{course.content_name}
-						</p>
-					)}
-
-					{/* Мэдээллийн хэсэг */}
-					<div className="space-y-3 mt-4">
-						{/* Багш */}
-						<div className="flex items-center gap-3">
-							<div className="p-2 bg-primary/10 rounded-lg">
-								<User className="w-4 h-4 text-primary" />
-							</div>
-							<div className="flex-1 min-w-0">
-								<p className="text-xs text-muted-foreground">Багш</p>
-								<p className="text-sm font-medium text-card-foreground truncate">
-									{course.teach_name}
-								</p>
-							</div>
+					{/* Stats Overlay */}
+					<div className="absolute bottom-2 left-2 right-2 flex items-center gap-2">
+						<div className="flex items-center gap-1.5 text-white/90 text-[11px] font-semibold">
+							<Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+							{course.rate}
 						</div>
-
-						{/* Үнэлгээ болон Stats */}
-						<div className="grid grid-cols-3 gap-3">
-							{/* Үнэлгээ */}
-							<div className="flex items-center gap-2">
-								<div className="p-2 bg-yellow-500/10 rounded-lg">
-									<Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-								</div>
-								<div>
-									<p className="text-xs text-muted-foreground">Үнэлгээ</p>
-									<p className="text-sm font-medium text-card-foreground">
-										{course.rate}
-									</p>
-								</div>
-							</div>
-
-							{/* Үзсэн */}
-							<div className="flex items-center gap-2">
-								<div className="p-2 bg-blue-500/10 rounded-lg">
-									<Eye className="w-4 h-4 text-blue-600" />
-								</div>
-								<div>
-									<p className="text-xs text-muted-foreground">Үзсэн</p>
-									<p className="text-sm font-medium text-card-foreground">
-										{course.views}
-									</p>
-								</div>
-							</div>
-
-							{/* Контент */}
-							<div className="flex items-center gap-2">
-								<div className="p-2 bg-green-500/10 rounded-lg">
-									<BookOpen className="w-4 h-4 text-green-600" />
-								</div>
-								<div>
-									<p className="text-xs text-muted-foreground">Контент</p>
-									<p className="text-sm font-medium text-card-foreground">
-										{course.contentcnt}
-									</p>
-								</div>
-							</div>
+						<div className="flex items-center gap-1.5 text-white/90 text-[11px] font-semibold">
+							<Eye className="w-3.5 h-3.5 text-blue-300" />
+							{course.views}
 						</div>
 					</div>
 				</div>
 
-				{/* Footer */}
-				<div className="mt-4 pt-4 space-y-3 border-t border-border">
-					{/* Төлбөрийн тайлбар */}
-					{course.ispay !== 1 && course.paydescr && (
-						<div className="rounded-md border-l-4 border-primary bg-primary/5 p-3">
-							<p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-								{course.paydescr}
+				{/* Content Area */}
+				<CardContent className="flex flex-col grow p-3 gap-2.5">
+					<div className="space-y-1.5">
+						<div className="flex items-center justify-between">
+							<p className="text-[9px] font-black text-primary/80 uppercase tracking-[0.15em]">
+								Хичээл
 							</p>
+							<Sparkles className="w-3.5 h-3.5 text-yellow-500 animate-pulse" />
 						</div>
-					)}
+						<h3 className="font-bold text-foreground leading-snug line-clamp-2 text-xs group-hover:text-primary transition-colors duration-300 min-h-8">
+							{course.course_name}
+						</h3>
+					</div>
 
-					{/* Үйлдлийн товч */}
-					<Button
-						className="w-full group-hover:scale-105 transition-transform duration-300 h-11"
-						onClick={handleViewCourse}
-						disabled={isNavigating}
-					>
-						{isNavigating ? (
-							<>
-								<Loader2 className="w-4 h-4 mr-2 animate-spin" />
-								Ачааллаж байна...
-							</>
-						) : (
-							<>
-								<BookOpen className="w-4 h-4 mr-2" />
-								Хичээл үзэх
-							</>
-						)}
-					</Button>
-				</div>
-			</CardContent>
-		</Card>
+					{/* Stats Grid */}
+					<div className="grid grid-cols-1 gap-1.5 mt-auto pt-2.5 border-t border-border/50">
+						<div className="flex items-center justify-between">
+							<div className="flex items-center gap-2.5">
+								<div className="flex items-center gap-1.5" title="Багш">
+									<User className="w-3.5 h-3.5 text-purple-500/80" />
+									<span className="text-[10px] font-bold text-muted-foreground max-w-20">
+										{course.teach_name}
+									</span>
+								</div>
+								<div className="flex items-center gap-1.5" title="Контент">
+									<BookOpen className="w-3.5 h-3.5 text-green-500/80" />
+									<span className="text-[10px] font-bold text-muted-foreground">
+										{course.contentcnt}
+									</span>
+								</div>
+							</div>
+
+							<div
+								className={cn(
+									"flex items-center justify-center min-w-8 h-8 rounded-full transition-all duration-300",
+									"bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white group-hover:scale-110",
+								)}
+							>
+								{isNavigating ? (
+									<Loader2 className="w-4 h-4 animate-spin" />
+								) : (
+									<ArrowRight className="w-4 h-4" />
+								)}
+							</div>
+						</div>
+					</div>
+				</CardContent>
+			</Card>
+		</motion.div>
 	);
 };

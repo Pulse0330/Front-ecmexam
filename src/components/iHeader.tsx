@@ -4,6 +4,7 @@ import {
 	BarChart3,
 	ChevronDown,
 	ClipboardList,
+	CreditCard,
 	FileText,
 	LogOut,
 	School,
@@ -50,9 +51,9 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { useUserStore } from "@/stores/useUserStore";
+import { useAuthStore } from "@/stores/useAuthStore";
 
-// ⭐ UNIFIED User Avatar Component - FIXED
+// ⭐ UNIFIED User Avatar Component
 const UserAvatar = React.memo(
 	({
 		userImage,
@@ -203,6 +204,22 @@ const sorilDropdownLinks = [
 	},
 ];
 
+// ⭐ НЭМСЭН: Цахим сургалтын dropdown links
+const courseDropdownLinks = [
+	{
+		href: "/Lists/courseList",
+		label: "Хичээл",
+		description: "",
+		icon: <School className="h-5 w-5" />,
+	},
+	{
+		href: "/Lists/paymentCoureList",
+		label: "Төлбөртэй хичээл",
+		description: "",
+		icon: <CreditCard className="h-5 w-5" />,
+	},
+];
+
 // Mega Menu Component
 const MegaMenuItem = React.memo(
 	({
@@ -329,22 +346,19 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 		const pathname = usePathname();
 		const router = useRouter();
 
-		// Get profile from Zustand store
-		const profile = useUserStore((state) => state.profile);
+		const { user, firstname, imgUrl, clearAuth } = useAuthStore();
 
-		// Memoize user information
 		const userInfo = useMemo(
 			() => ({
-				userName: profile?.fname || profile?.firstname || "Хэрэглэгч",
-				userEmail: profile?.email || "",
-				userImage: profile?.img_url || "",
-				schoolName: profile?.sch_name || "",
-				studentGroup: profile?.studentgroupname || "",
+				userName: user?.fname || firstname || "Хэрэглэгч",
+				userEmail: user?.email || "",
+				userImage: imgUrl || user?.img_url || "",
+				schoolName: user?.sch_name || "",
+				studentGroup: user?.studentgroupname || "",
 			}),
-			[profile],
+			[user, firstname, imgUrl],
 		);
 
-		// Optimized resize observer
 		useEffect(() => {
 			let timeoutId: NodeJS.Timeout;
 
@@ -391,9 +405,13 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 
 		const confirmLogout = useCallback(() => {
 			Cookies.remove("auth-token", { path: "/" });
-			useUserStore.getState().setProfile(null);
+			Cookies.remove("user-id", { path: "/" });
+			Cookies.remove("firstname", { path: "/" });
+			Cookies.remove("img-url", { path: "/" });
+
+			clearAuth();
 			router.push("/login");
-		}, [router]);
+		}, [router, clearAuth]);
 
 		const handleProfileClick = useCallback(() => {
 			router.push("/userProfile");
@@ -403,10 +421,12 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 			setIsMenuOpen(false);
 		}, []);
 
-		// Check if exam/soril paths are active
+		// ⭐ ӨӨРЧИЛСӨН: Цахим сургалтын хуудаснууд идэвхтэй эсэхийг шалгах
 		const isExamActive = pathname.includes("/Lists/exam");
 		const isSorilActive = pathname.includes("/Lists/soril");
-		const isCourseActive = pathname === "/Lists/courseList";
+		const isCourseActive =
+			pathname.includes("/Lists/courseList") ||
+			pathname.includes("/Lists/paymentCoureList");
 
 		return (
 			<>
@@ -481,22 +501,12 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 											isActive={isSorilActive}
 										/>
 
-										{/* Цахим сургалт - Regular Link */}
-										<NavigationMenuItem>
-											<Link
-												href="/Lists/courseList"
-												className={cn(
-													"group inline-flex h-10 w-max items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300",
-													"hover:bg-linear-to-r hover:from-accent/90 hover:to-accent hover:text-accent-foreground hover:shadow-md hover:scale-105",
-													"active:scale-95",
-													isCourseActive
-														? "bg-linear-to-r from-accent/90 to-accent text-accent-foreground shadow-md scale-[1.02]"
-														: "text-foreground/80 hover:text-foreground",
-												)}
-											>
-												Цахим сургалт
-											</Link>
-										</NavigationMenuItem>
+										{/* ⭐ ӨӨРЧИЛСӨН: Цахим сургалт - Mega Menu болгосон */}
+										<MegaMenuItem
+											label="Цахим сургалт"
+											items={courseDropdownLinks}
+											isActive={isCourseActive}
+										/>
 									</NavigationMenuList>
 								</NavigationMenu>
 							</div>
@@ -640,35 +650,53 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 													);
 												})}
 
-												{/* Mobile Цахим сургалт */}
+												{/* ⭐ НЭМСЭН: Mobile Цахим сургалт Section */}
 												<div className="w-full pt-4 pb-2">
 													<div className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
 														📚 Цахим сургалт
 													</div>
 												</div>
-												<NavigationMenuItem className="w-full">
-													<Link
-														href="/Lists/courseList"
-														onClick={handleMenuToggle}
-														className={cn(
-															"flex w-full items-center rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-300",
-															"hover:bg-accent hover:text-accent-foreground hover:translate-x-1 hover:shadow-md",
-															"active:scale-95",
-															isCourseActive
-																? "bg-linear-to-r from-accent/90 to-accent text-accent-foreground shadow-md"
-																: "text-foreground/80",
-														)}
-													>
-														Цахим сургалт
-													</Link>
-												</NavigationMenuItem>
+												{courseDropdownLinks.map((item) => {
+													const isActive = pathname === item.href;
+													return (
+														<NavigationMenuItem
+															key={item.href}
+															className="w-full"
+														>
+															<Link
+																href={item.href}
+																onClick={handleMenuToggle}
+																className={cn(
+																	"flex w-full items-start gap-3 rounded-xl px-4 py-3 text-sm transition-all duration-300",
+																	"hover:bg-accent hover:text-accent-foreground hover:translate-x-1 hover:shadow-md",
+																	"active:scale-95",
+																	isActive
+																		? "bg-linear-to-r from-accent/90 to-accent text-accent-foreground shadow-md"
+																		: "text-foreground/80",
+																)}
+															>
+																<span className="text-lg mt-0.5 filter drop-shadow-sm">
+																	{item.icon}
+																</span>
+																<div className="flex flex-col gap-1">
+																	<span className="font-bold">
+																		{item.label}
+																	</span>
+																	<span className="text-xs text-muted-foreground leading-tight">
+																		{item.description}
+																	</span>
+																</div>
+															</Link>
+														</NavigationMenuItem>
+													);
+												})}
 											</NavigationMenuList>
 										</NavigationMenu>
 									</PopoverContent>
 								</Popover>
 							)}
 
-							{/* ⭐ UNIFIED User dropdown - Desktop shows name + avatar, Mobile shows only avatar */}
+							{/* User dropdown */}
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<Button
@@ -679,14 +707,11 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 											"border-gray-200/60 dark:border-gray-700/60",
 											"hover:shadow-lg hover:scale-105 hover:border-primary/40",
 											"active:scale-95",
-											// Desktop: padding for name + avatar
 											!isMobile && "px-4 py-2 gap-3 h-auto",
-											// Mobile: square button with just avatar
 											isMobile && "p-0 h-11 w-11 overflow-hidden",
 										)}
 									>
 										{!isMobile ? (
-											// Desktop: Show avatar + name with online status
 											<>
 												<UserAvatar
 													userImage={userInfo.userImage}
@@ -699,7 +724,6 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
 												</span>
 											</>
 										) : (
-											// Mobile: Show only avatar
 											<UserAvatar
 												userImage={userInfo.userImage}
 												userName={userInfo.userName}

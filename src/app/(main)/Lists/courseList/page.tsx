@@ -80,7 +80,6 @@ const CourseListPage = () => {
 
 	const courses = queryData?.RetData || [];
 
-	// Check if there are no courses at all
 	if (courses.length === 0) {
 		return (
 			<div className="container mx-auto p-4">
@@ -139,12 +138,13 @@ const CourseListPage = () => {
 					</p>
 				</div>
 			) : (
-				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-					{filteredCourses.map((course) => (
+				<div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5">
+					{filteredCourses.map((course, idx) => (
 						<CourseCard
 							key={course.content_id}
 							course={course}
 							userId={userId}
+							index={idx}
 						/>
 					))}
 				</div>

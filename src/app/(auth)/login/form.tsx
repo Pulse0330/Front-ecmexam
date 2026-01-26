@@ -28,7 +28,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { notifyNewLogin } from "@/hooks/use-SessionCheker"; // ===== НЭМЭХ =====
+import { notifyNewLogin } from "@/hooks/use-SessionCheker";
 import { createSessionRequest, loginTokenRequest } from "@/lib/api";
 import { setCookie } from "@/lib/cookie";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -54,7 +54,9 @@ export function LoginForm() {
 	useEffect(() => {
 		const sessionExpired = searchParams.get("session");
 		if (sessionExpired === "expired") {
-			toast.error("Таны session дууссан байна. Дахин нэвтэрнэ үү.");
+			toast.error(
+				"Та үйлдэл хийгээгүй 5 минут болсон байна. Дахин нэвтэрнэ үү.",
+			);
 		}
 	}, [searchParams]);
 
@@ -68,14 +70,14 @@ export function LoginForm() {
 				"",
 			);
 
-			if (
-				!loginRes?.RetResponse?.ResponseType ||
-				!loginRes?.Data?.[0] ||
-				!loginRes.Token
-			) {
-				throw new Error(
-					loginRes?.RetResponse?.ResponseMessage || "Нэвтрэх амжилтгүй",
-				);
+			// ResponseType шалгах
+			if (!loginRes?.RetResponse?.ResponseType) {
+				throw new Error("Нэвтрэх нэр эсвэл нууц үг буруу байна");
+			}
+
+			// Data болон Token шалгах
+			if (!loginRes?.Data?.[0] || !loginRes.Token) {
+				throw new Error("Серверээс буруу хариу ирлээ");
 			}
 
 			const userData = loginRes.Data[0];
@@ -90,10 +92,7 @@ export function LoginForm() {
 			);
 
 			if (!sessionRes?.RetResponse?.ResponseType) {
-				throw new Error(
-					sessionRes?.RetResponse?.ResponseMessage ||
-						"Session үүсгэх амжилтгүй",
-				);
+				throw new Error("Session үүсгэх амжилтгүй");
 			}
 
 			return { userData, token };
@@ -106,17 +105,43 @@ export function LoginForm() {
 			// Cookies хадгалах
 			setCookie("auth-token", token, 7);
 			setCookie("user-id", userData.id.toString(), 7);
+			setCookie("firstname", userData.firstname || "", 7);
+			setCookie("img-url", userData.img_url || "", 7);
 
-			// ===== ШИНЭ: Бусад tab-д шинэ login мэдэгдэх =====
+			// Бусад tab-д шинэ login мэдэгдэх
 			notifyNewLogin(userData.id);
 
-			// Амжилттай мэдэгдэл
-			toast.success("Амжилттай нэвтэрлээ");
+			// ⭐ is_enabled шалгах - 0 бол профайл руу, 1 бол home руу
+			let finalRedirect = redirectUrl;
+
+			if (userData.is_enabled === 0) {
+				// Профайл бөглөөгүй бол профайл хуудас руу шилжүүлэх
+				finalRedirect = "/userProfile";
+				toast.info("Профайл мэдээллээ бөглөнө үү", {
+					description:
+						"Та профайл мэдээллээ бүрэн бөглөсний дараа системд нэвтрэх боломжтой болно.",
+					duration: 5000,
+				});
+			} else {
+				// Амжилттай нэвтэрсэн мэдэгдэл (is_enabled = 1)
+				toast.success("Амжилттай нэвтэрлээ");
+			}
 
 			// Redirect
 			setTimeout(() => {
-				window.location.href = redirectUrl;
+				window.location.href = finalRedirect;
 			}, 300);
+		},
+		onError: (error: Error) => {
+			// Формын дээр л алдаа харуулах (toast биш)
+			form.setError("root", {
+				type: "manual",
+				message: error.message || "Нэвтрэх нэр эсвэл нууц үг буруу байна",
+			});
+
+			// Нууц үг талбарыг цэвэрлэх
+			form.setValue("password", "");
+			form.setFocus("password");
 		},
 	});
 
@@ -137,8 +162,26 @@ export function LoginForm() {
 				<form onSubmit={form.handleSubmit(onSubmit)}>
 					<CardContent className="grid gap-4">
 						{form.formState.errors.root && (
-							<div className="text-sm text-destructive">
-								{form.formState.errors.root.message}
+							<div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive animate-in fade-in-0 slide-in-from-top-2 duration-300">
+								<div className="flex items-start gap-2">
+									<svg
+										className="h-5 w-5 shrink-0 mt-0.5"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke="currentColor"
+									>
+										<title>Warning</title>
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											strokeWidth={2}
+											d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+										/>
+									</svg>
+									<span className="flex-1">
+										{form.formState.errors.root.message}
+									</span>
+								</div>
 							</div>
 						)}
 
@@ -150,11 +193,16 @@ export function LoginForm() {
 									<FormLabel>Нэвтрэх нэр</FormLabel>
 									<FormControl>
 										<Input
-											placeholder="••••••••"
+											placeholder="Нэвтрэх нэр"
 											type="text"
 											autoComplete="username"
 											{...field}
 											disabled={isPending}
+											className={
+												form.formState.errors.root
+													? "border-destructive/50"
+													: ""
+											}
 										/>
 									</FormControl>
 									<FormMessage />
@@ -175,6 +223,11 @@ export function LoginForm() {
 											autoComplete="current-password"
 											{...field}
 											disabled={isPending}
+											className={
+												form.formState.errors.root
+													? "border-destructive/50 animate-shake"
+													: ""
+											}
 										/>
 									</FormControl>
 									<FormMessage />
@@ -215,6 +268,19 @@ export function LoginForm() {
 					</Button>
 				</p>
 			</CardFooter>
+
+			{/* Inline style for shake animation */}
+			<style jsx>{`
+				@keyframes shake {
+					0%, 100% { transform: translateX(0); }
+					10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+					20%, 40%, 60%, 80% { transform: translateX(4px); }
+				}
+				
+				.animate-shake {
+					animation: shake 0.5s ease-in-out;
+				}
+			`}</style>
 		</Card>
 	);
 }

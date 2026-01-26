@@ -5,8 +5,6 @@ import {
 	AlertCircle,
 	Award,
 	ChevronRight,
-	ClipboardList,
-	Sparkles,
 	Target,
 	TrendingUp,
 } from "lucide-react";
@@ -19,6 +17,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { useUserStore } from "@/stores/useUserStore";
 import type { HomeResponseType } from "@/types/home";
 import type { UserProfileResponseType } from "@/types/user";
+import UnifiedHeroSection from "./courseexam";
 import ExamLists from "./examlists";
 import HomeSorilLists from "./sorillists";
 
@@ -31,7 +30,7 @@ const PARTICLES = Array.from({ length: 50 }, (_, i) => ({
 	delay: Math.random() * 5,
 }));
 
-const FLOATING_ICONS = [
+const _FLOATING_ICONS = [
 	{ id: "award", Icon: Award, color: "text-amber-400", delay: 0 },
 	{ id: "target", Icon: Target, color: "text-emerald-400", delay: 1 },
 	{ id: "trending", Icon: TrendingUp, color: "text-blue-400", delay: 2 },
@@ -201,207 +200,74 @@ export default function HomePage() {
 			<div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8 relative z-10">
 				{/* Premium Hero Section */}
 				<div className="animate-in fade-in-0 slide-in-from-top-4 duration-1000">
-					<div className="relative group">
-						{/* Glow Effect */}
-						<div className="absolute -inset-1 bg-linear-to-r from-violet-600 via-purple-600 to-pink-600 rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity duration-500" />
+					<div className="animate-in fade-in-0 duration-700 delay-150">
+						<UnifiedHeroSection username={username} />
+					</div>
+				</div>
 
-						<div className="relative bg-linear-to-br from-card/95 via-card/90 to-card/95 backdrop-blur-2xl rounded-2xl border border-border shadow-2xl overflow-hidden">
-							{/* Animated Border */}
-
-							{/* Content Container */}
-							<div className="relative p-6 sm:p-8 lg:p-10">
-								{/* Floating Icons */}
-								<div className="absolute top-4 right-4 flex gap-2">
-									{FLOATING_ICONS.map(({ id, Icon, color, delay }) => (
-										<div
-											key={id}
-											className={`${color} animate-float opacity-40 hover:opacity-100 transition-opacity cursor-pointer`}
-											style={{ animationDelay: `${delay}s` }}
-										>
-											<Icon className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow-lg" />
-										</div>
-									))}
+				{/* Exam Lists Section - Only show if exams exist */}
+				{homeData?.RetDataThirt && homeData.RetDataThirt.length > 0 && (
+					<>
+						{/* Section Divider */}
+						<div className="py-4">
+							<div className="w-full border-t border-border" />
+							<div className="flex flex-col mt-4">
+								<div className="flex justify-center">
+									<span className="px-4 py-1.5 bg-linear-to-r from-violet-600 to-purple-600 text-white text-xs font-bold rounded-full shadow-lg">
+										Идэвхтэй шалгалтууд
+									</span>
 								</div>
-
-								{/* Main Content */}
-								<div className="space-y-4 max-w-2xl">
-									{/* Greeting */}
-									<div className="space-y-2">
-										<div className="flex items-center gap-3 flex-wrap">
-											<h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black bg-linear-to-r from-foreground via-purple-600 to-pink-600 dark:from-white dark:via-purple-200 dark:to-pink-200 bg-clip-text text-transparent drop-shadow-2xl leading-tight">
-												Сайн уу, {username}
-											</h1>
-											<span className="text-2xl sm:text-3xl lg:text-4xl animate-wave">
-												👋
-											</span>
-										</div>
-
-										<p className="text-sm sm:text-base lg:text-lg text-muted-foreground font-medium">
-											Таны амжилтын замд бид хамт байх болно
-										</p>
-									</div>
-
-									{/* Feature Pills */}
-									<div className="flex flex-wrap gap-2 pt-2">
-										{[
-											{
-												id: "learn",
-												icon: "",
-												text: "24/7 Суралцах",
-												color: "",
-											},
-											{
-												id: "grow",
-												icon: "",
-												text: "Хөгжих",
-												color: "",
-											},
-											{
-												id: "succeed",
-												icon: "",
-												text: "Амжилт олох",
-												color: "",
-											},
-										].map((pill) => (
-											<div
-												key={pill.id}
-												className={`group/pill relative overflow-hidden rounded-full px-4 py-2 bg-linear-to-r ${pill.color} shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer`}
-											>
-												<div className="absolute inset-0 bg-white/20 translate-y-full group-hover/pill:translate-y-0 transition-transform duration-300" />
-												<div className="relative flex items-center gap-1.5 text-white font-bold">
-													<span className="text-base">{pill.icon}</span>
-													<span className="text-xs">{pill.text}</span>
-												</div>
-											</div>
-										))}
-									</div>
-
-									{/* Motivational Quote */}
-									<div className="relative mt-4 pt-4 border-t border-border">
-										<div className="flex items-start gap-3">
-											<Sparkles className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5 animate-pulse" />
-											<p className="text-muted-foreground italic text-xs sm:text-sm">
-												"Өнөөдрийн бяцхан алхам маргаашийн томоохон өөрчлөлт"
-											</p>
-										</div>
-									</div>
+								<div className="flex justify-end mt-2">
+									<a
+										href="Lists\examList"
+										className="group flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer transition-all duration-300 hover:gap-2"
+									>
+										<span className="group-hover:underline">Бүгдийг харах</span>
+										<ChevronRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+									</a>
 								</div>
-
-								{/* Decorative Elements */}
-								<div className="absolute bottom-0 right-0 w-40 h-40 bg-linear-to-tl from-purple-500/10 to-transparent rounded-tl-full" />
-								<div className="absolute top-0 left-0 w-32 h-32 bg-linear-to-br from-pink-500/10 to-transparent rounded-br-full" />
 							</div>
 						</div>
-					</div>
-				</div>
 
-				{/* Section Divider */}
-				<div className="py-4">
-					{/* 1. Дээд талын хөндлөн зураас */}
-					<div className="w-full border-t border-border" />
-
-					{/* 2. Зураасны доорх агуулга */}
-					<div className="flex flex-col mt-4">
-						{/* Badge - Төвд нь байрлуулсан */}
-						<div className="flex justify-center">
-							<span className="px-4 py-1.5 bg-linear-to-r from-violet-600 to-purple-600 text-white text-xs font-bold rounded-full shadow-lg">
-								Идэвхтэй шалгалтууд
-							</span>
-						</div>
-
-						{/* "Бүгдийг харах" - Баруун талд нь */}
-						<div className="flex justify-end mt-2">
-							<a
-								href="Lists\examList"
-								className="group flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer transition-all duration-300 hover:gap-2"
-							>
-								<span className="group-hover:underline">Бүгдийг харах</span>
-								<ChevronRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
-							</a>
-						</div>
-					</div>
-				</div>
-
-				{/* Exam Lists Section */}
-				<div className="animate-in fade-in-0 duration-700 delay-300">
-					<div className="relative">
-						{homeData?.RetDataThirt?.length === 0 ? (
-							<div className="text-center py-20 px-4">
-								<div className="relative mb-6 inline-block">
-									<div className="absolute inset-0 bg-violet-500/20 blur-2xl rounded-full animate-pulse" />
-									<div className="relative w-24 h-24 rounded-2xl bg-linear-to-br from-muted to-muted/50 flex items-center justify-center shadow-2xl border border-border">
-										<ClipboardList
-											className="w-12 h-12 text-purple-400"
-											strokeWidth={1.5}
-										/>
-									</div>
-								</div>
-								<h3 className="text-xl font-bold text-foreground mb-2">
-									Шалгалт олдсонгүй
-								</h3>
-								<p className="text-sm text-muted-foreground">
-									Удахгүй шинэ шалгалтууд нэмэгдэх болно
-								</p>
+						<div className="animate-in fade-in-0 duration-700 delay-300">
+							<div className="relative">
+								<ExamLists exams={homeData.RetDataThirt} />
 							</div>
-						) : (
-							<ExamLists exams={homeData?.RetDataThirt || []} />
-						)}
-					</div>
-				</div>
-
-				{/* Section Divider */}
-				<div className="py-4">
-					{/* 1. Дээд талын хөндлөн зураас */}
-					<div className="w-full border-t border-border" />
-
-					{/* 2. Зураасны доорх агуулга */}
-					<div className="flex flex-col mt-4">
-						{/* Badge - Төвд нь байрлуулсан */}
-						<div className="flex justify-center">
-							<span className="px-4 py-1.5 bg-linear-to-r from-violet-600 to-purple-600 text-white text-xs font-bold rounded-full shadow-lg">
-								Сорилууд
-							</span>
 						</div>
+					</>
+				)}
 
-						{/* "Бүгдийг харах" - Баруун талд нь */}
-						<div className="flex justify-end mt-2">
-							<a
-								href="Lists\sorilList"
-								className="group flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer transition-all duration-300 hover:gap-2"
-							>
-								<span className="group-hover:underline">Бүгдийг харах</span>
-								<ChevronRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
-							</a>
-						</div>
-					</div>
-				</div>
-
-				{/* Soril Lists Section */}
-				<div className="animate-in fade-in-0 duration-700 delay-500">
-					<div className="relative">
-						{homeData?.RetDataFourth?.length === 0 ? (
-							<div className="text-center py-20 px-4">
-								<div className="relative mb-6 inline-block">
-									<div className="absolute inset-0 bg-pink-500/20 blur-2xl rounded-full animate-pulse" />
-									<div className="relative w-24 h-24 rounded-2xl bg-linear-to-br from-muted to-muted/50 flex items-center justify-center shadow-2xl border border-border">
-										<Sparkles
-											className="w-12 h-12 text-pink-400"
-											strokeWidth={1.5}
-										/>
-									</div>
+				{/* Soril Lists Section - Only show if sorils exist */}
+				{homeData?.RetDataFourth && homeData.RetDataFourth.length > 0 && (
+					<>
+						{/* Section Divider */}
+						<div className="py-4">
+							<div className="w-full border-t border-border" />
+							<div className="flex flex-col mt-4">
+								<div className="flex justify-center">
+									<span className="px-4 py-1.5 bg-linear-to-r from-violet-600 to-purple-600 text-white text-xs font-bold rounded-full shadow-lg">
+										Сорилууд
+									</span>
 								</div>
-								<h3 className="text-xl font-bold text-foreground mb-2">
-									Сорил олдсонгүй
-								</h3>
-								<p className="text-sm text-muted-foreground">
-									Удахгүй шинэ сорилууд нэмэгдэх болно
-								</p>
+								<div className="flex justify-end mt-2">
+									<a
+										href="Lists\sorilList"
+										className="group flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer transition-all duration-300 hover:gap-2"
+									>
+										<span className="group-hover:underline">Бүгдийг харах</span>
+										<ChevronRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+									</a>
+								</div>
 							</div>
-						) : (
-							<HomeSorilLists pastExams={homeData?.RetDataFourth || []} />
-						)}
-					</div>
-				</div>
+						</div>
+
+						<div className="animate-in fade-in-0 duration-700 delay-500">
+							<div className="relative">
+								<HomeSorilLists pastExams={homeData.RetDataFourth} />
+							</div>
+						</div>
+					</>
+				)}
 			</div>
 
 			<style jsx>{`

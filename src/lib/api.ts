@@ -25,6 +25,7 @@ import type {
 	TestSavedMixedResponse,
 } from "@/types/exercise/testSavedMixed";
 import type { HomeResponseType } from "@/types/home";
+import type { ForgotPasswordResponse } from "@/types/login/forgot/forgot";
 import type {
 	CheckTokenResponse,
 	StatusItem,
@@ -42,9 +43,12 @@ import type {} from "@/types/login/sign/registerChoose/aimag";
 import type {} from "@/types/login/sign/registerChoose/duureg";
 import type {} from "@/types/login/sign/registerChoose/sum";
 import type {} from "@/types/login/sign/registerChoose/surguuli";
+import type { getplaninfoCourseData } from "@/types/paymentCourse/getplaninfo";
+import type { QPayInvoiceResponse } from "@/types/Qpay/qpayinvoice";
 import type { ApiSorillistsResponse } from "@/types/soril/sorilLists";
 import type { SorilresultListResponseType } from "@/types/soril/sorilResultLists";
 import type { UserProfileResponseType } from "@/types/user";
+import type { userUpdateResponse } from "@/types/userUpdate";
 //-------------------------------Auth---------------------------------//
 
 // ===== LoginToken request =====
@@ -115,7 +119,17 @@ export const registerSysUserRequest = async (
 
 	return data;
 };
-
+// ===== Forgot password request =====
+export const Forgotpassword = async (
+	phone: string,
+	password: string,
+): Promise<ForgotPasswordResponse> => {
+	const { data } = await api.post("/forgetpass", {
+		phone: phone,
+		password: password,
+	});
+	return data;
+};
 // ===== HomeScreen request =====
 export const getHomeScreen = async (
 	userId: number,
@@ -132,6 +146,55 @@ export const getUserProfile = async (
 	const { data } = await api.post<UserProfileResponseType>("/getuserprofile", {
 		user_id: userId,
 	});
+	return data;
+};
+export const getUserUpdateProfile = async (
+	firstname: string,
+	lastname: string,
+	phone: string,
+	email: string,
+	aimag_id: number,
+	aimagname: string,
+	sym_id: number,
+	symname: string,
+	regnumber: string,
+	currentpassword: string,
+	schoolname: string,
+	schooldb: string,
+	studentgroupid: string,
+	studentgroupname: string,
+	user_id: number,
+	img_url: string | null,
+): Promise<userUpdateResponse> => {
+	// 👇 ЭНЭ ХЭСГИЙГ НЭМНЭ ҮҮ
+	console.log("🔍 getUserUpdateProfile RECEIVED:");
+	console.log("password parameter:", currentpassword);
+	console.log("password type:", typeof currentpassword);
+
+	const requestBody = {
+		firstname,
+		lastname,
+		phone,
+		email,
+		aimag_id,
+		aimagname,
+		sym_id,
+		symname,
+		regnumber,
+		currentpassword,
+		schoolname,
+		schooldb,
+		studentgroupid,
+		studentgroupname,
+		user_id,
+		img_url,
+	};
+
+	const { data } = await api.post<userUpdateResponse>(
+		"/sysprofileupdate",
+		requestBody,
+	);
+
 	return data;
 };
 // ===== Get Date =====
@@ -247,7 +310,6 @@ export const getExamResultMore = async (
 	});
 	return data;
 };
-
 // ===== Get Exam Dun  =====
 export const getExamDun = async (dun: number): Promise<ExamDunApiResponse> => {
 	// Type өөрчлөх
@@ -338,7 +400,6 @@ export const getSorilresultlists = async (
 	);
 	return data;
 };
-
 //===== Get SorilFilterdresultlists =====
 export const getSorilFilterdresultlists = async (
 	userId: number,
@@ -408,7 +469,6 @@ export const getTestFilter = async (
 	});
 	return data;
 };
-
 // ===== Get TestFiltered =====
 export const getTestFiltered = async (
 	userId: number,
@@ -445,5 +505,39 @@ export const getContentView = async (
 		possible_index: 1,
 		user_id,
 	});
+	return data;
+};
+//-------------------------------Payment Course---------------------------------//
+export const getPaymentCourseList = async (
+	userId: number,
+): Promise<getplaninfoCourseData> => {
+	const { data } = await api.post<getplaninfoCourseData>("/getplaninfo", {
+		user_id: userId,
+	});
+	return data;
+};
+//------------------------------- QPAY ---------------------------------//
+export const getQPayInvoice = async (
+	amount: string,
+	userId: string,
+	orderId: string,
+	billId: string,
+	classroomId: string,
+	topics: number[],
+): Promise<QPayInvoiceResponse> => {
+	const { data } = await api.post<QPayInvoiceResponse>(
+		"https://ottapp.ecm.mn/api/api_get_qpayinvoice",
+		{
+			amount,
+			userid: userId,
+			device_token: "",
+			orderid: orderId,
+			bilid: billId,
+			classroom_id: classroomId,
+			urls: topics.map((id) => ({ topic_id: id.toString() })),
+			// conn автоматаар нэмэгдэнэ
+		},
+	);
+
 	return data;
 };
