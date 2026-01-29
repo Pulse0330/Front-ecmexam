@@ -9,10 +9,12 @@ import {
 	Lock,
 	User,
 } from "lucide-react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ExamlistsData } from "@/types/exam/examList";
+import ExamRulesDialog from "./dialog";
 
 interface ExamCardProps {
 	exam: ExamlistsData;
@@ -32,6 +34,14 @@ export default function ExamCard({
 	isCreatingInvoice,
 }: ExamCardProps) {
 	const canTakeExam = !isPaid && !isExpired && exam.flag === 1;
+	const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
+	const [selectedExamId, setSelectedExamId] = useState<number | null>(null);
+	const router = useRouter();
+	const handleRulesConfirm = () => {
+		if (selectedExamId) {
+			router.push(`/exam/${selectedExamId}`);
+		}
+	};
 
 	return (
 		<motion.div
@@ -192,17 +202,26 @@ export default function ExamCard({
 							) : null}
 						</div>
 					) : null}
-
+					<ExamRulesDialog
+						open={rulesDialogOpen}
+						onOpenChange={setRulesDialogOpen}
+						onConfirm={handleRulesConfirm}
+						isMobile={false}
+					/>
 					{/* Action Circle - Only for available exams */}
 					{canTakeExam && (
-						<Link
-							href={`/exam/${exam.exam_id}`}
+						<button
+							type="button"
+							onClick={() => {
+								setSelectedExamId(exam.exam_id);
+								setRulesDialogOpen(true);
+							}}
 							className="block absolute bottom-1 right-1 sm:bottom-1.5 sm:right-1.5 md:bottom-2 md:right-2 lg:bottom-3 lg:right-3 z-10"
 						>
 							<div className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 rounded-full bg-muted/50 flex items-center justify-center group-hover:bg-foreground group-hover:scale-110 transition-all duration-300">
 								<ArrowRight className="w-1.5 h-1.5 sm:w-2 sm:h-2 md:w-2.5 md:h-2.5 lg:w-3 lg:h-3 text-muted-foreground group-hover:text-background group-hover:translate-x-0.5 transition-all" />
 							</div>
-						</Link>
+						</button>
 					)}
 				</div>
 			</div>

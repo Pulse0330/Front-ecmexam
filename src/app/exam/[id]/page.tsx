@@ -986,7 +986,7 @@ export default function ExamPage() {
 	return (
 		<div className="min-h-screen">
 			<AdvancedExamProctor
-				maxViolations={3}
+				maxViolations={100}
 				strictMode={true}
 				enableFullscreen={true}
 				onSubmit={handleAutoSubmit}

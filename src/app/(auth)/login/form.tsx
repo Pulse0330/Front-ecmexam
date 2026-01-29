@@ -28,7 +28,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { notifyNewLogin } from "@/hooks/use-SessionCheker";
+// import { notifyNewLogin } from "@/hooks/use-SessionCheker";
 import { createSessionRequest, loginTokenRequest } from "@/lib/api";
 import { setCookie } from "@/lib/cookie";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -108,8 +108,8 @@ export function LoginForm() {
 			setCookie("firstname", userData.firstname || "", 7);
 			setCookie("img-url", userData.img_url || "", 7);
 
-			// Бусад tab-д шинэ login мэдэгдэх
-			notifyNewLogin(userData.id);
+			// // Бусад tab-д шинэ login мэдэгдэх
+			// notifyNewLogin(userData.id);
 
 			// ⭐ is_enabled шалгах - 0 бол профайл руу, 1 бол home руу
 			let finalRedirect = redirectUrl;
