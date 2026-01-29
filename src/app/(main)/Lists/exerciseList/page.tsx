@@ -1,20 +1,15 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-	ArrowLeft,
-	ArrowRight,
-	BookOpen,
-	CheckCircle2,
-	Loader2,
-	Minus,
-	Plus,
-	Search,
-	Sparkles,
-	Zap,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
+import {
+	useCallback,
+	useDeferredValue,
+	useEffect,
+	useMemo,
+	useState,
+} from "react";
 import AnimatedBackground from "@/components/animated-bg";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +23,15 @@ import type {
 	GetTestGroupResponse,
 	TestGroupItem,
 } from "@/types/exercise/testGroup";
+import {
+	CategoryCard,
+	type CategoryGroup,
+	EmptyState,
+	LessonCard,
+	SkeletonCard,
+	TestItemCard,
+	TestListItem,
+} from "./exericeCard";
 
 // --- Types ---
 interface CourseFilterItem {
@@ -36,326 +40,61 @@ interface CourseFilterItem {
 	sort: number;
 }
 
-interface CategoryGroup {
-	coursename: string;
-	ulesson_name: string;
-	items: TestGroupItem[];
-}
-
-interface LessonGroup {
-	lesson_id: number;
-	lesson_name: string;
-	totalTests: number;
-}
-
-// --- Sub-components ---
-
-const SkeletonCard = () => (
-	<div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-2xl p-5 shadow-lg border-2 border-slate-200 dark:border-slate-800 animate-pulse">
-		<div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-3"></div>
-		<div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2 mb-2"></div>
-		<div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3"></div>
-	</div>
-);
-
-const EmptyState = ({ searchQuery }: { searchQuery: string }) => (
-	<div className="text-center py-20 animate-in fade-in zoom-in duration-500 w-full col-span-full">
-		<div className="relative inline-block mb-6">
-			<BookOpen className="w-20 h-20 text-slate-300 dark:text-slate-600" />
-			<div className="absolute -top-2 -right-2 w-8 h-8 bg-linear-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center animate-bounce">
-				<Search className="w-4 h-4 text-white" />
-			</div>
-		</div>
-		<h3 className="text-2xl font-bold text-slate-700 dark:text-slate-300 mb-2">
-			{searchQuery ? "Хайлт олдсонгүй" : "Тест олдсонгүй"}
-		</h3>
-		<p className="text-slate-500 dark:text-slate-400">
-			{searchQuery
-				? "Өөр түлхүүр үг ашиглан дахин оролдоно уу"
-				: "Тестийн бүлгүүд удахгүй нэмэгдэх болно"}
-		</p>
-	</div>
-);
-
-const LessonCard = memo(
-	({
-		lesson,
-		selectedCount,
-		totalQuestions,
-		onClick,
-	}: {
-		lesson: LessonGroup;
-		selectedCount: number;
-		totalQuestions: number;
-		onClick: () => void;
-	}) => (
-		<button
-			type="button"
-			onClick={onClick}
-			className="group bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl p-6 shadow-lg border-2 border-slate-200/50 dark:border-slate-800/50 hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] text-left relative overflow-hidden active:scale-95"
-		>
-			<div className="absolute inset-0 bg-linear-to-r from-transparent via-emerald-500/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-			<div className="relative flex flex-col h-full">
-				<div className="flex-1">
-					<div className="flex items-start justify-between mb-3">
-						<h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors flex-1 pr-2">
-							{lesson.lesson_name}
-						</h3>
-						{selectedCount > 0 && (
-							<div className="flex items-center gap-1 px-2 py-1 bg-linear-to-r from-emerald-500 to-emerald-600 rounded-lg shadow-lg animate-pulse shrink-0">
-								<Sparkles className="w-3 h-3 text-white" />
-								<span className="text-[10px] font-bold text-white uppercase tracking-wider">
-									{selectedCount} тест
-								</span>
-							</div>
-						)}
-					</div>
-				</div>
-				{selectedCount > 0 && (
-					<div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex gap-2">
-						<div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 dark:bg-emerald-900/30 rounded-md border border-emerald-100 dark:border-emerald-800">
-							<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-							<span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
-								{totalQuestions} асуулт
-							</span>
-						</div>
-					</div>
-				)}
-				<div className="absolute bottom-0 right-0 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-					<ArrowRight className="w-5 h-5 text-emerald-500" />
-				</div>
-			</div>
-		</button>
-	),
-);
-LessonCard.displayName = "LessonCard";
-
-const CategoryCard = memo(
-	({
-		category,
-		categorySelectedCount,
-		categoryTotalQuestions,
-		onClick,
-	}: {
-		category: CategoryGroup;
-		categorySelectedCount: number;
-		categoryTotalQuestions: number;
-		onClick: () => void;
-	}) => (
-		<button
-			type="button"
-			onClick={onClick}
-			className="group bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl p-6 shadow-lg border-2 border-slate-200/50 dark:border-slate-800/50 hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] text-left relative overflow-hidden active:scale-95"
-		>
-			<div className="absolute inset-0 bg-linear-to-r from-transparent via-emerald-500/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-			<div className="relative flex flex-col h-full">
-				<div className="flex-1">
-					<div className="flex items-start justify-between mb-3">
-						<h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors flex-1 pr-2">
-							{category.ulesson_name}
-						</h3>
-						{categorySelectedCount > 0 && (
-							<div className="flex items-center gap-1 px-2 py-1 bg-linear-to-r from-emerald-500 to-emerald-600 rounded-lg shadow-lg animate-pulse shrink-0">
-								<Sparkles className="w-3 h-3 text-white" />
-								<span className="text-[10px] font-bold text-white uppercase tracking-wider">
-									Сонгосон
-								</span>
-							</div>
-						)}
-					</div>
-					<div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
-						<p className="flex items-center gap-2">
-							<span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-							{category.coursename}
-						</p>
-						<p className="font-semibold text-slate-700 dark:text-slate-300">
-							{category.items.length} бүлэг тест
-						</p>
-					</div>
-				</div>
-				{categorySelectedCount > 0 && (
-					<div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex gap-2">
-						<div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 dark:bg-emerald-900/30 rounded-md border border-emerald-100 dark:border-emerald-800">
-							<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-							<span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
-								{categoryTotalQuestions} асуулт
-							</span>
-						</div>
-					</div>
-				)}
-				<div className="absolute bottom-0 right-0 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-					<ArrowRight className="w-5 h-5 text-emerald-500" />
-				</div>
-			</div>
-		</button>
-	),
-);
-CategoryCard.displayName = "CategoryCard";
-
-const TestItemCard = memo(
-	({
-		item,
-		selectedCount,
-		onCountChange,
-	}: {
-		item: TestGroupItem;
-		selectedCount: number;
-		onCountChange: (id: number, count: number) => void;
-	}) => {
-		const isSelected = selectedCount > 0;
-
-		const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-			let val = parseInt(e.target.value, 10);
-			if (Number.isNaN(val)) val = 0;
-			if (val > item.cnt) val = item.cnt;
-			if (val < 0) val = 0;
-			onCountChange(item.id, val);
-		};
-
-		return (
-			<div
-				className={`group relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-2xl p-6 shadow-md transition-all duration-300 ${
-					isSelected
-						? "border-2 border-emerald-500 ring-4 ring-emerald-500/5 scale-[1.02] shadow-emerald-200/50 dark:shadow-emerald-900/20"
-						: "border-2 border-slate-100/50 dark:border-slate-800/50 hover:border-emerald-300"
-				}`}
-			>
-				{isSelected && (
-					<div className="absolute -top-3 -right-2 flex items-center gap-1.5 px-3 py-1 bg-emerald-500 text-white rounded-full font-bold text-xs shadow-lg animate-bounce-subtle z-10">
-						{selectedCount} асуулт
-					</div>
-				)}
-
-				<h4 className="text-base font-bold text-slate-800 dark:text-slate-100 mb-4 line-clamp-2 min-h-12">
-					{item.name}
-				</h4>
-
-				<div className="space-y-5">
-					<div className="flex items-center justify-between gap-2">
-						<Button
-							onClick={() =>
-								onCountChange(item.id, Math.max(0, selectedCount - 1))
-							}
-							disabled={selectedCount === 0}
-							className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 active:scale-90 transition-transform"
-						>
-							<Minus className="w-5 h-5" />
-						</Button>
-
-						<div className="relative flex-1 group/input">
-							<input
-								type="number"
-								min="0"
-								max={item.cnt}
-								value={selectedCount === 0 ? "" : selectedCount}
-								onChange={handleInputChange}
-								placeholder="0"
-								className="w-full text-center text-xl font-black bg-slate-50/50 dark:bg-slate-800/50 border-2 border-transparent focus:border-emerald-500 focus:ring-0 rounded-xl py-2 transition-all appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-							/>
-							<span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 pointer-events-none">
-								/ {item.cnt}
-							</span>
-						</div>
-
-						<Button
-							onClick={() =>
-								onCountChange(item.id, Math.min(item.cnt, selectedCount + 1))
-							}
-							disabled={selectedCount >= item.cnt}
-							className="w-10 h-10 rounded-xl bg-emerald-500 text-white shadow-md active:scale-90 transition-transform"
-						>
-							<Plus className="w-5 h-5" />
-						</Button>
-					</div>
-
-					<div className="px-1">
-						<input
-							type="range"
-							min="0"
-							max={item.cnt}
-							value={selectedCount}
-							onChange={(e) => onCountChange(item.id, Number(e.target.value))}
-							className="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-emerald-500 bg-slate-200 dark:bg-slate-700"
-						/>
-					</div>
-				</div>
-			</div>
-		);
-	},
-);
-TestItemCard.displayName = "TestItemCard";
-const TestListItem = memo(
-	({
-		item,
-		selectedCount,
-		onCountChange,
-	}: {
-		item: TestGroupItem;
-		selectedCount: number;
-		onCountChange: (id: number, count: number) => void;
-	}) => (
-		<div
-			className={`flex flex-col sm:flex-row items-center gap-4 bg-white/80 dark:bg-slate-900/80 p-4 rounded-2xl border-2 transition-all ${
-				selectedCount > 0
-					? "border-emerald-500 shadow-md"
-					: "border-slate-100/50 dark:border-slate-800/50"
-			}`}
-		>
-			<div className="flex-1">
-				<h4 className="font-bold text-slate-800 dark:text-slate-100">
-					{item.name}
-				</h4>
-				<p className="text-xs text-slate-500">Нийт: {item.cnt} асуулт</p>
-			</div>
-
-			<div className="flex items-center gap-3">
-				<Button
-					size="sm"
-					variant="outline"
-					onClick={() => onCountChange(item.id, Math.max(0, selectedCount - 1))}
-					className="rounded-lg h-8 w-8 p-0"
-				>
-					<Minus className="w-4 h-4" />
-				</Button>
-
-				<div className="w-12 text-center font-bold text-lg">
-					{selectedCount}
-				</div>
-
-				<Button
-					size="sm"
-					onClick={() =>
-						onCountChange(item.id, Math.min(item.cnt, selectedCount + 1))
-					}
-					className="bg-emerald-500 hover:bg-emerald-600 rounded-lg h-8 w-8 p-0"
-				>
-					<Plus className="w-4 h-4" />
-				</Button>
-			</div>
-		</div>
-	),
-);
-TestListItem.displayName = "TestListItem";
-
 // --- Main Page ---
 
 export default function TestGroupPage() {
 	const { userId } = useAuthStore();
 	const router = useRouter();
+
+	// localStorage-оос сонгосон тестүүдийг уншиж эхлүүлэх
 	const [selectedTests, setSelectedTests] = useState<Record<number, number>>(
-		{},
+		() => {
+			if (typeof window !== "undefined") {
+				const saved = localStorage.getItem("selectedTests");
+				return saved ? JSON.parse(saved) : {};
+			}
+			return {};
+		},
 	);
 
 	const [searchQuery, setSearchQuery] = useState("");
 	const deferredSearch = useDeferredValue(searchQuery);
-	const [selectedLesson, setSelectedLesson] = useState<number | null>(null);
+
+	// localStorage-оос сонгосон хичээлийг уншиж эхлүүлэх
+	const [selectedLesson, setSelectedLesson] = useState<number | null>(() => {
+		if (typeof window !== "undefined") {
+			const saved = localStorage.getItem("selectedLesson");
+			return saved ? JSON.parse(saved) : null;
+		}
+		return null;
+	});
+
 	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-	const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+	// localStorage-оос сонгосон категорийг уншиж эхлүүлэх
+	const [selectedCategory, setSelectedCategory] = useState<string | null>(
+		() => {
+			if (typeof window !== "undefined") {
+				const saved = localStorage.getItem("selectedCategory");
+				return saved ? JSON.parse(saved) : null;
+			}
+			return null;
+		},
+	);
 
 	const { data: lessonData, isLoading: isLoadingLessons } = useQuery({
 		queryKey: ["testGroupByLesson", userId],
 		queryFn: () => getTestFilter(userId || 0),
 		enabled: !!userId && !selectedLesson,
+	});
+
+	// БҮХ хичээлүүдийн тестүүдийг урьдчилан татах
+	const { data: allLessonsData } = useQuery<GetTestGroupResponse>({
+		queryKey: ["allLessonsTests", userId],
+		queryFn: async () => {
+			return getTestFiltered(userId || 0, 0);
+		},
+		enabled: !!userId,
 	});
 
 	const { data, isLoading: isLoadingDetails } = useQuery<GetTestGroupResponse>({
@@ -364,16 +103,31 @@ export default function TestGroupPage() {
 		enabled: !!userId && !!selectedLesson,
 	});
 
+	// selectedLesson өөрчлөгдөхөд localStorage-д хадгалах
+	useEffect(() => {
+		if (selectedLesson !== null) {
+			localStorage.setItem("selectedLesson", JSON.stringify(selectedLesson));
+		}
+	}, [selectedLesson]);
+
+	// selectedCategory өөрчлөгдөхөд localStorage-д хадгалах
+	useEffect(() => {
+		if (selectedCategory !== null) {
+			localStorage.setItem(
+				"selectedCategory",
+				JSON.stringify(selectedCategory),
+			);
+		}
+	}, [selectedCategory]);
+
 	const mutation = useMutation({
 		mutationFn: async (tests: { testcnt: number; rlesson_id: number }[]) => {
 			console.log("🚀 1️⃣ /testsavedmixed дуудаж байна...");
 			console.log("📦 Payload:", tests);
 
-			// Эхлээд тестүүдийг холих
 			const mixedResponse = await getTestMixed(userId || 0, tests);
 			console.log("✅ Холих амжилттай:", mixedResponse);
 
-			// Холих амжилттай бол тестүүдийг татах
 			if (mixedResponse.RetResponse?.ResponseType) {
 				console.log("🚀 2️⃣ /gettestfill дуудаж байна...");
 				const fillResponse = await gettTestFill(userId || 0);
@@ -389,6 +143,9 @@ export default function TestGroupPage() {
 
 			if (res.RetResponse?.ResponseType) {
 				console.log("✈️ /exercise руу шилжиж байна...");
+				localStorage.removeItem("selectedTests");
+				localStorage.removeItem("selectedLesson");
+				localStorage.removeItem("selectedCategory");
 				router.push("/exercise");
 			} else {
 				console.log("❌ Алдаа:", res.RetResponse?.ResponseMessage);
@@ -460,6 +217,7 @@ export default function TestGroupPage() {
 				delete next[id];
 			}
 			console.log("📊 Сонгосон тестүүд:", next);
+			localStorage.setItem("selectedTests", JSON.stringify(next));
 			return next;
 		});
 	}, []);
@@ -467,6 +225,8 @@ export default function TestGroupPage() {
 	const handleBackToLessons = () => {
 		setSelectedLesson(null);
 		setSelectedCategory(null);
+		localStorage.removeItem("selectedLesson");
+		localStorage.removeItem("selectedCategory");
 	};
 
 	const handleStartTest = () => {
@@ -488,6 +248,7 @@ export default function TestGroupPage() {
 
 		mutation.mutate(payload);
 	};
+
 	if (!userId)
 		return (
 			<div className="h-screen flex items-center justify-center font-bold text-slate-400">
@@ -498,62 +259,58 @@ export default function TestGroupPage() {
 	const isLoading = selectedLesson ? isLoadingDetails : isLoadingLessons;
 
 	return (
-		<div className="min-h-screen bg-slate-50/50 dark:bg-slate-950/50 relative overflow-hidden pb-40">
+		<div className="min-h-screen bg-slate-50/50 dark:bg-slate-950/50 relative overflow-hidden pb-24 sm:pb-28 md:pb-32">
 			<AnimatedBackground />
 
-			<div className="container mx-auto px-4 pt-8 relative z-10">
-				<div className="mb-10 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-8 rounded-4xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100/50 dark:border-slate-800/50 relative overflow-hidden">
+			<div className="container mx-auto px-3 sm:px-4 md:px-5 lg:px-6 xl:px-8 pt-3 sm:pt-4 md:pt-6 lg:pt-8 relative z-10 max-w-[2000px]">
+				{/* Header Section - Optimized для всех экранов */}
+				<div className="mb-4 sm:mb-6 md:mb-8 lg:mb-10 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100/50 dark:border-slate-800/50 relative overflow-hidden">
 					<div className="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl" />
-					<div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-						<div className="flex items-center gap-5">
+					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 md:gap-6">
+						<div className="flex items-center gap-2 sm:gap-3 md:gap-4">
 							{selectedLesson && (
 								<Button
 									onClick={handleBackToLessons}
 									variant="ghost"
-									className="flex items-center gap-2 text-slate-500 font-bold hover:text-emerald-500 transition-colors"
+									size="sm"
+									className="flex items-center gap-1 sm:gap-1.5 md:gap-2 text-slate-500 font-bold hover:text-emerald-500 transition-colors p-1.5 sm:p-2 min-w-9 sm:min-w-10"
 								>
-									<ArrowLeft className="w-5 h-5" />
+									<ArrowLeft className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5" />
 								</Button>
 							)}
-							<div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-200">
-								<Zap className="text-white w-7 h-7 fill-white" />
-							</div>
+
 							<div>
-								<h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+								<h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black bg-linear-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
 									{selectedLesson ? "Тест сонгох" : "Хичээл сонгох"}
 								</h1>
-								<p className="text-slate-500 font-medium">
-									{selectedLesson
-										? "Өөртөө тохирсон дасгалаа бэлдээрэй"
-										: "Хичээлээ сонгоод эхэлцгээе"}
-								</p>
 							</div>
 						</div>
 
-						<div className="relative w-full md:w-72">
-							<Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+						<div className="relative w-full sm:w-56 md:w-64 lg:w-72 xl:w-80">
+							<Search className="absolute left-2.5 sm:left-3 md:left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 pointer-events-none" />
 							<input
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								placeholder={selectedLesson ? "Тест хайх..." : "Хичээл хайх..."}
-								className="w-full pl-11 pr-4 py-3 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border-none rounded-2xl text-sm focus:ring-2 ring-emerald-500 transition-all"
+								className="w-full pl-8 sm:pl-9 md:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 md:py-3 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border-none rounded-lg sm:rounded-xl md:rounded-2xl text-xs sm:text-sm md:text-base focus:ring-2 ring-emerald-500 transition-all placeholder:text-slate-400"
 							/>
 						</div>
 					</div>
 				</div>
 
+				{/* Content Section - Максимально оптимизированные сетки */}
 				{isLoading ? (
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-						{[1, 2, 3, 4].map((i) => (
+					<div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 3xl:grid-cols-10 gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6">
+						{[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) => (
 							<SkeletonCard key={i} />
 						))}
 					</div>
 				) : !selectedLesson ? (
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in slide-in-from-bottom-4 duration-500">
+					// Lesson Cards - Идеальная сетка для всех экранов
+					<div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 3xl:grid-cols-11 gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6 animate-in slide-in-from-bottom-4 duration-500">
 						{lessonGroups.map((lesson) => {
-							// data?.RetData-аас тухайн хичээлийн тестүүдийг олох
 							const lessonTests =
-								data?.RetData?.filter(
+								allLessonsData?.RetData?.filter(
 									(item: TestGroupItem) => item.ulessonid === lesson.lesson_id,
 								) || [];
 
@@ -584,16 +341,20 @@ export default function TestGroupPage() {
 						)}
 					</div>
 				) : !selectedCategory ? (
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in slide-in-from-bottom-4 duration-500">
+					// Category Cards - Оптимизированная сетка
+					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-3 sm:gap-4 md:gap-5 lg:gap-6 animate-in slide-in-from-bottom-4 duration-500">
 						{[...groupedData.entries()].map(([key, category]) => (
 							<CategoryCard
 								key={key}
 								category={category}
 								categorySelectedCount={
-									category.items.filter((i) => selectedTests[i.id]).length
+									category.items.filter(
+										(i: TestGroupItem) => selectedTests[i.id],
+									).length
 								}
 								categoryTotalQuestions={category.items.reduce(
-									(sum, i) => sum + (selectedTests[i.id] || 0),
+									(sum: number, i: TestGroupItem) =>
+										sum + (selectedTests[i.id] || 0),
 									0,
 								)}
 								onClick={() => setSelectedCategory(key)}
@@ -602,29 +363,34 @@ export default function TestGroupPage() {
 						{groupedData.size === 0 && <EmptyState searchQuery={searchQuery} />}
 					</div>
 				) : (
-					<div className="space-y-6 animate-in fade-in duration-300 relative z-10">
-						<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-4 rounded-2xl shadow-sm border border-slate-100/50 dark:border-slate-800/50">
-							<div className="flex items-center gap-2">
+					// Test Items - Оптимизированный вид
+					<div className="space-y-3 sm:space-y-4 md:space-y-5 animate-in fade-in duration-300 relative z-10">
+						<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3 md:gap-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-2.5 sm:p-3 md:p-4 rounded-lg sm:rounded-xl md:rounded-2xl shadow-sm border border-slate-100/50 dark:border-slate-800/50">
+							<div className="flex items-center gap-2 w-full sm:w-auto overflow-hidden">
 								<Button
 									onClick={() => setSelectedCategory(null)}
 									variant="ghost"
-									className="flex items-center gap-2 text-slate-500 font-bold hover:text-emerald-500 transition-colors"
+									size="sm"
+									className="flex items-center gap-1 sm:gap-1.5 text-slate-500 font-bold hover:text-emerald-500 transition-colors p-1.5 sm:p-2 shrink-0 min-w-9 sm:min-w-10"
 								>
-									<ArrowLeft className="w-4 h-4" /> Буцах
+									<ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+									<span className="text-xs sm:text-sm  xs:inline">Буцах</span>
 								</Button>
-								<div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2 hidden sm:block" />
-								<h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">
+								<div className="h-4 sm:h-5 md:h-6 w-px bg-slate-200 dark:bg-slate-700 mx-0.5 sm:mx-1 shrink-0" />
+								<h2 className="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-slate-800 dark:text-slate-200 truncate flex-1 min-w-0">
 									{groupedData.get(selectedCategory)?.ulesson_name}
 								</h2>
 							</div>
-							<div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl gap-1">
+
+							{/* View Mode Toggle - Компактный */}
+							<div className="flex bg-slate-100 dark:bg-slate-800 p-0.5 sm:p-1 rounded-md sm:rounded-lg gap-0.5 sm:gap-1 shrink-0">
 								<Button
 									variant="ghost"
 									size="sm"
 									onClick={() => setViewMode("grid")}
-									className={`rounded-lg px-3 ${viewMode === "grid" ? "bg-white dark:bg-slate-700 shadow-sm" : ""}`}
+									className={`rounded-md px-2 sm:px-2.5 h-7 sm:h-8 transition-all ${viewMode === "grid" ? "bg-white dark:bg-slate-700 shadow-sm" : ""}`}
 								>
-									<div className="grid grid-cols-2 gap-0.5 w-4 h-4">
+									<div className="grid grid-cols-2 gap-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5">
 										<div className="bg-current rounded-sm opacity-60" />
 										<div className="bg-current rounded-sm opacity-60" />
 										<div className="bg-current rounded-sm opacity-60" />
@@ -635,27 +401,28 @@ export default function TestGroupPage() {
 									variant="ghost"
 									size="sm"
 									onClick={() => setViewMode("list")}
-									className={`rounded-lg px-3 ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm" : ""}`}
+									className={`rounded-md px-2 sm:px-2.5 h-7 sm:h-8 transition-all ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm" : ""}`}
 								>
-									<div className="flex flex-col gap-1 w-4">
-										<div className="h-1 w-full bg-current rounded-full opacity-60" />
-										<div className="h-1 w-full bg-current rounded-full opacity-60" />
-										<div className="h-1 w-full bg-current rounded-full opacity-60" />
+									<div className="flex flex-col gap-0.5 w-3 sm:w-3.5">
+										<div className="h-0.5 sm:h-1 w-full bg-current rounded-full opacity-60" />
+										<div className="h-0.5 sm:h-1 w-full bg-current rounded-full opacity-60" />
+										<div className="h-0.5 sm:h-1 w-full bg-current rounded-full opacity-60" />
 									</div>
 								</Button>
 							</div>
 						</div>
 
+						{/* Test Items Grid/List - Максимально адаптивная сетка */}
 						<div
 							className={
 								viewMode === "grid"
-									? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-									: "flex flex-col gap-3"
+									? "grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 3xl:grid-cols-10 gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6"
+									: "flex flex-col gap-2 sm:gap-2.5 md:gap-3"
 							}
 						>
 							{groupedData
 								.get(selectedCategory)
-								?.items.map((item) =>
+								?.items.map((item: TestGroupItem) =>
 									viewMode === "grid" ? (
 										<TestItemCard
 											key={item.id}
@@ -677,36 +444,41 @@ export default function TestGroupPage() {
 				)}
 			</div>
 
+			{/* Floating Action Button - Идеально для всех экранов */}
 			{totals.questionCount > 0 && (
-				<div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-2xl z-50">
-					<div className="bg-slate-900/90 dark:bg-emerald-950/90 text-white rounded-4xl p-4 shadow-2xl flex items-center justify-between border border-white/10 backdrop-blur-xl">
-						<div className="flex items-center gap-6 pl-4">
-							<div className="flex flex-col">
-								<span className="text-[10px] uppercase font-black text-emerald-400 leading-none mb-1">
-									Нийт асуулт
+				<div className="fixed bottom-2 sm:bottom-3 md:bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-16px)] sm:w-[calc(100%-32px)] md:w-auto max-w-2xl z-50 px-2 sm:px-0">
+					<div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl rounded-full px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 shadow-2xl border-2 border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between gap-2 sm:gap-3 md:gap-4">
+						<div className="flex items-center gap-2 sm:gap-2.5 md:gap-3 flex-1 min-w-0">
+							<div className="flex items-center gap-1 sm:gap-1.5">
+								<span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+									Асуулт:
 								</span>
-								<span className="text-2xl font-black">
+								<span className="text-xs sm:text-sm md:text-base font-bold text-slate-900 dark:text-white">
 									{totals.questionCount}
 								</span>
 							</div>
-							<div className="w-px h-8 bg-white/10" />
-							<div className="flex flex-col">
-								<span className="text-[10px] uppercase font-black text-emerald-400 leading-none mb-1">
-									Сонгосон бүлэг
+							<div className="w-px h-3 sm:h-3.5 md:h-4 bg-slate-200 dark:bg-slate-700" />
+							<div className="flex items-center gap-1 sm:gap-1.5">
+								<span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+									Бүлэг:
 								</span>
-								<span className="text-2xl font-black">{totals.groupCount}</span>
+								<span className="text-xs sm:text-sm md:text-base font-bold text-slate-900 dark:text-white">
+									{totals.groupCount}
+								</span>
 							</div>
 						</div>
 						<Button
 							onClick={handleStartTest}
 							disabled={mutation.isPending}
-							className="bg-emerald-500 hover:bg-emerald-400 text-white rounded-3xl px-8 py-7 font-black text-lg transition-all active:scale-95 shadow-xl shadow-emerald-500/20"
+							size="sm"
+							className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 rounded-full px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 md:py-2.5 font-semibold text-xs sm:text-sm md:text-base transition-all active:scale-95 shrink-0 min-w-[72px] sm:min-w-20 md:min-w-[100px]"
 						>
 							{mutation.isPending ? (
-								<Loader2 className="animate-spin" />
+								<Loader2 className="animate-spin w-3.5 h-3.5 sm:w-4 sm:h-4 mx-auto" />
 							) : (
-								<div className="flex items-center gap-2">
-									ЭХЛЭХ <ArrowRight className="w-5 h-5" />
+								<div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 group cursor-pointer justify-center">
+									<span>Эхлэх</span>
+									<ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 transition-transform duration-300 group-hover:translate-x-1" />
 								</div>
 							)}
 						</Button>
@@ -715,15 +487,81 @@ export default function TestGroupPage() {
 			)}
 
 			<style jsx global>{`
-                .no-scrollbar::-webkit-scrollbar { display: none; }
-                .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                /* Smooth Scrolling */
+                html {
+                    scroll-behavior: smooth;
+                }
                 
+                /* Hide Scrollbar */
+                .no-scrollbar::-webkit-scrollbar { 
+                    display: none; 
+                }
+                .no-scrollbar { 
+                    -ms-overflow-style: none; 
+                    scrollbar-width: none; 
+                }
+                
+                /* Subtle Bounce Animation */
                 @keyframes bounce-subtle {
                     0%, 100% { transform: translateY(0); }
                     50% { transform: translateY(-4px); }
                 }
                 .animate-bounce-subtle {
                     animation: bounce-subtle 2s infinite ease-in-out;
+                }
+                
+                /* Enhanced Touch Targets for Mobile */
+                @media (max-width: 640px) {
+                    button:not(.no-touch-target), 
+                    a:not(.no-touch-target), 
+                    input[type="button"]:not(.no-touch-target) {
+                        min-height: 40px;
+                    }
+                }
+                
+                /* Optimized Text Rendering */
+                * {
+                    -webkit-font-smoothing: antialiased;
+                    -moz-osx-font-smoothing: grayscale;
+                    text-rendering: optimizeLegibility;
+                }
+                
+                /* Extra small breakpoint */
+                @media (min-width: 475px) {
+                    .xs:grid-cols-3 {
+                        grid-template-columns: repeat(3, minmax(0, 1fr));
+                    }
+                    .xs:inline {
+                        display: inline;
+                    }
+                }
+                
+               
+                @media (min-width: 1920px) {
+                    .3xl:grid-cols-10 {
+                        grid-template-columns: repeat(10, minmax(0, 1fr));
+                    }
+                    .3xl:grid-cols-11 {
+                        grid-template-columns: repeat(11, minmax(0, 1fr));
+                    }
+                    .3xl:grid-cols-7 {
+                        grid-template-columns: repeat(7, minmax(0, 1fr));
+                    }
+                }
+                
+          
+                .truncate {
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                
+              
+                @media (max-width: 375px) {
+                    .container {
+                        padding-left: 0.5rem;
+                        padding-right: 0.5rem;
+                    }
                 }
             `}</style>
 		</div>

@@ -1,19 +1,6 @@
-import {
-	ArrowRight,
-	Award,
-	Crown,
-	Lock,
-	Target,
-	TrendingUp,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-
-const FLOATING_ICONS = [
-	{ id: "award", Icon: Award, color: "text-amber-400", delay: 0 },
-	{ id: "target", Icon: Target, color: "text-emerald-400", delay: 1 },
-	{ id: "trending", Icon: TrendingUp, color: "text-blue-400", delay: 2 },
-];
 
 interface UnifiedHeroSectionProps {
 	username: string;
@@ -23,127 +10,64 @@ export default function UnifiedHeroSection({
 	username,
 }: UnifiedHeroSectionProps) {
 	return (
-		<div className="animate-in fade-in-0 slide-in-from-top-4 duration-1000">
-			<div className="relative group max-w-7xl mx-auto">
-				{/* Glow Effect */}
-				<div className="absolute -inset-1 bg-linear-to-r from-violet-600 via-purple-600 to-pink-600 rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity duration-500" />
+		<div className="w-full">
+			<div className="max-w-10xl   sm:px-6">
+				{/* Main Container */}
+				<div className="relative group overflow-hidden bg-white/50 dark:bg-zinc-950/50 backdrop-blur-sm border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl shadow-sm hover:shadow-lg hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-500">
+					{/* Subtle Background Pattern */}
+					<div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[radial-gradient(circle_at_30%_50%,rgba(0,0,0,0.04),transparent_50%)] dark:bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.04),transparent_50%)]" />
 
-				<div className="relative bg-linear-to-br from-card/95 via-card/90 to-card/95 backdrop-blur-2xl rounded-2xl border border-border shadow-2xl overflow-hidden">
-					{/* Content Container - py-6 болгож өндрийг багасгав */}
-					<div className="relative p-6 sm:px-8 lg:px-12 lg:py-8">
-						{/* Floating Icons - Байрлалыг илүү цэгцтэй болгов */}
-						<div className="absolute top-4 right-6 flex gap-3 opacity-30 group-hover:opacity-60 transition-opacity">
-							{FLOATING_ICONS.map(({ id, Icon, color, delay }) => (
-								<div
-									key={id}
-									className={`${color} animate-float cursor-pointer`}
-									style={{ animationDelay: `${delay}s` }}
-								>
-									<Icon className="w-5 h-5 drop-shadow-lg" />
-								</div>
-							))}
-						</div>
-
-						{/* Main Layout - justify-between ашиглан хоёр тийш шахав */}
-						<div className="flex flex-col lg:flex-row gap-6 lg:gap-0 items-center justify-between">
-							{/* Left Section - Greeting */}
-							<div className="space-y-3 flex-1 text-center lg:text-left">
-								<div className="space-y-1">
-									<div className="flex items-center gap-3 justify-center lg:justify-start flex-wrap">
-										<h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black bg-linear-to-r from-foreground via-purple-600 to-pink-600 dark:from-white dark:via-purple-200 dark:to-pink-200 bg-clip-text text-transparent drop-shadow-2xl leading-tight">
-											Сайн уу, {username}
-										</h1>
-										<span className="text-2xl sm:text-3xl lg:text-4xl animate-wave">
-											👋
-										</span>
-									</div>
-
-									<p className="text-sm sm:text-base lg:text-lg text-muted-foreground font-medium max-w-md">
-										Таны амжилтын замд бид хамт байх болно
-									</p>
-								</div>
-
-								{/* Motivational Quote - Нягтаршилтай болгосон */}
-
-								<div className="flex items-center gap-2 justify-center lg:justify-start">
-									<p className="text-muted-foreground italic text-[11px] sm:text-xs">
-										24/7 суралцах, хөгжих боломж
-									</p>
-								</div>
+					<div className="relative px-5 py-4 sm:px-8 sm:py-5 lg:px-10 lg:py-6 flex flex-col md:flex-row items-center justify-between gap-5 lg:gap-6">
+						{/* Left Side - Welcome Section */}
+						<div className="flex-1 space-y-2 sm:space-y-3 text-center md:text-left max-w-xl">
+							{/* Main Title */}
+							<div className="space-y-1">
+								<h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-4xl xl:text-5xl font-light tracking-tight text-zinc-900 dark:text-zinc-50 leading-tight">
+									Сайн уу,{" "}
+									<span className="font-medium text-zinc-600 dark:text-zinc-300">
+										{username}
+									</span>
+								</h1>
+								<p className="text-xs sm:text-sm lg:text-base text-zinc-500 dark:text-zinc-400 font-light leading-relaxed max-w-md mx-auto md:mx-0">
+									Өнөөдөр шинэ зүйл сурч, ур чадвараа хөгжүүлэхэд бэлэн үү?
+								</p>
 							</div>
 
-							{/* Right Section - Premium Info */}
-							<div className="relative w-full lg:w-auto">
-								{/* Subtle glow effect */}
-								<div className="absolute -inset-1 rounded-2xl blur-xl opacity-60" />
-
-								<div className="relative flex flex-row items-center gap-6 bg-linear-to-br from-secondary/40 via-secondary/30 to-secondary/40 dark:from-purple-950/20 dark:via-violet-950/15 dark:to-purple-900/20 p-5 sm:p-6 rounded-2xl border border-purple-500/30 dark:border-purple-500/20 backdrop-blur-md lg:min-w-[420px] shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-purple-500/50">
-									{/* Lock Icon */}
-									<div className="relative shrink-0">
-										<div className="absolute    rounded-full" />
-										<div className="relative w-16 h-16 rounded-xl  flex items-center justify-center shadow-lg border">
-											<Lock className="w-7 h-7 text-white" strokeWidth={2} />
-										</div>
-										<div className="absolute -top-1 -right-1 bg-linear-to-br from-purple-400 to-violet-500 rounded-lg p-1.5 shadow-lg animate-bounce">
-											<Crown className="w-3.5 h-3.5 text-white" />
-										</div>
-									</div>
-
-									{/* CTA Content */}
-									<div className="flex flex-col gap-3 flex-1 text-left">
-										<div className="space-y-1"></div>
-										<Link href="/Lists/paymentCoureList" className="w-full">
-											<Button
-												size="sm"
-												className="w-full h-10 bg-linear-to-r from-purple-500/90 via-violet-500/90 to-purple-600/90 hover:from-purple-500 hover:via-violet-500 hover:to-purple-600 text-white font-semibold shadow-md hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-300 border-0 text-sm relative overflow-hidden group"
-											>
-												{/* Shine effect */}
-												<span className="absolute inset-0 w-full h-full bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
-
-												{/* Button text with icon */}
-												<span className="relative flex items-center justify-center gap-2 group-hover:scale-105 transition-transform duration-200">
-													<span>Сургалт авах</span>
-													<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
-												</span>
-
-												{/* Ripple effect on hover */}
-												<span className="absolute inset-0 rounded-md border-2 border-white/0 group-hover:border-white/30 group-hover:scale-105 transition-all duration-300" />
-											</Button>
-										</Link>
-									</div>
-								</div>
+							{/* Decorative Line */}
+							<div className="flex items-center gap-2 justify-center md:justify-start pt-0">
+								<div className="h-px w-6 bg-linear-to-r from-transparent to-zinc-300 dark:to-zinc-700" />
+								<span className="text-[10px] sm:text-[11px] text-zinc-400 dark:text-zinc-500 font-light tracking-wide">
+									24/7 суралцах хөгжих боломж
+								</span>
+								<div className="h-px w-6 bg-linear-to-l from-transparent to-zinc-300 dark:to-zinc-700" />
 							</div>
 						</div>
 
-						{/* Decorative Elements */}
-						<div className="absolute bottom-0 right-0 w-32 h-32 bg-linear-to-tl from-purple-500/5 to-transparent rounded-tl-full pointer-events-none" />
-						<div className="absolute top-0 left-0 w-24 h-24 bg-linear-to-br from-pink-500/5 to-transparent rounded-br-full pointer-events-none" />
+						{/* Right Side - Action Area */}
+						<div className="flex flex-col items-center md:items-end gap-2.5 sm:gap-3 w-full md:w-auto">
+							{/* Status Badge - Desktop */}
+
+							{/* Main CTA Button */}
+							<Link href="/Lists/paymentCoureList" className="w-full sm:w-auto">
+								<Button className="w-full sm:min-w-[180px] h-10 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-100 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group shadow-md shadow-zinc-900/10 dark:shadow-zinc-50/5 border-0">
+									<span className="flex items-center gap-2 font-medium text-sm tracking-wide">
+										Сургалт үзэх
+										<ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
+									</span>
+								</Button>
+							</Link>
+
+							{/* Mobile Status - Shows on small screens */}
+						</div>
 					</div>
+
+					{/* Bottom Accent Line */}
+					<div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-zinc-200 dark:via-zinc-800 to-transparent opacity-60" />
+
+					{/* Corner Decoration */}
+					<div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-bl from-zinc-100/30 dark:from-zinc-900/30 to-transparent rounded-bl-[100px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
 				</div>
 			</div>
-
-			<style jsx>{`
-                @keyframes float {
-                    0%, 100% { transform: translateY(0px) rotate(0deg); }
-                    50% { transform: translateY(-10px) rotate(5deg); }
-                }
-                
-                @keyframes wave {
-                    0%, 100% { transform: rotate(0deg); }
-                    25% { transform: rotate(20deg); }
-                    75% { transform: rotate(-20deg); }
-                }
-
-                .animate-wave {
-                    animation: wave 2s ease-in-out infinite;
-                    display: inline-block;
-                    transform-origin: 70% 70%;
-                }
-
-                .animate-float {
-                    animation: float 3s ease-in-out infinite;
-                }
-            `}</style>
 		</div>
 	);
 }

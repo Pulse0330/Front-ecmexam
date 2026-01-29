@@ -9,8 +9,6 @@ import {
 	TrendingUp,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import UseAnimations from "react-useanimations";
-import loading2 from "react-useanimations/lib/loading2";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getHomeScreen, getUserProfile } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -92,28 +90,8 @@ export default function HomePage() {
 
 	if (isHomeLoading || isProfileLoading) {
 		return (
-			<div className="flex flex-col items-center justify-center min-h-[70vh] space-y-6 px-4">
-				<div className="relative">
-					<div className="absolute inset-0 bg-linear-to-r from-violet-500 via-purple-500 to-pink-500 blur-3xl opacity-30 animate-pulse" />
-					<div
-						className="absolute inset-0 bg-linear-to-r from-blue-500 via-cyan-500 to-teal-500 blur-3xl opacity-20 animate-pulse"
-						style={{ animationDelay: "1s" }}
-					/>
-					<UseAnimations
-						animation={loading2}
-						size={80}
-						strokeColor="hsl(var(--primary))"
-						loop
-					/>
-				</div>
-				<div className="space-y-3 text-center">
-					<p className="text-2xl font-black bg-linear-to-r from-violet-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-pulse">
-						Уншиж байна...
-					</p>
-					<p className="text-sm text-muted-foreground font-medium">
-						Таны мэдээллийг ачааллаж байна
-					</p>
-				</div>
+			<div className="flex items-center justify-center min-h-[70vh]">
+				<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
 			</div>
 		);
 	}
@@ -199,10 +177,8 @@ export default function HomePage() {
 
 			<div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8 relative z-10">
 				{/* Premium Hero Section */}
-				<div className="animate-in fade-in-0 slide-in-from-top-4 duration-1000">
-					<div className="animate-in fade-in-0 duration-700 delay-150">
-						<UnifiedHeroSection username={username} />
-					</div>
+				<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700">
+					<UnifiedHeroSection username={username} />
 				</div>
 
 				{/* Exam Lists Section - Only show if exams exist */}
@@ -213,7 +189,7 @@ export default function HomePage() {
 							<div className="w-full border-t border-border" />
 							<div className="flex flex-col mt-4">
 								<div className="flex justify-center">
-									<span className="px-4 py-1.5 bg-linear-to-r from-violet-600 to-purple-600 text-white text-xs font-bold rounded-full shadow-lg">
+									<span className="px-4 py-1.5 text-xs font-bold ">
 										Идэвхтэй шалгалтууд
 									</span>
 								</div>
@@ -230,7 +206,7 @@ export default function HomePage() {
 						</div>
 
 						<div className="animate-in fade-in-0 duration-700 delay-300">
-							<div className="relative">
+							<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 px-2">
 								<ExamLists exams={homeData.RetDataThirt} />
 							</div>
 						</div>
@@ -245,7 +221,7 @@ export default function HomePage() {
 							<div className="w-full border-t border-border" />
 							<div className="flex flex-col mt-4">
 								<div className="flex justify-center">
-									<span className="px-4 py-1.5 bg-linear-to-r from-violet-600 to-purple-600 text-white text-xs font-bold rounded-full shadow-lg">
+									<span className="px-4 py-1.5 text-xs font-bold ">
 										Сорилууд
 									</span>
 								</div>
@@ -261,7 +237,7 @@ export default function HomePage() {
 							</div>
 						</div>
 
-						<div className="animate-in fade-in-0 duration-700 delay-50">
+						<div className="animate-in fade-in-0 duration-700 delay-500">
 							<div className="relative">
 								<HomeSorilLists pastExams={homeData.RetDataFourth} />
 							</div>

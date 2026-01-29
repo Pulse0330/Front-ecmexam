@@ -1,7 +1,7 @@
 "use client";
 
+import { motion } from "framer-motion";
 import {
-	ArrowRight,
 	Award,
 	Calendar,
 	Clock,
@@ -11,18 +11,19 @@ import {
 	Target,
 	XCircle,
 } from "lucide-react";
+
 import { useRouter } from "next/navigation";
 import type React from "react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { ExamresultListCardProps } from "@/types/exam/examResultList";
 
 interface ExamListItemProps extends ExamresultListCardProps {
 	onViewRank?: (examId: number) => void;
 	onViewResults?: (examId: number, testId: number) => void;
 	globalShowScore?: boolean;
+	index?: number;
 }
 
 // Оноог үнэлэх
@@ -39,33 +40,27 @@ const getScoreLevel = (score?: number) => {
 const SCORE_CONFIG = {
 	none: {
 		label: "-",
-		badge: "bg-gray-100 text-gray-600",
-		icon: "bg-gray-100 text-gray-400",
+		gradient: "from-gray-400 to-gray-500",
 	},
 	excellent: {
 		label: "Маш сайн",
-		badge: "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white",
-		icon: "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white",
+		gradient: "from-emerald-500 to-emerald-600",
 	},
 	good: {
 		label: "Сайн",
-		badge: "bg-gradient-to-br from-green-500 to-green-600 text-white",
-		icon: "bg-gradient-to-br from-green-500 to-green-600 text-white",
+		gradient: "from-green-500 to-green-600",
 	},
 	average: {
 		label: "Дунд",
-		badge: "bg-gradient-to-br from-yellow-500 to-orange-500 text-white",
-		icon: "bg-gradient-to-br from-yellow-500 to-orange-500 text-white",
+		gradient: "from-yellow-500 to-orange-500",
 	},
 	pass: {
 		label: "Хангалттай",
-		badge: "bg-gradient-to-br from-orange-500 to-red-500 text-white",
-		icon: "bg-gradient-to-br from-orange-500 to-red-500 text-white",
+		gradient: "from-orange-500 to-red-500",
 	},
 	fail: {
 		label: "Хангалтгүй",
-		badge: "bg-gradient-to-br from-red-600 to-red-700 text-white",
-		icon: "bg-gradient-to-br from-red-600 to-red-700 text-white",
+		gradient: "from-red-600 to-red-700",
 	},
 };
 
@@ -74,6 +69,7 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 	onViewRank,
 	onViewResults,
 	globalShowScore = false,
+	index = 0,
 }) => {
 	const router = useRouter();
 	const [localShowScore, setLocalShowScore] = useState(false);
@@ -88,7 +84,7 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 		const year = date.getFullYear();
 		const month = String(date.getMonth() + 1).padStart(2, "0");
 		const day = String(date.getDate()).padStart(2, "0");
-		return `${year}.${month}.${day}`;
+		return `${year}/${month}/${day}`;
 	};
 
 	const formatTime = (date: Date) => {
@@ -115,133 +111,183 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 	};
 
 	return (
-		<Card className="group hover:border-blue-300 transition-all duration-300 overflow-hidden bg-outercard">
-			<CardHeader className="py-5 px-5">
-				<div className="flex items-start justify-between gap-4">
-					<div className="flex-1 min-w-0">
-						<div className="flex items-start gap-3 mb-3">
-							{/* Title & Date */}
-							<div className="flex-1">
-								<h3 className="text-base font-bold ">{exam.title}</h3>
-								<div className="flex flex-wrap gap-2">
-									<Badge variant="secondary" className="gap-1.5">
-										<Calendar className="w-3.5 h-3.5" />
-										{formatDate(examDate)}
-									</Badge>
-									<Badge variant="secondary" className="gap-1.5">
-										<Clock className="w-3.5 h-3.5" />
-										{formatTime(examDate)}
-									</Badge>
-								</div>
+		<motion.div
+			initial={{ opacity: 0, y: 20 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.4, delay: index * 0.05 }}
+			className="h-full"
+		>
+			<div className="group h-full w-full relative flex flex-col border border-border/40 bg-card/50 backdrop-blur-md transition-all duration-500 ease-out hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20 rounded-lg sm:rounded-xl overflow-hidden">
+				{/* Image Header with Score */}
+				<div className="relative w-full aspect-[5/2] bg-muted shrink-0">
+					{/* Background gradient based on score */}
+					<div
+						className={`absolute inset-0 bg-gradient-to-br ${config.gradient} opacity-20`}
+					/>
+
+					{/* Decorative pattern */}
+					<div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.1),rgba(255,255,255,0))]" />
+
+					{/* Gradient Overlay */}
+					<div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/50 to-transparent" />
+
+					{/* Status Badge */}
+					<div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 z-10">
+						{finished ? (
+							<Badge className="bg-green-500/90 text-white border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
+								<FileText className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
+								Дууссан
+							</Badge>
+						) : (
+							<motion.div
+								initial={{ scale: 0 }}
+								animate={{ scale: 1 }}
+								transition={{ delay: 0.2 }}
+							>
+								<Badge className="border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
+									<XCircle className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
+									Дуусаагүй
+								</Badge>
+							</motion.div>
+						)}
+					</div>
+
+					{/* Date & Time on Image */}
+					<div className="absolute bottom-0 left-0 right-0 p-1 sm:p-1.5 z-10">
+						<div className="flex items-center gap-1 sm:gap-2">
+							<div className="flex items-center gap-0.5 sm:gap-1">
+								<Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white/90 shrink-0" />
+								<span className="font-medium text-[8px] sm:text-[9px] md:text-xs text-white/90">
+									{formatDate(examDate)}
+								</span>
+							</div>
+							<div className="flex items-center gap-0.5 sm:gap-1">
+								<Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white/90 shrink-0" />
+								<span className="font-medium text-[8px] sm:text-[9px] md:text-xs text-white/90">
+									{formatTime(examDate)}
+								</span>
 							</div>
 						</div>
 					</div>
 
+					{/* Score Display - Top Right */}
 					{finished && exam.test_perc !== undefined && (
-						<div className="relative">
-							<div
-								className={`relative shrink-0 w-20 h-20 rounded-xl transition-all duration-300 group-hover:scale-105 `}
-							>
-								<div className="absolute inset-0 flex flex-col items-center justify-center">
+						<div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 z-10">
+							<div className="relative">
+								<div
+									className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl bg-gradient-to-br ${config.gradient} flex flex-col items-center justify-center transition-all duration-300 group-hover:scale-105 shadow-lg`}
+								>
 									<div
-										className={`text-2xl font-black leading-none transition-all duration-300 text-white ${
+										className={`text-sm sm:text-base md:text-lg font-black leading-none text-white transition-all duration-300 ${
 											showScore ? "" : "blur-md select-none"
 										}`}
 									>
 										{exam.test_perc?.toFixed(1)}%
 									</div>
-
 									<div
-										className={`text-[10px] font-medium mt-1 text-white transition-opacity duration-300 ${
+										className={`text-[6px] sm:text-[7px] md:text-[8px] font-medium mt-0.5 text-white transition-opacity duration-300 ${
 											showScore ? "opacity-80" : "opacity-0"
 										}`}
 									>
 										{config.label}
 									</div>
 								</div>
+								<Button
+									onClick={(e) => {
+										e.stopPropagation();
+										setLocalShowScore(!localShowScore);
+									}}
+									size="icon"
+									variant="outline"
+									className="absolute -bottom-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full hover:scale-110 transition-transform duration-200 hover:border-blue-400 p-0"
+									title={showScore ? "Оноо нуух" : "Оноо харах"}
+								>
+									{showScore ? (
+										<EyeOff className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-600" />
+									) : (
+										<Eye className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-blue-600" />
+									)}
+								</Button>
 							</div>
-							<Button
-								onClick={() => setLocalShowScore(!localShowScore)}
-								size="icon"
-								variant="outline"
-								className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full hover:scale-110 transition-transform duration-200 hover:border-blue-400"
-								title={showScore ? "Оноо нуух" : "Оноо харах"}
-							>
-								{showScore ? (
-									<EyeOff className="w-4 h-4 text-gray-600" />
-								) : (
-									<Eye className="w-4 h-4 text-blue-600" />
-								)}
-							</Button>
 						</div>
 					)}
 				</div>
-			</CardHeader>
 
-			<CardContent className="space-y-4 px-5 pb-5">
-				{/* Exam Duration */}
-				<div className="flex items-center justify-between p-3 rounded-lg border border-blue-200">
-					<div className="flex items-center gap-2 text-sm font-semibold ">
-						<Target className="w-4 h-4 " />
-						<span>Үргэлжлэх хугацаа</span>
-					</div>
-					<span className="text-lg font-bold ">{exam.exam_minute} минут</span>
-				</div>
-
-				{/* Time Spent */}
-				{finished && exam.test_time && (
-					<div className="flex items-center justify-between text-sm">
-						<span className="font-medium">Зарцуулсан хугацаа:</span>
-						<span className=" font-bold">{exam.test_time}</span>
-					</div>
-				)}
-
-				{/* Action Buttons */}
-				{finished ? (
-					<div className="space-y-2 pt-2">
-						<Button
-							className="w-full bg-linear-to-br from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700"
-							onClick={handleDetailsClick}
+				{/* Content Section */}
+				<div className="p-1.5 sm:p-2 md:p-2.5 pb-7 sm:pb-8 md:pb-9 flex flex-col flex-1 space-y-1 sm:space-y-1.5">
+					{/* Title */}
+					<div className="space-y-0.5 flex-1 min-h-0">
+						<h3
+							className="text-[10px] sm:text-xs md:text-sm font-semibold text-foreground line-clamp-1 leading-tight group-hover:text-primary transition-colors duration-300"
+							title={exam.title}
 						>
-							<FileText className="w-4 h-4 mr-2" />
-							<span>Дэлгэрэнгүй үзэх</span>
-							<ArrowRight className="w-4 h-4 ml-2" />
-						</Button>
+							{exam.title}
+						</h3>
+					</div>
 
-						<div className="flex items-center gap-2">
+					{/* Stats */}
+					<div className="flex items-center justify-between gap-1 sm:gap-1.5 pt-1 border-t border-border/50">
+						<div className="flex items-center gap-0.5 sm:gap-1 text-muted-foreground min-w-0">
+							<Target className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
+							<span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate">
+								{exam.exam_minute} мин
+							</span>
+						</div>
+						{finished && exam.test_time && (
+							<div className="flex items-center gap-0.5 sm:gap-1 text-muted-foreground min-w-0">
+								<Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
+								<span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate">
+									{exam.test_time}
+								</span>
+							</div>
+						)}
+					</div>
+
+					{/* Action Buttons - Absolute positioned */}
+					{finished ? (
+						<div className="absolute bottom-1.5 left-1.5 right-1.5 sm:bottom-2 sm:left-2 sm:right-2 flex items-center gap-1 sm:gap-1.5">
 							<Button
-								variant="outline"
-								className="flex-1 hover:bg-blue-50 hover:border-blue-300 border-blue-200"
-								onClick={handleAnswersClick}
+								onClick={handleDetailsClick}
+								size="sm"
+								className="flex-1 h-6 sm:h-7 md:h-8 text-[8px] sm:text-[9px] md:text-xs px-1.5 sm:px-2 bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700"
 							>
-								<FileText className="w-4 h-4 mr-2 text-blue-600" />
-								<span className="font-semibold">Шалгалтын оноо</span>
+								<FileText className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
+								<span className="hidden sm:inline">Дэлгэрэнгүй</span>
+								<span className="sm:hidden">Үзэх</span>
+							</Button>
+
+							<Button
+								onClick={handleAnswersClick}
+								size="sm"
+								variant="outline"
+								className="flex-1 h-6 sm:h-7 md:h-8 text-[8px] sm:text-[9px] md:text-xs px-1.5 sm:px-2 hover:bg-blue-50 hover:border-blue-300"
+							>
+								<FileText className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1 text-blue-600" />
+								<span className="hidden sm:inline">Оноо</span>
+								<span className="sm:hidden">Оноо</span>
 							</Button>
 
 							{onViewRank && (
 								<Button
-									variant="outline"
-									className="flex-1 hover:bg-purple-50 hover:border-purple-300 border-purple-200"
 									onClick={handleRankClick}
+									size="sm"
+									variant="outline"
+									className="h-6 sm:h-7 md:h-8 text-[8px] sm:text-[9px] md:text-xs px-1.5 sm:px-2 hover:bg-purple-50 hover:border-purple-300"
 								>
-									<Award className="w-4 h-4 mr-2 text-purple-600" />
-									<span className="font-semibold">Ранк харах</span>
+									<Award className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-purple-600" />
 								</Button>
 							)}
 						</div>
-					</div>
-				) : (
-					<div className="text-center py-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-						<XCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-						<p className="text-sm font-semibold text-gray-600">
-							Шалгалт дуусаагүй байна
-						</p>
-						<p className="text-xs text-gray-500 mt-1">
-							Та удахгүй шалгалтын дэлгэрэнгүйг харах боломжтой
-						</p>
-					</div>
-				)}
-			</CardContent>
-		</Card>
+					) : (
+						<div className="absolute bottom-1.5 left-1.5 right-1.5 sm:bottom-2 sm:left-2 sm:right-2 text-center py-1.5 sm:py-2 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+							<XCircle className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 mx-auto mb-0.5" />
+							<p className="text-[8px] sm:text-[9px] font-semibold text-gray-600">
+								Шалгалт дуусаагүй
+							</p>
+						</div>
+					)}
+				</div>
+			</div>
+		</motion.div>
 	);
 };

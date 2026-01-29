@@ -302,15 +302,6 @@ export default function ExamRulesDialog({
 								</span>
 							</div>
 						</div>
-						<div className="bg-white dark:bg-gray-800 p-3 rounded-lg border shadow-sm">
-							<div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 font-bold">
-								<AlertTriangle className="w-4 h-4" />
-								<span>
-									Дунд зэрэг:{" "}
-									{allRules.filter((r) => r.severity === "medium").length}
-								</span>
-							</div>
-						</div>
 					</div>
 				</div>
 

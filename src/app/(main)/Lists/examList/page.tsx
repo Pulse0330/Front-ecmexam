@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { AlertCircle, BookOpen, Search, X } from "lucide-react";
+import { AlertCircle, Search, X } from "lucide-react";
 import React, { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import type {
 } from "@/types/exam/examList";
 import type { QPayInvoiceResponse } from "@/types/Qpay/qpayinvoice";
 import ExamCard from "./examcard";
-import QPayDialog from "./qpayDialog"; // Import QPayDialog
+import QPayDialog from "./qpayDialog";
 
 type ExamCategory = "all" | "active" | "upcoming" | "free" | "paid" | "expired";
 
@@ -155,7 +155,6 @@ export default function ExamListPage() {
 
 	const clearSearch = () => setSearchTerm("");
 
-	// QPay invoice үүсгэх функц
 	const handleCreateInvoice = async (exam: ExamlistsData) => {
 		if (!userId) {
 			alert("Нэвтрэх шаардлагатай");
@@ -167,11 +166,11 @@ export default function ExamListPage() {
 
 			const response = await axios.post("/api/examqpay/invoice", {
 				amount: exam.amount?.toString() || "0",
-				userid: userId.toString(), // useAuthStore-оос авсан userId
-				device_token: "", // Хоосон утга
-				orderid: exam.bill_type?.toString() || "0", // bill_type буюу 6
-				bilid: exam.exam_id.toString(), // exam_id буюу 8802
-				classroom_id: "0", // Хоосон утга
+				userid: userId.toString(),
+				device_token: "",
+				orderid: exam.bill_type?.toString() || "0",
+				bilid: exam.exam_id.toString(),
+				classroom_id: "0",
 			});
 
 			console.log("QPay Invoice Created:", response.data);
@@ -188,9 +187,7 @@ export default function ExamListPage() {
 		}
 	};
 
-	// Төлбөр амжилттай төлөгдсөний дараа
 	const handlePaymentSuccess = () => {
-		// Exam list-ийг дахин уншуулах
 		refetch();
 	};
 
@@ -208,14 +205,14 @@ export default function ExamListPage() {
 	return (
 		<>
 			<div className="min-h-screen flex flex-col overflow-auto">
-				<div className="max-w-[1600px] mx-auto w-full flex flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+				<div className="max-w-[1600px] mx-auto w-full flex flex-col gap-4 sm:gap-6 px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
 					<header className="text-center space-y-1">
-						<h1 className="text-3xl sm:text-4xl font-extrabold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+						<h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold">
 							Шалгалтын жагсаалт
 						</h1>
 					</header>
 
-					<div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+					<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
 						<div className="relative w-full sm:max-w-md">
 							<Search
 								className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
@@ -277,27 +274,18 @@ export default function ExamListPage() {
 						</div>
 					</div>
 
-					<div className="flex items-center gap-3 pb-2">
-						<div className="flex items-center gap-2 shrink-0">
-							<BookOpen
-								className="text-gray-500 dark:text-gray-400"
-								size={18}
-							/>
-							<span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-								Хичээл:
-							</span>
-						</div>
-
-						<div className="hidden md:flex gap-2 flex-nowrap overflow-x-auto scrollbar-thin">
+					<div className="flex flex-col gap-3 pb-2">
+						{/* Lesson Filter Buttons - Desktop & Tablet */}
+						<div className="hidden sm:flex gap-2 flex-wrap">
 							{lessons.map((lesson) => (
 								<Button
 									key={lesson.lesson_id}
 									type="button"
 									onClick={() => setSelectedLessonId(lesson.lesson_id)}
 									className={cn(
-										"px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap shrink-0",
+										"px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap",
 										selectedLessonId === lesson.lesson_id
-											? "bg-linear-to-r from-blue-500 to-purple-500 text-white shadow-lg shadow-purple-500/30"
+											? ""
 											: "bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700",
 									)}
 									aria-label={`${lesson.lesson_name} хичээл сонгох`}
@@ -308,10 +296,11 @@ export default function ExamListPage() {
 							))}
 						</div>
 
+						{/* Lesson Filter Select - Mobile */}
 						<select
 							value={selectedLessonId}
 							onChange={(e) => setSelectedLessonId(Number(e.target.value))}
-							className="md:hidden flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
+							className="sm:hidden w-full px-4 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
 							aria-label="Хичээл сонгох"
 						>
 							{lessons.map((lesson) => (
@@ -349,7 +338,8 @@ export default function ExamListPage() {
 						</div>
 					)}
 
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 pb-4 items-stretch">
+					{/* Improved Grid with consistent card heights */}
+					<div className="grid grid-cols-3 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-6 gap-3 sm:gap-4 pb-4 auto-rows-fr">
 						{isPending
 							? skeletonIds.map((id) => <SkeletonCard key={id} />)
 							: filteredData.map((exam, index) => (
@@ -386,7 +376,6 @@ export default function ExamListPage() {
 				</div>
 			</div>
 
-			{/* QPay Dialog */}
 			<QPayDialog
 				open={qpayDialogOpen}
 				onOpenChange={setQpayDialogOpen}
@@ -399,34 +388,35 @@ export default function ExamListPage() {
 }
 
 const SkeletonCard = () => (
-	<div className="h-[430px] w-full flex flex-col overflow-hidden rounded-[28px] border border-border/40 bg-card/50 backdrop-blur-md animate-pulse">
-		<div className="h-40 w-full bg-slate-200 dark:bg-slate-800 relative">
-			<div className="absolute top-4 left-4 flex flex-col gap-2">
-				<div className="h-6 w-20 bg-slate-300 dark:bg-slate-700 rounded-full" />
-				<div className="h-6 w-24 bg-slate-300 dark:bg-slate-700 rounded-full" />
+	<div className="w-full flex flex-col overflow-hidden rounded-xl border border-border/40 bg-card/50 backdrop-blur-md animate-pulse">
+		<div className="h-20 w-full bg-slate-200 dark:bg-slate-800 relative shrink-0">
+			<div className="absolute top-1.5 left-1.5 flex flex-col gap-1">
+				<div className="h-4 w-16 bg-slate-300 dark:bg-slate-700 rounded-full" />
+				<div className="h-4 w-20 bg-slate-300 dark:bg-slate-700 rounded-full" />
 			</div>
 		</div>
 
-		<div className="flex flex-col grow p-5 gap-4">
-			<div className="space-y-3">
+		<div className="flex flex-col flex-1 p-3 gap-3">
+			<div className="space-y-2 flex-1">
 				<div className="flex justify-between items-center">
 					<div className="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
-					<div className="h-4 w-4 bg-slate-200 dark:bg-slate-800 rounded-full" />
+					<div className="h-3 w-3 bg-slate-200 dark:bg-slate-800 rounded-full" />
 				</div>
-				<div className="space-y-2">
-					<div className="h-5 w-full bg-slate-200 dark:bg-slate-800 rounded" />
-					<div className="h-5 w-2/3 bg-slate-200 dark:bg-slate-800 rounded" />
+				<div className="space-y-1.5">
+					<div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded" />
+					<div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-800 rounded" />
 				</div>
 			</div>
 
-			<div className="mt-auto pt-4 border-t border-border/50 flex items-center justify-between">
-				<div className="flex gap-4">
-					<div className="h-4 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
-					<div className="h-4 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
-					<div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
+			<div className="mt-auto pt-2 border-t border-border/50 flex items-center justify-between">
+				<div className="flex gap-3">
+					<div className="h-3 w-10 bg-slate-200 dark:bg-slate-800 rounded" />
+					<div className="h-3 w-10 bg-slate-200 dark:bg-slate-800 rounded" />
+					<div className="h-3 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
 				</div>
-				<div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-800" />
 			</div>
+
+			<div className="h-7 w-full bg-slate-200 dark:bg-slate-800 rounded-lg" />
 		</div>
 	</div>
 );
@@ -448,17 +438,13 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(
 
 			switch (variant) {
 				case "all":
-					return "bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-2 border-blue-500 shadow-lg shadow-blue-500/30";
+					return "";
 				case "active":
-					return "bg-gradient-to-r from-emerald-500 to-green-500 text-white border-2 border-emerald-500 shadow-lg shadow-emerald-500/30";
-				case "upcoming":
-					return "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-2 border-amber-500 shadow-lg shadow-amber-500/30";
-				case "free":
-					return "bg-gradient-to-r from-cyan-500 to-blue-500 text-white border-2 border-cyan-500 shadow-lg shadow-cyan-500/30";
+					return "";
 				case "paid":
-					return "bg-gradient-to-r from-rose-500 to-red-500 text-white border-2 border-rose-500 shadow-lg shadow-rose-500/30";
+					return "";
 				case "expired":
-					return "bg-gradient-to-r from-gray-500 to-slate-500 text-white border-2 border-gray-500 shadow-lg shadow-gray-500/30";
+					return "";
 				default:
 					return "";
 			}
@@ -469,7 +455,7 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(
 				type="button"
 				onClick={onClick}
 				className={cn(
-					"inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200",
+					"inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap",
 					getStyle(),
 					active ? "scale-105" : "hover:scale-102",
 				)}
@@ -480,7 +466,7 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(
 				<span>{label}</span>
 				<span
 					className={cn(
-						"ml-1 px-2 py-0.5 rounded-full text-xs font-bold",
+						"ml-0.5 sm:ml-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold",
 						active
 							? "bg-white/30 text-white"
 							: "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300",

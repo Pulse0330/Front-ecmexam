@@ -7,19 +7,19 @@ import {
 	CreditCard,
 	FileText,
 	LogOut,
+	type LucideIcon,
+	Menu,
 	School,
 	TrendingUp,
 	User,
 	UserCircle,
 	Users,
+	X,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import UseAnimations from "react-useanimations";
-import menu3 from "react-useanimations/lib/menu3";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -40,793 +40,668 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-	NavigationMenu,
-	NavigationMenuItem,
-	NavigationMenuList,
-} from "@/components/ui/navigation-menu";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/useAuthStore";
 
-// ⭐ UNIFIED User Avatar Component
-const UserAvatar = React.memo(
-	({
-		userImage,
-		userName,
-		size = "md",
-		showOnlineStatus = false,
-		className = "",
-	}: {
-		userImage: string;
-		userName: string;
-		size?: "sm" | "md" | "lg";
-		showOnlineStatus?: boolean;
-		className?: string;
-	}) => {
-		const sizeClasses = {
-			sm: "w-8 h-8 sm:w-9 sm:h-9",
-			md: "w-10 h-10 sm:w-11 sm:h-11",
-			lg: "w-12 h-12 sm:w-14 sm:h-14", // w-13 байхгүй
-		};
-
-		const iconSizes = {
-			sm: "h-3.5 w-3.5 sm:h-4 sm:w-4",
-			md: "h-4 w-4 sm:h-5 sm:w-5",
-			lg: "h-5 w-5 sm:h-6 sm:w-6",
-		};
-
-		const statusSizes = {
-			sm: "w-2 h-2 sm:w-2.5 sm:h-2.5",
-			md: "w-3 h-3 sm:w-3.5 sm:h-3.5",
-			lg: "w-3.5 h-3.5 sm:w-4 sm:h-4",
-		};
-
-		const imgSizes = {
-			sm: { width: 32, height: 32, smWidth: 36, smHeight: 36 },
-			md: { width: 40, height: 40, smWidth: 44, smHeight: 44 },
-			lg: { width: 48, height: 48, smWidth: 52, smHeight: 52 },
-		};
-
-		if (userImage) {
-			return (
-				<div className={cn("relative shrink-0", className)}>
-					<Image
-						src={userImage}
-						alt={userName}
-						width={imgSizes[size].smWidth}
-						height={imgSizes[size].smHeight}
-						className={cn(
-							"rounded-full object-cover ring-2 ring-primary/40 ring-offset-2 ring-offset-background shadow-sm",
-							sizeClasses[size],
-						)}
-					/>
-					{showOnlineStatus && (
-						<div
-							className={cn(
-								"absolute -bottom-0.5 -right-0.5 bg-linear-to-br from-green-400 to-green-500 rounded-full border-2 border-background shadow-sm",
-								statusSizes[size],
-							)}
-						>
-							<div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-75" />
-						</div>
-					)}
-				</div>
-			);
-		}
-
-		return (
-			<div
-				className={cn(
-					"rounded-full bg-linear-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0 shadow-sm",
-					sizeClasses[size],
-					className,
-				)}
-			>
-				<User className={`${iconSizes[size]} text-primary`} />
-			</div>
-		);
-	},
-);
-
-UserAvatar.displayName = "UserAvatar";
-
-// NavbarAction Component
-const NavbarAction = React.memo(
-	({
-		icon,
-		className,
-		...props
-	}: React.ComponentPropsWithoutRef<typeof Button> & {
-		icon: React.ReactNode;
-	}) => (
-		<Button
-			variant="ghost"
-			className={cn(
-				"relative p-2 md:p-3 rounded-full backdrop-blur-sm border transition-all duration-200",
-				"bg-white/90 dark:bg-gray-800/60 border-gray-200/80 dark:border-gray-700/80",
-				"text-gray-900 dark:text-yellow-400",
-				"active:scale-95 will-change-transform",
-				"shadow-sm h-auto w-auto",
-				className,
-			)}
-			{...props}
-		>
-			{icon}
-		</Button>
-	),
-);
-
-NavbarAction.displayName = "NavbarAction";
-
-// Types
-export interface Navbar01NavLink {
-	href: string;
-	label: string;
-}
-
-export interface Navbar01Props extends React.HTMLAttributes<HTMLElement> {
-	logo?: React.ReactNode;
-	logoHref?: string;
-	navigationLinks?: Navbar01NavLink[];
-}
-
-const defaultNavigationLinks: Navbar01NavLink[] = [
+// Navigation links configuration
+const NAV_LINKS = [
 	{ href: "/home", label: "Үндсэн хуудас" },
 	{ href: "/Lists/exerciseList", label: "Дасгал ажил" },
 ];
 
-const examDropdownLinks = [
+const EXAM_LINKS: Array<{ href: string; label: string; icon: LucideIcon }> = [
 	{
 		href: "/Lists/examList",
 		label: "Шалгалтын жагсаалт",
-		description: "",
-		icon: <FileText className="h-5 w-5" />,
+		icon: FileText,
 	},
 	{
 		href: "/Lists/examResult",
 		label: "Шалгалтын үр дүн",
-		description: "",
-		icon: <BarChart3 className="h-5 w-5" />,
+		icon: BarChart3,
 	},
 ];
 
-const sorilDropdownLinks = [
+const SORIL_LINKS: Array<{ href: string; label: string; icon: LucideIcon }> = [
 	{
 		href: "/Lists/sorilList",
 		label: "Сорилын жагсаалт",
-		description: "",
-		icon: <ClipboardList className="h-5 w-5" />,
+		icon: ClipboardList,
 	},
 	{
 		href: "/Lists/sorilResult",
 		label: "Сорилын үр дүн",
-		description: "",
-		icon: <TrendingUp className="h-5 w-5" />,
+		icon: TrendingUp,
 	},
 ];
 
-const courseDropdownLinks = [
+const COURSE_LINKS: Array<{ href: string; label: string; icon: LucideIcon }> = [
 	{
 		href: "/Lists/courseList",
 		label: "Хичээл",
-		description: "",
-		icon: <School className="h-5 w-5" />,
+		icon: School,
 	},
 	{
 		href: "/Lists/paymentCoureList",
 		label: "Төлбөртэй хичээл",
-		description: "",
-		icon: <CreditCard className="h-5 w-5" />,
+		icon: CreditCard,
 	},
 ];
 
-// Mega Menu Component
-const MegaMenuItem = React.memo(
-	({
-		label,
-		items,
-		isActive,
-	}: {
-		label: string;
-		items: Array<{
-			href: string;
-			label: string;
-			description: string;
-			icon: React.ReactNode;
-		}>;
-		isActive: boolean;
-	}) => {
-		const [isOpen, setIsOpen] = useState(false);
-		const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-		const pathname = usePathname();
+// User Avatar Component
+const UserAvatar: React.FC<{
+	userImage: string;
+	userName: string;
+	size?: "sm" | "md" | "lg";
+	showOnlineStatus?: boolean;
+}> = ({ userImage, userName, size = "md", showOnlineStatus = false }) => {
+	const sizeMap = {
+		sm: "w-8 h-8",
+		md: "w-10 h-10",
+		lg: "w-12 h-12",
+	};
 
-		const handleMouseEnter = useCallback(() => {
-			if (timeoutRef.current) {
-				clearTimeout(timeoutRef.current);
-			}
-			setIsOpen(true);
-		}, []);
-
-		const handleMouseLeave = useCallback(() => {
-			timeoutRef.current = setTimeout(() => {
-				setIsOpen(false);
-			}, 150);
-		}, []);
-
-		useEffect(() => {
-			return () => {
-				if (timeoutRef.current) {
-					clearTimeout(timeoutRef.current);
-				}
-			};
-		}, []);
-
+	if (userImage) {
 		return (
-			<NavigationMenuItem
-				onMouseEnter={handleMouseEnter}
-				onMouseLeave={handleMouseLeave}
-			>
-				<button
-					type="button"
+			<div className="relative">
+				<Image
+					src={userImage}
+					alt={userName}
+					width={size === "lg" ? 48 : size === "md" ? 40 : 32}
+					height={size === "lg" ? 48 : size === "md" ? 40 : 32}
 					className={cn(
-						"group inline-flex h-9 sm:h-10 items-center justify-center gap-1 sm:gap-1.5 rounded-xl px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all duration-300",
-						"hover:bg-linear-to-r hover:from-accent/90 hover:to-accent hover:text-accent-foreground hover:shadow-md hover:scale-105",
-						"active:scale-95",
-						isActive
-							? "bg-linear-to-r from-accent/90 to-accent text-accent-foreground shadow-md scale-[1.02]"
-							: "text-foreground/80 hover:text-foreground",
+						"rounded-full object-cover ring-2 ring-primary/20",
+						sizeMap[size],
 					)}
-				>
-					{label}
-					<ChevronDown
-						className={cn(
-							"h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform duration-300",
-							isOpen && "rotate-180",
-						)}
-					/>
-				</button>
+				/>
+				{showOnlineStatus && (
+					<span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full" />
+				)}
+			</div>
+		);
+	}
 
+	return (
+		<div
+			className={cn(
+				"rounded-full bg-linear-to-br from-primary/20 to-primary/10 flex items-center justify-center",
+				sizeMap[size],
+			)}
+		>
+			<User className="w-5 h-5 text-primary" />
+		</div>
+	);
+};
+
+// Desktop Dropdown Menu
+const DesktopDropdown: React.FC<{
+	label: string;
+	items: Array<{ href: string; label: string; icon: LucideIcon }>;
+	isActive: boolean;
+}> = ({ label, items, isActive }) => {
+	const [isOpen, setIsOpen] = React.useState(false);
+	const pathname = usePathname();
+	const dropdownRef = React.useRef<HTMLDivElement>(null);
+	const buttonRef = React.useRef<HTMLButtonElement>(null);
+
+	// Handle keyboard navigation
+	React.useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape" && isOpen) {
+				setIsOpen(false);
+				buttonRef.current?.focus();
+			}
+		};
+
+		if (isOpen) {
+			document.addEventListener("keydown", handleKeyDown);
+		}
+
+		return () => {
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [isOpen]);
+
+	// Handle click outside
+	React.useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (
+				dropdownRef.current &&
+				!dropdownRef.current.contains(event.target as Node)
+			) {
+				setIsOpen(false);
+			}
+		};
+
+		if (isOpen) {
+			document.addEventListener("mousedown", handleClickOutside);
+		}
+
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, [isOpen]);
+
+	const handleToggle = () => {
+		setIsOpen(!isOpen);
+	};
+
+	return (
+		<div ref={dropdownRef} className="relative">
+			<button
+				ref={buttonRef}
+				type="button"
+				className={cn(
+					"flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg transition-all",
+					"hover:bg-accent hover:text-accent-foreground",
+					isActive && "bg-accent text-accent-foreground",
+				)}
+				aria-expanded={isOpen}
+				aria-haspopup="true"
+				onClick={handleToggle}
+				onFocus={() => setIsOpen(true)}
+				onBlur={(e) => {
+					// Only close if focus is moving outside the dropdown
+					if (!dropdownRef.current?.contains(e.relatedTarget as Node)) {
+						setIsOpen(false);
+					}
+				}}
+			>
+				{label}
+				<ChevronDown
+					className={cn("w-4 h-4 transition-transform", isOpen && "rotate-180")}
+				/>
+			</button>
+
+			{isOpen && (
 				<div
-					className={cn(
-						"absolute left-0 top-full mt-3 w-72 sm:w-80 rounded-2xl border bg-popover/98 backdrop-blur-xl shadow-2xl transition-all duration-300",
-						"transform origin-top overflow-hidden",
-						isOpen
-							? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
-							: "opacity-0 scale-95 -translate-y-2 pointer-events-none",
-					)}
+					className="absolute top-full left-0 mt-2 w-56 rounded-xl border bg-popover shadow-lg z-50"
+					role="menu"
+					aria-orientation="vertical"
 				>
-					<div className="p-4 space-y-1.5">
-						<div className="px-3 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground/80 border-b border-border/50 mb-3">
-							{label}
-						</div>
+					<div className="p-2 space-y-1">
 						{items.map((item) => {
+							const Icon = item.icon;
 							const isItemActive = pathname === item.href;
 							return (
 								<Link
 									key={item.href}
 									href={item.href}
 									className={cn(
-										"flex flex-col items-start gap-2 p-3.5 rounded-xl transition-all duration-300",
-										"hover:bg-accent/90 hover:shadow-lg hover:scale-[1.02] hover:translate-x-1",
-										"active:scale-95",
-										isItemActive &&
-											"bg-linear-to-r from-accent to-accent/80 shadow-lg scale-[1.02] border border-primary/30",
+										"flex items-center gap-3 px-3 py-2 rounded-lg transition-all",
+										"hover:bg-accent hover:text-accent-foreground",
+										isItemActive && "bg-accent/50",
 									)}
 								>
-									<div className="flex items-center gap-3 w-full">
-										<span className="text-2xl filter drop-shadow-sm">
-											{item.icon}
-										</span>
-										<div className="text-sm font-bold leading-none">
-											{item.label}
-										</div>
-									</div>
-									<p className="text-xs leading-relaxed text-muted-foreground pl-9">
-										{item.description}
-									</p>
+									<Icon className="w-4 h-4" />
+									<span className="text-sm font-medium">{item.label}</span>
 								</Link>
 							);
 						})}
 					</div>
 				</div>
-			</NavigationMenuItem>
-		);
-	},
-);
+			)}
+		</div>
+	);
+};
 
-MegaMenuItem.displayName = "MegaMenuItem";
+// Mobile Menu - ACCORDION ONLY
+const MobileMenu: React.FC<{
+	isOpen: boolean;
+	onClose: () => void;
+}> = ({ isOpen, onClose }) => {
+	const pathname = usePathname();
+	const [expandedSection, setExpandedSection] = React.useState<string | null>(
+		null,
+	);
 
-export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
-	({ className, navigationLinks = defaultNavigationLinks, ...props }, ref) => {
-		const [isMobile, setIsMobile] = useState(false);
-		const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-		const [isMenuOpen, setIsMenuOpen] = useState(false);
-		const containerRef = useRef<HTMLElement>(null);
-		const pathname = usePathname();
-		const router = useRouter();
-
-		const { user, firstname, imgUrl, clearAuth } = useAuthStore();
-
-		const userInfo = useMemo(
-			() => ({
-				userName: user?.fname || firstname || "Хэрэглэгч",
-				userEmail: user?.email || "",
-				userImage: imgUrl || user?.img_url || "",
-				schoolName: user?.sch_name || "",
-				studentGroup: user?.studentgroupname || "",
-			}),
-			[user, firstname, imgUrl],
-		);
-
-		useEffect(() => {
-			let timeoutId: NodeJS.Timeout;
-
-			const checkWidth = () => {
-				if (containerRef.current) {
-					const width = containerRef.current.offsetWidth;
-					setIsMobile(width < 768);
-				}
-			};
-
-			const debouncedCheck = () => {
-				clearTimeout(timeoutId);
-				timeoutId = setTimeout(checkWidth, 100);
-			};
-
-			checkWidth();
-
-			const resizeObserver = new ResizeObserver(debouncedCheck);
-			if (containerRef.current) {
-				resizeObserver.observe(containerRef.current);
+	// Handle escape key
+	React.useEffect(() => {
+		const handleEscape = (e: KeyboardEvent) => {
+			if (e.key === "Escape" && isOpen) {
+				onClose();
 			}
+		};
 
-			return () => {
-				clearTimeout(timeoutId);
-				resizeObserver.disconnect();
-			};
-		}, []);
+		document.addEventListener("keydown", handleEscape);
+		return () => document.removeEventListener("keydown", handleEscape);
+	}, [isOpen, onClose]);
 
-		const combinedRef = useCallback(
-			(node: HTMLElement | null) => {
-				containerRef.current = node;
-				if (typeof ref === "function") {
-					ref(node);
-				} else if (ref) {
-					(ref as React.MutableRefObject<HTMLElement | null>).current = node;
-				}
-			},
-			[ref],
-		);
+	// Prevent body scroll when menu is open
+	React.useEffect(() => {
+		if (isOpen) {
+			document.body.style.overflow = "hidden";
+		} else {
+			document.body.style.overflow = "";
+		}
+		return () => {
+			document.body.style.overflow = "";
+		};
+	}, [isOpen]);
 
-		const handleLogoutClick = useCallback(() => {
-			setShowLogoutDialog(true);
-		}, []);
+	// Reset expanded section when menu closes
+	React.useEffect(() => {
+		if (!isOpen) {
+			setExpandedSection(null);
+		}
+	}, [isOpen]);
 
-		const confirmLogout = useCallback(() => {
-			Cookies.remove("auth-token", { path: "/" });
-			Cookies.remove("user-id", { path: "/" });
-			Cookies.remove("firstname", { path: "/" });
-			Cookies.remove("img-url", { path: "/" });
+	const toggleSection = (section: string) => {
+		setExpandedSection((prev) => (prev === section ? null : section));
+	};
 
-			clearAuth();
-			router.push("/login");
-		}, [router, clearAuth]);
+	if (!isOpen) return null;
 
-		const handleProfileClick = useCallback(() => {
-			router.push("/userProfile");
-		}, [router]);
+	return (
+		<div className="fixed inset-0 z-50 lg:hidden">
+			{/* Backdrop */}
+			<button
+				type="button"
+				className={cn(
+					"absolute inset-0 bg-black/60 backdrop-blur-sm cursor-default transition-opacity duration-300",
+					isOpen ? "opacity-100" : "opacity-0",
+				)}
+				onClick={onClose}
+				aria-label="Close menu"
+			/>
 
-		const handleMenuToggle = useCallback(() => {
-			setIsMenuOpen(false);
-		}, []);
+			{/* Menu Panel - Slides from LEFT */}
+			<div
+				className={cn(
+					"absolute left-0 top-0 h-full w-[85vw] max-w-sm bg-background shadow-2xl",
+					"transform transition-transform duration-300 ease-out",
+					isOpen ? "translate-x-0" : "-translate-x-full",
+				)}
+				role="dialog"
+				aria-modal="true"
+				aria-label="Navigation menu"
+			>
+				<div className="flex flex-col h-full">
+					{/* Header */}
+					<div className="flex items-center justify-between p-4 border-b bg-background shrink-0">
+						<div className="flex items-center gap-3">
+							<Image
+								src="/image/logoLogin.png"
+								alt="ECM Logo"
+								width={40}
+								height={40}
+								className="object-contain"
+							/>
+							<h2 className="text-lg font-bold">Цэс</h2>
+						</div>
+						<button
+							type="button"
+							onClick={onClose}
+							className="p-2 hover:bg-accent rounded-lg transition-colors"
+							aria-label="Close menu"
+						>
+							<X className="w-5 h-5" />
+						</button>
+					</div>
 
-		const isExamActive = pathname.includes("/Lists/exam");
-		const isSorilActive = pathname.includes("/Lists/soril");
-		const isCourseActive =
-			pathname.includes("/Lists/courseList") ||
-			pathname.includes("/Lists/paymentCoureList");
-
-		return (
-			<>
-				<header
-					ref={combinedRef}
-					className={cn(
-						"rounded-3xl border-2 bg-linear-to-r from-background/98 via-background/95 to-background/98",
-						"backdrop-blur-xl supports-backdrop-filter:bg-background/60",
-						"shadow-xl shadow-black/5 dark:shadow-black/20",
-						"sticky top-0 z-50 transition-all duration-300",
-						"border-gray-200/60 dark:border-gray-800/60",
-						className,
-					)}
-					{...props}
-				>
-					<div className="flex h-16 sm:h-18 md:h-20 items-center justify-between px-4 sm:px-6 md:px-8 lg:px-12">
-						{/* Left side - Logo */}
-						<div className="flex items-center shrink-0">
+					{/* Menu Items - Scrollable with Accordions */}
+					<div className="flex-1 overflow-y-auto p-4 space-y-2">
+						{/* Main Links */}
+						{NAV_LINKS.map((link) => (
 							<Link
-								href="/"
-								className="flex items-center text-primary hover:text-primary/90 transition-all duration-300 hover:scale-105 active:scale-95"
+								key={link.href}
+								href={link.href}
+								onClick={onClose}
+								className={cn(
+									"block px-4 py-3 rounded-lg font-medium transition-all",
+									"hover:bg-accent hover:text-accent-foreground",
+									pathname === link.href && "bg-accent text-accent-foreground",
+								)}
 							>
-								<Image
-									src="/image/logoLogin.png"
-									alt="ECM Logo"
-									width={96}
-									height={96}
-									className="object-contain drop-shadow-md w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24"
-									priority
-									unoptimized
-								/>
+								{link.label}
 							</Link>
+						))}
+
+						{/* Exam Accordion */}
+						<div className="space-y-1">
+							<button
+								type="button"
+								onClick={() => toggleSection("exam")}
+								className={cn(
+									"w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-all",
+									"hover:bg-accent hover:text-accent-foreground",
+									expandedSection === "exam" && "bg-accent/50",
+								)}
+							>
+								<span>Шалгалт</span>
+								<ChevronDown
+									className={cn(
+										"w-4 h-4 transition-transform duration-200",
+										expandedSection === "exam" && "rotate-180",
+									)}
+								/>
+							</button>
+
+							{expandedSection === "exam" && (
+								<div className="pl-4 space-y-1 animate-in slide-in-from-top-2">
+									{EXAM_LINKS.map((item) => {
+										const Icon = item.icon;
+										return (
+											<Link
+												key={item.href}
+												href={item.href}
+												onClick={onClose}
+												className={cn(
+													"flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm",
+													"hover:bg-accent hover:text-accent-foreground",
+													pathname === item.href &&
+														"bg-accent text-accent-foreground",
+												)}
+											>
+												<Icon className="w-4 h-4" />
+												<span>{item.label}</span>
+											</Link>
+										);
+									})}
+								</div>
+							)}
 						</div>
 
-						{/* Center - Desktop Navigation */}
-						{!isMobile && (
-							<div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-								<NavigationMenu>
-									<NavigationMenuList className="gap-2">
-										{navigationLinks.map((link) => {
-											const isActive = pathname === link.href;
-											return (
-												<NavigationMenuItem key={link.href}>
-													<Link
-														href={link.href}
-														className={cn(
-															"group inline-flex h-9 sm:h-10 w-max items-center justify-center rounded-xl px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all duration-300",
-															"hover:bg-linear-to-r hover:from-accent/90 hover:to-accent hover:text-accent-foreground hover:shadow-md hover:scale-105",
-															"active:scale-95",
-															isActive
-																? "bg-linear-to-r from-accent/90 to-accent text-accent-foreground shadow-md scale-[1.02]"
-																: "text-foreground/80 hover:text-foreground",
-														)}
-													>
-														{link.label}
-													</Link>
-												</NavigationMenuItem>
-											);
-										})}
+						{/* Soril Accordion */}
+						<div className="space-y-1">
+							<button
+								type="button"
+								onClick={() => toggleSection("soril")}
+								className={cn(
+									"w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-all",
+									"hover:bg-accent hover:text-accent-foreground",
+									expandedSection === "soril" && "bg-accent/50",
+								)}
+							>
+								<span>Сорил</span>
+								<ChevronDown
+									className={cn(
+										"w-4 h-4 transition-transform duration-200",
+										expandedSection === "soril" && "rotate-180",
+									)}
+								/>
+							</button>
 
-										<MegaMenuItem
-											label="Шалгалт"
-											items={examDropdownLinks}
-											isActive={isExamActive}
-										/>
-
-										<MegaMenuItem
-											label="Сорил"
-											items={sorilDropdownLinks}
-											isActive={isSorilActive}
-										/>
-
-										<MegaMenuItem
-											label="Цахим сургалт"
-											items={courseDropdownLinks}
-											isActive={isCourseActive}
-										/>
-									</NavigationMenuList>
-								</NavigationMenu>
-							</div>
-						)}
-
-						{/* Right side - Actions */}
-						<div className="flex items-center gap-3">
-							{/* Mobile menu */}
-							{isMobile && (
-								<Popover open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-									<PopoverTrigger asChild>
-										<Button
-											variant="ghost"
-											className={cn(
-												"p-2 sm:p-2.5 rounded-xl backdrop-blur-md border transition-all duration-300",
-												"bg-linear-to-br from-white/95 to-white/90 dark:from-gray-800/80 dark:to-gray-800/60",
-												"border-gray-200/60 dark:border-gray-700/60",
-												"text-gray-700 dark:text-yellow-400",
-												"hover:shadow-lg hover:scale-105 active:scale-95",
-												"h-9 w-9 sm:h-10 sm:w-10",
-											)}
-										>
-											<UseAnimations
-												animation={menu3}
-												size={20}
-												reverse={isMenuOpen}
-												strokeColor="currentColor"
-												className="sm:scale-110"
-											/>
-										</Button>
-									</PopoverTrigger>
-									<PopoverContent
-										align="end"
-										className="w-[90vw] max-w-72 sm:w-72 p-3 animate-in fade-in-0 zoom-in-95 rounded-2xl shadow-2xl border-2"
-									>
-										<NavigationMenu className="max-w-none">
-											<NavigationMenuList className="flex-col items-start gap-1.5">
-												{navigationLinks.map((link) => {
-													const isActive = pathname === link.href;
-													return (
-														<NavigationMenuItem
-															key={link.href}
-															className="w-full"
-														>
-															<Link
-																href={link.href}
-																onClick={handleMenuToggle}
-																className={cn(
-																	"flex w-full items-center rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold transition-all duration-300",
-																	"hover:bg-accent hover:text-accent-foreground hover:translate-x-1 hover:shadow-md",
-																	"active:scale-95",
-																	isActive
-																		? "bg-linear-to-r from-accent/90 to-accent text-accent-foreground shadow-md"
-																		: "text-foreground/80",
-																)}
-															>
-																{link.label}
-															</Link>
-														</NavigationMenuItem>
-													);
-												})}
-
-												<div className="w-full pt-4 pb-2">
-													<div className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
-														📝 Шалгалт
-													</div>
-												</div>
-												{examDropdownLinks.map((item) => {
-													const isActive = pathname === item.href;
-													return (
-														<NavigationMenuItem
-															key={item.href}
-															className="w-full"
-														>
-															<Link
-																href={item.href}
-																onClick={handleMenuToggle}
-																className={cn(
-																	"flex w-full items-start gap-3 rounded-xl px-4 py-3 text-sm transition-all duration-300",
-																	"hover:bg-accent hover:text-accent-foreground hover:translate-x-1 hover:shadow-md",
-																	"active:scale-95",
-																	isActive
-																		? "bg-linear-to-r from-accent/90 to-accent text-accent-foreground shadow-md"
-																		: "text-foreground/80",
-																)}
-															>
-																<span className="text-lg mt-0.5 filter drop-shadow-sm">
-																	{item.icon}
-																</span>
-																<div className="flex flex-col gap-1">
-																	<span className="font-bold">
-																		{item.label}
-																	</span>
-																	<span className="text-xs text-muted-foreground leading-tight">
-																		{item.description}
-																	</span>
-																</div>
-															</Link>
-														</NavigationMenuItem>
-													);
-												})}
-
-												<div className="w-full pt-4 pb-2">
-													<div className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
-														🎯 Сорил
-													</div>
-												</div>
-												{sorilDropdownLinks.map((item) => {
-													const isActive = pathname === item.href;
-													return (
-														<NavigationMenuItem
-															key={item.href}
-															className="w-full"
-														>
-															<Link
-																href={item.href}
-																onClick={handleMenuToggle}
-																className={cn(
-																	"flex w-full items-start gap-3 rounded-xl px-4 py-3 text-sm transition-all duration-300",
-																	"hover:bg-accent hover:text-accent-foreground hover:translate-x-1 hover:shadow-md",
-																	"active:scale-95",
-																	isActive
-																		? "bg-linear-to-r from-accent/90 to-accent text-accent-foreground shadow-md"
-																		: "text-foreground/80",
-																)}
-															>
-																<span className="text-lg mt-0.5 filter drop-shadow-sm">
-																	{item.icon}
-																</span>
-																<div className="flex flex-col gap-1">
-																	<span className="font-bold">
-																		{item.label}
-																	</span>
-																	<span className="text-xs text-muted-foreground leading-tight">
-																		{item.description}
-																	</span>
-																</div>
-															</Link>
-														</NavigationMenuItem>
-													);
-												})}
-
-												<div className="w-full pt-4 pb-2">
-													<div className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
-														📚 Цахим сургалт
-													</div>
-												</div>
-												{courseDropdownLinks.map((item) => {
-													const isActive = pathname === item.href;
-													return (
-														<NavigationMenuItem
-															key={item.href}
-															className="w-full"
-														>
-															<Link
-																href={item.href}
-																onClick={handleMenuToggle}
-																className={cn(
-																	"flex w-full items-start gap-3 rounded-xl px-4 py-3 text-sm transition-all duration-300",
-																	"hover:bg-accent hover:text-accent-foreground hover:translate-x-1 hover:shadow-md",
-																	"active:scale-95",
-																	isActive
-																		? "bg-linear-to-r from-accent/90 to-accent text-accent-foreground shadow-md"
-																		: "text-foreground/80",
-																)}
-															>
-																<span className="text-lg mt-0.5 filter drop-shadow-sm">
-																	{item.icon}
-																</span>
-																<div className="flex flex-col gap-1">
-																	<span className="font-bold">
-																		{item.label}
-																	</span>
-																	<span className="text-xs text-muted-foreground leading-tight">
-																		{item.description}
-																	</span>
-																</div>
-															</Link>
-														</NavigationMenuItem>
-													);
-												})}
-											</NavigationMenuList>
-										</NavigationMenu>
-									</PopoverContent>
-								</Popover>
+							{expandedSection === "soril" && (
+								<div className="pl-4 space-y-1 animate-in slide-in-from-top-2">
+									{SORIL_LINKS.map((item) => {
+										const Icon = item.icon;
+										return (
+											<Link
+												key={item.href}
+												href={item.href}
+												onClick={onClose}
+												className={cn(
+													"flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm",
+													"hover:bg-accent hover:text-accent-foreground",
+													pathname === item.href &&
+														"bg-accent text-accent-foreground",
+												)}
+											>
+												<Icon className="w-4 h-4" />
+												<span>{item.label}</span>
+											</Link>
+										);
+									})}
+								</div>
 							)}
+						</div>
 
-							{/* User dropdown */}
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button
-										variant="ghost"
-										className={cn(
-											!isMobile && "px-3 sm:px-4 py-2 gap-2 sm:gap-3 h-auto",
-											isMobile &&
-												"p-0 h-10 w-10 sm:h-11 sm:w-11 overflow-hidden",
-										)}
-									>
-										{!isMobile ? (
-											<>
-												<UserAvatar
-													userImage={userInfo.userImage}
-													userName={userInfo.userName}
-													size="sm"
-													showOnlineStatus={true}
-												/>
-												<span className="text-xs sm:text-sm font-semibold text-foreground leading-tight truncate max-w-[120px] sm:max-w-[150px]">
-													{userInfo.userName}
-												</span>
-											</>
-										) : (
-											<UserAvatar
-												userImage={userInfo.userImage}
-												userName={userInfo.userName}
-												size="md"
-											/>
-										)}
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent
-									align="end"
-									className="w-[90vw] max-w-72 sm:w-72 animate-in fade-in-0 zoom-in-95 rounded-2xl shadow-2xl border-2"
-								>
-									<DropdownMenuLabel className="pb-3">
-										<div className="flex items-center space-x-3.5">
-											<UserAvatar
-												userImage={userInfo.userImage}
-												userName={userInfo.userName}
-												size="lg"
-												showOnlineStatus={true}
-											/>
+						{/* Course Accordion */}
+						<div className="space-y-1">
+							<button
+								type="button"
+								onClick={() => toggleSection("course")}
+								className={cn(
+									"w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-all",
+									"hover:bg-accent hover:text-accent-foreground",
+									expandedSection === "course" && "bg-accent/50",
+								)}
+							>
+								<span>Цахим сургалт</span>
+								<ChevronDown
+									className={cn(
+										"w-4 h-4 transition-transform duration-200",
+										expandedSection === "course" && "rotate-180",
+									)}
+								/>
+							</button>
 
-											<div className="flex flex-col space-y-2 flex-1 min-w-0">
-												<p className="text-base font-bold leading-none truncate">
-													{userInfo.userName}
-												</p>
-
-												{userInfo.schoolName && (
-													<div
-														className="flex items-center gap-2 min-w-0 cursor-help group"
-														title={userInfo.schoolName}
-													>
-														<School className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0 text-blue-600 dark:text-blue-400 transition-transform group-hover:scale-110" />
-														<span className="text-[10px] sm:text-xs font-medium text-blue-600 dark:text-blue-400 truncate">
-															{userInfo.schoolName}
-														</span>
-													</div>
+							{expandedSection === "course" && (
+								<div className="pl-4 space-y-1 animate-in slide-in-from-top-2">
+									{COURSE_LINKS.map((item) => {
+										const Icon = item.icon;
+										return (
+											<Link
+												key={item.href}
+												href={item.href}
+												onClick={onClose}
+												className={cn(
+													"flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm",
+													"hover:bg-accent hover:text-accent-foreground",
+													pathname === item.href &&
+														"bg-accent text-accent-foreground",
 												)}
-												{userInfo.studentGroup && (
-													<div
-														className="flex items-center gap-2 min-w-0 cursor-help group"
-														title={userInfo.studentGroup}
-													>
-														<Users className="h-3.5 w-3.5 shrink-0 text-green-600 dark:text-green-400 transition-transform group-hover:scale-110" />
-														<span className="text-xs font-medium text-green-600 dark:text-green-400 truncate">
-															{userInfo.studentGroup}
-														</span>
-													</div>
-												)}
-											</div>
-										</div>
-									</DropdownMenuLabel>
-									<DropdownMenuSeparator />
-									<div className="px-2 py-1.5">
-										<div className="">
-											<AnimatedThemeToggler />
-										</div>
-									</div>
-									<DropdownMenuItem
-										onClick={handleProfileClick}
-										className="cursor-pointer transition-all duration-300 rounded-xl py-2.5 my-1"
-									>
-										<UserCircle className="mr-2.5 h-4 w-4" />
-										<span className="font-medium">Профайл</span>
-									</DropdownMenuItem>
-									<DropdownMenuSeparator />
-
-									<DropdownMenuSeparator />
-									<DropdownMenuItem
-										onClick={handleLogoutClick}
-										className="cursor-pointer text-red-600 dark:text-red-400 transition-all duration-300 rounded-xl py-2.5 my-1"
-									>
-										<LogOut className="mr-2.5 h-4 w-4" />
-										<span className="font-medium">Гарах</span>
-									</DropdownMenuItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
+											>
+												<Icon className="w-4 h-4" />
+												<span>{item.label}</span>
+											</Link>
+										);
+									})}
+								</div>
+							)}
 						</div>
 					</div>
-				</header>
+				</div>
+			</div>
+		</div>
+	);
+};
 
-				{/* Logout Confirmation Dialog */}
-				<AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
-					<AlertDialogContent className="w-[90vw] max-w-md sm:max-w-md rounded-2xl border-2">
-						<AlertDialogHeader>
-							<AlertDialogTitle className="flex items-center gap-2 sm:gap-2.5 text-base sm:text-lg">
-								<LogOut className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
-								Гарахдаа итгэлтэй байна уу?
-							</AlertDialogTitle>
-							<AlertDialogDescription className="text-xs sm:text-sm leading-relaxed pt-2">
-								Та системээс гарахдаа итгэлтэй байна уу? Дахин нэвтрэхийн тулд
-								нэвтрэх нэр болон нууц үгээ оруулах шаардлагатай.
-							</AlertDialogDescription>
-						</AlertDialogHeader>
-						<AlertDialogFooter className="gap-2">
-							<AlertDialogCancel className="transition-all duration-300 hover:scale-105 rounded-xl">
-								Цуцлах
-							</AlertDialogCancel>
-							<AlertDialogAction
-								onClick={confirmLogout}
-								className="bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-600 dark:to-red-700 dark:hover:from-red-700 dark:hover:to-red-800 transition-all duration-300 hover:scale-105 rounded-xl"
+// Main Navbar Component
+export const Navbar01: React.FC = () => {
+	const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+	const [showLogoutDialog, setShowLogoutDialog] = React.useState(false);
+	const pathname = usePathname();
+	const router = useRouter();
+	const { user, firstname, imgUrl, clearAuth } = useAuthStore();
+
+	const userInfo = React.useMemo(
+		() => ({
+			userName: user?.fname || firstname || "Хэрэглэгч",
+			userEmail: user?.email || "",
+			userImage: imgUrl || user?.img_url || "",
+			schoolName: user?.sch_name || "",
+			studentGroup: user?.studentgroupname || "",
+		}),
+		[user, firstname, imgUrl],
+	);
+
+	const isExamActive = pathname.includes("/Lists/exam");
+	const isSorilActive = pathname.includes("/Lists/soril");
+	const isCourseActive =
+		pathname.includes("/Lists/courseList") ||
+		pathname.includes("/Lists/paymentCoureList");
+
+	const handleLogout = () => {
+		Cookies.remove("auth-token", { path: "/" });
+		Cookies.remove("user-id", { path: "/" });
+		Cookies.remove("firstname", { path: "/" });
+		Cookies.remove("img-url", { path: "/" });
+		clearAuth();
+		router.push("/login");
+	};
+
+	return (
+		<>
+			<header className="w-full border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 rounded-2xl shadow-lg ">
+				<div className="flex h-16 items-center justify-between gap-4 px-6">
+					{/* Logo - Pushed Left */}
+					<Link href="/" className="flex items-center gap-2 shrink-0">
+						<Image
+							src="/image/logoLogin.png"
+							alt="ECM Logo"
+							width={48}
+							height={48}
+							className="object-contain"
+							priority
+						/>
+					</Link>
+
+					{/* Desktop Navigation - Centered */}
+					<nav
+						className="hidden lg:flex items-center gap-1 flex-1 justify-center"
+						aria-label="Main navigation"
+					>
+						{NAV_LINKS.map((link) => (
+							<Link
+								key={link.href}
+								href={link.href}
+								className={cn(
+									"px-4 py-2 text-sm font-medium rounded-lg transition-all",
+									"hover:bg-accent hover:text-accent-foreground",
+									pathname === link.href && "bg-accent text-accent-foreground",
+								)}
 							>
-								Тийм, Гарах
-							</AlertDialogAction>
-						</AlertDialogFooter>
-					</AlertDialogContent>
-				</AlertDialog>
-			</>
-		);
-	},
-);
+								{link.label}
+							</Link>
+						))}
 
-Navbar01.displayName = "Navbar01";
+						<DesktopDropdown
+							label="Шалгалт"
+							items={EXAM_LINKS}
+							isActive={isExamActive}
+						/>
+						<DesktopDropdown
+							label="Сорил"
+							items={SORIL_LINKS}
+							isActive={isSorilActive}
+						/>
+						<DesktopDropdown
+							label="Цахим сургалт"
+							items={COURSE_LINKS}
+							isActive={isCourseActive}
+						/>
+					</nav>
+
+					{/* Right Actions - Pushed Right */}
+					<div className="flex items-center gap-3 shrink-0">
+						{/* Mobile Menu Button */}
+						<button
+							type="button"
+							onClick={() => setMobileMenuOpen(true)}
+							className="lg:hidden p-2 hover:bg-accent rounded-lg transition-colors"
+							aria-label="Open navigation menu"
+							aria-expanded={mobileMenuOpen}
+						>
+							<Menu className="w-5 h-5" />
+						</button>
+
+						{/* User Dropdown */}
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="ghost"
+									className="gap-2 px-3 py-2 h-auto hover:bg-accent"
+								>
+									<UserAvatar
+										userImage={userInfo.userImage}
+										userName={userInfo.userName}
+										size="sm"
+										showOnlineStatus
+									/>
+									<span className="hidden md:block text-sm font-medium max-w-[120px] truncate">
+										{userInfo.userName}
+									</span>
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end" className="w-64">
+								<DropdownMenuLabel>
+									<div className="flex items-center gap-3">
+										<UserAvatar
+											userImage={userInfo.userImage}
+											userName={userInfo.userName}
+											size="md"
+											showOnlineStatus
+										/>
+										<div className="flex-1 min-w-0">
+											<p className="text-sm font-semibold truncate">
+												{userInfo.userName}
+											</p>
+											{userInfo.schoolName && (
+												<div className="flex items-center gap-1 mt-1">
+													<School className="w-3 h-3 text-blue-600" />
+													<p className="text-xs text-muted-foreground truncate">
+														{userInfo.schoolName}
+													</p>
+												</div>
+											)}
+											{userInfo.studentGroup && (
+												<div className="flex items-center gap-1 mt-0.5">
+													<Users className="w-3 h-3 text-green-600" />
+													<p className="text-xs text-muted-foreground truncate">
+														{userInfo.studentGroup}
+													</p>
+												</div>
+											)}
+										</div>
+									</div>
+								</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+								<div className="px-2 py-1.5">
+									<AnimatedThemeToggler />
+								</div>
+								<DropdownMenuItem
+									onClick={() => router.push("/userProfile")}
+									className="cursor-pointer"
+								>
+									<UserCircle className="w-4 h-4 mr-2" />
+									Профайл
+								</DropdownMenuItem>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem
+									onClick={() => setShowLogoutDialog(true)}
+									className="cursor-pointer text-red-600"
+								>
+									<LogOut className="w-4 h-4 mr-2" />
+									Гарах
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				</div>
+			</header>
+
+			{/* Mobile Menu */}
+			<MobileMenu
+				isOpen={mobileMenuOpen}
+				onClose={() => setMobileMenuOpen(false)}
+			/>
+
+			{/* Logout Dialog */}
+			<AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle className="flex items-center gap-2">
+							<LogOut className="w-5 h-5 text-red-600" />
+							Гарахдаа итгэлтэй байна уу?
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							Та системээс гарахдаа итгэлтэй байна уу? Дахин нэвтрэхийн тулд
+							нэвтрэх нэр болон нууц үгээ оруулах шаардлагатай.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Цуцлах</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleLogout}
+							className="bg-red-600 hover:bg-red-700"
+						>
+							Тийм, Гарах
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</>
+	);
+};

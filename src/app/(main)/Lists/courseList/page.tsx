@@ -138,14 +138,9 @@ const CourseListPage = () => {
 					</p>
 				</div>
 			) : (
-				<div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5">
+				<div className="grid gap-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6 xl:grid-cols-8">
 					{filteredCourses.map((course, idx) => (
-						<CourseCard
-							key={course.content_id}
-							course={course}
-							userId={userId}
-							index={idx}
-						/>
+						<CourseCard key={course.content_id} course={course} index={idx} />
 					))}
 				</div>
 			)}

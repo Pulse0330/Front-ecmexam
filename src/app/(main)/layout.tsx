@@ -9,8 +9,8 @@ interface MainLayoutProps {
 
 export default function MainLayout({ children }: MainLayoutProps) {
 	return (
-		<div className="bg-page-gradient ">
-			<div className=" sticky top-0 z-50 px-4 md:px-6 lg:px-8 pt-4 ">
+		<div>
+			<div className="sticky top-0 z-50 px-4 md:px-6 lg:px-8 pt-4">
 				<Navbar01 />
 			</div>
 			<main className="relative">

@@ -10,10 +10,11 @@ import {
 	FileText,
 	HelpCircle,
 	Lock,
-	Sparkles,
+	Unlock,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import ExamRulesDialog from "@/app/(main)/Lists/examList/dialog";
 import QPayDialog from "@/app/(main)/Lists/examList/qpayDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,24 +30,24 @@ interface ExamListProps {
 }
 
 const MONGOLIAN_MONTHS = [
-	"1-р сар",
-	"2-р сар",
-	"3-р сар",
-	"4-р сар",
-	"5-р сар",
-	"6-р сар",
-	"7-р сар",
-	"8-р сар",
-	"9-р сар",
-	"10-р сар",
-	"11-р сар",
-	"12-р сар",
+	"1-р сарын",
+	"2-р сарын",
+	"3-р сарын",
+	"4-р сарын",
+	"5-р сарын",
+	"6-р сарын",
+	"7-р сарын",
+	"8-р сарын",
+	"9-р сарын",
+	"10-р сарын",
+	"11-р сарын",
+	"12-р сарын",
 ];
 
 const formatMongolianDateTime = (dateString: string) => {
 	const date = new Date(dateString);
 	return {
-		date: `${MONGOLIAN_MONTHS[date.getMonth()]} ${date.getDate()}`,
+		date: `${date.getFullYear()} оны ${MONGOLIAN_MONTHS[date.getMonth()]} ${date.getDate()}`,
 		time: `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`,
 	};
 };
@@ -55,14 +56,16 @@ export default function ExamList({ exams, onPaymentSuccess }: ExamListProps) {
 	const router = useRouter();
 	const { userId } = useAuthStore();
 
-	// QPay states
 	const [qpayDialogOpen, setQpayDialogOpen] = useState(false);
 	const [qpayData, setQpayData] = useState<QPayInvoiceResponse | null>(null);
 	const [isCreatingInvoice, setIsCreatingInvoice] = useState(false);
 
-	// QPay invoice үүсгэх функц
+	// Rules dialog state
+	const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
+	const [selectedExamId, setSelectedExamId] = useState<number | null>(null);
+
 	const handleCreateInvoice = async (exam: Exam, e: React.MouseEvent) => {
-		e.stopPropagation(); // Card click-ээс зайлсхийх
+		e.stopPropagation();
 
 		if (!userId) {
 			alert("Нэвтрэх шаардлагатай");
@@ -81,8 +84,6 @@ export default function ExamList({ exams, onPaymentSuccess }: ExamListProps) {
 				classroom_id: "0",
 			});
 
-			console.log("QPay Invoice Created:", response.data);
-
 			if (response.data) {
 				setQpayData(response.data);
 				setQpayDialogOpen(true);
@@ -95,209 +96,182 @@ export default function ExamList({ exams, onPaymentSuccess }: ExamListProps) {
 		}
 	};
 
-	// Төлбөр амжилттай төлөгдсөний дараа
 	const handlePaymentSuccess = () => {
 		if (onPaymentSuccess) {
 			onPaymentSuccess();
 		}
 	};
 
+	// Handle exam card click - show rules dialog first
+	const handleExamClick = (examId: number, canTake: boolean) => {
+		if (!canTake) return;
+		setSelectedExamId(examId);
+		setRulesDialogOpen(true);
+	};
+
+	// Handle rules confirmation - navigate to exam
+	const handleRulesConfirm = () => {
+		if (selectedExamId) {
+			router.push(`/exam/${selectedExamId}`);
+		}
+	};
+
 	if (!exams?.length)
 		return (
-			<div className="flex flex-col items-center py-24 opacity-40">
+			<div className="flex flex-col items-center py-24 text-muted-foreground col-span-full">
 				<HelpCircle className="w-12 h-12 mb-4 stroke-[1.5px]" />
-				<p className="font-bold tracking-tight">Шалгалт олдсонгүй</p>
+				<p className="font-medium tracking-tight">Шалгалт олдсонгүй</p>
 			</div>
 		);
 
 	return (
 		<>
-			<div className="px-2">
-				{/* Compact 6-Column Grid */}
-				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 md:gap-4">
-					{exams.map((exam, index) => {
-						const isActive = exam.flag === 1;
-						const isPaid =
-							exam.ispaydescr?.toLowerCase().includes("төлбөртэй") ||
-							exam.ispaydescr?.toLowerCase().includes("paid");
-						const isPurchased = exam.ispurchased === 1;
-						const dt = formatMongolianDateTime(exam.ognoo);
+			{exams.map((exam, index) => {
+				const isActive = exam.flag === 1;
+				const isPaid =
+					exam.ispaydescr?.toLowerCase().includes("төлбөртэй") ||
+					exam.ispaydescr?.toLowerCase().includes("paid");
+				const isPurchased = exam.ispurchased === 1;
+				const dt = formatMongolianDateTime(exam.ognoo);
 
-						// Төлбөртэй боловч төлөгдөөгүй бол шалгалт өгч болохгүй
-						const canTakeExam = isActive && (!isPaid || isPurchased);
+				const canTakeExam = isActive && (!isPaid || isPurchased);
 
-						return (
-							<motion.div
-								key={exam.exam_id}
-								initial={{ opacity: 0, y: 20 }}
-								animate={{ opacity: 1, y: 0 }}
-								transition={{ duration: 0.4, delay: index * 0.1 }}
-								className="h-full"
-							>
-								<Card
-									onClick={() =>
-										canTakeExam && router.push(`/exam/${exam.exam_id}`)
-									}
-									onKeyDown={(e) => {
-										if (canTakeExam && (e.key === "Enter" || e.key === " ")) {
-											e.preventDefault();
-											router.push(`/exam/${exam.exam_id}`);
-										}
-									}}
-									role="button"
-									tabIndex={canTakeExam ? 0 : -1}
-									aria-label={`${exam.title} шалгалт`}
-									className={cn(
-										"group h-full relative overflow-hidden rounded-xl border border-border/40 bg-card/50 backdrop-blur-md transition-all duration-500 ease-out",
-										canTakeExam
-											? "cursor-pointer hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20"
-											: "opacity-50 cursor-not-allowed",
-									)}
-								>
-									{/* Compact Image/Header Section */}
-									<div className="relative w-full h-20 overflow-hidden">
-										{/* Gradient Background */}
-										<div className="w-full h-full bg-linear-to-br from-primary/20 via-primary/10 to-background flex items-center justify-center">
-											<Sparkles className="w-8 h-8 text-primary/30" />
-										</div>
-
-										{/* Decorative Pattern */}
-										<div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.1),rgba(255,255,255,0))]" />
-
-										{/* Gradient Overlay */}
-										<div className="absolute inset-0 bg-linear-to-t from-background/80 via-background/20 to-transparent" />
-
-										{/* Status Badges */}
-										<div className="absolute top-1.5 left-1.5 z-10 flex items-center gap-1">
-											<Badge
-												className={cn(
-													"px-1.5 py-0 text-[10px] backdrop-blur-sm border-0 shadow-lg",
-													isActive
-														? "bg-green-500/90 text-white"
-														: "bg-gray-500/90 text-white",
-												)}
-											>
-												{isActive ? "Идэвхтэй" : "Хаагдсан"}
-											</Badge>
-											{isPaid && (
-												<Badge
-													className={cn(
-														"px-1.5 py-0 text-[10px] backdrop-blur-sm border-0 shadow-lg",
-														isPurchased
-															? "bg-blue-500/90 text-white"
-															: "bg-orange-500/90 text-white",
-													)}
-												>
-													<Lock className="w-2.5 h-2.5 mr-0.5" />
-													{isPurchased ? "Төлөгдсөн" : "Төлбөртэй"}
-												</Badge>
+				return (
+					<motion.div
+						key={exam.exam_id}
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.4, delay: index * 0.05 }}
+						className="h-full"
+					>
+						<Card
+							onClick={() =>
+								canTakeExam && handleExamClick(exam.exam_id, canTakeExam)
+							}
+							onKeyDown={(e) => {
+								if (canTakeExam && (e.key === "Enter" || e.key === " ")) {
+									e.preventDefault();
+									handleExamClick(exam.exam_id, canTakeExam);
+								}
+							}}
+							role="button"
+							tabIndex={canTakeExam ? 0 : -1}
+							aria-label={`${exam.title} шалгалт`}
+							className={cn(
+								"group h-full relative flex flex-col overflow-hidden rounded-lg sm:rounded-xl border border-border/40 bg-card/50 backdrop-blur-md transition-all duration-500 ease-out",
+								canTakeExam
+									? "cursor-pointer hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20"
+									: "opacity-60 cursor-not-allowed",
+							)}
+						>
+							<CardContent className="p-2 sm:p-3 pb-10 sm:pb-12 flex flex-col flex-1 space-y-2 sm:space-y-3">
+								{/* Status Badges */}
+								<div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
+									<Badge
+										variant={isActive ? "default" : "secondary"}
+										className="px-1.5 sm:px-2 py-0 text-[8px] sm:text-[9px] font-medium"
+									>
+										{isActive ? "Идэвхтэй" : "Хаагдсан"}
+									</Badge>
+									{isPaid && (
+										<Badge
+											variant={isPurchased ? "default" : "outline"}
+											className="px-1.5 sm:px-2 py-0 text-[8px] sm:text-[9px] font-medium"
+										>
+											{isPurchased ? (
+												<>
+													<Unlock className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
+													Төлөгдсөн
+												</>
+											) : (
+												<>
+													<Lock className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
+													Төлбөртэй
+												</>
 											)}
-										</div>
+										</Badge>
+									)}
+								</div>
 
-										{/* Date & Time Overlay */}
-										<div className="absolute bottom-1.5 left-1.5 right-1.5 flex items-center justify-between">
-											<div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-background/80 backdrop-blur-md border border-border/40 shadow-sm">
-												<Calendar className="w-2.5 h-2.5 text-muted-foreground" />
-												<span className="text-[10px] font-medium text-foreground">
-													{dt.date}
-												</span>
-											</div>
-											<div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-background/80 backdrop-blur-md border border-border/40 shadow-sm">
-												<Clock className="w-2.5 h-2.5 text-muted-foreground" />
-												<span className="text-[10px] font-medium text-foreground">
-													{dt.time}
-												</span>
-											</div>
+								{/* Title Section */}
+								<div className="space-y-0.5 sm:space-y-1 flex-1">
+									<h3
+										className="text-xs sm:text-sm font-semibold text-foreground line-clamp-2 leading-tight"
+										title={exam.title}
+									>
+										{exam.title}
+									</h3>
+									<p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1">
+										{exam.lesson_name}
+									</p>
+								</div>
+
+								{/* Info Grid */}
+								<div className="space-y-1.5 sm:space-y-2 text-[10px] sm:text-xs">
+									{/* Date & Time */}
+									<div className="flex items-center justify-between gap-1.5 sm:gap-2 pb-1.5 sm:pb-2 border-b border-border/50">
+										<div className="flex items-center gap-1 sm:gap-1.5 text-muted-foreground">
+											<Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+											<span className="font-medium text-[9px] sm:text-xs">
+												{dt.date}
+											</span>
+										</div>
+										<div className="flex items-center gap-1 sm:gap-1.5 text-muted-foreground">
+											<Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+											<span className="font-medium text-[9px] sm:text-xs">
+												{dt.time}
+											</span>
 										</div>
 									</div>
 
-									{/* Compact Card Content */}
-									<CardContent className="p-3 pb-11 space-y-2">
-										{/* Title Section with Tooltip */}
-										<div className="relative group/title space-y-1">
-											<h3
-												className="text-sm font-semibold text-foreground line-clamp-2 leading-tight group-hover:text-primary transition-colors duration-300"
-												title={exam.title}
-											>
-												{exam.title}
-											</h3>
-											<p className="text-xs text-muted-foreground line-clamp-1">
-												{exam.lesson_name}
-											</p>
-
-											{/* Tooltip on hover */}
-											<div className="absolute left-0 top-full mt-2 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-lg shadow-lg border border-border z-50 opacity-0 invisible group-hover/title:opacity-100 group-hover/title:visible transition-all duration-200 pointer-events-none whitespace-normal max-w-xs">
-												{exam.title}
-												<div className="absolute -top-1 left-4 w-2 h-2 bg-popover border-l border-t border-border rotate-45"></div>
-											</div>
+									{/* Stats */}
+									<div className="flex items-center justify-between gap-1.5 sm:gap-2">
+										<div className="flex items-center gap-1 sm:gap-1.5 text-muted-foreground">
+											<Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+											<span className="font-medium text-[9px] sm:text-xs">
+												{exam.exam_minute} минут
+											</span>
 										</div>
+										<div className="flex items-center gap-1 sm:gap-1.5 text-muted-foreground">
+											<FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+											<span className="font-medium text-[9px] sm:text-xs">
+												{exam.que_cnt} асуулт
+											</span>
+										</div>
+									</div>
+								</div>
 
-										{/* Payment Button - Төлбөртэй боловч төлөөгүй үед */}
-										{isPaid && !isPurchased && isActive && (
-											<Button
-												onClick={(e) => handleCreateInvoice(exam, e)}
-												disabled={isCreatingInvoice}
-												size="sm"
-												className="w-full h-8 text-xs bg-linear-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-md"
-											>
-												{isCreatingInvoice ? (
-													"Уншиж байна..."
-												) : (
-													<>
-														<CreditCard className="w-3.5 h-3.5 mr-1.5" />
-														Төлбөр төлөх
-													</>
-												)}
-											</Button>
+								{/* Payment Button */}
+								{isPaid && !isPurchased && isActive && (
+									<Button
+										onClick={(e) => handleCreateInvoice(exam, e)}
+										disabled={isCreatingInvoice}
+										size="sm"
+										variant="default"
+										className="w-full h-7 sm:h-8 text-[10px] sm:text-xs mt-1.5 sm:mt-2"
+									>
+										{isCreatingInvoice ? (
+											"Уншиж байна..."
+										) : (
+											<>
+												<CreditCard className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-1.5" />
+												Төлбөр төлөх
+											</>
 										)}
+									</Button>
+								)}
 
-										{/* Compact Stats Footer */}
-										<div className="flex items-center gap-3 pt-1.5 border-t border-border/40">
-											<div className="flex items-center gap-1 text-muted-foreground">
-												<Clock className="w-3 h-3" />
-												<span className="text-[10px] font-medium">
-													{exam.exam_minute}м
-												</span>
-											</div>
-											<div className="flex items-center gap-1 text-muted-foreground">
-												<FileText className="w-3 h-3" />
-												<span className="text-[10px] font-medium">
-													{exam.que_cnt}
-												</span>
-											</div>
-										</div>
-
-										{/* Compact Action Circle */}
-										<div
-											className={cn(
-												"absolute bottom-3 right-3 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
-												canTakeExam
-													? "bg-primary/10 group-hover:bg-primary group-hover:scale-110"
-													: isPaid && !isPurchased
-														? "bg-orange-500/10"
-														: "bg-muted",
-											)}
-										>
-											{isPaid && !isPurchased ? (
-												<Lock className="w-3 h-3 text-orange-500" />
-											) : (
-												<ArrowRight
-													className={cn(
-														"w-3 h-3 transition-all",
-														canTakeExam
-															? "text-primary group-hover:text-primary-foreground group-hover:translate-x-0.5"
-															: "text-muted-foreground",
-													)}
-												/>
-											)}
-										</div>
-									</CardContent>
-								</Card>
-							</motion.div>
-						);
-					})}
-				</div>
-			</div>
+								{/* Action Button - Only for accessible exams */}
+								{canTakeExam && (!isPaid || isPurchased) && (
+									<div className="absolute bottom-2.5 right-2.5 sm:bottom-3 sm:right-3 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-muted/50 flex items-center justify-center group-hover:bg-foreground group-hover:scale-110 transition-all duration-300">
+										<ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-muted-foreground group-hover:text-background group-hover:translate-x-0.5 transition-all" />
+									</div>
+								)}
+							</CardContent>
+						</Card>
+					</motion.div>
+				);
+			})}
 
 			{/* QPay Dialog */}
 			<QPayDialog
@@ -306,6 +280,14 @@ export default function ExamList({ exams, onPaymentSuccess }: ExamListProps) {
 				qpayData={qpayData}
 				userId={userId}
 				onPaymentSuccess={handlePaymentSuccess}
+			/>
+
+			{/* Exam Rules Dialog */}
+			<ExamRulesDialog
+				open={rulesDialogOpen}
+				onOpenChange={setRulesDialogOpen}
+				onConfirm={handleRulesConfirm}
+				isMobile={false}
 			/>
 		</>
 	);
