@@ -57,12 +57,12 @@ export default function ExamCard({
 				)}
 			>
 				{/* Header Section - Fixed aspect ratio matching image cards */}
-				<div className="relative w-full aspect-[4/2] bg-gradient-to-br from-primary/20 via-primary/10 to-background flex-shrink-0">
+				<div className="relative w-full aspect-4/2 bg-linear-to-br from-primary/20 via-primary/10 to-background shrink-0">
 					{/* Decorative Pattern */}
 					<div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.1),rgba(255,255,255,0))]" />
 
 					{/* Gradient Overlay */}
-					<div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/50 to-transparent" />
+					<div className="absolute inset-0 bg-linear-to-t from-background/85 via-background/50 to-transparent" />
 
 					{/* Top Badges */}
 					<div className="absolute top-1 left-1 sm:top-1.5 sm:left-1.5 md:top-2 md:left-2 z-10 flex flex-col gap-0.5 sm:gap-1 max-w-[calc(100%-2.5rem)]">
@@ -111,7 +111,7 @@ export default function ExamCard({
 					{/* Lesson name overlay - Bottom */}
 					<div className="absolute bottom-0 left-0 right-0 p-1 sm:p-1.5 md:p-2 z-10">
 						<div className="flex items-center gap-0.5 sm:gap-1 md:gap-1.5">
-							<FileText className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 lg:w-3.5 lg:h-3.5 text-white/90 flex-shrink-0" />
+							<FileText className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 lg:w-3.5 lg:h-3.5 text-white/90 shrink-0" />
 							<span className="font-medium text-[7px] sm:text-[8px] md:text-[9px] lg:text-xs text-white/90 truncate">
 								{exam.lesson_name}
 							</span>
@@ -135,20 +135,20 @@ export default function ExamCard({
 					<div className="space-y-0.5 sm:space-y-1 md:space-y-1.5">
 						<div className="flex items-center justify-between gap-0.5 sm:gap-1 md:gap-1.5 lg:gap-2 pt-0.5 sm:pt-1 md:pt-1.5 lg:pt-2 border-t border-border/50">
 							<div className="flex items-center gap-0.5 text-muted-foreground min-w-0">
-								<Clock className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 lg:w-3.5 lg:h-3.5 flex-shrink-0" />
+								<Clock className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 lg:w-3.5 lg:h-3.5 shrink-0" />
 								<span className="font-medium text-[7px] sm:text-[8px] md:text-[9px] lg:text-xs truncate">
 									{exam.exam_minute}
 									<span className="hidden xs:inline">м</span>
 								</span>
 							</div>
 							<div className="flex items-center gap-0.5 text-muted-foreground min-w-0 flex-1">
-								<User className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 lg:w-3.5 lg:h-3.5 flex-shrink-0" />
+								<User className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 lg:w-3.5 lg:h-3.5 shrink-0" />
 								<span className="font-medium text-[7px] sm:text-[8px] md:text-[9px] lg:text-xs truncate">
 									{exam.teach_name}
 								</span>
 							</div>
 							<div className="flex items-center gap-0.5 text-muted-foreground min-w-0">
-								<FileText className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 lg:w-3.5 lg:h-3.5 flex-shrink-0" />
+								<FileText className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 lg:w-3.5 lg:h-3.5 shrink-0" />
 								<span className="font-medium text-[7px] sm:text-[8px] md:text-[9px] lg:text-xs truncate">
 									{exam.que_cnt}
 								</span>

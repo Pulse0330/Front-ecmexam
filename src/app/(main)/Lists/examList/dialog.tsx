@@ -353,7 +353,7 @@ export default function ExamRulesDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col p-0">
 				{/* Header Section */}
-				<DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 border-b bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
+				<DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 border-b bg-linar-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
 					<div className="flex items-start gap-3">
 						<div className="mt-0.5 p-2 rounded-lg bg-blue-100 dark:bg-blue-900/50">
 							<Shield className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />

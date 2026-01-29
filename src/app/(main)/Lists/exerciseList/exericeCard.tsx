@@ -10,6 +10,12 @@ import {
 } from "lucide-react";
 import { memo } from "react";
 import { Button } from "@/components/ui/button";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import type { TestGroupItem } from "@/types/exercise/testGroup";
 
@@ -188,9 +194,18 @@ export const TestItemCard = memo(
 
 		return (
 			<div className="group relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-md transition-all duration-300 w-full space-y-3 sm:space-y-4 flex flex-col justify-between">
-				<h1 className="text-xs sm:text-sm leading-tight font-semibold text-slate-800 dark:text-slate-100 line-clamp-2 min-h-8 sm:min-h-9">
-					{item.name}
-				</h1>
+				<TooltipProvider>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<h1 className="text-xs sm:text-sm leading-tight font-semibold text-slate-800 dark:text-slate-100 line-clamp-2 min-h-8 sm:min-h-9">
+								{item.name}
+							</h1>
+						</TooltipTrigger>
+						<TooltipContent>
+							<p className="max-w-xs">{item.name}</p>
+						</TooltipContent>
+					</Tooltip>
+				</TooltipProvider>
 
 				<div className="flex justify-center">
 					<div className="flex w-full items-stretch">
@@ -201,7 +216,7 @@ export const TestItemCard = memo(
 								onCountChange(item.id, Math.max(0, selectedCount - 1))
 							}
 							disabled={selectedCount === 0}
-							className="h-8 lg:h-9 w-8 lg:w-9 p-0 flex-shrink-0 rounded-r-none border-r-0"
+							className="h-8 lg:h-9 w-8 lg:w-9 p-0 shrink-0 rounded-r-none border-r-0"
 							aria-label="Decrease count"
 						>
 							<MinusIcon className="w-3 h-3 lg:w-4 lg:h-4" />
@@ -238,7 +253,7 @@ export const TestItemCard = memo(
 								onCountChange(item.id, Math.min(item.cnt, selectedCount + 1))
 							}
 							disabled={selectedCount >= item.cnt}
-							className="h-8 lg:h-9 w-8 lg:w-9 p-0 flex-shrink-0 rounded-l-none border-l-0"
+							className="h-8 lg:h-9 w-8 lg:w-9 p-0 shrink-0 rounded-l-none border-l-0"
 							aria-label="Increase count"
 						>
 							<PlusIcon className="w-3 h-3 lg:w-4 lg:h-4" />
