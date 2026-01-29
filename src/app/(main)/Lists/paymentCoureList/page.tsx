@@ -65,7 +65,7 @@ export default function PaymentCoursesPage() {
 		);
 	}, [availableCourses, searchQuery]);
 
-	const totalIndividualPrice = useMemo(() => {
+	const _totalIndividualPrice = useMemo(() => {
 		return selectedCourses.reduce((sum, id) => {
 			const course = courses.find((c) => c.palnid === id);
 			return sum + (course?.amount || 0);
@@ -80,36 +80,20 @@ export default function PaymentCoursesPage() {
 		return plans.filter((plan) => plan.planid === 1);
 	}, [selectedCourses.length, plans]);
 
-	const calculateSavings = (
-		planAmount: number,
-		planMonth: number,
-		planId: number,
-	) => {
-		if (planId === 0 && selectedCourses.length === 1) {
-			const course = courses.find((c) => c.palnid === selectedCourses[0]);
-			if (!course) return 0;
-			const basePrice = course.amount * planMonth;
-			return basePrice - planAmount;
+	// Хөнгөлөлттэй эсэхийг шалгах (заавал биш, зөвхөн харуулах бол)
+	const hasDiscount = (planId: number, planMonth: number) => {
+		// Жишээ: 3 сарын төлбөр 1 сарын үнээс 3 дахин бага бол хөнгөлөлттэй гэж үзнэ
+		if (planId === 0 && planMonth > 1) {
+			const basePlan = plans.find((p) => p.planid === 0 && p.month === 1);
+			const currentPlan = plans.find(
+				(p) => p.planid === 0 && p.month === planMonth,
+			);
+			if (basePlan && currentPlan) {
+				return currentPlan.amount < basePlan.amount * planMonth;
+			}
 		}
-		return totalIndividualPrice - planAmount;
-	};
-
-	const calculateSavingsPercent = (
-		planAmount: number,
-		planMonth: number,
-		planId: number,
-	) => {
-		if (planId === 0 && selectedCourses.length === 1) {
-			const course = courses.find((c) => c.palnid === selectedCourses[0]);
-			if (!course) return 0;
-			const basePrice = course.amount * planMonth;
-			if (basePrice === 0) return 0;
-			return Math.round(((basePrice - planAmount) / basePrice) * 100);
-		}
-		if (totalIndividualPrice === 0) return 0;
-		return Math.round(
-			((totalIndividualPrice - planAmount) / totalIndividualPrice) * 100,
-		);
+		// Багц төлбөр (planid === 1) үргэлж хөнгөлөлттэй гэж үзнэ
+		return planId === 1;
 	};
 
 	const handleCheckout = async () => {
@@ -441,18 +425,12 @@ export default function PaymentCoursesPage() {
 
 										<div className="space-y-3">
 											{availablePlans.map((plan) => {
-												const savings = calculateSavings(
-													plan.amount,
-													plan.month,
-													plan.planid,
-												);
-												const savingsPercent = calculateSavingsPercent(
-													plan.amount,
-													plan.month,
-													plan.planid,
-												);
 												const uniqueKey = `${plan.planid}-${plan.month}`;
 												const isSelected = selectedPlan === uniqueKey;
+												const showDiscount = hasDiscount(
+													plan.planid,
+													plan.month,
+												);
 
 												return (
 													<button
@@ -468,7 +446,7 @@ export default function PaymentCoursesPage() {
 																: "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800",
 														)}
 													>
-														{savings > 0 && (
+														{showDiscount && (
 															<Badge
 																className={cn(
 																	"absolute top-3 right-3 text-xs font-bold",
@@ -477,8 +455,8 @@ export default function PaymentCoursesPage() {
 																		: "bg-green-500 text-white",
 																)}
 															>
-																<TrendingDown className="w-3 h-3 mr-1" />-
-																{savingsPercent}%
+																<TrendingDown className="w-3 h-3 mr-1" />
+																Хөнгөлөлттэй
 															</Badge>
 														)}
 
@@ -490,18 +468,6 @@ export default function PaymentCoursesPage() {
 																<p className="text-2xl font-black text-slate-900 dark:text-white">
 																	₮{plan.amount.toLocaleString()}
 																</p>
-																{savings > 0 && (
-																	<p className="text-sm line-through text-slate-400">
-																		₮
-																		{(plan.planid === 0
-																			? (courses.find(
-																					(c) =>
-																						c.palnid === selectedCourses[0],
-																				)?.amount || 0) * plan.month
-																			: totalIndividualPrice
-																		).toLocaleString()}
-																	</p>
-																)}
 															</div>
 														</div>
 
@@ -511,12 +477,6 @@ export default function PaymentCoursesPage() {
 																{plan.month} сарын хугацаа
 															</span>
 														</div>
-
-														{savings > 0 && (
-															<div className="text-xs font-semibold text-green-600 dark:text-green-400">
-																₮{savings.toLocaleString()} хэмнэнэ
-															</div>
-														)}
 
 														{isSelected && (
 															<div className="absolute bottom-3 right-3 w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">

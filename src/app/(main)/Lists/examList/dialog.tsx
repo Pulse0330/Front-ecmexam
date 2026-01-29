@@ -451,7 +451,7 @@ export default function ExamRulesDialog({
 					</Button>
 					<Button
 						onClick={handleStartExam}
-						className="flex-1 sm:flex-none bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-xs sm:text-sm shadow-lg"
+						className="flex-1 sm:flex-none bg-linears-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-xs sm:text-sm shadow-lg"
 						disabled={showMessage}
 					>
 						{showMessage ? (
