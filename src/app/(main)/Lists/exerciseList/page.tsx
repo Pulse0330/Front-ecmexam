@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Loader2, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
 	useCallback,
@@ -10,7 +10,6 @@ import {
 	useMemo,
 	useState,
 } from "react";
-import AnimatedBackground from "@/components/animated-bg";
 import { Button } from "@/components/ui/button";
 import {
 	getTestFilter,
@@ -57,7 +56,7 @@ export default function TestGroupPage() {
 		},
 	);
 
-	const [searchQuery, setSearchQuery] = useState("");
+	const [searchQuery, _setSearchQuery] = useState("");
 	const deferredSearch = useDeferredValue(searchQuery);
 
 	// localStorage-оос сонгосон хичээлийг уншиж эхлүүлэх
@@ -260,9 +259,7 @@ export default function TestGroupPage() {
 
 	return (
 		<div className="min-h-screen bg-slate-50/50 dark:bg-slate-950/50 relative overflow-hidden pb-24 sm:pb-28 md:pb-32">
-			<AnimatedBackground />
-
-			<div className="container mx-auto px-3 sm:px-4 md:px-5 lg:px-6 xl:px-8 pt-3 sm:pt-4 md:pt-6 lg:pt-8 relative z-10 max-w-[2000px]">
+			<div className="container mx-auto px-3 sm:px-4 md:px-5 lg:px-6 xl:px-8 pt-3 sm:pt-4 md:pt-6 lg:pt-8 relative z-10 max-w-[2000px] h-full overflow-y-auto">
 				{/* Header Section - Optimized для всех экранов */}
 				<div className="mb-4 sm:mb-6 md:mb-8 lg:mb-10 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100/50 dark:border-slate-800/50 relative overflow-hidden">
 					<div className="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl" />
@@ -280,20 +277,10 @@ export default function TestGroupPage() {
 							)}
 
 							<div>
-								<h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black bg-linear-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+								<h1 className=" flex items-center text-lg sm:text-xl md:text-2xl lg:text-3xl font-black  ">
 									{selectedLesson ? "Тест сонгох" : "Хичээл сонгох"}
 								</h1>
 							</div>
-						</div>
-
-						<div className="relative w-full sm:w-56 md:w-64 lg:w-72 xl:w-80">
-							<Search className="absolute left-2.5 sm:left-3 md:left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 pointer-events-none" />
-							<input
-								value={searchQuery}
-								onChange={(e) => setSearchQuery(e.target.value)}
-								placeholder={selectedLesson ? "Тест хайх..." : "Хичээл хайх..."}
-								className="w-full pl-8 sm:pl-9 md:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 md:py-3 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border-none rounded-lg sm:rounded-xl md:rounded-2xl text-xs sm:text-sm md:text-base focus:ring-2 ring-emerald-500 transition-all placeholder:text-slate-400"
-							/>
 						</div>
 					</div>
 				</div>

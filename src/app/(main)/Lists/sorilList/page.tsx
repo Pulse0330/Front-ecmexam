@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, BookOpen, Search, Sparkles, X } from "lucide-react";
+import { AlertCircle, Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -114,12 +114,9 @@ export default function Sorillists() {
 			<div className="max-w-[1600px] mx-auto w-full flex flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 				{/* Header */}
 				<header className="text-center space-y-1">
-					<h1 className="text-3xl sm:text-4xl font-extrabold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+					<h1 className="text-3xl sm:text-4xl font-extrabold ">
 						Сорилын жагсаалт
 					</h1>
-					<p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
-						Та өөрийн сорилуудыг энд харж, эхлүүлэх боломжтой
-					</p>
 				</header>
 
 				{/* Search & Filter */}
@@ -155,19 +152,19 @@ export default function Sorillists() {
 							{
 								key: "all",
 								label: "Бүгд",
-								icon: null,
+
 								count: data.length,
 							},
 							{
 								key: "notstarted",
 								label: "Шинэ",
-								icon: <Sparkles size={14} />,
+
 								count: categorizedData.notstarted.length,
 							},
 							{
 								key: "completed",
 								label: "Дууссан",
-								icon: <BookOpen size={14} />,
+
 								count: categorizedData.completed.length,
 							},
 						].map((cat) => (
@@ -177,7 +174,6 @@ export default function Sorillists() {
 								onClick={() => setSelectedCategory(cat.key as SorilCategory)}
 								count={cat.count}
 								label={cat.label}
-								icon={cat.icon || undefined}
 								variant={cat.key as SorilCategory}
 							/>
 						))}
@@ -187,16 +183,6 @@ export default function Sorillists() {
 				{/* Lesson Filter - Хичээлийн сонголт */}
 				{lessons.length > 0 && (
 					<div className="flex items-center gap-3 pb-2">
-						<div className="flex items-center gap-2 shrink-0">
-							<BookOpen
-								className="text-gray-500 dark:text-gray-400"
-								size={18}
-							/>
-							<span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-								Хичээл:
-							</span>
-						</div>
-
 						{/* Desktop - Horizontal buttons */}
 						<div className="hidden md:flex gap-2 flex-nowrap overflow-x-auto scrollbar-thin">
 							{lessons.map((lesson) => (
@@ -207,7 +193,7 @@ export default function Sorillists() {
 									className={cn(
 										"px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap shrink-0",
 										selectedLessonId === lesson.lesson_id
-											? "bg-linear-to-r from-blue-500 to-blue-600 text-white border-2 border-blue-500 shadow-lg shadow-blue-500/30"
+											? ""
 											: "bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600",
 									)}
 									aria-label={`${lesson.lesson_name} хичээл сонгох`}
@@ -357,11 +343,11 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(
 
 			switch (variant) {
 				case "all":
-					return "bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-2 border-blue-500 shadow-lg shadow-blue-500/30";
+					return "";
 				case "notstarted":
-					return "bg-gradient-to-r from-emerald-500 to-green-500 text-white border-2 border-emerald-500 shadow-lg shadow-emerald-500/30";
+					return "";
 				case "completed":
-					return "bg-gradient-to-r from-purple-500 to-violet-500 text-white border-2 border-purple-500 shadow-lg shadow-purple-500/30";
+					return "";
 				default:
 					return "";
 			}

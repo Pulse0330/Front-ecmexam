@@ -2,57 +2,53 @@
 
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-interface BackButtonProps {
+interface StyledBackButtonProps {
 	className?: string;
-	text?: string;
-	showIcon?: boolean;
-	variant?: "default" | "outline" | "ghost" | "secondary";
-	fullWidth?: boolean;
+	onClick?: () => void; // Custom onClick handler (optional)
 }
 
-export default function BackButton({
+export default function StyledBackButton({
 	className = "",
-	text = "Буцах",
-	showIcon = true,
-	variant = "outline",
-	fullWidth = false,
-}: BackButtonProps) {
+	onClick,
+}: StyledBackButtonProps) {
 	const router = useRouter();
 
+	const handleClick = () => {
+		if (onClick) {
+			onClick();
+		} else {
+			router.back();
+		}
+	};
+
 	return (
-		<Button
-			variant={variant}
-			onClick={() => router.back()}
-			className={cn(fullWidth && "w-full", className)}
+		<button
+			type="button"
+			onClick={handleClick}
+			className={cn(
+				"group flex items-center gap-2 pl-1 pr-3 py-2 duration-300 cursor-pointer bg-transparent border-none",
+				className,
+			)}
 		>
-			{showIcon && <ArrowLeft className="mr-2 h-4 w-4" />}
-			{text}
-		</Button>
+			<div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 transition-colors duration-300">
+				<ArrowLeft className="w-4 h-4 text-slate-600 dark:text-slate-400 group-hover:-translate-x-0.5 transition-all duration-300" />
+			</div>
+		</button>
 	);
 }
 
 // Хэрэглээ:
 /*
-import BackButton from '@/components/BackButton';
+import StyledBackButton from '@/components/StyledBackButton';
 
-// Энгийн
-<BackButton />
+// Энгийн хэрэглээ (router.back())
+<StyledBackButton />
 
-// Бүтэн өргөнтэй
-<BackButton fullWidth />
-
-// Өөр variant
-<BackButton variant="ghost" />
-
-// Өөр текст
-<BackButton text="Нүүр хуудас руу" />
-
-// Icon-гүй
-<BackButton showIcon={false} />
+// Custom onClick handler
+<StyledBackButton onClick={() => router.push('/home')} />
 
 // Custom className
-<BackButton className="mb-4" />
+<StyledBackButton className="mb-4" />
 */
