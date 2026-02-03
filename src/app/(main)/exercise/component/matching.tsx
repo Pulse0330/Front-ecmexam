@@ -34,9 +34,9 @@ interface QuestionItem {
 
 interface MatchingByLineProps {
 	answers: QuestionItem[];
-	onMatchChange?: (matches: Record<number, number>) => void;
+	onMatchChange?: (matches: Record<number, number | string>) => void;
 	readonly?: boolean;
-	userAnswers?: Record<number, number>;
+	userAnswers?: Record<number, number | string>;
 }
 
 interface Connection {

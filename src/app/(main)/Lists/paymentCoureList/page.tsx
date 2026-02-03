@@ -122,7 +122,7 @@ export default function PaymentCoursesPage() {
 			const billId = firstCourse?.bill_type?.toString() || "1";
 
 			const payload = {
-				amount: "100",
+				amount: plan.amount.toString(),
 				userid: userId.toString(),
 				device_token: "",
 				orderid: "8",

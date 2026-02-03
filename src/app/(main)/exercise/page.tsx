@@ -9,6 +9,7 @@ import { gettTestFill } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { ExamFinishResponse } from "@/types/exercise/testGetFill";
 import FillInTheBlankQuestion from "./component/fillinblank";
+import NumberInputQuestion from "./component/inutNumber";
 import MatchingByLine from "./component/matching";
 import MultiSelectQuestion from "./component/multiselect";
 import DragAndDropWrapper from "./component/order";
@@ -18,7 +19,7 @@ interface SelectedAnswer {
 	questionId: number;
 	answerIds: number[];
 	textAnswer?: string;
-	matches?: Record<number, number>;
+	matches?: Record<number, number | string>;
 	order?: number[];
 }
 
@@ -97,10 +98,6 @@ export default function ExercisePage() {
 		(questionId: number) => {
 			const filtered = answers.filter((a) => a.question_id === questionId);
 
-			// ⚠️ ЭНЭ ХЭСГИЙГ УСТГААРАЙ - Type 6-д давхардал байх ёстой!
-			// const seen = new Map<number, (typeof filtered)[0]>();
-			// ...
-
 			// Зүгээр л refid-аар sort хий, duplicate устгах хэрэггүй
 			return filtered.sort((a, b) => {
 				if (a.refid === undefined || b.refid === undefined) return 0;
@@ -114,14 +111,6 @@ export default function ExercisePage() {
 		(questionId: number) =>
 			selectedAnswers.find((a) => a.questionId === questionId),
 		[selectedAnswers],
-	);
-
-	const isAnswerCorrect = useCallback(
-		(answerId: number) => {
-			const answer = answers.find((a) => a.answer_id === answerId);
-			return answer?.is_true === 1;
-		},
-		[answers],
 	);
 
 	const getBodolt = useCallback(
@@ -191,7 +180,7 @@ export default function ExercisePage() {
 	);
 
 	const handleMatching = useCallback(
-		(questionId: number, matches: Record<number, number>) => {
+		(questionId: number, matches: Record<number, number | string>) => {
 			setSelectedAnswers((prev) => {
 				const filtered = prev.filter((a) => a.questionId !== questionId);
 				return Object.keys(matches).length > 0
@@ -249,7 +238,8 @@ export default function ExercisePage() {
 			const showAnswerFeedback =
 				((questionType === 1 || questionType === 2 || questionType === 4) &&
 					selected) ||
-				((questionType === 5 || questionType === 6) && isSubmitted);
+				((questionType === 3 || questionType === 5 || questionType === 6) &&
+					isSubmitted);
 
 			return (
 				<div
@@ -302,60 +292,17 @@ export default function ExercisePage() {
 									onAnswerChange={handleSingleSelect}
 								/>
 
-								{showAnswerFeedback && selected && (
-									<div className="mt-4 space-y-3">
-										{selected.answerIds.some((id) => isAnswerCorrect(id)) ? (
-											<div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 rounded-lg">
-												<p className="text-green-800 dark:text-green-300 font-semibold text-sm sm:text-base flex items-center gap-2">
-													✓ Зөв хариулт!
-												</p>
-												{bodolt && (
-													<div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800">
-														<p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-															📝 Тайлбар:
-														</p>
-														<div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 p-3 rounded-lg">
-															{parse(bodolt.descr)}
-														</div>
-													</div>
-												)}
+								{/* Зөвхөн бодолт харуулах */}
+								{showAnswerFeedback && selected && bodolt && (
+									<div className="mt-4">
+										<div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-lg">
+											<p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+												📝 Бодолт:
+											</p>
+											<div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 p-3 rounded-lg">
+												{parse(bodolt.descr)}
 											</div>
-										) : (
-											<div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-lg space-y-3">
-												<p className="text-red-800 dark:text-red-300 font-semibold text-sm sm:text-base flex items-center gap-2">
-													✗ Буруу хариулт
-												</p>
-
-												<div className="pt-3 border-t border-red-200 dark:border-red-800">
-													<p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-														✓ Зөв хариулт:
-													</p>
-													<div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3 rounded-lg">
-														{questionAnswers
-															.filter((a) => a.is_true === 1)
-															.map((correctAnswer) => (
-																<div
-																	key={correctAnswer.answer_id}
-																	className="text-sm text-green-800 dark:text-green-300 font-medium"
-																>
-																	{parse(correctAnswer.answer_name_html)}
-																</div>
-															))}
-													</div>
-												</div>
-
-												{bodolt && (
-													<div className="pt-3 border-t border-red-200 dark:border-red-800">
-														<p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-															📝 Бодолт:
-														</p>
-														<div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 p-3 rounded-lg">
-															{parse(bodolt.descr)}
-														</div>
-													</div>
-												)}
-											</div>
-										)}
+										</div>
 									</div>
 								)}
 							</>
@@ -363,28 +310,113 @@ export default function ExercisePage() {
 
 						{/* Type 2: Multi Select */}
 						{questionType === 2 && (
-							<MultiSelectQuestion
-								questionId={question.question_id}
-								questionText={question.question_name}
-								answers={convertedAnswers}
-								mode="exam"
-								selectedAnswers={selected?.answerIds || []}
-								onAnswerChange={handleMultiSelect}
-							/>
+							<>
+								<MultiSelectQuestion
+									questionId={question.question_id}
+									questionText={question.question_name}
+									answers={convertedAnswers}
+									mode="exam"
+									selectedAnswers={selected?.answerIds || []}
+									onAnswerChange={handleMultiSelect}
+								/>
+
+								{/* Зөвхөн бодолт харуулах */}
+								{showAnswerFeedback && selected && bodolt && (
+									<div className="mt-4">
+										<div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-lg">
+											<p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+												📝 Бодолт:
+											</p>
+											<div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 p-3 rounded-lg">
+												{parse(bodolt.descr)}
+											</div>
+										</div>
+									</div>
+								)}
+							</>
+						)}
+
+						{/* Type 3: Number Input */}
+						{questionType === 3 && (
+							<>
+								<NumberInputQuestion
+									questionId={question.question_id}
+									answers={convertedAnswers}
+									userAnswers={selected?.matches || {}}
+									onAnswerChange={(answers) => {
+										handleMatching(question.question_id, answers);
+									}}
+									showResults={isSubmitted}
+									onRestart={() => {
+										// Clear submitted state for this question
+										setSubmittedQuestions((prev) => {
+											const newSet = new Set(prev);
+											newSet.delete(question.question_id);
+											return newSet;
+										});
+									}}
+								/>
+
+								{/* Submit button */}
+								{!isSubmitted &&
+									selected?.matches &&
+									Object.keys(selected.matches).length > 0 && (
+										<div className="mt-4">
+											<Button
+												onClick={() =>
+													handleSubmitQuestion(question.question_id)
+												}
+												className="w-full sm:w-auto font-semibold shadow-lg"
+											>
+												Хариултаа шалгах
+											</Button>
+										</div>
+									)}
+
+								{/* Зөвхөн бодолт харуулах */}
+								{isSubmitted && bodolt && (
+									<div className="mt-4">
+										<div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-lg">
+											<p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+												📝 Бодолт:
+											</p>
+											<div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 p-3 rounded-lg">
+												{parse(bodolt.descr)}
+											</div>
+										</div>
+									</div>
+								)}
+							</>
 						)}
 
 						{/* Type 4: Fill in Blank */}
 						{questionType === 4 && (
-							<FillInTheBlankQuestion
-								questionId={question.question_id}
-								questionText={question.question_name}
-								value={selected?.textAnswer || ""}
-								mode="exam"
-								onAnswerChange={handleFillInBlank}
-							/>
+							<>
+								<FillInTheBlankQuestion
+									questionId={question.question_id}
+									questionText={question.question_name}
+									value={selected?.textAnswer || ""}
+									mode="exam"
+									onAnswerChange={handleFillInBlank}
+								/>
+
+								{/* Зөвхөн бодолт харуулах */}
+								{showAnswerFeedback && selected && bodolt && (
+									<div className="mt-4">
+										<div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-lg">
+											<p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+												📝 Бодолт:
+											</p>
+											<div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 p-3 rounded-lg">
+												{parse(bodolt.descr)}
+											</div>
+										</div>
+									</div>
+								)}
+							</>
 						)}
 
-						{/* Type 5: Ordering - ДАВХАРДСАН ХЭСЭГ УСТГАСАН */}
+						{/* Type 5: Ordering */}
 						{questionType === 5 && (
 							<>
 								<DragAndDropWrapper
@@ -417,9 +449,24 @@ export default function ExercisePage() {
 											</Button>
 										</div>
 									)}
+
+								{/* Зөвхөн бодолт харуулах */}
+								{isSubmitted && bodolt && (
+									<div className="mt-4">
+										<div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-lg">
+											<p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+												📝 Бодолт:
+											</p>
+											<div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 p-3 rounded-lg">
+												{parse(bodolt.descr)}
+											</div>
+										</div>
+									</div>
+								)}
 							</>
 						)}
 
+						{/* Type 6: Matching */}
 						{questionType === 6 && (
 							<>
 								<MatchingByLine
@@ -453,11 +500,25 @@ export default function ExercisePage() {
 											</Button>
 										</div>
 									)}
+
+								{/* Зөвхөн бодолт харуулах */}
+								{isSubmitted && bodolt && (
+									<div className="mt-4">
+										<div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-lg">
+											<p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+												📝 Бодолт:
+											</p>
+											<div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 p-3 rounded-lg">
+												{parse(bodolt.descr)}
+											</div>
+										</div>
+									</div>
+								)}
 							</>
 						)}
 
 						{/* Unknown question type warning */}
-						{![1, 2, 4, 5, 6].includes(questionType) && (
+						{![1, 2, 3, 4, 5, 6].includes(questionType) && (
 							<div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-lg">
 								<p className="text-red-800 dark:text-red-300 font-semibold text-sm">
 									⚠️ Тодорхойгүй асуултын төрөл: {questionType}
@@ -476,7 +537,6 @@ export default function ExercisePage() {
 			getTypeColor,
 			getQuestionTypeName,
 			handleSingleSelect,
-			isAnswerCorrect,
 			handleMultiSelect,
 			handleFillInBlank,
 			handleOrdering,
