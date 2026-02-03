@@ -46,14 +46,14 @@ export function SafeHtmlContent({ html, contentType }: SafeHtmlContentProps) {
 		if (isYouTubeId) {
 			return (
 				<div className="space-y-2">
-					<div className="bg-black rounded-lg overflow-hidden shadow-lg">
+					<div className="bg-black rounded-lg overflow-hidden shadow-lg max-w-2xl mx-auto">
 						<div
 							className="relative w-full bg-black"
 							style={{ paddingBottom: "56.25%" }}
 						>
 							<iframe
 								src={`https://www.youtube.com/embed/${trimmedHtml}?rel=0&modestbranding=1`}
-								className="absolute top-0 left-0 w-full h-full"
+								className="absolute top-0 left-0 w-full h-full max-h-[360px]"
 								title="YouTube Video"
 								allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
 								allowFullScreen
@@ -72,14 +72,14 @@ export function SafeHtmlContent({ html, contentType }: SafeHtmlContentProps) {
 			const videoId = youtubeMatch[1];
 			return (
 				<div className="space-y-2">
-					<div className="bg-black rounded-lg overflow-hidden shadow-lg">
+					<div className="bg-black rounded-lg overflow-hidden shadow-lg max-w-2xl mx-auto">
 						<div
 							className="relative w-full bg-black"
 							style={{ paddingBottom: "56.25%" }}
 						>
 							<iframe
 								src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
-								className="absolute top-0 left-0 w-full h-full"
+								className="absolute top-0 left-0 w-full h-full max-h-[360px]"
 								title="YouTube Video"
 								allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
 								allowFullScreen
@@ -263,7 +263,7 @@ export function SafeHtmlContent({ html, contentType }: SafeHtmlContentProps) {
 		<div
 			ref={contentRef}
 			className="prose prose-sm max-w-none
-				[&_iframe]:w-full [&_iframe]:max-h-[400px] [&_iframe]:aspect-video [&_iframe]:rounded-lg [&_iframe]:border
+				[&_iframe]:w-full [&_iframe]:max-h-[360px] [&_iframe]:aspect-video [&_iframe]:rounded-lg [&_iframe]:border [&_iframe]:mx-auto [&_iframe]:max-w-2xl
 				[&_img]:rounded-lg [&_img]:max-w-full [&_img]:max-h-[350px]
 				[&_a]:text-blue-600 [&_a]:no-underline hover:[&_a]:underline
 				[&_video]:w-full [&_video]:max-h-[400px] [&_video]:rounded-lg

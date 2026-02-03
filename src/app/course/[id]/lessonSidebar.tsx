@@ -10,14 +10,14 @@ interface LessonSidebarProps {
 	contents: ContentView[];
 	currentLessonIndex: number;
 	onLessonSelect: (index: number) => void;
-	showBackButton?: boolean; // Нэмэлт prop
+	showBackButton?: boolean;
 }
 
 export function LessonSidebar({
 	contents,
 	currentLessonIndex,
 	onLessonSelect,
-	showBackButton = true, // Default утга
+	showBackButton = true,
 }: LessonSidebarProps) {
 	return (
 		<Card>
@@ -31,6 +31,8 @@ export function LessonSidebar({
 				<div className="max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
 					{contents.map((item, index) => {
 						const isActive = index === currentLessonIndex;
+						const isCompleted = item.stu_worked === 1;
+
 						return (
 							<button
 								key={item.content_id}
@@ -44,7 +46,7 @@ export function LessonSidebar({
 							>
 								<div className="flex items-start gap-3">
 									<div className="shrink-0 mt-1">
-										{item.stu_worked === 1 ? (
+										{isCompleted ? (
 											<CheckCircle2 className="h-5 w-5 text-green-600" />
 										) : (
 											<div className="h-5 w-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
@@ -69,6 +71,14 @@ export function LessonSidebar({
 													className="text-xs px-2 py-0.5 border-orange-300 bg-orange-50"
 												>
 													Даалгавар
+												</Badge>
+											)}
+											{isCompleted && (
+												<Badge
+													variant="outline"
+													className="text-xs px-2 py-0.5 border-green-300 bg-green-50 text-green-700"
+												>
+													Үзсэн
 												</Badge>
 											)}
 										</div>
