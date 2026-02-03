@@ -513,8 +513,8 @@ export default function PaymentCoursesPage() {
 								<div className="pt-4 border-t border-slate-200 dark:border-slate-700">
 									<p className="text-xs text-slate-500 dark:text-slate-400 text-center">
 										{selectedCourses.length === 1
-											? "Нэг хичээлийн янз бүрийн хугацааны төлбөрөөс сонгоно уу"
-											: "Багц төлбөр сонгоснаар илүү хямд үнээр олон хичээлд хамрагдах боломжтой"}
+											? "Хичээлийн хугацаа ба төлбөрөө сонгоно уу"
+											: "Та өөрийн хүссэн хичээлүүдээ сонгон , суралцаж хугацаа болон төлбөрийн хамгийн ашигтай хувилбарыг сонгоорой "}
 									</p>
 								</div>
 							</div>

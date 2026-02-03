@@ -51,7 +51,7 @@ export default function UnifiedHeroSection({
 							<Link href="/Lists/paymentCoureList" className="w-full sm:w-auto">
 								<Button className="w-full sm:min-w-[180px] h-10 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-100 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group shadow-md shadow-zinc-900/10 dark:shadow-zinc-50/5 border-0">
 									<span className="flex items-center gap-2 font-medium text-sm tracking-wide">
-										Сургалт үзэх
+										Сургалт авах
 										<ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
 									</span>
 								</Button>

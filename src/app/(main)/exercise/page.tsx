@@ -98,15 +98,20 @@ export default function ExercisePage() {
 		(questionId: number) => {
 			const filtered = answers.filter((a) => a.question_id === questionId);
 
-			// Зүгээр л refid-аар sort хий, duplicate устгах хэрэггүй
-			return filtered.sort((a, b) => {
+			// Remove duplicates based on answer_id
+			const unique = filtered.filter(
+				(answer, index, self) =>
+					index === self.findIndex((a) => a.answer_id === answer.answer_id),
+			);
+
+			// Sort by refid
+			return unique.sort((a, b) => {
 				if (a.refid === undefined || b.refid === undefined) return 0;
 				return a.refid - b.refid;
 			});
 		},
 		[answers],
 	);
-
 	const getSelectedAnswer = useCallback(
 		(questionId: number) =>
 			selectedAnswers.find((a) => a.questionId === questionId),
