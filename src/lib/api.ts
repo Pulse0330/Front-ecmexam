@@ -507,6 +507,16 @@ export const getContentView = async (
 	});
 	return data;
 };
+export const getFilteredContnView = async (
+	userId: number,
+	lesson_id: number,
+): Promise<CourseListResponse> => {
+	const { data } = await api.post<CourseListResponse>("/webgetcourse", {
+		user_id: userId,
+		lesson_id: lesson_id,
+	});
+	return data;
+};
 //-------------------------------Payment Course---------------------------------//
 export const getPaymentCourseList = async (
 	userId: number,
@@ -535,7 +545,6 @@ export const getQPayInvoice = async (
 			bilid: billId,
 			classroom_id: classroomId,
 			urls: topics.map((id) => ({ topic_id: id.toString() })),
-			// conn автоматаар нэмэгдэнэ
 		},
 	);
 

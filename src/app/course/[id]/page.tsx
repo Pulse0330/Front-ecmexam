@@ -219,11 +219,15 @@ export default function CoursePage() {
 			{/* Header */}
 			<div className="border-b bg-card">
 				<div className="px-4 py-3">
-					<div className="mb-2">
-						<StyledBackButton />
+					<div className="flex items-center gap-2 mb-3">
+						<StyledBackButton
+							onClick={() => router.push("/Lists/courseList")}
+						/>
+						<span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+							Буцах
+						</span>
 					</div>
-
-					<h1 className="text-xl font-bold mb-3">
+					<h1 className="text-xl font-bold">
 						{contents[0]?.content_name || "Хичээлийн агуулга"}
 					</h1>
 				</div>
@@ -238,6 +242,7 @@ export default function CoursePage() {
 							contents={contents}
 							currentLessonIndex={currentLessonIndex}
 							onLessonSelect={setCurrentLessonIndex}
+							showBackButton={contents.length > 1}
 						/>
 					</div>
 

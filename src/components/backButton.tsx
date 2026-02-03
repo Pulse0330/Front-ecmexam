@@ -28,7 +28,7 @@ export default function StyledBackButton({
 			type="button"
 			onClick={handleClick}
 			className={cn(
-				"group flex items-center gap-2 pl-1 pr-3 py-2 duration-300 cursor-pointer bg-transparent border-none",
+				"group inline-flex items-center gap-2 p-0 duration-300 cursor-pointer bg-transparent border-none",
 				className,
 			)}
 		>
