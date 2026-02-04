@@ -166,10 +166,9 @@ input[type="number"] {
 }
 
 /* ============================================
-   MathJax Styles - Word Wrap Solution
+   MATH CONTENT & LISTS - MathJax болон жагсаалтын загвар
    ============================================ */
 
-/* Main container with word wrapping */
 .math-content {
 	display: block;
 	width: 100%;
@@ -179,7 +178,60 @@ input[type="number"] {
 	line-height: 1.8;
 }
 
-/* MathJax containers - Wrap томъёонууд */
+/* Ordered Lists - Дугаарласан жагсаалт */
+.math-content ol {
+	list-style-type: decimal;
+	list-style-position: outside;
+	margin-left: 2rem;
+	margin-top: 1rem;
+	margin-bottom: 1rem;
+	padding-left: 0.5rem;
+}
+
+.math-content ol li {
+	display: list-item;
+	margin-bottom: 0.5rem;
+	padding-left: 0.5rem;
+}
+
+/* Unordered Lists - Цэглэсэн жагсаалт */
+.math-content ul {
+	list-style-type: disc;
+	list-style-position: outside;
+	margin-left: 2rem;
+	margin-top: 1rem;
+	margin-bottom: 1rem;
+	padding-left: 0.5rem;
+}
+
+.math-content ul li {
+	display: list-item;
+	margin-bottom: 0.5rem;
+	padding-left: 0.5rem;
+}
+
+/* Nested lists */
+.math-content ol ol {
+	list-style-type: lower-alpha;
+	margin-top: 0.5rem;
+}
+
+.math-content ol ol ol {
+	list-style-type: lower-roman;
+}
+
+/* Paragraph spacing */
+.math-content p {
+	margin-bottom: 1rem;
+	overflow-wrap: break-word;
+	word-wrap: break-word;
+	hyphens: auto;
+}
+
+/* ============================================
+   MATHJAX CONTAINERS
+   ============================================ */
+
 .math-content mjx-container {
 	display: inline-block;
 	max-width: 100%;
@@ -188,7 +240,18 @@ input[type="number"] {
 	margin: 0.3em 0;
 }
 
-/* Responsive scaling */
+.math-content mjx-math {
+	display: inline-block;
+	max-width: 100%;
+}
+
+.math-content mjx-container svg {
+	max-width: 100%;
+	height: auto;
+	overflow: hidden;
+}
+
+/* Responsive MathJax scaling */
 @media (min-width: 1025px) {
 	.math-content mjx-container {
 		transform: scale(0.95);
@@ -217,97 +280,97 @@ input[type="number"] {
 	}
 }
 
-/* Math elements */
-.math-content mjx-math {
-	display: inline-block;
-	max-width: 100%;
-}
-
-/* SVG elements with proper sizing */
-.math-content mjx-container svg {
-	max-width: 100%;
-	height: auto;
-	overflow: hidden;
-}
-
-/* Text wrapping for surrounding content */
-.math-content p {
-	overflow-wrap: break-word;
-	word-wrap: break-word;
-	hyphens: auto;
-}
-
 /* ============================================
-   Table Styles - Хүснэгтийн загвар
+   TABLE STYLES - Хүснэгтийн загвар
    ============================================ */
 
-/* Үндсэн хүснэгтийн загвар */
+.math-content figure.table {
+	width: 100%;
+	margin: 1rem 0;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+.math-content figure.table table {
+	margin: 0;
+}
+
 .math-content table {
 	width: 100%;
 	border-collapse: collapse;
 	margin: 1rem 0;
 	font-size: 0.95rem;
-	background-color: var(--color-card);
+	background-color: white;
 	border-radius: var(--radius-md);
 	overflow: hidden;
-	/* Shadow for depth */
 	box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+.dark .math-content table {
+	background-color: rgb(55 65 81);
 }
 
 /* Table headers */
 .math-content th {
-	background-color: oklch(0.97 0 0);
-	color: oklch(0.205 0 0);
+	background-color: rgb(243 244 246);
+	color: rgb(31 41 55);
 	font-weight: 600;
 	padding: 0.75rem 1rem;
 	text-align: left;
-	border: 1px solid oklch(0.922 0 0);
+	border: 1px solid rgb(229 231 235);
 	white-space: normal;
 	word-wrap: break-word;
 }
 
 .dark .math-content th {
-	background-color: oklch(0.269 0 0);
-	color: oklch(0.985 0 0);
-	border-color: oklch(1 0 0 / 10%);
+	background-color: rgb(75 85 99);
+	color: rgb(249 250 251);
+	border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Table cells */
 .math-content td {
 	padding: 0.75rem 1rem;
-	border: 1px solid oklch(0.922 0 0);
+	border: 1px solid rgb(229 231 235);
 	white-space: normal;
 	word-wrap: break-word;
 	vertical-align: top;
+	min-width: 80px;
 }
 
 .dark .math-content td {
-	border-color: oklch(1 0 0 / 10%);
+	border-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Hover effect on rows */
+/* Striped rows */
+.math-content tbody tr:nth-child(even) {
+	background-color: rgb(249 250 251);
+}
+
+.dark .math-content tbody tr:nth-child(even) {
+	background-color: rgb(45 55 72);
+}
+
+/* Hover effect */
 .math-content tbody tr {
 	transition: background-color 0.2s ease;
 }
 
 .math-content tbody tr:hover {
-	background-color: oklch(0.985 0 0);
+	background-color: rgb(243 244 246);
 }
 
 .dark .math-content tbody tr:hover {
-	background-color: oklch(0.205 0 0);
+	background-color: rgb(55 65 81);
 }
 
-/* Striped rows эсвэл */
-.math-content tbody tr:nth-child(even) {
-	background-color: oklch(0.99 0 0);
+/* Strong text */
+.math-content td strong,
+.math-content th strong {
+	font-weight: 700;
 }
 
-.dark .math-content tbody tr:nth-child(even) {
-	background-color: oklch(0.185 0 0);
-}
-
-/* Mobile хүснэгтийн responsive */
+/* Mobile responsive tables */
 @media (max-width: 768px) {
 	.math-content table {
 		font-size: 0.875rem;
@@ -317,24 +380,13 @@ input[type="number"] {
 	.math-content td {
 		padding: 0.5rem 0.75rem;
 	}
-
-	/* Утга ихтэй хүснэгтийг horizontal scroll хийх */
-	.math-content table {
-		display: block;
-		overflow-x: auto;
-		white-space: nowrap;
-	}
-
-	.math-content thead,
-	.math-content tbody,
-	.math-content tr {
-		display: table;
-		width: 100%;
-		table-layout: fixed;
+	
+	.math-content ol,
+	.math-content ul {
+		margin-left: 1.5rem;
 	}
 }
 
-/* Very small screens - стек болгох */
 @media (max-width: 480px) {
 	.math-content table {
 		font-size: 0.8125rem;
@@ -343,10 +395,16 @@ input[type="number"] {
 	.math-content th,
 	.math-content td {
 		padding: 0.5rem;
+		min-width: 60px;
+	}
+	
+	.math-content ol,
+	.math-content ul {
+		margin-left: 1rem;
 	}
 }
 
-/* Хүснэгт доторх MathJax-ийн scaling */
+/* MathJax in tables */
 .math-content table mjx-container {
 	margin: 0.2em 0;
 }
@@ -366,17 +424,15 @@ input[type="number"] {
 }
 
 /* ============================================
-   Performance & Accessibility
+   PERFORMANCE & ACCESSIBILITY
    ============================================ */
 
-/* GPU acceleration for smooth transforms */
 .math-content mjx-container,
 .math-content table {
 	will-change: transform;
 	transform: translateZ(0);
 }
 
-/* Accessibility - focus states */
 .math-content table:focus-within {
 	outline: 2px solid var(--color-ring);
 	outline-offset: 2px;
@@ -392,160 +448,9 @@ input[type="number"] {
 	.math-content mjx-container {
 		transform: none !important;
 	}
-}/* ============================================
-   ХҮСНЭГТИЙН ЗАГВАР - Table Styles
-   Энэ кодыг globals.css файлынхаа доод хэсэгт хуулж нэмээрэй
-   ============================================ */
-
-/* Math content wrapper */
-.math-content {
-	@apply block w-full max-w-full;
-	overflow-wrap: break-word;
-	word-wrap: break-word;
-	line-height: 1.8;
-}
-
-/* Figure table wrapper */
-.math-content figure.table {
-	@apply w-full my-4 overflow-x-auto;
-	-webkit-overflow-scrolling: touch;
-}
-
-.math-content figure.table table {
-	@apply m-0;
-}
-
-/* Base table styles */
-.math-content table {
-	@apply w-full my-4 rounded-lg overflow-hidden shadow-sm;
-	border-collapse: collapse;
-	font-size: 0.95rem;
-	background-color: white;
-}
-
-@media (prefers-color-scheme: dark) {
-	.math-content table {
-		background-color: rgb(55 65 81);
-	}
-}
-
-.dark .math-content table {
-	background-color: rgb(55 65 81);
-}
-
-/* Table headers */
-.math-content th {
-	@apply px-4 py-3 text-left font-semibold;
-	background-color: rgb(243 244 246);
-	color: rgb(31 41 55);
-	border: 1px solid rgb(229 231 235);
-	white-space: normal;
-	word-wrap: break-word;
-}
-
-.dark .math-content th {
-	background-color: rgb(75 85 99);
-	color: rgb(249 250 251);
-	border-color: rgba(255, 255, 255, 0.1);
-}
-
-/* Table cells */
-.math-content td {
-	@apply px-4 py-3 align-top;
-	border: 1px solid rgb(229 231 235);
-	white-space: normal;
-	word-wrap: break-word;
-	min-width: 80px;
-}
-
-.dark .math-content td {
-	border-color: rgba(255, 255, 255, 0.1);
-}
-
-/* Striped rows */
-.math-content tbody tr:nth-child(even) {
-	background-color: rgb(249 250 251);
-}
-
-.dark .math-content tbody tr:nth-child(even) {
-	background-color: rgb(45 55 72);
-}
-
-/* Hover effect */
-.math-content tbody tr {
-	@apply transition-colors duration-200;
-}
-
-.math-content tbody tr:hover {
-	background-color: rgb(243 244 246);
-}
-
-.dark .math-content tbody tr:hover {
-	background-color: rgb(55 65 81);
-}
-
-/* Strong text in table */
-.math-content td strong,
-.math-content th strong {
-	@apply font-bold;
-}
-
-/* Mobile responsive */
-@media (max-width: 768px) {
-	.math-content table {
-		font-size: 0.875rem;
-	}
-
-	.math-content th,
-	.math-content td {
-		@apply px-3 py-2;
-	}
-}
-
-@media (max-width: 480px) {
-	.math-content table {
-		font-size: 0.8125rem;
-	}
-
-	.math-content th,
-	.math-content td {
-		@apply px-2 py-2;
-		min-width: 60px;
-	}
-}
-
-/* MathJax support */
-.math-content mjx-container {
-	@apply inline-block max-w-full overflow-hidden align-middle;
-	margin: 0.3em 0;
-}
-
-.math-content mjx-math {
-	@apply inline-block max-w-full;
-}
-
-.math-content mjx-container svg {
-	@apply max-w-full h-auto overflow-hidden;
-}
-
-/* Responsive MathJax scaling */
-@media (max-width: 1024px) {
-	.math-content mjx-container {
-		transform: scale(0.8);
-		transform-origin: left center;
-	}
-}
-
-@media (max-width: 640px) {
-	.math-content mjx-container {
-		transform: scale(0.65);
-		transform-origin: left center;
-	}
-}
-
-@media (max-width: 480px) {
-	.math-content mjx-container {
-		transform: scale(0.55);
-		transform-origin: left center;
+	
+	.math-content ol,
+	.math-content ul {
+		margin-left: 1.5rem;
 	}
 }
