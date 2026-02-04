@@ -23,9 +23,9 @@ interface QuestionItem {
 
 interface MatchingByLineProps {
 	answers: QuestionItem[];
-	onMatchChange?: (matches: Record<number, number>) => void;
+	onMatchChange?: (matches: Record<number, number[]>) => void; // Өөрчлөгдсөн: number -> number[]
 	readonly?: boolean;
-	userAnswers?: Record<number, number>;
+	userAnswers?: Record<number, number[]>; // Өөрчлөгдсөн: number -> number[]
 }
 
 interface Connection {
@@ -103,20 +103,15 @@ export default function MatchingByLine({
 
 	const getUniqueColor = useCallback(
 		(currentConnections: Connection[]): string => {
-			// Одоо ашиглагдаж байгаа бүх өнгийг авна
 			const usedColors = new Set(currentConnections.map((c) => c.color));
-
-			// Ашиглагдаагүй өнгүүдийг олно (эхний дарааллаар)
 			const available = colorPalette.current.filter((c) => !usedColors.has(c));
 
 			if (available.length === 0) {
-				// Бүх өнгө ашиглагдсан бол палитрын дарааллын дагуу давтана
 				return colorPalette.current[
 					currentConnections.length % colorPalette.current.length
 				];
 			}
 
-			// Санамсаргүй биш, эхний ашиглагдаагүй өнгийг авна
 			return available[0];
 		},
 		[],
@@ -157,79 +152,102 @@ export default function MatchingByLine({
 
 		const restored: Connection[] = [];
 
-		Object.entries(userAnswers).forEach(([qRefIdStr, answerId]) => {
+		Object.entries(userAnswers).forEach(([qRefIdStr, answerIds]) => {
 			const qRefId = Number(qRefIdStr);
 
 			const question = answers.find(
 				(a) => a.refid === qRefId && a.ref_child_id === -1,
 			);
 
-			const answer = answers.find((a) => a.answer_id === answerId);
+			if (!question) return;
 
-			if (question && answer) {
-				restored.push({
-					start: `q-${question.answer_id}`,
-					end: `a-${answer.answer_id}`,
-					color: getUniqueColor(restored),
-				});
-			}
+			// Олон хариулттай холбогдох
+			answerIds.forEach((answerId) => {
+				const answer = answers.find((a) => a.answer_id === answerId);
+
+				if (answer) {
+					restored.push({
+						start: `q-${question.answer_id}`,
+						end: `a-${answer.answer_id}`,
+						color: getUniqueColor(restored),
+					});
+				}
+			});
 		});
 
 		setConnections(restored);
 	}, [userAnswers, answers, getUniqueColor]);
 
 	const isSelected = (id: string) => id === activeStart;
+
 	const isConnected = (id: string) =>
 		connections.some((c) => c.start === id || c.end === id);
-	const getConnectionColor = (id: string) =>
-		connections.find((c) => c.start === id || c.end === id)?.color;
+
+	// Холболтын өнгүүдийг авах (олон байж болно)
+	const getConnectionColors = (id: string) =>
+		connections
+			.filter((c) => c.start === id || c.end === id)
+			.map((c) => c.color);
 
 	const handleItemClick = useCallback(
 		(id: string, _isQuestion: boolean) => {
-			setConnections((prevConnections) => {
-				const existing = prevConnections.find(
-					(c) => c.start === id || c.end === id,
-				);
-				if (existing) {
-					// Холболт устгах
-					setActiveStart("");
-					return prevConnections.filter((c) => c !== existing);
+			// Хэрэв идэвхтэй асуулт байгаа бөгөөд дарагдсан нь хариулт бол
+			if (activeStart && activeStart !== id) {
+				const firstIsQuestion = activeStart.startsWith("q-");
+				const secondIsQuestion = id.startsWith("q-");
+
+				// Хоёулаа асуулт эсвэл хоёулаа хариулт бол холбохгүй
+				if (firstIsQuestion === secondIsQuestion) {
+					setActiveStart(id);
+					return;
 				}
-				return prevConnections;
-			});
 
-			setActiveStart((currentStart) => {
-				if (currentStart) {
-					// Хоёр дахь элемент дарагдлаа - холболт үүсгэх
-					const firstIsQuestion = currentStart.startsWith("q-");
-					const secondIsQuestion = id.startsWith("q-");
+				// Холболт үүсгэх - асуулт нь үргэлж start байна
+				const start = firstIsQuestion ? activeStart : id;
+				const end = firstIsQuestion ? id : activeStart;
 
-					// Хоёулаа асуулт эсвэл хоёулаа хариулт бол холбохгүй
-					if (firstIsQuestion === secondIsQuestion) {
-						// Өөр элемент сонгох
-						return id;
-					}
+				// Ижил холболт байгаа эсэхийг шалгах
+				const existingConnection = connections.find(
+					(c) => c.start === start && c.end === end,
+				);
 
-					// Холболт үүсгэх - асуулт нь үргэлж start байна
-					const start = firstIsQuestion ? currentStart : id;
-					const end = firstIsQuestion ? id : currentStart;
-
+				if (existingConnection) {
+					// Холболт устгах
+					setConnections((prev) =>
+						prev.filter((c) => c !== existingConnection),
+					);
+				} else {
+					// Шинэ холболт нэмэх
 					setConnections((prevConnections) => {
 						const color = getUniqueColor(prevConnections);
-						return [
-							...prevConnections.filter(
-								(c) => c.start !== start && c.end !== end,
-							),
-							{ start, end, color },
-						];
+						return [...prevConnections, { start, end, color }];
 					});
-					return "";
 				}
-				// Эхний элемент сонгогдлоо
-				return id;
-			});
+
+				// Асуултыг идэвхтэй байлгах (олон хариулт сонгох боломжтой)
+				// Хэрэв та нэг удаа сонгоод дуусгахыг хүсвэл: setActiveStart("");
+				return;
+			}
+
+			// Холболттой элемент дээр дарах (устгах)
+			const existingConnections = connections.filter(
+				(c) => c.start === id || c.end === id,
+			);
+
+			if (existingConnections.length > 0) {
+				// Сүүлийн холболтыг устгах
+				setConnections((prev) =>
+					prev.filter(
+						(c) => c !== existingConnections[existingConnections.length - 1],
+					),
+				);
+				return;
+			}
+
+			// Эхний элемент сонгогдлоо
+			setActiveStart(id);
 		},
-		[getUniqueColor],
+		[activeStart, connections, getUniqueColor],
 	);
 
 	const interactiveProps = (id: string) => ({
@@ -287,7 +305,7 @@ export default function MatchingByLine({
 	useEffect(() => {
 		if (!onMatchChangeRef.current) return;
 
-		const matches: Record<number, number> = {};
+		const matches: Record<number, number[]> = {};
 
 		connections.forEach((c) => {
 			const startId = parseInt(c.start.replace("q-", ""), 10);
@@ -297,7 +315,10 @@ export default function MatchingByLine({
 			const answer = answers.find((a) => a.answer_id === endId);
 
 			if (question && answer) {
-				matches[question.refid] = answer.answer_id;
+				if (!matches[question.refid]) {
+					matches[question.refid] = [];
+				}
+				matches[question.refid].push(answer.answer_id);
 			}
 		});
 
@@ -315,20 +336,22 @@ export default function MatchingByLine({
 				<Xwrapper>
 					<p className="font-semibold mb-4 text-center">
 						{isMobile
-							? "Асуулт дээр дарж дараа нь хариулт сонгоно уу"
-							: "Асуулт дээр дарж холбох хариултаа сонгоно уу"}
+							? "Асуулт дээр дарж олон хариулт сонгоно уу"
+							: "Асуулт дээр дарж холбох хариултуудаа сонгоно уу (олон сонгох боломжтой)"}
 					</p>
 
 					{isMobile ? (
 						<div className="space-y-4 max-h-[80vh] overflow-y-auto">
 							{questionsOnly.map((q) => {
 								const qid = `q-${q.answer_id}`;
-								const connected = connections.find((c) => c.start === qid);
-								const answerItem = connected
-									? answersOnly.find(
-											(a) => `a-${a.answer_id}` === connected.end,
-										)
-									: null;
+								const connectedAnswers = connections.filter(
+									(c) => c.start === qid,
+								);
+								const answerItems = connectedAnswers
+									.map((c) =>
+										answersOnly.find((a) => `a-${a.answer_id}` === c.end),
+									)
+									.filter(Boolean);
 
 								return (
 									<div key={qid} className="space-y-2">
@@ -343,51 +366,59 @@ export default function MatchingByLine({
 														? "border-2 border-green-500 bg-green-50"
 														: "border border-gray-300 ",
 											)}
-											style={
-												isSelected(qid)
-													? undefined
-													: getConnectionColor(qid)
-														? {
-																borderWidth: "2px",
-																borderColor: getConnectionColor(qid),
-																backgroundColor: `${getConnectionColor(qid)}20`,
-															}
-														: undefined
-											}
 										>
 											{renderContent(q)}
+											{connectedAnswers.length > 0 && (
+												<div className="mt-2 text-xs text-gray-500">
+													{connectedAnswers.length} хариулт холбогдсон
+												</div>
+											)}
 										</div>
 
-										{answerItem && (
-											<div className="pl-4 mt-1 border-l-2 border-green-500">
+										{answerItems.length > 0 && (
+											<div className="pl-4 space-y-2 border-l-2 border-green-500">
 												<div className="text-sm text-gray-500 dark:text-gray-400">
-													Сонгосон хариулт:
+													Сонгосон хариултууд:
 												</div>
-												<div className="p-2 rounded border border-green-500 bg-green-50 dark:bg-green-900/20">
-													{renderContent(answerItem)}
-												</div>
+												{answerItems.map(
+													(answerItem) =>
+														answerItem && (
+															<div
+																key={`mobile-answer-${answerItem.answer_id}`}
+																className="p-2 rounded border border-green-500 bg-green-50 dark:bg-green-900/20"
+															>
+																{renderContent(answerItem)}
+															</div>
+														),
+												)}
 											</div>
 										)}
 
-										{isSelected(qid) && !answerItem && (
+										{isSelected(qid) && (
 											<div className="pl-4 mt-2 space-y-2">
 												<div className="text-sm text-gray-600 mb-1">
-													Хариултаа сонгоно уу:
+													Хариултуудаа сонгоно уу:
 												</div>
-												{answersOnly
-													.filter((a) => !isConnected(`a-${a.answer_id}`))
-													.map((a) => {
-														const aid = `a-${a.answer_id}`;
-														return (
-															<div
-																key={aid}
-																{...interactiveProps(aid)}
-																className="w-full p-2 border border-dashed rounded cursor-pointer  transition-colors border-blue-300"
-															>
-																{renderContent(a)}
-															</div>
-														);
-													})}
+												{answersOnly.map((a) => {
+													const aid = `a-${a.answer_id}`;
+													const alreadyConnected = connections.some(
+														(c) => c.start === qid && c.end === aid,
+													);
+													return (
+														<div
+															key={aid}
+															{...interactiveProps(aid)}
+															className={cn(
+																"w-full p-2 border rounded cursor-pointer transition-colors",
+																alreadyConnected
+																	? "border-green-500 bg-green-50"
+																	: "border-dashed border-blue-300",
+															)}
+														>
+															{renderContent(a)}
+														</div>
+													);
+												})}
 											</div>
 										)}
 									</div>
@@ -406,13 +437,16 @@ export default function MatchingByLine({
 							<div className="space-y-3">
 								{questionsOnly.map((q) => {
 									const qid = `q-${q.answer_id}`;
+									const colors = getConnectionColors(qid);
+									const connectionCount = colors.length;
+
 									return (
 										<div
 											key={qid}
 											id={qid}
 											{...interactiveProps(qid)}
 											className={cn(
-												"w-full p-4 rounded-lg flex flex-col items-center justify-center transition-all  cursor-pointer",
+												"w-full p-4 rounded-lg flex flex-col items-center justify-center transition-all cursor-pointer relative",
 												isSelected(qid)
 													? "border-2 border-blue-500"
 													: isConnected(qid)
@@ -420,18 +454,25 @@ export default function MatchingByLine({
 														: "border border-gray-300",
 											)}
 											style={
-												isSelected(qid)
-													? undefined
-													: getConnectionColor(qid)
-														? {
-																borderWidth: "2px",
-																borderColor: getConnectionColor(qid),
-																backgroundColor: `${getConnectionColor(qid)}20`,
-															}
-														: undefined
+												!isSelected(qid) && colors.length > 0
+													? {
+															borderWidth: "2px",
+															background: `linear-gradient(135deg, ${colors
+																.map(
+																	(c, i) =>
+																		`${c}20 ${(i / colors.length) * 100}%, ${c}20 ${((i + 1) / colors.length) * 100}%`,
+																)
+																.join(", ")})`,
+														}
+													: undefined
 											}
 										>
 											{renderContent(q)}
+											{connectionCount > 0 && (
+												<div className="absolute top-2 right-2 bg-green-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold">
+													{connectionCount}
+												</div>
+											)}
 										</div>
 									);
 								})}
@@ -440,29 +481,33 @@ export default function MatchingByLine({
 							<div className="space-y-3">
 								{answersOnly.map((a) => {
 									const aid = `a-${a.answer_id}`;
+									const colors = getConnectionColors(aid);
+
 									return (
 										<div
 											key={aid}
 											id={aid}
 											{...interactiveProps(aid)}
 											className={cn(
-												"w-full p-4 rounded-lg flex flex-col items-center justify-center transition-all  cursor-pointer hover:border-2 hover:border-blue-500",
+												"w-full p-4 rounded-lg flex flex-col items-center justify-center transition-all cursor-pointer hover:border-2 hover:border-blue-500",
 												isSelected(aid)
-													? "border-2 border-blue-500  shadow-md"
+													? "border-2 border-blue-500 shadow-md"
 													: isConnected(aid)
 														? "border-2 border-green-500 bg-green-50"
 														: "border border-gray-300",
 											)}
 											style={
-												isSelected(aid)
-													? undefined
-													: getConnectionColor(aid)
-														? {
-																borderWidth: "2px",
-																borderColor: getConnectionColor(aid),
-																backgroundColor: `${getConnectionColor(aid)}20`,
-															}
-														: undefined
+												!isSelected(aid) && colors.length > 0
+													? {
+															borderWidth: "2px",
+															background: `linear-gradient(135deg, ${colors
+																.map(
+																	(c, i) =>
+																		`${c}20 ${(i / colors.length) * 100}%, ${c}20 ${((i + 1) / colors.length) * 100}%`,
+																)
+																.join(", ")})`,
+														}
+													: undefined
 											}
 										>
 											{renderContent(a)}
@@ -471,9 +516,9 @@ export default function MatchingByLine({
 								})}
 							</div>
 
-							{connections.map((c) => (
+							{connections.map((c, idx) => (
 								<Xarrow
-									key={`${c.start}-${c.end}`}
+									key={`${c.start}-${c.end}-${idx}`}
 									start={c.start}
 									end={c.end}
 									color={c.color}

@@ -1,13 +1,13 @@
 // types/exam.ts
 
 export type AnswerValue =
-	| number // Type 1: single select
-	| number[] // Type 2: multi-select, Type 5: ordered
-	| string // Type 4: fill in blank
-	| Record<number, number> // Type 6: matching
-	| Record<number, string> // ✅ Type 3: number inputs (answerId -> value)
+	| number
+	| number[]
+	| string
+	| Record<number, string>
+	| Record<number, number>
+	| Record<number, number[]> // 👈 ЭНЭ МӨРИЙГ НЭМЭХ
 	| null;
-
 export interface Question {
 	row_num: string;
 	question_id: number;

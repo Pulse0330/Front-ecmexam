@@ -7,47 +7,57 @@ interface MathContentProps {
 }
 
 function MathContent({ html }: MathContentProps) {
-	const mathRef = useRef<HTMLDivElement>(null);
+	const contentRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		const renderMath = async () => {
-			if (mathRef.current && window.MathJax) {
-				try {
-					if (window.MathJax.typesetClear) {
-						window.MathJax.typesetClear([mathRef.current]);
-					}
-					await window.MathJax.typesetPromise?.([mathRef.current]);
+			if (!contentRef.current) return;
 
-					// mjx-mspace-ийг олж <br> нэмэх
-					const mspaces = mathRef.current.querySelectorAll("mjx-mspace");
+			try {
+				// MathJax байгаа бол render хийх
+				if (window.MathJax) {
+					if (window.MathJax.typesetClear) {
+						window.MathJax.typesetClear([contentRef.current]);
+					}
+					if (window.MathJax.typesetPromise) {
+						await window.MathJax.typesetPromise([contentRef.current]);
+					}
+
+					// mjx-mspace элементүүдийг <br> болгох
+					const mspaces = contentRef.current.querySelectorAll("mjx-mspace");
 					mspaces.forEach((mspace) => {
-						const br = document.createElement("br");
-						mspace.parentNode?.insertBefore(br, mspace);
-						mspace.remove();
+						try {
+							const br = document.createElement("br");
+							if (mspace.parentNode) {
+								mspace.parentNode.insertBefore(br, mspace);
+								mspace.remove();
+							}
+						} catch (err) {
+							console.warn("Error processing mjx-mspace:", err);
+						}
 					});
-				} catch (err) {
-					console.error("MathJax rendering error:", err);
 				}
+			} catch (err) {
+				console.error("MathJax rendering error:", err);
 			}
 		};
 
+		// MathJax initialization
 		if (window.MathJax?.startup?.promise) {
-			window.MathJax.startup.promise.then(renderMath);
+			window.MathJax.startup.promise.then(renderMath).catch(console.error);
 		} else {
 			renderMath();
 		}
 	}, []);
 
+	// HTML-ийн урт хязгаарлах (DOS халдлагаас хамгаалах)
+	const sanitizedHtml = html.length > 100000 ? html.substring(0, 100000) : html;
+
 	return (
 		<div
-			ref={mathRef}
-			dangerouslySetInnerHTML={{ __html: html }}
-			className="math-content text-gray-900 dark:text-gray-100"
-			style={{
-				display: "block",
-				width: "100%",
-				maxWidth: "100%",
-			}}
+			ref={contentRef}
+			dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+			className="math-content"
 		/>
 	);
 }

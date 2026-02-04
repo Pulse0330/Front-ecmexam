@@ -907,7 +907,8 @@ export default function ExamPage() {
 								handleAnswerChange(q.question_id, matches)
 							}
 							userAnswers={
-								(selectedAnswers[q.question_id] as Record<number, number>) || {}
+								(selectedAnswers[q.question_id] as Record<number, number[]>) ||
+								{}
 							}
 						/>
 					)}
