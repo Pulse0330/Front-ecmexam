@@ -166,26 +166,55 @@ input[type="number"] {
 }
 
 /* ============================================
-   MathJax Styles - Хайрцагт багтаах
+   MathJax Styles - Word Wrap Solution
    ============================================ */
 
-/* Main container */
+/* Main container with word wrapping */
 .math-content {
 	display: block;
 	width: 100%;
 	max-width: 100%;
-	overflow: hidden;
-	line-height: 1.6;
+	overflow-wrap: break-word;
+	word-wrap: break-word;
+	line-height: 1.8;
 }
 
-/* MathJax containers - хайрцагт багтаах */
+/* MathJax containers - Wrap томъёонууд */
 .math-content mjx-container {
 	display: inline-block;
 	max-width: 100%;
 	overflow: hidden;
-	transform: scale(0.85);
-	transform-origin: left center;
+	vertical-align: middle;
 	margin: 0.3em 0;
+}
+
+/* Responsive scaling */
+@media (min-width: 1025px) {
+	.math-content mjx-container {
+		transform: scale(0.95);
+		transform-origin: left center;
+	}
+}
+
+@media (max-width: 1024px) {
+	.math-content mjx-container {
+		transform: scale(0.8);
+		transform-origin: left center;
+	}
+}
+
+@media (max-width: 640px) {
+	.math-content mjx-container {
+		transform: scale(0.65);
+		transform-origin: left center;
+	}
+}
+
+@media (max-width: 480px) {
+	.math-content mjx-container {
+		transform: scale(0.55);
+		transform-origin: left center;
+	}
 }
 
 /* Math elements */
@@ -194,11 +223,18 @@ input[type="number"] {
 	max-width: 100%;
 }
 
-/* SVG elements */
+/* SVG elements with proper sizing */
 .math-content mjx-container svg {
 	max-width: 100%;
 	height: auto;
 	overflow: hidden;
+}
+
+/* Text wrapping for surrounding content */
+.math-content p {
+	overflow-wrap: break-word;
+	word-wrap: break-word;
+	hyphens: auto;
 }
 
 /* Tablet responsive */
