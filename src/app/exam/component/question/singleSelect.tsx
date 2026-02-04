@@ -141,7 +141,14 @@ function SingleSelectQuestion({
 
 									<div className="flex-1 min-w-0 flex flex-col gap-3 overflow-hidden">
 										{hasContent && (
-											<div className="text-left text-sm sm:text-base w-full overflow-x-auto">
+											<div
+												className="text-left text-sm sm:text-base w-full"
+												style={{
+													lineHeight: "1.8",
+													maxWidth: "100%",
+													overflow: "visible",
+												}}
+											>
 												{option.answer_name_html ? (
 													<MathContent html={option.answer_name_html} />
 												) : (
@@ -151,7 +158,6 @@ function SingleSelectQuestion({
 												)}
 											</div>
 										)}
-
 										{!hasImage && !hasContent && (
 											<span className="text-sm text-gray-400 italic">
 												Хариулт байхгүй

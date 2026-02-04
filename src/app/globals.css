@@ -122,27 +122,25 @@
 }
 
 @layer utilities {
-	/* Page gradient background */
 	.bg-page-gradient {
 		background: linear-gradient(
 			to bottom right,
-			rgb(248 250 252) /* slate-50 */,
-			rgb(255 255 255) /* white */,
-			rgb(248 250 252) /* slate-50 */
+			rgb(248 250 252),
+			rgb(255 255 255),
+			rgb(248 250 252)
 		);
 	}
 
 	.dark .bg-page-gradient {
 		background: linear-gradient(
 			to bottom right,
-			rgb(3 7 18) /* gray-950 */,
-			rgb(17 24 39) /* gray-900 */,
-			rgb(3 7 18) /* gray-950 */
+			rgb(3 7 18),
+			rgb(17 24 39),
+			rgb(3 7 18)
 		);
 	}
 }
 
-/* Animations */
 @keyframes fadeInUp {
 	from {
 		opacity: 0;
@@ -154,7 +152,6 @@
 	}
 }
 
-/* Remove number input spinners */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
 	-webkit-appearance: none;
@@ -165,45 +162,40 @@ input[type="number"] {
 	-moz-appearance: textfield;
 }
 
-/* ============================================
-   MATH CONTENT & LISTS - MathJax болон жагсаалтын загвар
-   ============================================ */
-
 .math-content {
 	display: block;
 	width: 100%;
 	max-width: 100%;
-	overflow-x: auto;
-	overflow-y: visible;
+	overflow: visible;
 	overflow-wrap: break-word;
 	word-wrap: break-word;
+	hyphens: auto;
 	line-height: 1.8;
 	box-sizing: border-box;
-	font-size: 1rem; /* Desktop base size */
+	font-size: 1rem;
 }
 
-/* Tablet - 768px - 1024px */
-@media (max-width: 1024px) and (min-width: 769px) {
+@media (width <= 1024px) and (width >= 769px) {
 	.math-content {
-		font-size: 0.9375rem; /* 15px */
+		font-size: 0.9375rem;
+		line-height: 1.7;
 	}
 }
 
-/* Mobile landscape / Small tablet - 481px - 768px */
-@media (max-width: 768px) and (min-width: 481px) {
+@media (width <= 768px) and (width >= 481px) {
 	.math-content {
-		font-size: 0.875rem; /* 14px */
+		font-size: 0.875rem;
+		line-height: 1.6;
 	}
 }
 
-/* Mobile portrait - max 480px */
-@media (max-width: 480px) {
+@media (width <= 480px) {
 	.math-content {
-		font-size: 0.8125rem; /* 13px */
+		font-size: 0.75rem;
+		line-height: 1.5;
 	}
 }
 
-/* Ordered Lists - Дугаарласан жагсаалт */
 .math-content ol {
 	list-style-type: decimal;
 	list-style-position: outside;
@@ -219,7 +211,6 @@ input[type="number"] {
 	padding-left: 0.5rem;
 }
 
-/* Unordered Lists - Цэглэсэн жагсаалт */
 .math-content ul {
 	list-style-type: disc;
 	list-style-position: outside;
@@ -235,7 +226,6 @@ input[type="number"] {
 	padding-left: 0.5rem;
 }
 
-/* Nested lists */
 .math-content ol ol {
 	list-style-type: lower-alpha;
 	margin-top: 0.5rem;
@@ -245,103 +235,155 @@ input[type="number"] {
 	list-style-type: lower-roman;
 }
 
-/* Paragraph spacing */
 .math-content p {
 	margin-bottom: 1rem;
 	overflow-wrap: break-word;
 	word-wrap: break-word;
 	hyphens: auto;
+	max-width: 100%;
+	overflow: visible;
 }
 
-/* List item responsive sizing */
-@media (max-width: 768px) {
+@media (width <= 768px) {
 	.math-content ol li,
 	.math-content ul li {
 		line-height: 1.6;
 		margin-bottom: 0.4rem;
+		font-size: 0.875rem;
 	}
 }
 
-@media (max-width: 480px) {
+@media (width <= 480px) {
+	.math-content ol,
+	.math-content ul {
+		margin-left: 1rem;
+	}
+
 	.math-content ol li,
 	.math-content ul li {
 		line-height: 1.5;
 		margin-bottom: 0.3rem;
+		font-size: 0.75rem;
 	}
 }
-
-/* ============================================
-   MATHJAX CONTAINERS
-   ============================================ */
 
 .math-content mjx-container {
 	display: inline-block;
 	max-width: 100%;
-	overflow: hidden;
+	overflow: visible;
 	vertical-align: middle;
 	margin: 0.3em 0;
+	white-space: normal;
 }
 
 .math-content mjx-math {
 	display: inline-block;
 	max-width: 100%;
+	overflow: visible;
+	white-space: normal;
 }
 
 .math-content mjx-container svg {
 	max-width: 100%;
 	height: auto;
-	overflow: hidden;
+	overflow: visible;
 }
 
-/* Responsive MathJax scaling */
-@media (min-width: 1025px) {
-	.math-content mjx-container {
-		transform: scale(0.95);
-		transform-origin: left center;
-	}
-}
-
-@media (max-width: 1024px) {
-	.math-content mjx-container {
-		transform: scale(0.8);
-		transform-origin: left center;
-	}
-}
-
-@media (max-width: 640px) {
-	.math-content mjx-container {
-		transform: scale(0.65);
-		transform-origin: left center;
-	}
-}
-
-@media (max-width: 480px) {
-	.math-content mjx-container {
-		transform: scale(0.55);
-		transform-origin: left center;
-	}
-}
-
-/* ============================================
-   TABLE STYLES - Хүснэгтийн загвар
-   ============================================ */
-
-/* Table wrapper for horizontal scroll */
-.math-content figure.table {
-	width: 100%;
-	max-width: 100%;
-	margin: 1rem 0;
+.math-content mjx-container[display="true"] {
+	display: block;
 	overflow-x: auto;
-	overflow-y: visible;
-	-webkit-overflow-scrolling: touch;
+	overflow-y: hidden;
+	max-width: 100%;
 	box-sizing: border-box;
+	white-space: normal;
+	-webkit-overflow-scrolling: touch;
 }
 
-.math-content figure.table table {
-	margin: 0;
-	min-width: 100%;
-	width: max-content;
-	max-width: none;
+.math-content mjx-container mjx-mtable {
+	max-width: 100%;
+	overflow: visible;
+	white-space: normal;
+}
+
+.math-content mjx-container mjx-mo {
+	white-space: normal;
+}
+
+.math-content mjx-container mjx-mtd,
+.math-content mjx-container mjx-mtr {
+	white-space: normal;
+	max-width: 100%;
+}
+
+.math-content p mjx-container {
+	display: inline-block;
+	max-width: 100%;
+}
+
+.math-content p mjx-container[display="true"] {
+	display: block;
+	max-width: 100%;
+}
+
+@media (width >= 1025px) {
+	.math-content mjx-container {
+		transform: scale(0.9);
+		transform-origin: left center;
+	}
+}
+
+@media (width <= 1024px) and (width >= 769px) {
+	.math-content mjx-container {
+		transform: scale(0.75);
+		transform-origin: left center;
+	}
+}
+
+@media (width <= 768px) and (width >= 481px) {
+	.math-content mjx-container {
+		transform: scale(0.6);
+		transform-origin: left center;
+	}
+}
+
+@media (width <= 480px) {
+	.math-content mjx-container {
+		transform: scale(0.5);
+		transform-origin: left center;
+		max-width: calc(100vw - 2rem);
+	}
+
+	.math-content mjx-container[display="true"] {
+		transform: scale(0.5);
+		transform-origin: left center;
+		max-width: calc(100vw - 2rem);
+		overflow-x: auto;
+		overflow-y: hidden;
+		padding-bottom: 0.5rem;
+		background:
+			linear-gradient(90deg, white 0%, transparent 10%) left,
+			linear-gradient(90deg, transparent 90%, white 100%) right;
+		background-size:
+			40px 100%,
+			40px 100%;
+		background-repeat: no-repeat;
+		background-attachment: local, local;
+	}
+
+	.math-content mjx-container svg {
+		max-width: none;
+	}
+
+	.dark .math-content mjx-container[display="true"] {
+		background:
+			linear-gradient(90deg, rgb(30 41 59) 0%, transparent 10%) left,
+			linear-gradient(90deg, transparent 90%, rgb(30 41 59) 100%) right;
+		background-size:
+			40px 100%,
+			40px 100%;
+		background-repeat: no-repeat;
+		background-attachment: local, local;
+	}
 }
 
 .math-content table {
@@ -352,7 +394,7 @@ input[type="number"] {
 	font-size: 0.95rem;
 	background-color: white;
 	border-radius: var(--radius-md);
-	overflow: hidden;
+	overflow: visible;
 	box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
 	box-sizing: border-box;
 	table-layout: auto;
@@ -362,7 +404,6 @@ input[type="number"] {
 	background-color: rgb(55 65 81);
 }
 
-/* Table headers */
 .math-content th {
 	background-color: rgb(243 244 246);
 	color: rgb(31 41 55);
@@ -372,33 +413,31 @@ input[type="number"] {
 	border: 1px solid rgb(229 231 235);
 	white-space: normal;
 	word-wrap: break-word;
+	overflow-wrap: break-word;
 }
 
 .dark .math-content th {
 	background-color: rgb(75 85 99);
 	color: rgb(249 250 251);
-	border-color: rgba(255, 255, 255, 0.1);
+	border-color: rgb(255 255 255 / 10%);
 }
 
-/* Table cells */
 .math-content td {
 	padding: 0.75rem 1rem;
 	border: 1px solid rgb(229 231 235);
 	white-space: normal;
 	word-wrap: break-word;
-	word-break: break-word;
 	overflow-wrap: break-word;
 	vertical-align: top;
-	min-width: 80px;
-	max-width: 300px;
+	min-width: 60px;
+	max-width: 250px;
 	box-sizing: border-box;
 }
 
 .dark .math-content td {
-	border-color: rgba(255, 255, 255, 0.1);
+	border-color: rgb(255 255 255 / 10%);
 }
 
-/* Striped rows */
 .math-content tbody tr:nth-child(even) {
 	background-color: rgb(249 250 251);
 }
@@ -407,7 +446,6 @@ input[type="number"] {
 	background-color: rgb(45 55 72);
 }
 
-/* Hover effect */
 .math-content tbody tr {
 	transition: background-color 0.2s ease;
 }
@@ -420,81 +458,72 @@ input[type="number"] {
 	background-color: rgb(55 65 81);
 }
 
-/* Strong text */
 .math-content td strong,
 .math-content th strong {
 	font-weight: 700;
 }
 
-/* Mobile responsive tables */
-@media (max-width: 768px) {
+@media (width <= 768px) {
 	.math-content table {
-		font-size: 0.8125rem; /* 13px - smaller for mobile */
-		display: block;
-		overflow-x: auto;
-		white-space: nowrap;
-	}
-	
-	.math-content table thead,
-	.math-content table tbody {
-		display: table;
-		width: 100%;
+		font-size: 0.6875rem;
+		transform: scale(0.85);
+		transform-origin: left top;
 	}
 
 	.math-content th,
 	.math-content td {
-		padding: 0.5rem 0.75rem;
+		padding: 0.375rem 0.5rem;
 		white-space: normal;
-		font-size: 0.8125rem; /* 13px */
+		font-size: 0.6875rem;
+		min-width: 45px;
+		max-width: 150px;
 	}
-	
+
 	.math-content ol,
 	.math-content ul {
 		margin-left: 1.5rem;
 	}
 }
 
-@media (max-width: 480px) {
+@media (width <= 480px) {
 	.math-content table {
-		font-size: 0.75rem; /* 12px - even smaller */
+		font-size: 0.625rem;
+		transform: scale(0.7);
+		transform-origin: left top;
 	}
 
 	.math-content th,
 	.math-content td {
-		padding: 0.5rem;
-		min-width: 60px;
-		max-width: 200px;
-		font-size: 0.75rem; /* 12px */
+		padding: 0.25rem 0.375rem;
+		min-width: 35px;
+		max-width: 100px;
+		font-size: 0.625rem;
+		line-height: 1.4;
 	}
-	
+
 	.math-content ol,
 	.math-content ul {
 		margin-left: 1rem;
 	}
 }
 
-/* MathJax in tables */
 .math-content table mjx-container {
 	margin: 0.2em 0;
 }
 
-@media (max-width: 768px) {
-	.math-content table mjx-container {
-		transform: scale(0.75);
-		transform-origin: left center;
-	}
-}
-
-@media (max-width: 480px) {
+@media (width <= 768px) {
 	.math-content table mjx-container {
 		transform: scale(0.65);
 		transform-origin: left center;
 	}
 }
 
-/* ============================================
-   PERFORMANCE & ACCESSIBILITY
-   ============================================ */
+@media (width <= 480px) {
+	.math-content table mjx-container {
+		transform: scale(0.5);
+		transform-origin: left center;
+	}
+}
 
 .math-content mjx-container,
 .math-content table {
@@ -507,7 +536,6 @@ input[type="number"] {
 	outline-offset: 2px;
 }
 
-/* Print styles */
 @media print {
 	.math-content table {
 		box-shadow: none;
@@ -515,9 +543,9 @@ input[type="number"] {
 	}
 
 	.math-content mjx-container {
-		transform: none !important;
+		transform: none;
 	}
-	
+
 	.math-content ol,
 	.math-content ul {
 		margin-left: 1.5rem;

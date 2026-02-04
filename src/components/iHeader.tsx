@@ -184,7 +184,7 @@ const DesktopDropdown: React.FC<{
 	}, [isOpen]);
 
 	const handleToggle = () => {
-		setIsOpen(!isOpen);
+		setIsOpen((prev) => !prev);
 	};
 
 	return (
@@ -200,13 +200,6 @@ const DesktopDropdown: React.FC<{
 				aria-expanded={isOpen}
 				aria-haspopup="true"
 				onClick={handleToggle}
-				onFocus={() => setIsOpen(true)}
-				onBlur={(e) => {
-					// Only close if focus is moving outside the dropdown
-					if (!dropdownRef.current?.contains(e.relatedTarget as Node)) {
-						setIsOpen(false);
-					}
-				}}
 			>
 				{label}
 				<ChevronDown
@@ -233,6 +226,7 @@ const DesktopDropdown: React.FC<{
 										"hover:bg-accent hover:text-accent-foreground",
 										isItemActive && "bg-accent/50",
 									)}
+									onClick={() => setIsOpen(false)}
 								>
 									<Icon className="w-4 h-4" />
 									<span className="text-sm font-medium">{item.label}</span>
@@ -245,7 +239,6 @@ const DesktopDropdown: React.FC<{
 		</div>
 	);
 };
-
 // Mobile Menu - ACCORDION ONLY
 const MobileMenu: React.FC<{
 	isOpen: boolean;
@@ -360,7 +353,7 @@ const MobileMenu: React.FC<{
 
 						{/* Exam Accordion */}
 						<div className="space-y-1">
-							<button
+							<Button
 								type="button"
 								onClick={() => toggleSection("exam")}
 								className={cn(
@@ -376,7 +369,7 @@ const MobileMenu: React.FC<{
 										expandedSection === "exam" && "rotate-180",
 									)}
 								/>
-							</button>
+							</Button>
 
 							{expandedSection === "exam" && (
 								<div className="pl-4 space-y-1 animate-in slide-in-from-top-2">

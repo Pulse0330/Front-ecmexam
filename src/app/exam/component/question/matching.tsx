@@ -1,14 +1,39 @@
 "use client";
 
 import parse from "html-react-parser";
-import { Maximize2, XCircle } from "lucide-react";
+import { HelpCircle, Maximize2, X, XCircle } from "lucide-react";
 import Image from "next/image";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Xarrow, { useXarrow, Xwrapper } from "react-xarrows";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
+import {
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+
+// VisuallyHidden component for accessibility
+const VisuallyHidden = ({ children }: { children: React.ReactNode }) => (
+	<span
+		style={{
+			position: "absolute",
+			border: 0,
+			width: 1,
+			height: 1,
+			padding: 0,
+			margin: -1,
+			overflow: "hidden",
+			clip: "rect(0, 0, 0, 0)",
+			whiteSpace: "nowrap",
+			wordWrap: "normal",
+		}}
+	>
+		{children}
+	</span>
+);
 
 interface QuestionItem {
 	refid: number;
@@ -43,6 +68,7 @@ export default function MatchingByLine({
 	const [activeStart, setActiveStart] = useState<string>("");
 	const [isMobile, setIsMobile] = useState(false);
 	const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+	const [showHelp, setShowHelp] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const updateXarrow = useXarrow();
 	const lastNotifiedRef = useRef<string>("");
@@ -190,62 +216,76 @@ export default function MatchingByLine({
 			.map((c) => c.color);
 
 	const handleItemClick = useCallback(
-		(id: string, _isQuestion: boolean) => {
-			// Хэрэв идэвхтэй асуулт байгаа бөгөөд дарагдсан нь хариулт бол
+		(id: string, isQuestion: boolean) => {
+			// ========================================
+			// ЗӨВХӨН АСУУЛТААС СОНГОЛТ ЭХЛЭНЭ
+			// ========================================
+
+			// Хэрэв хариулт дарсан бол юу ч хийхгүй (асуулт идэвхгүй үед)
+			if (!isQuestion && !activeStart) {
+				// ❌ ГЭХДЭЭ хариулт холбогдсон бол устгана
+				const existingConnections = connections.filter((c) => c.end === id);
+
+				if (existingConnections.length > 0) {
+					// Холбогдсон хариулт дарвал устгах
+					setConnections((prev) =>
+						prev.filter((c) => !existingConnections.includes(c)),
+					);
+				}
+				return;
+			}
+
+			// ========================================
+			// АСУУЛТ → ХАРИУЛТ ХОЛБОЛТ
+			// ========================================
 			if (activeStart && activeStart !== id) {
 				const firstIsQuestion = activeStart.startsWith("q-");
-				const secondIsQuestion = id.startsWith("q-");
 
-				// Хоёулаа асуулт эсвэл хоёулаа хариулт бол холбохгүй
-				if (firstIsQuestion === secondIsQuestion) {
+				// Хоёр асуулт дарсан бол өмнөхийг цуцлаад шинийг идэвхжүүлэх
+				if (firstIsQuestion && isQuestion) {
 					setActiveStart(id);
 					return;
 				}
 
-				// Холболт үүсгэх - асуулт нь үргэлж start байна
-				const start = firstIsQuestion ? activeStart : id;
-				const end = firstIsQuestion ? id : activeStart;
+				// Асуулт идэвхтэй байгаад хариулт дарсан бол холбох
+				if (firstIsQuestion && !isQuestion) {
+					const start = activeStart;
+					const end = id;
 
-				// Ижил холболт байгаа эсэхийг шалгах
-				const existingConnection = connections.find(
-					(c) => c.start === start && c.end === end,
-				);
-
-				if (existingConnection) {
-					// Холболт устгах
-					setConnections((prev) =>
-						prev.filter((c) => c !== existingConnection),
+					// Ижил холболт байгаа эсэхийг шалгах
+					const existingConnection = connections.find(
+						(c) => c.start === start && c.end === end,
 					);
-				} else {
-					// Шинэ холболт нэмэх
-					setConnections((prevConnections) => {
-						const color = getUniqueColor(prevConnections);
-						return [...prevConnections, { start, end, color }];
-					});
+
+					if (existingConnection) {
+						// УСТГАХ: Холболт байвал устгана
+						setConnections((prev) =>
+							prev.filter((c) => c !== existingConnection),
+						);
+					} else {
+						// НЭМЭХ: Шинэ холболт үүсгэнэ
+						setConnections((prevConnections) => {
+							const color = getUniqueColor(prevConnections);
+							return [...prevConnections, { start, end, color }];
+						});
+					}
+
+					// ✅ ЧУХАЛ: Холболт үүсгэсний дараа сонголтыг цуцлах
+					// Дараагийн хариултаа холбохын тулд асуултаа дахин дарах хэрэгтэй
+					setActiveStart("");
+					return;
 				}
 
-				// Асуултыг идэвхтэй байлгах (олон хариулт сонгох боломжтой)
-				// Хэрэв та нэг удаа сонгоод дуусгахыг хүсвэл: setActiveStart("");
 				return;
 			}
 
-			// Холболттой элемент дээр дарах (устгах)
-			const existingConnections = connections.filter(
-				(c) => c.start === id || c.end === id,
-			);
-
-			if (existingConnections.length > 0) {
-				// Сүүлийн холболтыг устгах
-				setConnections((prev) =>
-					prev.filter(
-						(c) => c !== existingConnections[existingConnections.length - 1],
-					),
-				);
-				return;
+			// ========================================
+			// ШИНЭ СОНГОЛТ ЭХЛЭХ (зөвхөн асуулт)
+			// ========================================
+			if (isQuestion) {
+				// Асуулт дарах
+				setActiveStart(id);
 			}
-
-			// Эхний элемент сонгогдлоо
-			setActiveStart(id);
 		},
 		[activeStart, connections, getUniqueColor],
 	);
@@ -334,11 +374,21 @@ export default function MatchingByLine({
 		<>
 			<div ref={containerRef} className="w-full relative">
 				<Xwrapper>
-					<p className="font-semibold mb-4 text-center">
-						{isMobile
-							? "Асуулт дээр дарж олон хариулт сонгоно уу"
-							: "Асуулт дээр дарж холбох хариултуудаа сонгоно уу (олон сонгох боломжтой)"}
-					</p>
+					<div className="flex items-center justify-center gap-2 mb-4">
+						<p className="font-semibold text-center text-sm">
+							{isMobile
+								? "Асуулт → Хариулт → Асуулт дахин → Дараагийн хариулт"
+								: "Асуулт сонгоод хариултаа дарна уу. Дараагийн хариулт холбохын тулд асуултаа дахин дарна уу."}
+						</p>
+						<button
+							type="button"
+							onClick={() => setShowHelp(true)}
+							className="p-1 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+							title="Заавар харах"
+						>
+							<HelpCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+						</button>
+					</div>
 
 					{isMobile ? (
 						<div className="space-y-4 max-h-[80vh] overflow-y-auto">
@@ -377,17 +427,28 @@ export default function MatchingByLine({
 
 										{answerItems.length > 0 && (
 											<div className="pl-4 space-y-2 border-l-2 border-green-500">
-												<div className="text-sm text-gray-500 dark:text-gray-400">
-													Сонгосон хариултууд:
+												<div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-between">
+													<span>Сонгосон хариултууд:</span>
+													<span className="text-xs text-red-400">
+														дарж устгана
+													</span>
 												</div>
 												{answerItems.map(
 													(answerItem) =>
 														answerItem && (
 															<div
 																key={`mobile-answer-${answerItem.answer_id}`}
-																className="p-2 rounded border border-green-500 bg-green-50 dark:bg-green-900/20"
+																{...interactiveProps(
+																	`a-${answerItem.answer_id}`,
+																)}
+																className="p-2 rounded border border-green-500 bg-green-50 dark:bg-green-900/20 cursor-pointer hover:border-red-400 hover:bg-red-50 active:scale-95 transition-all"
 															>
-																{renderContent(answerItem)}
+																<div className="flex items-center gap-2">
+																	<div className="flex-1">
+																		{renderContent(answerItem)}
+																	</div>
+																	<X className="w-4 h-4 text-red-500 shrink-0" />
+																</div>
 															</div>
 														),
 												)}
@@ -396,8 +457,9 @@ export default function MatchingByLine({
 
 										{isSelected(qid) && (
 											<div className="pl-4 mt-2 space-y-2">
-												<div className="text-sm text-gray-600 mb-1">
-													Хариултуудаа сонгоно уу:
+												<div className="text-sm text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-2">
+													<span className="inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+													Холбох хариултаа сонгоно уу:
 												</div>
 												{answersOnly.map((a) => {
 													const aid = `a-${a.answer_id}`;
@@ -411,8 +473,8 @@ export default function MatchingByLine({
 															className={cn(
 																"w-full p-2 border rounded cursor-pointer transition-colors",
 																alreadyConnected
-																	? "border-green-500 bg-green-50"
-																	: "border-dashed border-blue-300",
+																	? "border-green-500 bg-green-50 dark:bg-green-900/20"
+																	: "border-dashed border-blue-300 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20",
 															)}
 														>
 															{renderContent(a)}
@@ -448,10 +510,10 @@ export default function MatchingByLine({
 											className={cn(
 												"w-full p-4 rounded-lg flex flex-col items-center justify-center transition-all cursor-pointer relative",
 												isSelected(qid)
-													? "border-2 border-blue-500"
+													? "border-2 border-blue-500 shadow-lg"
 													: isConnected(qid)
-														? "border-2 border-green-500"
-														: "border border-gray-300",
+														? "border-2 border-green-500 hover:border-red-400"
+														: "border border-gray-300 hover:border-blue-400",
 											)}
 											style={
 												!isSelected(qid) && colors.length > 0
@@ -482,6 +544,8 @@ export default function MatchingByLine({
 								{answersOnly.map((a) => {
 									const aid = `a-${a.answer_id}`;
 									const colors = getConnectionColors(aid);
+									const isConnectedAnswer = isConnected(aid);
+									const isClickable = !!activeStart || isConnectedAnswer;
 
 									return (
 										<div
@@ -489,12 +553,17 @@ export default function MatchingByLine({
 											id={aid}
 											{...interactiveProps(aid)}
 											className={cn(
-												"w-full p-4 rounded-lg flex flex-col items-center justify-center transition-all cursor-pointer hover:border-2 hover:border-blue-500",
+												"w-full p-4 rounded-lg flex flex-col items-center justify-center transition-all relative",
+												isClickable
+													? "cursor-pointer"
+													: "cursor-not-allowed opacity-60",
 												isSelected(aid)
 													? "border-2 border-blue-500 shadow-md"
-													: isConnected(aid)
-														? "border-2 border-green-500 bg-green-50"
-														: "border border-gray-300",
+													: isConnectedAnswer
+														? "border-2 border-green-500 bg-green-50 hover:border-red-400 hover:bg-red-50"
+														: activeStart
+															? "border border-gray-300 hover:border-blue-400"
+															: "border border-gray-300",
 											)}
 											style={
 												!isSelected(aid) && colors.length > 0
@@ -509,8 +578,14 @@ export default function MatchingByLine({
 														}
 													: undefined
 											}
+											title={isConnectedAnswer ? "Дарж устгана уу" : ""}
 										>
 											{renderContent(a)}
+											{isConnectedAnswer && (
+												<div className="absolute top-1 right-1 text-xs text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+													×
+												</div>
+											)}
 										</div>
 									);
 								})}
@@ -532,9 +607,81 @@ export default function MatchingByLine({
 				</Xwrapper>
 			</div>
 
+			{/* Help Dialog */}
+			<Dialog open={showHelp} onOpenChange={setShowHelp}>
+				<DialogContent className="max-w-md">
+					<DialogTitle className="flex items-center gap-2">
+						<HelpCircle className="w-6 h-6 text-blue-600" />
+						<span className="text-xl font-bold">Хэрхэн ашиглах вэ?</span>
+					</DialogTitle>
+
+					<div className="space-y-4">
+						<div className="space-y-3 text-sm">
+							<div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+								<h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+									✅ Холбох
+								</h3>
+								<ol className="space-y-1 text-gray-700 dark:text-gray-300 list-decimal list-inside">
+									<li>
+										<strong>Асуулт</strong> баганаас асуултаа сонгоно (цэнхэр
+										хүрээтэй болно)
+									</li>
+									<li>
+										<strong>Хариулт</strong> баганаас хариултаа дарна
+									</li>
+									<li>Холболт үүсэх ба сонголт цуцлагдана</li>
+									<li>
+										Дараагийн хариулт холбохын тулд{" "}
+										<strong>асуултаа дахин</strong> дарна
+									</li>
+								</ol>
+							</div>
+
+							<div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+								<h3 className="font-semibold text-red-900 dark:text-red-100 mb-2">
+									❌ Устгах
+								</h3>
+								<ul className="space-y-1 text-gray-700 dark:text-gray-300 list-disc list-inside">
+									<li>
+										Холбогдсон <strong>хариулт</strong> дээр дарах → холболт
+										устана
+									</li>
+									<li>
+										Асуулт сонгоод ижил хариултаа дахин дарах → холболт устана
+									</li>
+								</ul>
+							</div>
+
+							<div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+								<h3 className="font-semibold mb-2">💡 Дохио өнгөнүүд</h3>
+								<ul className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
+									<li>🔵 Цэнхэр = Идэвхтэй сонголт</li>
+									<li>🟢 Ногоон = Холбогдсон</li>
+									<li>🔴 Улаан = Устгах боломжтой</li>
+								</ul>
+							</div>
+						</div>
+
+						<Button
+							onClick={() => setShowHelp(false)}
+							className="w-full"
+							variant="default"
+						>
+							Ойлголоо
+						</Button>
+					</div>
+				</DialogContent>
+			</Dialog>
+
 			{/* Image Zoom Dialog */}
 			<Dialog open={!!zoomedImage} onOpenChange={() => setZoomedImage(null)}>
-				<DialogContent className="max-w-7xl w-[95vw] h-[95vh] p-0">
+				<DialogContent
+					className="max-w-7xl w-[95vw] h-[95vh] p-0"
+					showCloseButton={false}
+				>
+					<VisuallyHidden>
+						<DialogTitle>Зургийг томруулж харах</DialogTitle>
+					</VisuallyHidden>
 					<DialogClose className="absolute right-4 top-4 z-50 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
 						<XCircle className="h-6 w-6" />
 						<span className="sr-only">Close</span>

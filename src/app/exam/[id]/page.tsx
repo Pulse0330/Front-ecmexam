@@ -91,7 +91,6 @@ export default function ExamPage() {
 			if (a === b) return true;
 			if (a === undefined || b === undefined) return false;
 
-			// ✅ Type check эхлээд
 			const aType = Array.isArray(a) ? "array" : typeof a;
 			const bType = Array.isArray(b) ? "array" : typeof b;
 			if (aType !== bType) return false;
@@ -111,11 +110,32 @@ export default function ExamPage() {
 				const bKeys = Object.keys(b);
 				if (aKeys.length !== bKeys.length) return false;
 
-				const aRecord = a as Record<number, number>;
-				const bRecord = b as Record<number, number>;
+				const aRecord = a as Record<number, number | number[]>;
+				const bRecord = b as Record<number, number | number[]>;
+
 				return aKeys.every((key) => {
 					const numKey = Number(key);
-					return aRecord[numKey] === bRecord[numKey];
+					const aVal = aRecord[numKey];
+					const bVal = bRecord[numKey];
+
+					// Хоёулаа array бол
+					if (Array.isArray(aVal) && Array.isArray(bVal)) {
+						if (aVal.length !== bVal.length) return false;
+						return aVal.every((v, i) => v === bVal[i]);
+					}
+
+					// Хоёулаа number бол
+					if (typeof aVal === "number" && typeof bVal === "number") {
+						return aVal === bVal;
+					}
+
+					// Хоёулаа string бол (Type 3)
+					if (typeof aVal === "string" && typeof bVal === "string") {
+						return aVal === bVal;
+					}
+
+					// Төрөл таарахгүй бол false
+					return false;
 				});
 			}
 
@@ -270,8 +290,23 @@ export default function ExamPage() {
 					previousAnswer !== null &&
 					!Array.isArray(previousAnswer)
 				) {
-					const oldMatches = previousAnswer as Record<number, number>;
-					const oldAnswerIds = Object.values(oldMatches);
+					const oldMatches = previousAnswer as Record<
+						number,
+						number | number[]
+					>;
+					const oldAnswerIds: number[] = [];
+
+					// Хоёр төрлийн утгыг хоёуланг нь боловсруулах
+					Object.values(oldMatches).forEach((value) => {
+						if (Array.isArray(value)) {
+							// Олон хариулт
+							oldAnswerIds.push(...value);
+						} else if (typeof value === "number") {
+							// Нэг хариулт (хуучин format)
+							oldAnswerIds.push(value);
+						}
+					});
+
 					if (oldAnswerIds.length > 0) {
 						try {
 							await Promise.allSettled(
@@ -413,33 +448,52 @@ export default function ExamPage() {
 					answer !== null &&
 					!Array.isArray(answer)
 				) {
-					const matches = answer as Record<number, number>;
-					const entries = Object.entries(matches);
-					if (entries.length > 0) {
-						await Promise.all(
-							entries.map(([qRefIdStr, aRefId]) =>
+					const matches = answer as Record<number, number | number[]>;
+					const savePromises: Promise<unknown>[] = [];
+
+					Object.entries(matches).forEach(([qRefIdStr, value]) => {
+						if (Array.isArray(value)) {
+							// Олон хариулт
+							value.forEach((aRefId) => {
+								savePromises.push(
+									saveExamAnswer(
+										userId || 0,
+										examId,
+										questionId,
+										aRefId,
+										queTypeId,
+										qRefIdStr,
+										rowNum,
+									),
+								);
+							});
+						} else if (typeof value === "number") {
+							// Нэг хариулт (backward compatibility)
+							savePromises.push(
 								saveExamAnswer(
 									userId || 0,
 									examId,
 									questionId,
-									aRefId,
+									value,
 									queTypeId,
 									qRefIdStr,
 									rowNum,
 								),
-							),
-						);
+							);
+						}
+					});
+
+					if (savePromises.length > 0) {
+						await Promise.all(savePromises);
 					}
 				}
 
-				// Update last saved answer in memory
 				lastSavedAnswers.current.set(questionId, answer);
 				return true;
 			} catch (error) {
 				console.error(`❌ Failed to save question ${questionId}:`, error);
 				return false;
 			} finally {
-				// ✅ Хадгалалт дууссан - Set-с устгах
 				savingQuestions.current.delete(questionId);
 			}
 		},
@@ -595,12 +649,20 @@ export default function ExamPage() {
 					.map((i) => i.AnsID)
 					.filter((id): id is number => id !== null && id !== 0);
 			} else if (QueType === 6) {
-				const matchMap: Record<number, number> = {};
+				const matchMap: Record<number, number[]> = {};
+
 				items.forEach((item) => {
 					const qRefId = Number((item as { Answer?: string }).Answer);
 					const aRefId = item.AnsID;
-					if (qRefId && aRefId) matchMap[qRefId] = aRefId;
+
+					if (qRefId && aRefId) {
+						if (!matchMap[qRefId]) {
+							matchMap[qRefId] = [];
+						}
+						matchMap[qRefId].push(aRefId);
+					}
 				});
+
 				answersMap[QueID] = matchMap;
 			}
 		});
@@ -815,7 +877,7 @@ export default function ExamPage() {
 						<QuestionImage src={q.question_img} alt="Асуултын зураг" />
 					)}
 					{(q.source_name || q.source_img) && (
-						<div className="mt-3 p-3 border rounded-lg bg-gray-50">
+						<div className="mt-3 p-3 border rounded-lg ">
 							{/* Эх сурвалж зураг */}
 							{q.source_img && (
 								<img

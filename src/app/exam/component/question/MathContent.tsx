@@ -7,60 +7,70 @@ interface MathContentProps {
 }
 
 function MathContent({ html }: MathContentProps) {
-	const contentRef = useRef<HTMLDivElement>(null);
+	const mathRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		const renderMath = async () => {
-			if (!contentRef.current) return;
-
-			try {
-				// MathJax байгаа бол render хийх
-				if (window.MathJax) {
+			if (mathRef.current && window.MathJax) {
+				try {
+					// MathJax typesetClear хэрэглэх
 					if (window.MathJax.typesetClear) {
-						window.MathJax.typesetClear([contentRef.current]);
-					}
-					if (window.MathJax.typesetPromise) {
-						await window.MathJax.typesetPromise([contentRef.current]);
+						window.MathJax.typesetClear([mathRef.current]);
 					}
 
-					// mjx-mspace элементүүдийг <br> болгох
-					const mspaces = contentRef.current.querySelectorAll("mjx-mspace");
-					mspaces.forEach((mspace) => {
-						try {
-							const br = document.createElement("br");
-							if (mspace.parentNode) {
-								mspace.parentNode.insertBefore(br, mspace);
-								mspace.remove();
-							}
-						} catch (err) {
-							console.warn("Error processing mjx-mspace:", err);
+					// MathJax typesetPromise хэрэглэх
+					if (window.MathJax.typesetPromise) {
+						await window.MathJax.typesetPromise([mathRef.current]);
+					}
+
+					// Container-уудыг wrap болгох
+					const containers = mathRef.current.querySelectorAll("mjx-container");
+					containers.forEach((container: Element) => {
+						const el = container as HTMLElement;
+
+						// Table шалгах
+						const hasTable = container.querySelector("mjx-mtable, mtable");
+
+						if (hasTable) {
+							// Table бол horizontal scroll
+							el.style.display = "block";
+							el.style.maxWidth = "100%";
+							el.style.overflowX = "auto";
+							el.style.overflowY = "hidden";
+						} else {
+							// Энгийн томьёо бол wrap
+							el.style.display = "block";
+							el.style.maxWidth = "100%";
+							el.style.overflow = "visible";
+							el.style.whiteSpace = "normal";
 						}
 					});
+				} catch (err) {
+					console.error("MathJax rendering error:", err);
 				}
-			} catch (err) {
-				console.error("MathJax rendering error:", err);
 			}
 		};
 
-		// MathJax initialization
 		if (window.MathJax?.startup?.promise) {
-			window.MathJax.startup.promise.then(renderMath).catch(console.error);
+			window.MathJax.startup.promise.then(renderMath);
 		} else {
 			renderMath();
 		}
-	}, []);
-
-	// HTML-ийн урт хязгаарлах (DOS халдлагаас хамгаалах)
-	const sanitizedHtml = html.length > 100000 ? html.substring(0, 100000) : html;
+	}, []); // html dependency нэмсэн
 
 	return (
-		<div className="w-full max-w-full overflow-x-auto">
-			<div
-				ref={contentRef}
-				dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-				className="math-content"
-			/>
-		</div>
+		<div
+			ref={mathRef}
+			dangerouslySetInnerHTML={{ __html: html }}
+			className="math-content text-gray-900 dark:text-gray-100"
+			style={{
+				maxWidth: "100%",
+				overflow: "visible",
+				wordWrap: "break-word",
+				overflowWrap: "break-word",
+				display: "block",
+			}}
+		/>
 	);
 }
 
