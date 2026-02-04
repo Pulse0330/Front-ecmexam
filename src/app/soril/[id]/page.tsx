@@ -18,6 +18,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ExamMinimap from "@/app/exam/component/minimap";
 import FillInTheBlankQuestion from "@/app/exam/component/question/fillblank";
+import MathContent from "@/app/exam/component/question/MathContent";
 import MatchingByLine from "@/app/exam/component/question/matching";
 import MultiSelectQuestion from "@/app/exam/component/question/multiselect";
 import NumberInputQuestion from "@/app/exam/component/question/numberinput";
@@ -1011,7 +1012,7 @@ export default function SorilPage() {
 											<div className="flex-1 min-w-0">
 												<div className="flex items-start justify-between gap-2 mb-4">
 													<div className="font-semibold text-lg flex-1 leading-relaxed prose prose-sm max-w-none">
-														{parse(q.question_name)}
+														<MathContent html={q.question_name} />
 													</div>
 													<div className="flex items-center gap-2 shrink-0">
 														<Button

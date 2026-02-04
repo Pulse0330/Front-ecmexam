@@ -1,4 +1,5 @@
 "use client";
+import { useQueryClient } from "@tanstack/react-query";
 import Cookies from "js-cookie";
 import {
 	BarChart3,
@@ -504,6 +505,7 @@ export const Navbar01: React.FC = () => {
 	const [showLogoutDialog, setShowLogoutDialog] = React.useState(false);
 	const pathname = usePathname();
 	const router = useRouter();
+	const queryClient = useQueryClient(); // ← Hook-ийг энд дуудна
 	const { user, firstname, imgUrl, clearAuth } = useAuthStore();
 
 	const userInfo = React.useMemo(
@@ -523,13 +525,33 @@ export const Navbar01: React.FC = () => {
 		pathname.includes("/Lists/courseList") ||
 		pathname.includes("/Lists/paymentCoureList");
 
-	const handleLogout = () => {
-		Cookies.remove("auth-token", { path: "/" });
-		Cookies.remove("user-id", { path: "/" });
-		Cookies.remove("firstname", { path: "/" });
-		Cookies.remove("img-url", { path: "/" });
-		clearAuth();
-		router.push("/login");
+	const handleLogout = async () => {
+		try {
+			// 1. Call logout API if available
+			// await logoutAPI();
+
+			// 2. Clear cookies
+			const cookiesToRemove = ["auth-token", "user-id", "firstname", "img-url"];
+			cookiesToRemove.forEach((cookie) => {
+				Cookies.remove(cookie, { path: "/" });
+			});
+
+			// 3. Clear Zustand (includes localStorage cleanup)
+			clearAuth();
+
+			// 4. Clear session storage
+			sessionStorage.clear();
+
+			// 5. Clear React Query cache
+			queryClient.clear();
+
+			// 6. Navigate to login
+			router.push("/login");
+		} catch (error) {
+			console.error("Logout error:", error);
+			// Force reload as fallback
+			window.location.href = "/login";
+		}
 	};
 
 	return (

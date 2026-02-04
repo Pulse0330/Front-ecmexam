@@ -122,7 +122,7 @@
 }
 
 @layer utilities {
-	/* Page gradient background - яг таны хүссэн градиент */
+	/* Page gradient background */
 	.bg-page-gradient {
 		background: linear-gradient(
 			to bottom right,
@@ -141,8 +141,8 @@
 		);
 	}
 }
-/* Animations CSS - globals.css-д нэмнэ үү */
 
+/* Animations */
 @keyframes fadeInUp {
 	from {
 		opacity: 0;
@@ -154,13 +154,70 @@
 	}
 }
 
+/* Remove number input spinners */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
 	-webkit-appearance: none;
 	margin: 0;
 }
 
-/* Firefox */
 input[type="number"] {
 	-moz-appearance: textfield;
+}
+
+/* ============================================
+   MathJax Styles - Хайрцагт багтаах
+   ============================================ */
+
+/* Main container */
+.math-content {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	overflow: hidden;
+	line-height: 1.6;
+}
+
+/* MathJax containers - хайрцагт багтаах */
+.math-content mjx-container {
+	display: inline-block;
+	max-width: 100%;
+	overflow: hidden;
+	transform: scale(0.85);
+	transform-origin: left center;
+	margin: 0.3em 0;
+}
+
+/* Math elements */
+.math-content mjx-math {
+	display: inline-block;
+	max-width: 100%;
+}
+
+/* SVG elements */
+.math-content mjx-container svg {
+	max-width: 100%;
+	height: auto;
+	overflow: hidden;
+}
+
+/* Tablet responsive */
+@media (max-width: 1024px) {
+	.math-content mjx-container {
+		transform: scale(0.75);
+	}
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+	.math-content mjx-container {
+		transform: scale(0.65);
+	}
+}
+
+/* Very small screens */
+@media (max-width: 480px) {
+	.math-content mjx-container {
+		transform: scale(0.55);
+	}
 }

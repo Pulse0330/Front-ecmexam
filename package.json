@@ -48,6 +48,7 @@
 		"react-dom": "19.2.0",
 		"react-hook-form": "^7.67.0",
 		"react-icons": "^5.5.0",
+		"react-mathjax2": "^0.0.2",
 		"react-modal": "^3.16.3",
 		"react-useanimations": "^2.10.0",
 		"react-xarrows": "^2.0.2",

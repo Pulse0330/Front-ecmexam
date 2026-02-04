@@ -1,7 +1,6 @@
 "use client";
 
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import parse from "html-react-parser";
 import { Maximize2, RotateCw, XCircle, ZoomIn, ZoomOut } from "lucide-react";
 import Image from "next/image";
 import { memo, useCallback, useState } from "react";
@@ -12,6 +11,7 @@ import {
 	DialogContent,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import MathContent from "./MathContent";
 
 interface AnswerData {
 	answer_id: number;
@@ -82,8 +82,7 @@ function SingleSelectQuestion({
 
 	return (
 		<>
-			<div className="space-y-3 sm:space-y-4">
-				{/* Question Image */}
+			<div className="space-y-3 sm:space-y-4 w-full">
 				{questionImage && (
 					<button
 						type="button"
@@ -109,7 +108,6 @@ function SingleSelectQuestion({
 					</p>
 					{answers.map((option) => {
 						const isSelected = selectedAnswer === option.answer_id;
-
 						const hasContent = option.answer_name_html || option.answer_name;
 						const hasImage = option.answer_img || option.source_img;
 						const imageUrl = option.answer_img || option.source_img;
@@ -121,33 +119,52 @@ function SingleSelectQuestion({
 						return (
 							<div
 								key={option.answer_id}
-								className={`relative flex items-start gap-2 sm:gap-3 w-full p-3 sm:p-4 rounded-lg border-2 transition-all duration-200 min-h-12 ${colorClass}`}
+								className={`relative rounded-lg border-2 transition-all duration-200 ${colorClass} overflow-hidden`}
 							>
 								<button
 									type="button"
 									onClick={() => handleSelect(option.answer_id)}
-									className="absolute inset-0 w-full h-full cursor-pointer opacity-0"
-									aria-label={`Хариулт ${option.answer_id} сонгох`}
-								/>
-
-								<span
-									className={`relative z-10 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 transition-all pointer-events-none
-									${
-										isSelected
-											? "border-primary bg-primary"
-											: "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
-									}`}
+									className="w-full p-3 sm:p-4 flex items-start gap-2 sm:gap-3 text-left"
 								>
-									{isSelected && (
-										<span className="w-2.5 h-2.5 bg-white rounded-full" />
-									)}
-								</span>
+									<span
+										className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 transition-all
+					${
+						isSelected
+							? "border-primary bg-primary"
+							: "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
+					}`}
+									>
+										{isSelected && (
+											<span className="w-2.5 h-2.5 bg-white rounded-full" />
+										)}
+									</span>
 
-								<div className="relative z-10 flex-1 min-w-0 flex flex-col gap-3 pointer-events-none">
-									{hasImage && imageUrl && (
+									<div className="flex-1 min-w-0 flex flex-col gap-3 overflow-hidden">
+										{hasContent && (
+											<div className="text-left text-sm sm:text-base w-full overflow-x-auto">
+												{option.answer_name_html ? (
+													<MathContent html={option.answer_name_html} />
+												) : (
+													<span className="text-gray-900 dark:text-gray-100">
+														{option.answer_name}
+													</span>
+												)}
+											</div>
+										)}
+
+										{!hasImage && !hasContent && (
+											<span className="text-sm text-gray-400 italic">
+												Хариулт байхгүй
+											</span>
+										)}
+									</div>
+								</button>
+
+								{hasImage && imageUrl && (
+									<div className="px-3 sm:px-4 pb-3 sm:pb-4">
 										<button
 											type="button"
-											className="relative w-full h-48 group cursor-zoom-in border-0 bg-transparent p-0 rounded-md pointer-events-auto"
+											className="relative w-full h-48 group cursor-zoom-in border-0 bg-transparent p-0 rounded-md"
 											onClick={(e) => handleImageClick(e, imageUrl)}
 										>
 											<Image
@@ -161,42 +178,20 @@ function SingleSelectQuestion({
 												<Maximize2 className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
 											</div>
 										</button>
-									)}
-
-									{hasContent && (
-										<div className="text-left text-sm sm:text-base leading-relaxed">
-											{option.answer_name_html ? (
-												<div className="prose prose-sm max-w-none dark:prose-invert">
-													{parse(option.answer_name_html)}
-												</div>
-											) : (
-												<span className="text-gray-900 dark:text-gray-100">
-													{option.answer_name}
-												</span>
-											)}
-										</div>
-									)}
-
-									{!hasImage && !hasContent && (
-										<span className="text-sm text-gray-400 italic">
-											Хариулт байхгүй
-										</span>
-									)}
-								</div>
+									</div>
+								)}
 							</div>
 						);
 					})}
 				</div>
 			</div>
 
-			{/* Image Zoom Dialog */}
 			<Dialog open={!!zoomedImage} onOpenChange={handleDialogClose}>
 				<DialogContent className="max-w-7xl w-[95vw] h-[95vh] p-0">
 					<VisuallyHidden>
 						<DialogTitle>Зургийг томруулах</DialogTitle>
 					</VisuallyHidden>
 
-					{/* Control Buttons */}
 					<div className="absolute left-4 top-4 z-50 flex gap-2 bg-background/80 backdrop-blur-sm rounded-lg p-2 border">
 						<Button
 							variant="ghost"

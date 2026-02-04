@@ -3,12 +3,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	AlertCircle,
-	Building2,
 	Check,
+	Eye,
+	EyeOff,
 	Lock,
-	Mail,
 	MapPin,
-	Phone as PhoneIcon,
 	Save,
 	Upload,
 	User,
@@ -190,8 +189,6 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 	const [selectedClass, setSelectedClass] = useState<string>("");
 	const [showNewPassword, setShowNewPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-	// ⭐ Upload state-үүд_setShowConfirmPassword
 	const [isUploadingImage, setIsUploadingImage] = useState(false);
 	const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
 
@@ -200,8 +197,8 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 		firstname: user.firstname || "",
 		email: user.email || "",
 		Phone: user.Phone || "",
-		newPassword: user.password || "", // ЭНД НЭМСЭН
-		confirmPassword: user.password || "", // ЭНД НЭМСЭН
+		newPassword: user.password || "",
+		confirmPassword: user.password || "",
 	});
 
 	const [passwordError, setPasswordError] = useState("");
@@ -354,7 +351,6 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 		},
 	});
 
-	// Compress and resize image
 	const compressImage = (file: File): Promise<string> => {
 		return new Promise((resolve, reject) => {
 			const reader = new FileReader();
@@ -396,7 +392,6 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 		});
 	};
 
-	//  Зураг upload хийх функц
 	const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
@@ -413,20 +408,15 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 		try {
 			setIsUploadingImage(true);
 
-			// Зургийг багасгах
 			const compressedImage = await compressImage(file);
 			setImagePreview(compressedImage);
 
-			// Server рүү upload хийх
 			const formData = new FormData();
 			const blob = await fetch(compressedImage).then((r) => r.blob());
 			formData.append("file", blob, file.name);
 
-			console.log("📤 Upload эхлүүлж байна...");
 			const result = await uploadImage(formData);
-			console.log("✅ Upload response:", result);
 
-			// Response-н бүтцийг шалгаад зөв URL авах
 			let imageUrl = "";
 
 			if (Array.isArray(result) && result.length > 0) {
@@ -440,7 +430,6 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 			if (imageUrl) {
 				setUploadedImageUrl(imageUrl);
 				setSelectedImage(file);
-				console.log("✅ Зураг амжилттай upload хийгдлээ:", imageUrl);
 			} else {
 				throw new Error("Upload хариу буруу байна");
 			}
@@ -474,23 +463,18 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 		}
 		setPasswordError("");
 
-		// img_url-г зөв форматаар авах
 		let finalImageUrl = "";
 		if (uploadedImageUrl) {
-			// Шинэ upload хийсэн зураг - string эсэхийг шалгах
 			if (typeof uploadedImageUrl === "string") {
 				finalImageUrl = uploadedImageUrl;
 			} else if (uploadedImageUrl && typeof uploadedImageUrl === "object") {
-				// Хэрэв объект ирвэл FileWebUrl-г авах
 				const imgObj = uploadedImageUrl as { FileWebUrl?: string };
 				finalImageUrl = imgObj.FileWebUrl || "";
 			}
 		} else if (user.img_url) {
-			// Хуучин зураг
 			if (typeof user.img_url === "string") {
 				finalImageUrl = user.img_url;
 			} else if (typeof user.img_url === "object" && user.img_url !== null) {
-				// Type assertion ашиглах
 				const imgObj = user.img_url as { FileWebUrl?: string };
 				finalImageUrl = imgObj.FileWebUrl || "";
 			}
@@ -518,28 +502,14 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 			password: editForm.newPassword || "",
 		};
 
-		console.log("📤 Хадгалах мэдээлэл:", profileData);
-		console.log(
-			"🔍 finalImageUrl:",
-			finalImageUrl,
-			"| Type:",
-			typeof finalImageUrl,
-		);
-		console.log("🔍 img_url type:", typeof profileData.img_url);
-		console.log("🔍 img_url value:", JSON.stringify(profileData.img_url));
-
-		// FINAL CHECK: Ensure img_url is definitely a string
 		if (typeof profileData.img_url !== "string") {
-			console.error(
-				"❌ CRITICAL: img_url is NOT a string after conversion!",
-				profileData.img_url,
-			);
 			alert("Техникийн алдаа: Зургийн URL буруу байна");
 			return;
 		}
 
 		updateMutation.mutate(profileData);
 	};
+
 	const handleAimagChange = (value: string) => {
 		setSelectedAimag(value);
 		setSelectedDistrict("");
@@ -569,42 +539,26 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 	};
 
 	return (
-		<div className="min-h-screen bg-linear-to-br from-slate-50 via-purple-50/30 to-pink-50/30 dark:from-slate-950 dark:via-purple-950/30 dark:to-pink-950/30 p-3 sm:p-4 md:p-6 lg:p-8 relative overflow-hidden">
-			{/* Animated Background Effects */}
-			<div className="fixed inset-0 pointer-events-none overflow-hidden">
-				<div className="absolute -top-40 -left-40 w-80 h-80 bg-linear-to-r from-violet-500/20 to-purple-500/20 dark:from-violet-600/30 dark:to-purple-600/30 rounded-full blur-3xl animate-pulse" />
-				<div
-					className="absolute -bottom-40 -right-40 w-96 h-96 bg-linear-to-r from-pink-500/20 to-rose-500/20 dark:from-pink-600/30 dark:to-rose-600/30 rounded-full blur-3xl animate-pulse"
-					style={{ animationDelay: "1s" }}
-				/>
-				<div
-					className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-linear-to-r from-blue-500/10 to-cyan-500/10 dark:from-blue-600/20 dark:to-cyan-600/20 rounded-full blur-3xl animate-pulse"
-					style={{ animationDelay: "2s" }}
-				/>
-			</div>
-
-			<div className="max-w-5xl mx-auto space-y-4 sm:space-y-6 relative z-10">
+		<div className="min-h-screen bg-background p-3 md:p-4">
+			<div className="max-w-3xl mx-auto space-y-3">
 				{/* Header */}
-				<div className="px-1 sm:px-0">
-					<h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold t mb-1 sm:mb-2">
-						Профайл
-					</h1>
+				<div>
+					<h1 className="text-xl font-bold">Профайл</h1>
+					<p className="text-xs text-muted-foreground">Мэдээллээ засварлах</p>
 				</div>
 
-				{/* Main Content Card */}
-				<Card className="border-0 shadow-2xl bg-card/95 backdrop-blur-xl">
-					<CardContent className="p-4 sm:p-6 md:p-8 lg:p-10">
-						<form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
+				{/* Main Card */}
+				<Card>
+					<CardContent className="p-4">
+						<form onSubmit={handleSubmit} className="space-y-4">
 							{/* Avatar Section */}
-							<div className="flex flex-col items-center gap-4 sm:gap-6 pb-6 sm:pb-8 border-b">
-								<div className="relative group">
-									<div className="absolute -inset-1 bg-linear-to-r from-violet-600 to-pink-600 rounded-full blur-xl opacity-30 group-hover:opacity-50 transition-opacity"></div>
-									<Avatar className="relative w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 border-4 border-white dark:border-slate-800 shadow-2xl ring-4 ring-purple-100 dark:ring-purple-900/50">
+							<div className="flex flex-col items-center gap-2 pb-3 border-b">
+								<div className="relative">
+									<Avatar className="w-20 h-20 border-2">
 										<AvatarImage
 											src={imagePreview || user.img_url || undefined}
-											className="object-cover"
 										/>
-										<AvatarFallback className="text-2xl sm:text-3xl font-bold bg-linear-to-br from-violet-500 to-pink-600 text-white">
+										<AvatarFallback className="text-lg bg-muted">
 											{getInitials(user.username)}
 										</AvatarFallback>
 									</Avatar>
@@ -616,185 +570,113 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												setImagePreview(user.img_url || "");
 												setUploadedImageUrl("");
 											}}
-											className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-linear-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white flex items-center justify-center shadow-lg transition-all hover:scale-110"
+											className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
 										>
-											<X className="w-3 h-3 sm:w-4 sm:h-4" />
+											<X className="w-3 h-3" />
 										</button>
 									)}
 								</div>
 
-								<div className="flex-1 text-center w-full max-w-md">
-									<h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-										{user.username || "Нэргүй хэрэглэгч"}
-									</h2>
-									<p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4 break-all">
-										{user.email}
-									</p>
-
-									<div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
-										<Label htmlFor="image-upload" className="cursor-pointer">
-											<div className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-linear-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white rounded-lg sm:rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-sm sm:text-base disabled:opacity-50">
-												<Upload className="w-4 h-4" />
-												<span>
-													{isUploadingImage
-														? "Upload хийж байна..."
-														: "Зураг солих"}
-												</span>
-											</div>
-										</Label>
-										<Input
-											id="image-upload"
-											type="file"
-											accept="image/*"
-											className="hidden"
-											onChange={handleImageChange}
-											disabled={isUploadingImage}
-										/>
-									</div>
-
-									{/* Файлын нэр */}
-									{selectedImage && (
-										<div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-lg max-w-full">
-											<Check className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" />
-											<p className="text-xs sm:text-sm text-green-700 dark:text-green-300 font-medium truncate">
-												{selectedImage.name}
-											</p>
-										</div>
-									)}
-
-									{/* Upload амжилттай message */}
-									{uploadedImageUrl && (
-										<div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg max-w-full">
-											<Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-											<p className="text-xs sm:text-sm text-blue-700 dark:text-blue-300 font-medium">
-												Server рүү амжилттай хуулагдлаа
-											</p>
-										</div>
-									)}
+								<div className="text-center space-y-1">
+									<h2 className="text-base font-bold">{user.username}</h2>
+									<p className="text-xs text-muted-foreground">{user.email}</p>
 								</div>
+
+								<Label htmlFor="image-upload" className="cursor-pointer">
+									<div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium">
+										<Upload className="w-3 h-3" />
+										<span>
+											{isUploadingImage ? "Уншиж байна..." : "Зураг солих"}
+										</span>
+									</div>
+								</Label>
+								<Input
+									id="image-upload"
+									type="file"
+									accept="image/*"
+									className="hidden"
+									onChange={handleImageChange}
+									disabled={isUploadingImage}
+								/>
+
+								{selectedImage && (
+									<p className="text-xs text-green-600">
+										✓ {selectedImage.name}
+									</p>
+								)}
+								{uploadedImageUrl && (
+									<p className="text-xs text-blue-600">✓ Амжилттай хадгаллаа</p>
+								)}
 							</div>
 
-							{/* Personal Information Section */}
-							<div className="space-y-4 sm:space-y-6">
-								<div className="flex items-center gap-2">
-									<div className="p-1.5 sm:p-2 bg-linear-to-br from-violet-500 to-purple-600 rounded-lg">
-										<User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-									</div>
-									<h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
-										Хувийн мэдээлэл
-									</h3>
-								</div>
-
-								<div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 sm:grid-cols-2">
-									{/* Lastname */}
-									<div className="space-y-2">
-										<Label
-											htmlFor="lastname"
-											className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2"
-										>
-											<User className="w-3 h-3 sm:w-4 sm:h-4 text-violet-600" />
-											Овог
-										</Label>
+							{/* Personal Info */}
+							<div className="space-y-2">
+								<h3 className="text-sm font-semibold flex items-center gap-1.5">
+									<User className="w-4 h-4" />
+									Хувийн мэдээлэл
+								</h3>
+								<div className="grid gap-2 md:grid-cols-2">
+									<div className="space-y-1">
+										<Label className="text-xs">Овог</Label>
 										<Input
-											id="lastname"
 											value={editForm.lastname}
 											onChange={(e) =>
 												setEditForm({ ...editForm, lastname: e.target.value })
 											}
 											required
-											className="h-10 sm:h-11 border-2 border-gray-200 dark:border-gray-700 focus:border-violet-500 dark:focus:border-violet-400 rounded-lg sm:rounded-xl transition-all text-sm sm:text-base"
+											className="h-9 text-sm"
 										/>
 									</div>
-
-									{/* Firstname */}
-									<div className="space-y-2">
-										<Label
-											htmlFor="firstname"
-											className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2"
-										>
-											<User className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600" />
-											Нэр
-										</Label>
+									<div className="space-y-1">
+										<Label className="text-xs">Нэр</Label>
 										<Input
-											id="firstname"
 											value={editForm.firstname}
 											onChange={(e) =>
 												setEditForm({ ...editForm, firstname: e.target.value })
 											}
 											required
-											className="h-10 sm:h-11 border-2 border-gray-200 dark:border-gray-700 focus:border-purple-500 dark:focus:border-purple-400 rounded-lg sm:rounded-xl transition-all text-sm sm:text-base"
+											className="h-9 text-sm"
 										/>
 									</div>
-
-									{/* Email */}
-									<div className="space-y-2">
-										<Label
-											htmlFor="email"
-											className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2"
-										>
-											<Mail className="w-3 h-3 sm:w-4 sm:h-4 text-pink-600" />
-											Имэйл хаяг
-										</Label>
+									<div className="space-y-1">
+										<Label className="text-xs">Имэйл</Label>
 										<Input
-											id="email"
 											type="email"
 											value={editForm.email}
 											onChange={(e) =>
 												setEditForm({ ...editForm, email: e.target.value })
 											}
 											required
-											className="h-10 sm:h-11 border-2 border-gray-200 dark:border-gray-700 focus:border-pink-500 dark:focus:border-pink-400 rounded-lg sm:rounded-xl transition-all text-sm sm:text-base"
+											className="h-9 text-sm"
 										/>
 									</div>
-
-									{/* Phone */}
-									<div className="space-y-2">
-										<Label
-											htmlFor="phone"
-											className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2"
-										>
-											<PhoneIcon className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
-											Утасны дугаар
-										</Label>
+									<div className="space-y-1">
+										<Label className="text-xs">Утас</Label>
 										<Input
-											id="phone"
 											type="tel"
 											value={editForm.Phone}
 											onChange={(e) =>
 												setEditForm({ ...editForm, Phone: e.target.value })
 											}
-											placeholder="+976 ..."
-											className="h-10 sm:h-11 border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg sm:rounded-xl transition-all text-sm sm:text-base"
+											className="h-9 text-sm"
 										/>
 									</div>
 								</div>
 							</div>
 
-							<Separator />
+							<Separator className="my-3" />
 
-							{/* Password Section */}
-							<div className="space-y-4 sm:space-y-6">
-								<div className="flex items-center gap-2">
-									<div className="p-1.5 sm:p-2 bg-linear-to-br from-pink-500 to-rose-600 rounded-lg">
-										<Lock className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-									</div>
-									<h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
-										Нууц үг
-									</h3>
-								</div>
-
-								<div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 sm:grid-cols-2">
-									{/* New Password */}
-									<div className="space-y-2">
-										<Label
-											htmlFor="new-password"
-											className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300"
-										>
-											Шинэ нууц үг
-										</Label>
+							{/* Password */}
+							<div className="space-y-2">
+								<h3 className="text-sm font-semibold flex items-center gap-1.5">
+									<Lock className="w-4 h-4" />
+									Нууц үг
+								</h3>
+								<div className="grid gap-2 md:grid-cols-2">
+									<div className="space-y-1">
+										<Label className="text-xs">Шинэ нууц үг</Label>
 										<div className="relative">
 											<Input
-												id="new-password"
 												type={showNewPassword ? "text" : "password"}
 												value={editForm.newPassword}
 												onChange={(e) =>
@@ -803,28 +685,25 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 														newPassword: e.target.value,
 													})
 												}
-												placeholder="Шинэ нууц үг оруулах"
-												className="h-10 sm:h-11 border-2 border-gray-200 dark:border-gray-700 focus:border-violet-500 dark:focus:border-violet-400 rounded-lg sm:rounded-xl transition-all pr-10 text-sm sm:text-base"
+												className="h-9 pr-8 text-sm"
 											/>
 											<button
 												type="button"
 												onClick={() => setShowNewPassword(!showNewPassword)}
-												className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-											></button>
+												className="absolute right-2 top-1/2 -translate-y-1/2"
+											>
+												{showNewPassword ? (
+													<EyeOff className="w-3.5 h-3.5" />
+												) : (
+													<Eye className="w-3.5 h-3.5" />
+												)}
+											</button>
 										</div>
 									</div>
-
-									{/* Confirm Password */}
-									<div className="space-y-2">
-										<Label
-											htmlFor="confirm-password"
-											className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300"
-										>
-											Нууц үг баталгаажуулах
-										</Label>
+									<div className="space-y-1">
+										<Label className="text-xs">Баталгаажуулах</Label>
 										<div className="relative">
 											<Input
-												id="confirm-password"
 												type={showConfirmPassword ? "text" : "password"}
 												value={editForm.confirmPassword}
 												onChange={(e) =>
@@ -833,72 +712,66 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 														confirmPassword: e.target.value,
 													})
 												}
-												placeholder="Нууц үгээ дахин оруулах"
-												className="h-10 sm:h-11 border-2 border-gray-200 dark:border-gray-700 focus:border-purple-500 dark:focus:border-purple-400 rounded-lg sm:rounded-xl transition-all pr-10 text-sm sm:text-base"
+												className="h-9 pr-8 text-sm"
 											/>
 											<button
 												type="button"
 												onClick={() =>
 													setShowConfirmPassword(!showConfirmPassword)
 												}
-												className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+												className="absolute right-2 top-1/2 -translate-y-1/2"
 											>
-												{/* Энд Eye icon нэмж болно */}
+												{showConfirmPassword ? (
+													<EyeOff className="w-3.5 h-3.5" />
+												) : (
+													<Eye className="w-3.5 h-3.5" />
+												)}
 											</button>
 										</div>
 									</div>
 								</div>
-
-								{/* Password Error */}
 								{passwordError && (
-									<div className="p-3 sm:p-4 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded-lg sm:rounded-xl flex items-start gap-2">
-										<AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-										<p className="text-xs sm:text-sm text-red-700 dark:text-red-300">
-											{passwordError}
-										</p>
+									<div className="p-2 bg-destructive/10 border border-destructive/30 rounded flex items-start gap-1.5">
+										<AlertCircle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
+										<p className="text-xs text-destructive">{passwordError}</p>
 									</div>
 								)}
 							</div>
 
-							<Separator />
+							<Separator className="my-3" />
 
-							{/* Location Selection */}
-							<div className="space-y-4 sm:space-y-6">
-								<div className="flex items-center gap-2">
-									<div className="p-1.5 sm:p-2 bg-linear-to-br from-blue-500 to-cyan-600 rounded-lg">
-										<MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-									</div>
-									<h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
-										Байршил
-									</h3>
-								</div>
-
-								<div className=" ">
-									{/* Aimag */}
-									<div className="space-y-2">
-										<Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-											<MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
-											Аймаг/Хот
-										</Label>
+							{/* Location */}
+							<div className="space-y-2">
+								<h3 className="text-sm font-semibold flex items-center gap-1.5">
+									<MapPin className="w-4 h-4" />
+									Байршил
+								</h3>
+								<div className="grid gap-2 md:grid-cols-2">
+									<div className="space-y-1">
+										<Label className="text-xs">Аймаг/Хот</Label>
 										<Select
 											value={selectedAimag}
 											onValueChange={handleAimagChange}
 											disabled={aimagLoading}
 										>
-											<SelectTrigger className="h-10 sm:h-11 border-2 rounded-lg sm:rounded-xl text-sm sm:text-base">
+											<SelectTrigger className="h-9 w-full text-sm">
 												<SelectValue
-													placeholder={user.aimag_name || "Сонгох"}
+													placeholder={
+														aimagLoading
+															? "Уншиж байна..."
+															: user.aimag_name || "Сонгох"
+													}
 												/>
 											</SelectTrigger>
-											<SelectContent>
+											<SelectContent className="max-h-[200px]">
 												{aimagList.map((aimag) => (
 													<SelectItem
 														key={aimag.mid}
 														value={aimag.mAcode}
-														className="truncate max-w-full"
+														className="text-sm"
 													>
 														<span
-															className="truncate block"
+															className="block truncate"
 															title={aimag.mName}
 														>
 															{aimag.mName}
@@ -909,29 +782,33 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 										</Select>
 									</div>
 
-									{/* District */}
-									<div className="space-y-2">
-										<Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-											<MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
-											Дүүрэг/Сум
-										</Label>
+									<div className="space-y-1">
+										<Label className="text-xs">Дүүрэг/Сум</Label>
 										<Select
 											value={selectedDistrict}
 											onValueChange={handleDistrictChange}
 											disabled={!selectedAimag || districtLoading}
 										>
-											<SelectTrigger className="h-10 sm:h-11 border-2 rounded-lg sm:rounded-xl text-sm sm:text-base">
-												<SelectValue placeholder={user.sym_name || "Сонгох"} />
+											<SelectTrigger className="h-9 w-full text-sm">
+												<SelectValue
+													placeholder={
+														districtLoading
+															? "Уншиж байна..."
+															: !selectedAimag
+																? "Аймаг сонгоно уу"
+																: user.sym_name || "Сонгох"
+													}
+												/>
 											</SelectTrigger>
-											<SelectContent>
+											<SelectContent className="max-h-[200px]">
 												{districtList.map((district) => (
 													<SelectItem
 														key={district.id}
 														value={district.id.toString()}
-														className="truncate max-w-full"
+														className="text-sm"
 													>
 														<span
-															className="truncate block"
+															className="block truncate"
 															title={district.name}
 														>
 															{district.name}
@@ -942,29 +819,33 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 										</Select>
 									</div>
 
-									{/* School */}
-									<div className="space-y-2">
-										<Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-											<Building2 className="w-3 h-3 sm:w-4 sm:h-4 text-indigo-600" />
-											Сургууль
-										</Label>
+									<div className="space-y-1">
+										<Label className="text-xs">Сургууль</Label>
 										<Select
 											value={selectedSchool}
 											onValueChange={handleSchoolChange}
 											disabled={!selectedDistrict || schoolLoading}
 										>
-											<SelectTrigger className="h-10 sm:h-11 border-2 rounded-lg sm:rounded-xl text-sm sm:text-base">
-												<SelectValue placeholder={user.sch_name || "Сонгох"} />
+											<SelectTrigger className="h-9 w-full text-sm">
+												<SelectValue
+													placeholder={
+														schoolLoading
+															? "Уншиж байна..."
+															: !selectedDistrict
+																? "Дүүрэг сонгоно уу"
+																: user.sch_name || "Сонгох"
+													}
+												/>
 											</SelectTrigger>
-											<SelectContent>
+											<SelectContent className="max-h-[200px]">
 												{schoolList.map((school, index) => (
 													<SelectItem
 														key={`${school.dbname}-${index}`}
 														value={school.sName}
-														className="truncate max-w-full"
+														className="text-sm"
 													>
 														<span
-															className="truncate block"
+															className="block truncate"
 															title={school.sName}
 														>
 															{school.sName}
@@ -974,35 +855,36 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 											</SelectContent>
 										</Select>
 									</div>
-									{/* Class */}
-									<div className="space-y-2">
-										<Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-											<User className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600" />
-											Анги
-										</Label>
+
+									<div className="space-y-1">
+										<Label className="text-xs">Анги</Label>
 										<Select
 											value={selectedClass}
 											onValueChange={setSelectedClass}
 											disabled={!selectedSchool || classLoading}
 										>
-											<SelectTrigger className="h-10 sm:h-11 border-2 rounded-lg sm:rounded-xl text-sm sm:text-base">
+											<SelectTrigger className="h-9 w-full text-sm">
 												<SelectValue
-													placeholder={user.studentgroupname || "Сонгох"}
+													placeholder={
+														classLoading
+															? "Уншиж байна..."
+															: !selectedSchool
+																? "Сургууль сонгоно уу"
+																: user.studentgroupname || "Сонгох"
+													}
 												/>
 											</SelectTrigger>
-											<SelectContent>
+											<SelectContent className="max-h-[200px]">
 												{classList
-													.filter(
-														(classItem) => classItem.class_name !== "Бүлэг ",
-													)
+													.filter((c) => c.class_name !== "Бүлэг ")
 													.map((classItem, index) => (
 														<SelectItem
 															key={`${classItem.studentgroupid}-${index}`}
 															value={classItem.studentgroupid}
-															className="truncate max-w-full"
+															className="text-sm"
 														>
 															<span
-																className="truncate block"
+																className="block truncate"
 																title={classItem.class_name}
 															>
 																{classItem.class_name}
@@ -1016,61 +898,56 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 							</div>
 
 							{/* Save Button */}
-							<div className="pt-2">
-								<Button
-									type="submit"
-									disabled={updateMutation.isPending}
-									className="w-full h-11 sm:h-12 rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 font-semibold text-sm sm:text-base"
-								>
-									{updateMutation.isPending ? (
-										<span className="flex items-center gap-2">
-											<UseAnimations
-												animation={loading2}
-												size={20}
-												strokeColor="#ffffff"
-												loop
-											/>
-											<span className="text-sm sm:text-base">
-												Хадгалж байна...
-											</span>
-										</span>
-									) : (
-										<>
-											<Save className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-											Хадгалах
-										</>
-									)}
-								</Button>
-							</div>
+							<Button
+								type="submit"
+								disabled={updateMutation.isPending}
+								className="w-full h-10 text-sm"
+							>
+								{updateMutation.isPending ? (
+									<span className="flex items-center gap-2">
+										<UseAnimations
+											animation={loading2}
+											size={16}
+											strokeColor="currentColor"
+											loop
+										/>
+										<span>Хадгалж байна...</span>
+									</span>
+								) : (
+									<span className="flex items-center gap-2">
+										<Save className="w-4 h-4" />
+										<span>Хадгалах</span>
+									</span>
+								)}
+							</Button>
 						</form>
 					</CardContent>
 				</Card>
 
-				{/* Error Display */}
+				{/* Messages */}
 				{updateMutation.isError && (
-					<div className="p-3 sm:p-4 bg-red-50 dark:bg-red-950/50 border-2 border-red-200 dark:border-red-800 rounded-lg sm:rounded-xl flex items-start gap-2 sm:gap-3">
-						<AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-						<div className="min-w-0 flex-1">
-							<p className="text-xs sm:text-sm font-semibold text-red-900 dark:text-red-100">
+					<div className="p-3 bg-destructive/10 border border-destructive/30 rounded flex items-start gap-2">
+						<AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+						<div>
+							<p className="text-sm font-semibold text-destructive">
 								Алдаа гарлаа
 							</p>
-							<p className="text-xs sm:text-sm text-red-700 dark:text-red-300 mt-1 wrap-break-words">
+							<p className="text-xs text-destructive/80">
 								{(updateMutation.error as Error).message}
 							</p>
 						</div>
 					</div>
 				)}
 
-				{/* Success Display */}
 				{updateMutation.isSuccess && (
-					<div className="p-3 sm:p-4 bg-green-50 dark:bg-green-950/50 border-2 border-green-200 dark:border-green-800 rounded-lg sm:rounded-xl flex items-start gap-2 sm:gap-3">
-						<Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
-						<div className="min-w-0 flex-1">
-							<p className="text-xs sm:text-sm font-semibold text-green-900 dark:text-green-100">
-								Амжилттай хадгаллаа
+					<div className="p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded flex items-start gap-2">
+						<Check className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+						<div>
+							<p className="text-sm font-semibold text-green-900 dark:text-green-100">
+								Амжилттай
 							</p>
-							<p className="text-xs sm:text-sm text-green-700 dark:text-green-300 mt-1">
-								Таны мэдээлэл амжилттай шинэчлэгдлээ
+							<p className="text-xs text-green-700 dark:text-green-300">
+								Мэдээлэл шинэчлэгдлээ
 							</p>
 						</div>
 					</div>

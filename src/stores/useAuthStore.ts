@@ -1,3 +1,4 @@
+// useAuthStore.ts - Updated clearAuth function
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { User } from "@/types/login/loginToken/loginToken";
@@ -38,14 +39,25 @@ export const useAuthStore = create<AuthState>()(
 			setFirstname: (firstname) => set({ firstname }),
 			setImgUrl: (imgUrl) => set({ imgUrl }),
 			clearUserId: () => set({ userId: null }),
-			clearAuth: () =>
+			clearAuth: () => {
+				// Clear all state
 				set({
 					userId: null,
 					token: null,
 					user: null,
 					firstname: null,
 					imgUrl: null,
-				}),
+				});
+
+				// Remove from localStorage
+				localStorage.removeItem("auth-storage");
+
+				// Clear all localStorage (optional - use with caution)
+				// localStorage.clear();
+
+				// Clear all sessionStorage (optional)
+				// sessionStorage.clear();
+			},
 			isAuthenticated: () => get().userId !== null,
 		}),
 		{

@@ -5,6 +5,7 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import StyledBackButton from "@/components/backButton";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getContentView } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -15,10 +16,12 @@ import { LessonSidebar } from "./lessonSidebar";
 
 // Loading component мемоизлох
 const LoadingSpinner = memo(() => (
-	<div className="flex items-center justify-center min-h-screen">
+	<div className="flex items-center justify-center min-h-screen px-4">
 		<div className="text-center space-y-4">
-			<Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-			<p className="text-muted-foreground">Ачааллаж байна...</p>
+			<Loader2 className="h-10 w-10 md:h-12 md:w-12 animate-spin text-primary mx-auto" />
+			<p className="text-sm md:text-base text-muted-foreground">
+				Ачааллаж байна...
+			</p>
 		</div>
 	</div>
 ));
@@ -30,10 +33,10 @@ const ErrorMessage = memo(({ message }: { message: string }) => (
 		<Card className="max-w-md w-full">
 			<CardContent className="pt-6 space-y-4">
 				<div className="text-center">
-					<p className="text-lg font-semibold mb-2 text-destructive">
+					<p className="text-base md:text-lg font-semibold mb-2 text-destructive">
 						Алдаа гарлаа
 					</p>
-					<p className="text-muted-foreground text-sm">{message}</p>
+					<p className="text-xs md:text-sm text-muted-foreground">{message}</p>
 				</div>
 				<StyledBackButton />
 			</CardContent>
@@ -45,14 +48,14 @@ ErrorMessage.displayName = "ErrorMessage";
 // Completion message мемоизлох
 const CompletionMessage = memo(() => (
 	<Card className="mt-4 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
-		<CardContent className="p-4">
-			<div className="flex items-center gap-3">
-				<CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
+		<CardContent className="p-3 md:p-4">
+			<div className="flex items-center gap-2 md:gap-3">
+				<CheckCircle2 className="h-5 w-5 md:h-6 md:w-6 text-green-600 dark:text-green-400 shrink-0" />
 				<div>
-					<p className="font-semibold text-green-900 dark:text-green-100">
+					<p className="text-sm md:text-base font-semibold text-green-900 dark:text-green-100">
 						Амжилттай дүүргэлээ!
 					</p>
-					<p className="text-sm text-green-700 dark:text-green-300">
+					<p className="text-xs md:text-sm text-green-700 dark:text-green-300">
 						Та энэ хичээлийг бүрэн судаллаа
 					</p>
 				</div>
@@ -66,6 +69,7 @@ export default function CoursePage() {
 	const router = useRouter();
 	const params = useParams();
 	const [currentLessonIndex, setCurrentLessonIndex] = useState<number>(0);
+	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 	const queryClient = useQueryClient();
 
 	const content_id = Number(params.id);
@@ -75,10 +79,10 @@ export default function CoursePage() {
 		queryKey: ["contentView", content_id, userId],
 		queryFn: () => getContentView(content_id, userId || 0),
 		enabled: !!content_id && !!userId,
-		staleTime: 5 * 60 * 1000, // 5 минут
-		gcTime: 10 * 60 * 1000, // 10 минут cache хадгална
-		refetchOnWindowFocus: false, // Window focus дээр дахин татахгүй
-		refetchOnMount: false, // Mount дээр дахин татахгүй
+		staleTime: 5 * 60 * 1000,
+		gcTime: 10 * 60 * 1000,
+		refetchOnWindowFocus: false,
+		refetchOnMount: false,
 	});
 
 	// Auto-scroll optimized
@@ -97,15 +101,17 @@ export default function CoursePage() {
 		return () => clearTimeout(timeoutId);
 	}, [currentLessonIndex]);
 
+	// Close sidebar when lesson changes on mobile
+	useEffect(() => {
+		setIsSidebarOpen(false);
+	}, []);
+
 	// Mark lesson as complete mutation optimized
 	const markCompleteMutation = useMutation({
 		mutationFn: async (_lessonId: number) => {
-			// Replace with your actual API call
-			// await markLessonComplete(lessonId, userId);
 			return { success: true };
 		},
 		onMutate: async (lessonId) => {
-			// Optimistic update
 			await queryClient.cancelQueries({
 				queryKey: ["contentView", content_id, userId],
 			});
@@ -131,7 +137,6 @@ export default function CoursePage() {
 			return { previousData };
 		},
 		onError: (_err, _lessonId, context) => {
-			// Rollback on error
 			if (context?.previousData) {
 				queryClient.setQueryData(
 					["contentView", content_id, userId],
@@ -154,7 +159,6 @@ export default function CoursePage() {
 		) {
 			markCompleteMutation.mutate(data.RetData[currentLessonIndex].content_id);
 		}
-		// Move to next lesson
 		if (data?.RetData && currentLessonIndex < data.RetData.length - 1) {
 			setCurrentLessonIndex(currentLessonIndex + 1);
 		}
@@ -182,6 +186,11 @@ export default function CoursePage() {
 	const handleFinish = useCallback(() => {
 		router.push("/Lists/courseList");
 	}, [router]);
+
+	const handleLessonSelect = useCallback((index: number) => {
+		setCurrentLessonIndex(index);
+		setIsSidebarOpen(false);
+	}, []);
 
 	// Memoized values
 	const contents = useMemo(() => data?.RetData || [], [data?.RetData]);
@@ -217,40 +226,100 @@ export default function CoursePage() {
 	return (
 		<div className="min-h-screen bg-background">
 			{/* Header */}
-			<div className="border-b bg-card">
-				<div className="px-4 py-3">
-					<div className="flex items-center gap-2 mb-3">
+			<div className="border-b bg-card sticky top-0 z-10">
+				<div className="px-3 md:px-4 py-2.5 md:py-3">
+					<div className="flex items-center gap-2 mb-2 md:mb-3">
 						<StyledBackButton
 							onClick={() => router.push("/Lists/courseList")}
 						/>
-						<span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+						<span className="text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300">
 							Буцах
 						</span>
 					</div>
-					<h1 className="text-xl font-bold">
-						{contents[0]?.content_name || "Хичээлийн агуулга"}
-					</h1>
+					<div className="flex items-center justify-between">
+						<h1 className="text-base md:text-xl font-bold truncate flex-1 mr-2">
+							{contents[0]?.content_name || "Хичээлийн агуулга"}
+						</h1>
+						{/* Mobile menu toggle */}
+						<Button
+							onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+							className="lg:hidden p-2 rounded-md hover:bg-accent"
+							aria-label="Toggle lesson list"
+						>
+							<svg
+								className="w-5 h-5"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<title>Menu</title>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth={2}
+									d="M4 6h16M4 12h16M4 18h16"
+								/>
+							</svg>
+						</Button>
+					</div>
 				</div>
 			</div>
 
 			{/* Main Content */}
-			<div className="px-4 py-4">
-				<div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+			<div className="px-3 md:px-4 py-3 md:py-4">
+				<div className="grid grid-cols-1 lg:grid-cols-4 gap-3 md:gap-4">
 					{/* Sidebar - Lesson List */}
-					<div className="lg:col-span-1">
-						<LessonSidebar
-							contents={contents}
-							currentLessonIndex={currentLessonIndex}
-							onLessonSelect={setCurrentLessonIndex}
-							showBackButton={contents.length > 1}
-						/>
+					<div
+						className={`
+							lg:col-span-1
+							${isSidebarOpen ? "block" : "hidden lg:block"}
+							${isSidebarOpen ? "fixed inset-0 z-50 bg-background lg:relative" : ""}
+						`}
+					>
+						{isSidebarOpen && (
+							<div className="lg:hidden p-3 border-b flex items-center justify-between sticky top-0 bg-background">
+								<h2 className="font-semibold">Хичээлийн жагсаалт</h2>
+								<Button
+									onClick={() => setIsSidebarOpen(false)}
+									className="p-2 rounded-md hover:bg-accent"
+									aria-label="Close lesson list"
+								>
+									<svg
+										className="w-5 h-5"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
+									>
+										<title>Close</title>
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											strokeWidth={2}
+											d="M6 18L18 6M6 6l12 12"
+										/>
+									</svg>
+								</Button>
+							</div>
+						)}
+						<div
+							className={
+								isSidebarOpen ? "p-3 overflow-y-auto h-[calc(100vh-60px)]" : ""
+							}
+						>
+							<LessonSidebar
+								contents={contents}
+								currentLessonIndex={currentLessonIndex}
+								onLessonSelect={handleLessonSelect}
+								showBackButton={contents.length > 1}
+							/>
+						</div>
 					</div>
 
 					{/* Main Lesson Content */}
 					<div className="lg:col-span-3">
 						<div
 							id={`lesson-${currentLessonIndex}`}
-							className="max-h-[calc(100vh-250px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+							className="max-h-[calc(100vh-180px)] md:max-h-[calc(100vh-200px)] lg:max-h-[calc(100vh-250px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
 						>
 							{isHomework ? (
 								<Homework

@@ -34,6 +34,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import type { AnswerValue } from "@/types/exam/exam";
 import { AdvancedExamProctor } from "../component/examguard";
 import ExamTimer from "../component/Itime";
+import MathContent from "../component/question/MathContent";
 import QuestionImage from "../component/question/questionImage";
 
 interface PendingAnswer {
@@ -1043,7 +1044,7 @@ export default function ExamPage() {
 											<div className="flex-1 min-w-0">
 												<div className="flex items-start justify-between gap-2 mb-4">
 													<div className="font-semibold text-lg flex-1 leading-relaxed prose prose-sm max-w-none">
-														{parse(q.question_name)}
+														<MathContent html={q.question_name} />
 													</div>
 													<div className="flex items-center gap-2 shrink-0">
 														<Button

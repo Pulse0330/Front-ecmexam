@@ -106,18 +106,18 @@ export default function MatchingByLine({
 			// Одоо ашиглагдаж байгаа бүх өнгийг авна
 			const usedColors = new Set(currentConnections.map((c) => c.color));
 
-			// Ашиглагдаагүй өнгүүдийг олно
+			// Ашиглагдаагүй өнгүүдийг олно (эхний дарааллаар)
 			const available = colorPalette.current.filter((c) => !usedColors.has(c));
 
 			if (available.length === 0) {
-				// Бүх өнгө ашиглагдсан бол эхнээс нь эхэлнэ
+				// Бүх өнгө ашиглагдсан бол палитрын дарааллын дагуу давтана
 				return colorPalette.current[
-					Math.floor(Math.random() * colorPalette.current.length)
+					currentConnections.length % colorPalette.current.length
 				];
 			}
 
-			// Санамсаргүй байдлаар ашиглагдаагүй өнгөнөөс сонгоно
-			return available[Math.floor(Math.random() * available.length)];
+			// Санамсаргүй биш, эхний ашиглагдаагүй өнгийг авна
+			return available[0];
 		},
 		[],
 	);
@@ -185,50 +185,61 @@ export default function MatchingByLine({
 		connections.find((c) => c.start === id || c.end === id)?.color;
 
 	const handleItemClick = useCallback(
-		(id: string, isQuestion: boolean) => {
+		(id: string, _isQuestion: boolean) => {
 			setConnections((prevConnections) => {
 				const existing = prevConnections.find(
 					(c) => c.start === id || c.end === id,
 				);
 				if (existing) {
-					// Холболт устгах - өнгө буцаж ашиглагдахгүй
+					// Холболт устгах
 					setActiveStart("");
 					return prevConnections.filter((c) => c !== existing);
 				}
 				return prevConnections;
 			});
 
-			if (isQuestion) {
-				setActiveStart(id);
-			} else {
-				setActiveStart((currentStart) => {
-					if (currentStart) {
-						setConnections((prevConnections) => {
-							// Шинэ холболт үүсгэхдээ одоогийн холболтуудыг харгалзана
-							const color = getUniqueColor(prevConnections);
+			setActiveStart((currentStart) => {
+				if (currentStart) {
+					// Хоёр дахь элемент дарагдлаа - холболт үүсгэх
+					const firstIsQuestion = currentStart.startsWith("q-");
+					const secondIsQuestion = id.startsWith("q-");
 
-							return [
-								...prevConnections.filter((c) => c.start !== currentStart),
-								{ start: currentStart, end: id, color },
-							];
-						});
-						return "";
+					// Хоёулаа асуулт эсвэл хоёулаа хариулт бол холбохгүй
+					if (firstIsQuestion === secondIsQuestion) {
+						// Өөр элемент сонгох
+						return id;
 					}
-					return currentStart;
-				});
-			}
+
+					// Холболт үүсгэх - асуулт нь үргэлж start байна
+					const start = firstIsQuestion ? currentStart : id;
+					const end = firstIsQuestion ? id : currentStart;
+
+					setConnections((prevConnections) => {
+						const color = getUniqueColor(prevConnections);
+						return [
+							...prevConnections.filter(
+								(c) => c.start !== start && c.end !== end,
+							),
+							{ start, end, color },
+						];
+					});
+					return "";
+				}
+				// Эхний элемент сонгогдлоо
+				return id;
+			});
 		},
 		[getUniqueColor],
 	);
 
-	const interactiveProps = (id: string, isQuestion: boolean) => ({
+	const interactiveProps = (id: string) => ({
 		role: "button",
 		tabIndex: 0,
-		onClick: () => handleItemClick(id, isQuestion),
+		onClick: () => handleItemClick(id, id.startsWith("q-")),
 		onKeyDown: (e: React.KeyboardEvent) => {
 			if (e.key === "Enter" || e.key === " ") {
 				e.preventDefault();
-				handleItemClick(id, isQuestion);
+				handleItemClick(id, id.startsWith("q-"));
 			}
 		},
 	});
@@ -323,14 +334,14 @@ export default function MatchingByLine({
 									<div key={qid} className="space-y-2">
 										<div
 											id={qid}
-											{...interactiveProps(qid, true)}
+											{...interactiveProps(qid)}
 											className={cn(
 												"w-full p-3 rounded-lg flex flex-col items-center transition-colors cursor-pointer",
 												isSelected(qid)
-													? "border-2 border-blue-500 bg-blue-50"
+													? "border-2 border-blue-500 "
 													: isConnected(qid)
 														? "border-2 border-green-500 bg-green-50"
-														: "border border-gray-300 bg-white hover:border-2 hover:border-blue-500",
+														: "border border-gray-300 ",
 											)}
 											style={
 												isSelected(qid)
@@ -370,8 +381,8 @@ export default function MatchingByLine({
 														return (
 															<div
 																key={aid}
-																{...interactiveProps(aid, false)}
-																className="w-full p-2 border border-dashed rounded cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors border-blue-300"
+																{...interactiveProps(aid)}
+																className="w-full p-2 border border-dashed rounded cursor-pointer  transition-colors border-blue-300"
 															>
 																{renderContent(a)}
 															</div>
@@ -399,9 +410,9 @@ export default function MatchingByLine({
 										<div
 											key={qid}
 											id={qid}
-											{...interactiveProps(qid, true)}
+											{...interactiveProps(qid)}
 											className={cn(
-												"w-full p-4 rounded-lg flex flex-col items-center justify-center transition-all  cursor-pointer hover:border-2 hover:border-blue-500",
+												"w-full p-4 rounded-lg flex flex-col items-center justify-center transition-all  cursor-pointer",
 												isSelected(qid)
 													? "border-2 border-blue-500"
 													: isConnected(qid)
@@ -433,11 +444,11 @@ export default function MatchingByLine({
 										<div
 											key={aid}
 											id={aid}
-											{...interactiveProps(aid, false)}
+											{...interactiveProps(aid)}
 											className={cn(
 												"w-full p-4 rounded-lg flex flex-col items-center justify-center transition-all  cursor-pointer hover:border-2 hover:border-blue-500",
 												isSelected(aid)
-													? "border-2 border-blue-500 bg-blue-50 shadow-md"
+													? "border-2 border-blue-500  shadow-md"
 													: isConnected(aid)
 														? "border-2 border-green-500 bg-green-50"
 														: "border border-gray-300",
