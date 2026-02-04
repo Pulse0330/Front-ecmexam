@@ -54,11 +54,13 @@ function MathContent({ html }: MathContentProps) {
 	const sanitizedHtml = html.length > 100000 ? html.substring(0, 100000) : html;
 
 	return (
-		<div
-			ref={contentRef}
-			dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-			className="math-content"
-		/>
+		<div className="w-full max-w-full overflow-x-auto">
+			<div
+				ref={contentRef}
+				dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+				className="math-content"
+			/>
+		</div>
 	);
 }
 
