@@ -1,68 +1,89 @@
 "use client";
 
-import { memo, useEffect, useRef } from "react";
+import { memo, useCallback, useEffect, useRef } from "react";
 
 interface MathContentProps {
 	html: string;
+	className?: string;
 }
 
-function MathContent({ html }: MathContentProps) {
+function MathContent({ html, className = "" }: MathContentProps) {
 	const mathRef = useRef<HTMLDivElement>(null);
+	const renderTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-	useEffect(() => {
-		const renderMath = async () => {
-			if (mathRef.current && window.MathJax) {
-				try {
-					// MathJax typesetClear хэрэглэх
-					if (window.MathJax.typesetClear) {
-						window.MathJax.typesetClear([mathRef.current]);
-					}
+	const renderMath = useCallback(async () => {
+		if (!mathRef.current || !window.MathJax) return;
 
-					// MathJax typesetPromise хэрэглэх
-					if (window.MathJax.typesetPromise) {
-						await window.MathJax.typesetPromise([mathRef.current]);
-					}
+		try {
+			// Clear previous timeout
+			if (renderTimeoutRef.current) {
+				clearTimeout(renderTimeoutRef.current);
+			}
 
-					// Container-уудыг wrap болгох
-					const containers = mathRef.current.querySelectorAll("mjx-container");
+			// Debounce rendering for performance
+			renderTimeoutRef.current = setTimeout(async () => {
+				if (!mathRef.current || !window.MathJax) return;
+
+				// Clear previous renders
+				if (window.MathJax.typesetClear) {
+					window.MathJax.typesetClear([mathRef.current]);
+				}
+
+				// Render MathJax
+				if (window.MathJax.typesetPromise) {
+					await window.MathJax.typesetPromise([mathRef.current]);
+				}
+
+				// Post-process containers
+				const containers = mathRef.current.querySelectorAll("mjx-container");
+
+				// Use requestAnimationFrame for better performance
+				requestAnimationFrame(() => {
 					containers.forEach((container: Element) => {
 						const el = container as HTMLElement;
-
-						// Table шалгах
 						const hasTable = container.querySelector("mjx-mtable, mtable");
 
 						if (hasTable) {
-							// Table бол horizontal scroll
+							// Table: horizontal scroll
 							el.style.display = "block";
 							el.style.maxWidth = "100%";
 							el.style.overflowX = "auto";
 							el.style.overflowY = "hidden";
 						} else {
-							// Энгийн томьёо бол wrap
-							el.style.display = "block";
+							// Regular: wrap
+							el.style.display = "inline-block";
 							el.style.maxWidth = "100%";
 							el.style.overflow = "visible";
 							el.style.whiteSpace = "normal";
 						}
 					});
-				} catch (err) {
-					console.error("MathJax rendering error:", err);
-				}
-			}
-		};
+				});
+			}, 100); // 100ms debounce
+		} catch (err) {
+			console.error("MathJax rendering error:", err);
+		}
+	}, []);
 
+	useEffect(() => {
 		if (window.MathJax?.startup?.promise) {
 			window.MathJax.startup.promise.then(renderMath);
 		} else {
 			renderMath();
 		}
-	}, []); // html dependency нэмсэн
+
+		// Cleanup
+		return () => {
+			if (renderTimeoutRef.current) {
+				clearTimeout(renderTimeoutRef.current);
+			}
+		};
+	}, [renderMath]);
 
 	return (
 		<div
 			ref={mathRef}
 			dangerouslySetInnerHTML={{ __html: html }}
-			className="math-content text-gray-900 dark:text-gray-100"
+			className={`math-content text-gray-900 dark:text-gray-100 ${className}`}
 			style={{
 				maxWidth: "100%",
 				overflow: "visible",
@@ -74,4 +95,10 @@ function MathContent({ html }: MathContentProps) {
 	);
 }
 
-export default memo(MathContent);
+// Custom comparison for better memoization
+export default memo(MathContent, (prevProps, nextProps) => {
+	return (
+		prevProps.html === nextProps.html &&
+		prevProps.className === nextProps.className
+	);
+});

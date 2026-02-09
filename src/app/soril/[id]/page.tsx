@@ -23,7 +23,6 @@ import MatchingByLine from "@/app/exam/component/question/matching";
 import MultiSelectQuestion from "@/app/exam/component/question/multiselect";
 import NumberInputQuestion from "@/app/exam/component/question/numberinput";
 import DragAndDropQuestion from "@/app/exam/component/question/order";
-import QuestionImage from "@/app/exam/component/question/questionImage";
 import SingleSelectQuestion from "@/app/exam/component/question/singleSelect";
 import FixedScrollButton from "@/components/FixedScrollButton";
 import { Button } from "@/components/ui/button";
@@ -31,6 +30,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { deleteExamAnswer, getExamById, saveExamAnswer } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { AnswerValue } from "@/types/exam/exam";
+import QuestionImage from "../../exam/component/question/questionImage";
 import FinishExamResultDialog, { type FinishExamDialogHandle } from "../finish";
 import ExamTimer from "../stime";
 

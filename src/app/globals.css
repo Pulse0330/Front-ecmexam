@@ -152,15 +152,20 @@
 	}
 }
 
+/* Performance: Simplified input styling */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
-	-webkit-appearance: none;
+	appearance: none;
 	margin: 0;
 }
 
 input[type="number"] {
-	-moz-appearance: textfield;
+	appearance: textfield;
 }
+
+/* ==========================================
+   MATH CONTENT - OPTIMIZED & FIXED
+   ========================================== */
 
 .math-content {
 	display: block;
@@ -173,57 +178,42 @@ input[type="number"] {
 	line-height: 1.8;
 	box-sizing: border-box;
 	font-size: 1rem;
+	contain: layout style;
 }
 
-@media (width <= 1024px) and (width >= 769px) {
-	.math-content {
-		font-size: 0.9375rem;
-		line-height: 1.7;
-	}
+/* Paragraphs */
+.math-content p {
+	margin-bottom: 1rem;
+	overflow-wrap: break-word;
+	word-wrap: break-word;
+	hyphens: auto;
+	max-width: 100%;
+	overflow: visible;
+	line-height: 1.8;
 }
 
-@media (width <= 768px) and (width >= 481px) {
-	.math-content {
-		font-size: 0.875rem;
-		line-height: 1.6;
-	}
-}
-
-@media (width <= 480px) {
-	.math-content {
-		font-size: 0.75rem;
-		line-height: 1.5;
-	}
+/* Lists */
+.math-content ol,
+.math-content ul {
+	list-style-position: outside;
+	margin: 1rem 0 1rem 2rem;
+	padding-left: 0.5rem;
 }
 
 .math-content ol {
 	list-style-type: decimal;
-	list-style-position: outside;
-	margin-left: 2rem;
-	margin-top: 1rem;
-	margin-bottom: 1rem;
-	padding-left: 0.5rem;
-}
-
-.math-content ol li {
-	display: list-item;
-	margin-bottom: 0.5rem;
-	padding-left: 0.5rem;
 }
 
 .math-content ul {
 	list-style-type: disc;
-	list-style-position: outside;
-	margin-left: 2rem;
-	margin-top: 1rem;
-	margin-bottom: 1rem;
-	padding-left: 0.5rem;
 }
 
+.math-content ol li,
 .math-content ul li {
 	display: list-item;
 	margin-bottom: 0.5rem;
 	padding-left: 0.5rem;
+	line-height: 1.7;
 }
 
 .math-content ol ol {
@@ -235,45 +225,35 @@ input[type="number"] {
 	list-style-type: lower-roman;
 }
 
-.math-content p {
-	margin-bottom: 1rem;
-	overflow-wrap: break-word;
-	word-wrap: break-word;
-	hyphens: auto;
-	max-width: 100%;
-	overflow: visible;
-}
+/* ==========================================
+   MATHJAX CONTAINERS - FIXED POSITIONING
+   ========================================== */
 
-@media (width <= 768px) {
-	.math-content ol li,
-	.math-content ul li {
-		line-height: 1.6;
-		margin-bottom: 0.4rem;
-		font-size: 0.875rem;
-	}
-}
-
-@media (width <= 480px) {
-	.math-content ol,
-	.math-content ul {
-		margin-left: 1rem;
-	}
-
-	.math-content ol li,
-	.math-content ul li {
-		line-height: 1.5;
-		margin-bottom: 0.3rem;
-		font-size: 0.75rem;
-	}
-}
-
+/* Inline Math - бичвэртэй зэрэгцэх */
 .math-content mjx-container {
 	display: inline-block;
 	max-width: 100%;
 	overflow: visible;
-	vertical-align: middle;
-	margin: 0.3em 0;
+	vertical-align: baseline; /* ЗАСВАР: middle → baseline */
+	margin: 0 0.15em; /* ЗАСВАР: жижиг margin */
 	white-space: normal;
+	font-size: 1em; /* ЗАСВАР: transform-ийг font-size болгосон */
+	line-height: 0; /* ЗАСВАР: line-height асуудал шийдсэн */
+}
+
+/* Display Math - блок хэлбэр */
+.math-content mjx-container[display="true"] {
+	display: block;
+	overflow-x: auto;
+	overflow-y: hidden;
+	max-width: 100%;
+	box-sizing: border-box;
+	white-space: normal;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-gutter: stable;
+	margin: 1em auto; /* ЗАСВАР: центрлэх */
+	padding: 0.5em 0;
+	line-height: 1; /* ЗАСВАР: line-height сэргээсэн */
 }
 
 .math-content mjx-math {
@@ -287,37 +267,23 @@ input[type="number"] {
 	max-width: 100%;
 	height: auto;
 	overflow: visible;
+	vertical-align: baseline; /* ЗАСВАР */
 }
 
-.math-content mjx-container[display="true"] {
-	display: block;
-	overflow-x: auto;
-	overflow-y: hidden;
-	max-width: 100%;
-	box-sizing: border-box;
-	white-space: normal;
-	-webkit-overflow-scrolling: touch;
-}
-
-.math-content mjx-container mjx-mtable {
-	max-width: 100%;
-	overflow: visible;
-	white-space: normal;
-}
-
-.math-content mjx-container mjx-mo {
-	white-space: normal;
-}
-
+/* MathJax table elements */
+.math-content mjx-container mjx-mtable,
+.math-content mjx-container mjx-mo,
 .math-content mjx-container mjx-mtd,
 .math-content mjx-container mjx-mtr {
 	white-space: normal;
 	max-width: 100%;
 }
 
+/* Paragraph дотор MathJax */
 .math-content p mjx-container {
 	display: inline-block;
 	max-width: 100%;
+	vertical-align: baseline; /* ЗАСВАР */
 }
 
 .math-content p mjx-container[display="true"] {
@@ -325,66 +291,9 @@ input[type="number"] {
 	max-width: 100%;
 }
 
-@media (width >= 1025px) {
-	.math-content mjx-container {
-		transform: scale(0.9);
-		transform-origin: left center;
-	}
-}
-
-@media (width <= 1024px) and (width >= 769px) {
-	.math-content mjx-container {
-		transform: scale(0.75);
-		transform-origin: left center;
-	}
-}
-
-@media (width <= 768px) and (width >= 481px) {
-	.math-content mjx-container {
-		transform: scale(0.6);
-		transform-origin: left center;
-	}
-}
-
-@media (width <= 480px) {
-	.math-content mjx-container {
-		transform: scale(0.5);
-		transform-origin: left center;
-		max-width: calc(100vw - 2rem);
-	}
-
-	.math-content mjx-container[display="true"] {
-		transform: scale(0.5);
-		transform-origin: left center;
-		max-width: calc(100vw - 2rem);
-		overflow-x: auto;
-		overflow-y: hidden;
-		padding-bottom: 0.5rem;
-		background:
-			linear-gradient(90deg, white 0%, transparent 10%) left,
-			linear-gradient(90deg, transparent 90%, white 100%) right;
-		background-size:
-			40px 100%,
-			40px 100%;
-		background-repeat: no-repeat;
-		background-attachment: local, local;
-	}
-
-	.math-content mjx-container svg {
-		max-width: none;
-	}
-
-	.dark .math-content mjx-container[display="true"] {
-		background:
-			linear-gradient(90deg, rgb(30 41 59) 0%, transparent 10%) left,
-			linear-gradient(90deg, transparent 90%, rgb(30 41 59) 100%) right;
-		background-size:
-			40px 100%,
-			40px 100%;
-		background-repeat: no-repeat;
-		background-attachment: local, local;
-	}
-}
+/* ==========================================
+   TABLES - OPTIMIZED
+   ========================================== */
 
 .math-content table {
 	width: 100%;
@@ -398,6 +307,7 @@ input[type="number"] {
 	box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
 	box-sizing: border-box;
 	table-layout: auto;
+	contain: paint;
 }
 
 .dark .math-content table {
@@ -463,72 +373,9 @@ input[type="number"] {
 	font-weight: 700;
 }
 
-@media (width <= 768px) {
-	.math-content table {
-		font-size: 0.6875rem;
-		transform: scale(0.85);
-		transform-origin: left top;
-	}
-
-	.math-content th,
-	.math-content td {
-		padding: 0.375rem 0.5rem;
-		white-space: normal;
-		font-size: 0.6875rem;
-		min-width: 45px;
-		max-width: 150px;
-	}
-
-	.math-content ol,
-	.math-content ul {
-		margin-left: 1.5rem;
-	}
-}
-
-@media (width <= 480px) {
-	.math-content table {
-		font-size: 0.625rem;
-		transform: scale(0.7);
-		transform-origin: left top;
-	}
-
-	.math-content th,
-	.math-content td {
-		padding: 0.25rem 0.375rem;
-		min-width: 35px;
-		max-width: 100px;
-		font-size: 0.625rem;
-		line-height: 1.4;
-	}
-
-	.math-content ol,
-	.math-content ul {
-		margin-left: 1rem;
-	}
-}
-
 .math-content table mjx-container {
 	margin: 0.2em 0;
-}
-
-@media (width <= 768px) {
-	.math-content table mjx-container {
-		transform: scale(0.65);
-		transform-origin: left center;
-	}
-}
-
-@media (width <= 480px) {
-	.math-content table mjx-container {
-		transform: scale(0.5);
-		transform-origin: left center;
-	}
-}
-
-.math-content mjx-container,
-.math-content table {
-	will-change: transform;
-	transform: translateZ(0);
+	font-size: 0.9em; /* ЗАСВАР: table доторх math багасгасан */
 }
 
 .math-content table:focus-within {
@@ -536,18 +383,229 @@ input[type="number"] {
 	outline-offset: 2px;
 }
 
-@media print {
-	.math-content table {
-		box-shadow: none;
-		border: 1px solid #000;
+/* ==========================================
+   RESPONSIVE - OPTIMIZED BREAKPOINTS
+   ========================================== */
+
+/* Large Desktop: > 1440px */
+@media (width >= 1441px) {
+	.math-content {
+		font-size: 1.0625rem; /* 17px */
+	}
+	
+	.math-content mjx-container {
+		font-size: 1.05em;
+	}
+}
+
+/* Desktop: 1025px - 1440px */
+@media (width <= 1440px) and (width >= 1025px) {
+	.math-content {
+		font-size: 1rem; /* 16px */
+	}
+	
+	.math-content mjx-container {
+		font-size: 1em;
+	}
+}
+
+/* Tablet: 769px - 1024px */
+@media (width <= 1024px) and (width >= 769px) {
+	.math-content {
+		font-size: 0.9375rem; /* 15px */
+		line-height: 1.7;
 	}
 
 	.math-content mjx-container {
-		transform: none;
+		font-size: 0.95em;
+		margin: 0 0.1em;
+	}
+	
+	.math-content mjx-container[display="true"] {
+		padding: 0.4em 0;
+	}
+}
+
+/* Mobile Large: 481px - 768px */
+@media (width <= 768px) and (width >= 481px) {
+	.math-content {
+		font-size: 0.875rem; /* 14px */
+		line-height: 1.6;
+	}
+
+	.math-content mjx-container {
+		font-size: 0.9em;
+		margin: 0 0.1em;
+	}
+	
+	.math-content mjx-container[display="true"] {
+		font-size: 0.85em;
+		padding: 0.3em 0;
+	}
+
+	.math-content ol li,
+	.math-content ul li {
+		line-height: 1.6;
+		margin-bottom: 0.4rem;
+		font-size: 0.875rem;
+	}
+
+	.math-content table {
+		font-size: 0.8125rem; /* 13px */
+	}
+
+	.math-content th,
+	.math-content td {
+		padding: 0.5rem 0.75rem;
+		font-size: 0.8125rem;
+		min-width: 50px;
+		max-width: 180px;
 	}
 
 	.math-content ol,
 	.math-content ul {
 		margin-left: 1.5rem;
+	}
+
+	.math-content table mjx-container {
+		font-size: 0.85em;
+	}
+}
+
+/* Mobile: <= 480px */
+@media (width <= 480px) {
+	.math-content {
+		font-size: 0.8125rem; /* 13px */
+		line-height: 1.5;
+	}
+
+	.math-content mjx-container {
+		font-size: 0.85em;
+		margin: 0 0.05em;
+		max-width: calc(100vw - 2rem);
+	}
+	
+	.math-content mjx-container[display="true"] {
+		font-size: 0.75em;
+		max-width: calc(100vw - 2rem);
+		overflow-x: auto;
+		overflow-y: hidden;
+		padding: 0.5rem 0;
+		/* Scroll gradient indicators */
+		background:
+			linear-gradient(90deg, white 0%, transparent 10%) left,
+			linear-gradient(90deg, transparent 90%, white 100%) right;
+		background-size: 40px 100%, 40px 100%;
+		background-repeat: no-repeat;
+		background-attachment: local, local;
+	}
+
+	.dark .math-content mjx-container[display="true"] {
+		background:
+			linear-gradient(90deg, rgb(30 41 59) 0%, transparent 10%) left,
+			linear-gradient(90deg, transparent 90%, rgb(30 41 59) 100%) right;
+		background-size: 40px 100%, 40px 100%;
+		background-repeat: no-repeat;
+		background-attachment: local, local;
+	}
+
+	.math-content mjx-container svg {
+		max-width: none;
+	}
+
+	.math-content ol,
+	.math-content ul {
+		margin-left: 1rem;
+		padding-left: 0.25rem;
+	}
+
+	.math-content ol li,
+	.math-content ul li {
+		line-height: 1.5;
+		margin-bottom: 0.3rem;
+		font-size: 0.8125rem;
+		padding-left: 0.25rem;
+	}
+
+	.math-content table {
+		font-size: 0.75rem; /* 12px */
+		margin: 0.75rem 0;
+	}
+
+	.math-content th,
+	.math-content td {
+		padding: 0.375rem 0.5rem;
+		min-width: 40px;
+		max-width: 120px;
+		font-size: 0.75rem;
+		line-height: 1.4;
+	}
+
+	.math-content table mjx-container {
+		font-size: 0.8em;
+	}
+}
+
+/* Extra Small Mobile: <= 360px */
+@media (width <= 360px) {
+	.math-content {
+		font-size: 0.75rem; /* 12px */
+	}
+
+	.math-content mjx-container {
+		font-size: 0.8em;
+	}
+	
+	.math-content mjx-container[display="true"] {
+		font-size: 0.7em;
+	}
+
+	.math-content table {
+		font-size: 0.6875rem; /* 11px */
+	}
+
+	.math-content th,
+	.math-content td {
+		padding: 0.25rem 0.375rem;
+		font-size: 0.6875rem;
+		min-width: 35px;
+		max-width: 100px;
+	}
+}
+
+/* ==========================================
+   PRINT OPTIMIZATION
+   ========================================== */
+@media print {
+	.math-content {
+		font-size: 12pt;
+		line-height: 1.6;
+	}
+
+	.math-content mjx-container {
+		font-size: 1em;
+		margin: 0 0.2em;
+	}
+
+	.math-content mjx-container[display="true"] {
+		page-break-inside: avoid;
+		margin: 1em auto;
+	}
+
+	.math-content table {
+		box-shadow: none;
+		border: 1px solid #000;
+		page-break-inside: avoid;
+		font-size: 10pt;
+	}
+
+	.math-content ol,
+	.math-content ul {
+		margin-left: 1.5rem;
+	}
+
+	.math-content p {
+		orphans: 3;
+		widows: 3;
 	}
 }

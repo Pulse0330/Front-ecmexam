@@ -353,11 +353,11 @@ const MobileMenu: React.FC<{
 
 						{/* Exam Accordion */}
 						<div className="space-y-1">
-							<Button
+							<button
 								type="button"
 								onClick={() => toggleSection("exam")}
 								className={cn(
-									"w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-all",
+									"w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-all cursor-pointer",
 									"hover:bg-accent hover:text-accent-foreground",
 									expandedSection === "exam" && "bg-accent/50",
 								)}
@@ -369,7 +369,7 @@ const MobileMenu: React.FC<{
 										expandedSection === "exam" && "rotate-180",
 									)}
 								/>
-							</Button>
+							</button>
 
 							{expandedSection === "exam" && (
 								<div className="pl-4 space-y-1 animate-in slide-in-from-top-2">

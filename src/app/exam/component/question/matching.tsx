@@ -1,22 +1,17 @@
 "use client";
 
 import parse from "html-react-parser";
-import { HelpCircle, Maximize2, X, XCircle } from "lucide-react";
-import Image from "next/image";
+import { HelpCircle, X } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Xarrow, { useXarrow, Xwrapper } from "react-xarrows";
+import QuestionImage from "@/app/exam/component/question/questionImage";
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogClose,
-	DialogContent,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 // VisuallyHidden component for accessibility
-const VisuallyHidden = ({ children }: { children: React.ReactNode }) => (
+const _VisuallyHidden = ({ children }: { children: React.ReactNode }) => (
 	<span
 		style={{
 			position: "absolute",
@@ -48,9 +43,9 @@ interface QuestionItem {
 
 interface MatchingByLineProps {
 	answers: QuestionItem[];
-	onMatchChange?: (matches: Record<number, number[]>) => void; // Өөрчлөгдсөн: number -> number[]
+	onMatchChange?: (matches: Record<number, number[]>) => void;
 	readonly?: boolean;
-	userAnswers?: Record<number, number[]>; // Өөрчлөгдсөн: number -> number[]
+	userAnswers?: Record<number, number[]>;
 }
 
 interface Connection {
@@ -67,7 +62,6 @@ export default function MatchingByLine({
 	const [connections, setConnections] = useState<Connection[]>([]);
 	const [activeStart, setActiveStart] = useState<string>("");
 	const [isMobile, setIsMobile] = useState(false);
-	const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 	const [showHelp, setShowHelp] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const updateXarrow = useXarrow();
@@ -75,56 +69,56 @@ export default function MatchingByLine({
 	const onMatchChangeRef = useRef(onMatchChange);
 
 	const colorPalette = useRef<string[]>([
-		"#3b82f6", // blue
-		"#8b5cf6", // purple
-		"#ec4899", // pink
-		"#f59e0b", // orange
-		"#eab308", // yellow
-		"#6366f1", // indigo
-		"#a855f7", // violet
-		"#f97316", // deep orange
-		"#fbbf24", // amber
-		"#fb923c", // light orange
-		"#c026d3", // fuchsia
-		"#e11d48", // rose
-		"#7c3aed", // deep purple
-		"#4f46e5", // strong indigo
-		"#2563eb", // medium blue
-		"#0284c7", // sky
-		"#facc15", // bright yellow
-		"#fde047", // lime yellow
-		"#fb7185", // light pink
-		"#f472b6", // medium pink
-		"#d946ef", // magenta
-		"#a78bfa", // light purple
-		"#818cf8", // light indigo
-		"#60a5fa", // light blue
-		"#fcd34d", // golden
-		"#fdba74", // peach
-		"#fed7aa", // light peach
-		"#fde68a", // pale yellow
-		"#93c5fd", // sky blue
-		"#c4b5fd", // lavender
-		"#ddd6fe", // pale lavender
-		"#fbcfe8", // pale pink
-		"#fecaca", // pale rose
-		"#fed7e2", // blush
-		"#fef3c7", // cream
-		"#1d4ed8", // navy blue
-		"#7e22ce", // deep violet
-		"#be185d", // deep rose
-		"#ca8a04", // dark yellow
-		"#ea580c", // burnt orange
-		"#9333ea", // royal purple
-		"#db2777", // hot pink
-		"#0369a1", // ocean blue
-		"#4338ca", // deep indigo
-		"#f59e42", // tangerine
-		"#fbbf80", // apricot
-		"#a21caf", // vivid fuchsia
-		"#854d0e", // brown
-		"#b45309", // copper
-		"#92400e", // rust
+		"#3b82f6",
+		"#8b5cf6",
+		"#ec4899",
+		"#f59e0b",
+		"#eab308",
+		"#6366f1",
+		"#a855f7",
+		"#f97316",
+		"#fbbf24",
+		"#fb923c",
+		"#c026d3",
+		"#e11d48",
+		"#7c3aed",
+		"#4f46e5",
+		"#2563eb",
+		"#0284c7",
+		"#facc15",
+		"#fde047",
+		"#fb7185",
+		"#f472b6",
+		"#d946ef",
+		"#a78bfa",
+		"#818cf8",
+		"#60a5fa",
+		"#fcd34d",
+		"#fdba74",
+		"#fed7aa",
+		"#fde68a",
+		"#93c5fd",
+		"#c4b5fd",
+		"#ddd6fe",
+		"#fbcfe8",
+		"#fecaca",
+		"#fed7e2",
+		"#fef3c7",
+		"#1d4ed8",
+		"#7e22ce",
+		"#be185d",
+		"#ca8a04",
+		"#ea580c",
+		"#9333ea",
+		"#db2777",
+		"#0369a1",
+		"#4338ca",
+		"#f59e42",
+		"#fbbf80",
+		"#a21caf",
+		"#854d0e",
+		"#b45309",
+		"#92400e",
 	]);
 
 	const getUniqueColor = useCallback(
@@ -139,14 +133,6 @@ export default function MatchingByLine({
 			}
 
 			return available[0];
-		},
-		[],
-	);
-
-	const handleImageClick = useCallback(
-		(e: React.MouseEvent, imageUrl: string) => {
-			e.stopPropagation();
-			setZoomedImage(imageUrl);
 		},
 		[],
 	);
@@ -187,7 +173,6 @@ export default function MatchingByLine({
 
 			if (!question) return;
 
-			// Олон хариулттай холбогдох
 			answerIds.forEach((answerId) => {
 				const answer = answers.find((a) => a.answer_id === answerId);
 
@@ -209,7 +194,6 @@ export default function MatchingByLine({
 	const isConnected = (id: string) =>
 		connections.some((c) => c.start === id || c.end === id);
 
-	// Холболтын өнгүүдийг авах (олон байж болно)
 	const getConnectionColors = (id: string) =>
 		connections
 			.filter((c) => c.start === id || c.end === id)
@@ -217,17 +201,10 @@ export default function MatchingByLine({
 
 	const handleItemClick = useCallback(
 		(id: string, isQuestion: boolean) => {
-			// ========================================
-			// ЗӨВХӨН АСУУЛТААС СОНГОЛТ ЭХЛЭНЭ
-			// ========================================
-
-			// Хэрэв хариулт дарсан бол юу ч хийхгүй (асуулт идэвхгүй үед)
 			if (!isQuestion && !activeStart) {
-				// ❌ ГЭХДЭЭ хариулт холбогдсон бол устгана
 				const existingConnections = connections.filter((c) => c.end === id);
 
 				if (existingConnections.length > 0) {
-					// Холбогдсон хариулт дарвал устгах
 					setConnections((prev) =>
 						prev.filter((c) => !existingConnections.includes(c)),
 					);
@@ -235,43 +212,33 @@ export default function MatchingByLine({
 				return;
 			}
 
-			// ========================================
-			// АСУУЛТ → ХАРИУЛТ ХОЛБОЛТ
-			// ========================================
 			if (activeStart && activeStart !== id) {
 				const firstIsQuestion = activeStart.startsWith("q-");
 
-				// Хоёр асуулт дарсан бол өмнөхийг цуцлаад шинийг идэвхжүүлэх
 				if (firstIsQuestion && isQuestion) {
 					setActiveStart(id);
 					return;
 				}
 
-				// Асуулт идэвхтэй байгаад хариулт дарсан бол холбох
 				if (firstIsQuestion && !isQuestion) {
 					const start = activeStart;
 					const end = id;
 
-					// Ижил холболт байгаа эсэхийг шалгах
 					const existingConnection = connections.find(
 						(c) => c.start === start && c.end === end,
 					);
 
 					if (existingConnection) {
-						// УСТГАХ: Холболт байвал устгана
 						setConnections((prev) =>
 							prev.filter((c) => c !== existingConnection),
 						);
 					} else {
-						// НЭМЭХ: Шинэ холболт үүсгэнэ
 						setConnections((prevConnections) => {
 							const color = getUniqueColor(prevConnections);
 							return [...prevConnections, { start, end, color }];
 						});
 					}
 
-					// ✅ ЧУХАЛ: Холболт үүсгэсний дараа сонголтыг цуцлах
-					// Дараагийн хариултаа холбохын тулд асуултаа дахин дарах хэрэгтэй
 					setActiveStart("");
 					return;
 				}
@@ -279,11 +246,7 @@ export default function MatchingByLine({
 				return;
 			}
 
-			// ========================================
-			// ШИНЭ СОНГОЛТ ЭХЛЭХ (зөвхөн асуулт)
-			// ========================================
 			if (isQuestion) {
-				// Асуулт дарах
 				setActiveStart(id);
 			}
 		},
@@ -306,25 +269,15 @@ export default function MatchingByLine({
 		return (
 			<div className="w-full">
 				{item.answer_img && (
-					<div className="mb-2 relative">
-						<Button
-							className="relative w-full h-32 group cursor-zoom-in block"
-							onClick={(e) => handleImageClick(e, item.answer_img as string)}
-						>
-							<Image
-								src={item.answer_img}
-								alt={item.answer_name_html || "Answer image"}
-								fill
-								className="object-contain rounded-md"
-							/>
-							<div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-md flex items-center justify-center">
-								<Maximize2 className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
-							</div>
-						</Button>
+					<div className="mb-2">
+						<QuestionImage
+							src={item.answer_img}
+							alt={item.answer_name_html || "Answer image"}
+						/>
 					</div>
 				)}
 				{item.answer_name_html && (
-					<div className="text-sm font-medium text-center ">
+					<div className="text-sm font-medium text-center">
 						{parse(item.answer_name_html.trim())}
 					</div>
 				)}
@@ -411,10 +364,10 @@ export default function MatchingByLine({
 											className={cn(
 												"w-full p-3 rounded-lg flex flex-col items-center transition-colors cursor-pointer",
 												isSelected(qid)
-													? "border-2 border-blue-500 "
+													? "border-2 border-blue-500"
 													: isConnected(qid)
 														? "border-2 border-green-500 bg-green-50"
-														: "border border-gray-300 ",
+														: "border border-gray-300",
 											)}
 										>
 											{renderContent(q)}
@@ -670,32 +623,6 @@ export default function MatchingByLine({
 							Ойлголоо
 						</Button>
 					</div>
-				</DialogContent>
-			</Dialog>
-
-			{/* Image Zoom Dialog */}
-			<Dialog open={!!zoomedImage} onOpenChange={() => setZoomedImage(null)}>
-				<DialogContent
-					className="max-w-7xl w-[95vw] h-[95vh] p-0"
-					showCloseButton={false}
-				>
-					<VisuallyHidden>
-						<DialogTitle>Зургийг томруулж харах</DialogTitle>
-					</VisuallyHidden>
-					<DialogClose className="absolute right-4 top-4 z-50 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-						<XCircle className="h-6 w-6" />
-						<span className="sr-only">Close</span>
-					</DialogClose>
-					{zoomedImage && (
-						<div className="relative w-full h-full p-4">
-							<Image
-								src={zoomedImage}
-								alt="Томруулсан зураг"
-								fill
-								className="object-contain"
-							/>
-						</div>
-					)}
 				</DialogContent>
 			</Dialog>
 		</>

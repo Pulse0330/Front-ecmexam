@@ -1,7 +1,7 @@
 import type React from "react";
 import { useCallback, useMemo } from "react";
 import { Input } from "@/components/ui/input";
-import type { AnswerValue } from "@/types/exam/exam"; // ✅ Add this import
+import type { AnswerValue } from "@/types/exam/exam";
 
 interface AnswerData {
 	answer_id: number;
@@ -15,12 +15,11 @@ interface NumberInputQuestionProps {
 	questionText?: string;
 	answers: AnswerData[];
 	selectedValues?: Record<number, string>;
-	onAnswerChange?: (questionId: number, values: AnswerValue) => void; // ✅ Now it will work
+	onAnswerChange?: (questionId: number, values: AnswerValue) => void;
 }
 
 const NumberInputQuestion: React.FC<NumberInputQuestionProps> = ({
 	questionId,
-
 	answers,
 	selectedValues = {},
 	onAnswerChange,
@@ -46,25 +45,32 @@ const NumberInputQuestion: React.FC<NumberInputQuestionProps> = ({
 	return (
 		<div className="space-y-3">
 			<div className="flex flex-col gap-2">
-				{answers.map((ans, idx) => (
-					<div key={ans.answer_id} className="flex items-center gap-2">
-						<label
-							htmlFor={`number-input-${ans.answer_id}`}
-							className="text-sm text-gray-600 min-w-8"
-						>
-							{String.fromCharCode(97 + idx)}=
-						</label>
-						<Input
-							id={`number-input-${ans.answer_id}`}
-							type="text"
-							inputMode="numeric"
-							value={values[ans.answer_id]}
-							onChange={(e) => handleChange(ans.answer_id, e.target.value)}
-							placeholder="0"
-							className="max-w-xs"
-						/>
-					</div>
-				))}
+				{answers.map((ans, idx) => {
+					// Use answer_name if available, otherwise use alphabetic label
+					const label = ans.answer_name
+						? `${ans.answer_name}=`
+						: `${String.fromCharCode(97 + idx)}=`;
+
+					return (
+						<div key={ans.answer_id} className="flex items-center gap-2">
+							<label
+								htmlFor={`number-input-${ans.answer_id}`}
+								className="text-sm text-gray-600 min-w-8"
+							>
+								{label}
+							</label>
+							<Input
+								id={`number-input-${ans.answer_id}`}
+								type="text"
+								inputMode="numeric"
+								value={values[ans.answer_id]}
+								onChange={(e) => handleChange(ans.answer_id, e.target.value)}
+								placeholder="0"
+								className="max-w-xs"
+							/>
+						</div>
+					);
+				})}
 			</div>
 		</div>
 	);

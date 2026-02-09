@@ -20,17 +20,18 @@ export default function RootLayout({ children }: RootLayoutProps) {
 								tex: {
 									inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
 									displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']],
+									processEscapes: true
 								},
 								mml: {
 									parseNodes: true,
 								},
 								startup: {
-									typeset: true
+									typeset: false  // Changed: false илүү сайн performance
 								},
 								options: {
-									skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+									skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
 									ignoreHtmlClass: 'tex2jax_ignore',
-									processHtmlClass: 'tex2jax_process'
+									processHtmlClass: 'math-content'  // Changed: MathContent component-тэй тохирох
 								},
 								chtml: {
 									scale: 1,
