@@ -11,6 +11,19 @@ function MathContent({ html, className = "" }: MathContentProps) {
 	const mathRef = useRef<HTMLDivElement>(null);
 	const renderTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
+	// HTML preprocessing: Олон зайг цэвэрлэх
+	const cleanHtml = useCallback((rawHtml: string) => {
+		return (
+			rawHtml
+				// Олон дараалсан &nbsp; -г нэг зай болгох
+				.replace(/(&nbsp;\s*)+/g, " ")
+				// Олон дараалсан ердийн зайг нэг болгох
+				.replace(/\s{2,}/g, " ")
+				// Tag хооронд илүүдэл зай арилгах
+				.replace(/>\s+</g, "><")
+		);
+	}, []);
+
 	const renderMath = useCallback(async () => {
 		if (!mathRef.current || !window.MathJax) return;
 
@@ -41,20 +54,23 @@ function MathContent({ html, className = "" }: MathContentProps) {
 				requestAnimationFrame(() => {
 					containers.forEach((container: Element) => {
 						const el = container as HTMLElement;
-						const hasTable = container.querySelector("mjx-mtable, mtable");
+						const isDisplayMode = el.getAttribute("display") === "true";
 
-						if (hasTable) {
-							// Table: horizontal scroll
+						if (isDisplayMode) {
+							// Display mode - блок хэлбэр (шинэ мөр)
 							el.style.display = "block";
 							el.style.maxWidth = "100%";
-							el.style.overflowX = "auto";
-							el.style.overflowY = "hidden";
+							el.style.overflow = "visible";
+							el.style.margin = "1em auto";
 						} else {
-							// Regular: wrap
-							el.style.display = "inline-block";
+							// Inline mode - мөрөнд үргэлжилнэ
+							el.style.display = "inline";
 							el.style.maxWidth = "100%";
+							el.style.verticalAlign = "middle";
 							el.style.overflow = "visible";
 							el.style.whiteSpace = "normal";
+							el.style.margin = "0";
+							el.style.padding = "0";
 						}
 					});
 				});
@@ -79,10 +95,12 @@ function MathContent({ html, className = "" }: MathContentProps) {
 		};
 	}, [renderMath]);
 
+	const processedHtml = cleanHtml(html);
+
 	return (
 		<div
 			ref={mathRef}
-			dangerouslySetInnerHTML={{ __html: html }}
+			dangerouslySetInnerHTML={{ __html: processedHtml }}
 			className={`math-content text-gray-900 dark:text-gray-100 ${className}`}
 			style={{
 				maxWidth: "100%",

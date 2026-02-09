@@ -179,6 +179,7 @@ input[type="number"] {
 	box-sizing: border-box;
 	font-size: 1rem;
 	contain: layout style;
+	white-space: normal;
 }
 
 /* Paragraphs */
@@ -190,6 +191,7 @@ input[type="number"] {
 	max-width: 100%;
 	overflow: visible;
 	line-height: 1.8;
+	white-space: normal;
 }
 
 /* Lists */
@@ -490,6 +492,7 @@ input[type="number"] {
 		max-width: calc(100vw - 2rem);
 		overflow-x: auto;
 		overflow-y: hidden;
+		overflow: visible;
 		padding: 0.5rem 0;
 		/* Scroll gradient indicators */
 		background:
