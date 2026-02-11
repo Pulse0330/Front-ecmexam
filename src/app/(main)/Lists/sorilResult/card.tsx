@@ -123,7 +123,7 @@ export const ExamResultCard: React.FC<ExamResultCardProps> = ({
 							<div className="relative">
 								<div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl bg-linear-to-br flex flex-col items-center justify-center transition-all duration-300 group-hover:scale-105 shadow-lg">
 									<div
-										className={`text-sm sm:text-base md:text-lg font-black leading-none text-white ${showScore ? "" : "blur-md select-none"}`}
+										className={`text-sm sm:text-base md:text-lg font-black leading-none ${showScore ? "" : "blur-md select-none"}`}
 									>
 										{exam.test_perc?.toFixed(1)}%
 									</div>
@@ -164,23 +164,6 @@ export const ExamResultCard: React.FC<ExamResultCardProps> = ({
 
 					{/* Stats */}
 					<div className="space-y-1">
-						<div className="flex items-center justify-between gap-1 sm:gap-1.5 pt-1 border-t border-border/50">
-							<div className="flex items-center gap-0.5 sm:gap-1 text-muted-foreground min-w-0">
-								<Target className={iconClass} />
-								<span className={`font-medium ${textClass} truncate`}>
-									{exam.exam_minute} мин
-								</span>
-							</div>
-							{finished && exam.test_time && (
-								<div className="flex items-center gap-0.5 sm:gap-1 text-muted-foreground min-w-0">
-									<Clock className={iconClass} />
-									<span className={`font-medium ${textClass} truncate`}>
-										{formatTestTime(exam.test_time)}
-									</span>
-								</div>
-							)}
-						</div>
-
 						{/* Зарцуулсан хугацаа */}
 						{finished && exam.test_time && (
 							<div className="flex items-center justify-between gap-1 px-1">

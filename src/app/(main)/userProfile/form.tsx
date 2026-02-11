@@ -4,8 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	AlertCircle,
 	Check,
-	Eye,
-	EyeOff,
 	Lock,
 	MapPin,
 	Save,
@@ -28,7 +26,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { getUserUpdateProfile } from "@/lib/api";
 import { uploadImage } from "@/utils/upload";
 
@@ -187,8 +184,6 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 	const [selectedDistrict, setSelectedDistrict] = useState<string>("");
 	const [selectedSchool, setSelectedSchool] = useState<string>("");
 	const [selectedClass, setSelectedClass] = useState<string>("");
-	const [showNewPassword, setShowNewPassword] = useState(false);
-	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 	const [isUploadingImage, setIsUploadingImage] = useState(false);
 	const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
 
@@ -539,29 +534,28 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 	};
 
 	return (
-		<div className="min-h-screen bg-background p-3 md:p-4">
+		<div className="min-h-screen bg-backgroundp-3 md:p-4">
 			<div className="max-w-3xl mx-auto space-y-3">
-				{/* Header */}
 				<div>
 					<h1 className="text-xl font-bold">Профайл</h1>
 					<p className="text-xs text-muted-foreground">Мэдээллээ засварлах</p>
 				</div>
 
-				{/* Main Card */}
-				<Card>
-					<CardContent className="p-4">
-						<form onSubmit={handleSubmit} className="space-y-4">
-							{/* Avatar Section */}
-							<div className="flex flex-col items-center gap-2 pb-3 border-b">
+				<Card className="overflow-hidden bg-gray-50">
+					<CardContent className="p-6">
+						<form onSubmit={handleSubmit} className="space-y-6">
+							<div className="flex flex-col items-center gap-1 border-b pb-2">
+								{/* Avatar */}
 								<div className="relative">
-									<Avatar className="w-20 h-20 border-2">
+									<Avatar className="w-24 h-24 border-2">
 										<AvatarImage
 											src={imagePreview || user.img_url || undefined}
 										/>
-										<AvatarFallback className="text-lg bg-muted">
+										<AvatarFallback className="text-xl bg-muted">
 											{getInitials(user.username)}
 										</AvatarFallback>
 									</Avatar>
+
 									{selectedImage && (
 										<button
 											type="button"
@@ -577,331 +571,268 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 									)}
 								</div>
 
-								<div className="text-center space-y-1">
-									<h2 className="text-base font-bold">{user.username}</h2>
-									<p className="text-xs text-muted-foreground">{user.email}</p>
-								</div>
+								<div className="flex flex-col items-center space-y-1">
+									<h2 className="text-lg font-semibold">{user.username}</h2>
+									<p className="text-sm text-muted-foreground">{user.email}</p>
 
-								<Label htmlFor="image-upload" className="cursor-pointer">
-									<div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium">
-										<Upload className="w-3 h-3" />
-										<span>
-											{isUploadingImage ? "Уншиж байна..." : "Зураг солих"}
-										</span>
-									</div>
-								</Label>
-								<Input
-									id="image-upload"
-									type="file"
-									accept="image/*"
-									className="hidden"
-									onChange={handleImageChange}
-									disabled={isUploadingImage}
-								/>
+									<Label htmlFor="image-upload" className="cursor-pointer">
+										<div className="inline-flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded-lg text-sm font-medium">
+											<Upload className="w-4 h-4" />
+											<span>
+												{isUploadingImage ? "Уншиж байна..." : "Зураг солих"}
+											</span>
+										</div>
+									</Label>
 
-								{selectedImage && (
-									<p className="text-xs text-green-600">
-										✓ {selectedImage.name}
-									</p>
-								)}
-								{uploadedImageUrl && (
-									<p className="text-xs text-blue-600">✓ Амжилттай хадгаллаа</p>
-								)}
-							</div>
+									<Input
+										id="image-upload"
+										type="file"
+										accept="image/*"
+										className="hidden"
+										onChange={handleImageChange}
+										disabled={isUploadingImage}
+									/>
 
-							{/* Personal Info */}
-							<div className="space-y-2">
-								<h3 className="text-sm font-semibold flex items-center gap-1.5">
-									<User className="w-4 h-4" />
-									Хувийн мэдээлэл
-								</h3>
-								<div className="grid gap-2 md:grid-cols-2">
-									<div className="space-y-1">
-										<Label className="text-xs">Овог</Label>
-										<Input
-											value={editForm.lastname}
-											onChange={(e) =>
-												setEditForm({ ...editForm, lastname: e.target.value })
-											}
-											required
-											className="h-9 text-sm"
-										/>
-									</div>
-									<div className="space-y-1">
-										<Label className="text-xs">Нэр</Label>
-										<Input
-											value={editForm.firstname}
-											onChange={(e) =>
-												setEditForm({ ...editForm, firstname: e.target.value })
-											}
-											required
-											className="h-9 text-sm"
-										/>
-									</div>
-									<div className="space-y-1">
-										<Label className="text-xs">Имэйл</Label>
-										<Input
-											type="email"
-											value={editForm.email}
-											onChange={(e) =>
-												setEditForm({ ...editForm, email: e.target.value })
-											}
-											required
-											className="h-9 text-sm"
-										/>
-									</div>
-									<div className="space-y-1">
-										<Label className="text-xs">Утас</Label>
-										<Input
-											type="tel"
-											value={editForm.Phone}
-											onChange={(e) =>
-												setEditForm({ ...editForm, Phone: e.target.value })
-											}
-											className="h-9 text-sm"
-										/>
-									</div>
+									{selectedImage && (
+										<p className="text-xs text-green-600 mt-1">
+											✓ {selectedImage.name}
+										</p>
+									)}
+									{uploadedImageUrl && (
+										<p className="text-xs text-blue-600 mt-1">
+											✓ Амжилттай хадгаллаа
+										</p>
+									)}
 								</div>
 							</div>
 
-							<Separator className="my-3" />
-
-							{/* Password */}
-							<div className="space-y-2">
-								<h3 className="text-sm font-semibold flex items-center gap-1.5">
-									<Lock className="w-4 h-4" />
-									Нууц үг
-								</h3>
-								<div className="grid gap-2 md:grid-cols-2">
-									<div className="space-y-1">
-										<Label className="text-xs">Шинэ нууц үг</Label>
-										<div className="relative">
+							<Card className="p-4 ">
+								<CardContent className="space-y-3">
+									<h3 className="text-sm font-semibold flex items-center gap-2">
+										<User className="w-4 h-4" /> Хувийн мэдээлэл
+									</h3>
+									<div className="grid gap-3 md:grid-cols-2">
+										<div className="space-y-1">
+											<Label className="text-xs">Овог</Label>
 											<Input
-												type={showNewPassword ? "text" : "password"}
-												value={editForm.newPassword}
+												value={editForm.lastname}
+												onChange={(e) =>
+													setEditForm({ ...editForm, lastname: e.target.value })
+												}
+												required
+												className="h-9 text-sm"
+											/>
+										</div>
+										<div className="space-y-1">
+											<Label className="text-xs">Нэр</Label>
+											<Input
+												value={editForm.firstname}
 												onChange={(e) =>
 													setEditForm({
 														...editForm,
-														newPassword: e.target.value,
+														firstname: e.target.value,
 													})
 												}
-												className="h-9 pr-8 text-sm"
+												required
+												className="h-9 text-sm"
 											/>
-											<button
-												type="button"
-												onClick={() => setShowNewPassword(!showNewPassword)}
-												className="absolute right-2 top-1/2 -translate-y-1/2"
-											>
-												{showNewPassword ? (
-													<EyeOff className="w-3.5 h-3.5" />
-												) : (
-													<Eye className="w-3.5 h-3.5" />
-												)}
-											</button>
 										</div>
-									</div>
-									<div className="space-y-1">
-										<Label className="text-xs">Баталгаажуулах</Label>
-										<div className="relative">
+										<div className="space-y-1">
+											<Label className="text-xs">Имэйл</Label>
 											<Input
-												type={showConfirmPassword ? "text" : "password"}
-												value={editForm.confirmPassword}
+												type="email"
+												value={editForm.email}
 												onChange={(e) =>
-													setEditForm({
-														...editForm,
-														confirmPassword: e.target.value,
-													})
+													setEditForm({ ...editForm, email: e.target.value })
 												}
-												className="h-9 pr-8 text-sm"
+												required
+												className="h-9 text-sm"
 											/>
-											<button
-												type="button"
-												onClick={() =>
-													setShowConfirmPassword(!showConfirmPassword)
+										</div>
+										<div className="space-y-1">
+											<Label className="text-xs">Утас</Label>
+											<Input
+												type="tel"
+												value={editForm.Phone}
+												onChange={(e) =>
+													setEditForm({ ...editForm, Phone: e.target.value })
 												}
-												className="absolute right-2 top-1/2 -translate-y-1/2"
-											>
-												{showConfirmPassword ? (
-													<EyeOff className="w-3.5 h-3.5" />
-												) : (
-													<Eye className="w-3.5 h-3.5" />
-												)}
-											</button>
+												className="h-9 text-sm"
+											/>
 										</div>
 									</div>
-								</div>
-								{passwordError && (
-									<div className="p-2 bg-destructive/10 border border-destructive/30 rounded flex items-start gap-1.5">
-										<AlertCircle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
-										<p className="text-xs text-destructive">{passwordError}</p>
-									</div>
-								)}
-							</div>
+								</CardContent>
+							</Card>
 
-							<Separator className="my-3" />
-
-							{/* Location */}
-							<div className="space-y-2">
-								<h3 className="text-sm font-semibold flex items-center gap-1.5">
-									<MapPin className="w-4 h-4" />
-									Байршил
-								</h3>
-								<div className="grid gap-2 md:grid-cols-2">
-									<div className="space-y-1">
-										<Label className="text-xs">Аймаг/Хот</Label>
-										<Select
-											value={selectedAimag}
-											onValueChange={handleAimagChange}
-											disabled={aimagLoading}
-										>
-											<SelectTrigger className="h-9 w-full text-sm">
-												<SelectValue
-													placeholder={
-														aimagLoading
-															? "Уншиж байна..."
-															: user.aimag_name || "Сонгох"
+							<Card className="p-4  ">
+								<CardContent className="space-y-3">
+									<h3 className="text-sm font-semibold flex items-center gap-2">
+										<Lock className="w-4 h-4" /> Нууц үг
+									</h3>
+									<div className="grid gap-3 md:grid-cols-2">
+										{[
+											{ label: "Шинэ нууц үг", key: "newPassword" },
+											{ label: "Баталгаажуулах", key: "confirmPassword" },
+										].map(({ label, key }) => (
+											<div key={key} className="space-y-1">
+												<Label className="text-xs">{label}</Label>
+												<Input
+													type="password"
+													value={editForm[key as keyof typeof editForm]}
+													onChange={(e) =>
+														setEditForm({ ...editForm, [key]: e.target.value })
 													}
+													placeholder="••••••••"
+													className="h-8 text-sm px-2"
+													autoComplete="new-password"
 												/>
-											</SelectTrigger>
-											<SelectContent className="max-h-[200px]">
-												{aimagList.map((aimag) => (
-													<SelectItem
-														key={aimag.mid}
-														value={aimag.mAcode}
-														className="text-sm"
-													>
-														<span
-															className="block truncate"
-															title={aimag.mName}
-														>
-															{aimag.mName}
-														</span>
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
+											</div>
+										))}
 									</div>
+									{passwordError && (
+										<div className="p-2 bg-destructive/10 border border-destructive/30 rounded flex items-start gap-2 text-xs text-destructive">
+											<AlertCircle className="w-4 h-4 mt-0.5" /> {passwordError}
+										</div>
+									)}
+								</CardContent>
+							</Card>
 
-									<div className="space-y-1">
-										<Label className="text-xs">Дүүрэг/Сум</Label>
-										<Select
-											value={selectedDistrict}
-											onValueChange={handleDistrictChange}
-											disabled={!selectedAimag || districtLoading}
-										>
-											<SelectTrigger className="h-9 w-full text-sm">
-												<SelectValue
-													placeholder={
-														districtLoading
-															? "Уншиж байна..."
-															: !selectedAimag
-																? "Аймаг сонгоно уу"
-																: user.sym_name || "Сонгох"
-													}
-												/>
-											</SelectTrigger>
-											<SelectContent className="max-h-[200px]">
-												{districtList.map((district) => (
-													<SelectItem
-														key={district.id}
-														value={district.id.toString()}
-														className="text-sm"
-													>
-														<span
-															className="block truncate"
-															title={district.name}
-														>
-															{district.name}
-														</span>
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
+							<Card className="p-4 ">
+								<CardContent className="space-y-4">
+									<h3 className="text-sm font-semibold flex items-center gap-2">
+										<MapPin className="w-4 h-4" /> Байршил
+									</h3>
 
-									<div className="space-y-1">
-										<Label className="text-xs">Сургууль</Label>
-										<Select
-											value={selectedSchool}
-											onValueChange={handleSchoolChange}
-											disabled={!selectedDistrict || schoolLoading}
-										>
-											<SelectTrigger className="h-9 w-full text-sm">
-												<SelectValue
-													placeholder={
-														schoolLoading
-															? "Уншиж байна..."
-															: !selectedDistrict
-																? "Дүүрэг сонгоно уу"
-																: user.sch_name || "Сонгох"
-													}
-												/>
-											</SelectTrigger>
-											<SelectContent className="max-h-[200px]">
-												{schoolList.map((school, index) => (
-													<SelectItem
-														key={`${school.dbname}-${index}`}
-														value={school.sName}
-														className="text-sm"
-													>
-														<span
-															className="block truncate"
-															title={school.sName}
-														>
-															{school.sName}
-														</span>
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
-
-									<div className="space-y-1">
-										<Label className="text-xs">Анги</Label>
-										<Select
-											value={selectedClass}
-											onValueChange={setSelectedClass}
-											disabled={!selectedSchool || classLoading}
-										>
-											<SelectTrigger className="h-9 w-full text-sm">
-												<SelectValue
-													placeholder={
-														classLoading
-															? "Уншиж байна..."
-															: !selectedSchool
-																? "Сургууль сонгоно уу"
-																: user.studentgroupname || "Сонгох"
-													}
-												/>
-											</SelectTrigger>
-											<SelectContent className="max-h-[200px]">
-												{classList
-													.filter((c) => c.class_name !== "Бүлэг ")
-													.map((classItem, index) => (
-														<SelectItem
-															key={`${classItem.studentgroupid}-${index}`}
-															value={classItem.studentgroupid}
-															className="text-sm"
-														>
-															<span
-																className="block truncate"
-																title={classItem.class_name}
-															>
-																{classItem.class_name}
-															</span>
+									<div className="grid gap-4 sm:grid-cols-2">
+										{/* Аймаг */}
+										<div className="flex flex-col space-y-1">
+											<Label className="text-xs">Аймаг/Хот</Label>
+											<Select
+												value={selectedAimag}
+												onValueChange={handleAimagChange}
+												disabled={aimagLoading}
+											>
+												<SelectTrigger className="h-9 text-sm w-full">
+													<SelectValue
+														placeholder={
+															aimagLoading
+																? "Уншиж байна..."
+																: user.aimag_name || "Сонгох"
+														}
+													/>
+												</SelectTrigger>
+												<SelectContent className="max-h-[200px] w-full">
+													{aimagList.map((a) => (
+														<SelectItem key={a.mid} value={a.mAcode}>
+															{a.mName}
 														</SelectItem>
 													))}
-											</SelectContent>
-										</Select>
-									</div>
-								</div>
-							</div>
+												</SelectContent>
+											</Select>
+										</div>
 
-							{/* Save Button */}
+										{/* Дүүрэг */}
+										<div className="flex flex-col space-y-1">
+											<Label className="text-xs">Дүүрэг/Сум</Label>
+											<Select
+												value={selectedDistrict}
+												onValueChange={handleDistrictChange}
+												disabled={!selectedAimag || districtLoading}
+											>
+												<SelectTrigger className="h-9 text-sm w-full">
+													<SelectValue
+														placeholder={
+															districtLoading
+																? "Уншиж байна..."
+																: !selectedAimag
+																	? "Аймаг сонгоно уу"
+																	: user.sym_name || "Сонгох"
+														}
+													/>
+												</SelectTrigger>
+												<SelectContent className="max-h-[200px] w-full">
+													{districtList.map((d) => (
+														<SelectItem key={d.id} value={d.id.toString()}>
+															{d.name}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</div>
+
+										{/* Сургууль */}
+										<div className="flex flex-col space-y-1">
+											<Label className="text-xs">Сургууль</Label>
+											<Select
+												value={selectedSchool}
+												onValueChange={handleSchoolChange}
+												disabled={!selectedDistrict || schoolLoading}
+											>
+												<SelectTrigger className="h-9 text-sm w-full">
+													<SelectValue
+														placeholder={
+															schoolLoading
+																? "Уншиж байна..."
+																: !selectedDistrict
+																	? "Дүүрэг сонгоно уу"
+																	: user.sch_name || "Сонгох"
+														}
+													/>
+												</SelectTrigger>
+												<SelectContent className="max-h-[200px] w-full">
+													{schoolList.map((s, i) => (
+														<SelectItem
+															key={`${s.dbname}-${i}`}
+															value={s.sName}
+														>
+															{s.sName}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</div>
+
+										{/* Анги */}
+										<div className="flex flex-col space-y-1">
+											<Label className="text-xs">Анги</Label>
+											<Select
+												value={selectedClass}
+												onValueChange={setSelectedClass}
+												disabled={!selectedSchool || classLoading}
+											>
+												<SelectTrigger className="h-9 text-sm w-full">
+													<SelectValue
+														placeholder={
+															classLoading
+																? "Уншиж байна..."
+																: !selectedSchool
+																	? "Сургууль сонгоно уу"
+																	: user.studentgroupname || "Сонгох"
+														}
+													/>
+												</SelectTrigger>
+												<SelectContent className="max-h-[200px] w-full">
+													{classList
+														.filter((c) => c.class_name.trim() !== "")
+														.map((c) => (
+															<SelectItem
+																key={c.studentgroupid}
+																value={c.studentgroupid}
+															>
+																{c.class_name}
+															</SelectItem>
+														))}
+												</SelectContent>
+											</Select>
+										</div>
+									</div>
+								</CardContent>
+							</Card>
+
 							<Button
 								type="submit"
 								disabled={updateMutation.isPending}
-								className="w-full h-10 text-sm"
+								className="h-9 px-3 text-sm flex items-center justify-center gap-2 ml-auto"
 							>
 								{updateMutation.isPending ? (
 									<span className="flex items-center gap-2">
@@ -924,7 +855,6 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 					</CardContent>
 				</Card>
 
-				{/* Messages */}
 				{updateMutation.isError && (
 					<div className="p-3 bg-destructive/10 border border-destructive/30 rounded flex items-start gap-2">
 						<AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />

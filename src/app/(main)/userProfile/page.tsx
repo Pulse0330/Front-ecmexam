@@ -21,7 +21,6 @@ export default function UserProfilePage() {
 			retry: 2,
 		});
 
-	// Not logged in - Сайжруулсан дизайн
 	if (!userId) {
 		return (
 			<div className="flex items-center justify-center min-h-[70vh] px-4">
@@ -46,7 +45,6 @@ export default function UserProfilePage() {
 		);
 	}
 
-	// Loading - Сайжруулсан дизайн
 	if (isLoading) {
 		return (
 			<div className="flex flex-col items-center justify-center min-h-[70vh] space-y-6 px-4">
@@ -71,7 +69,6 @@ export default function UserProfilePage() {
 		);
 	}
 
-	// Error - Сайжруулсан дизайн
 	if (isError) {
 		return (
 			<div className="flex items-center justify-center min-h-[70vh] px-4">
