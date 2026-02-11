@@ -9,13 +9,14 @@ import {
 	CreditCard,
 	FileText,
 	HelpCircle,
+	Loader2,
 	Lock,
 	Unlock,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import ExamRulesDialog from "@/app/(main)/Lists/examList/dialog";
 import QPayDialog from "@/app/(main)/Lists/examList/qpayDialog";
+import ExamRulesDialog from "@/components/examRuleDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -64,6 +65,9 @@ export default function ExamList({ exams, onPaymentSuccess }: ExamListProps) {
 	const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
 	const [selectedExamId, setSelectedExamId] = useState<number | null>(null);
 
+	// Loading state for navigation
+	const [isNavigating, setIsNavigating] = useState(false);
+
 	const handleCreateInvoice = async (exam: Exam, e: React.MouseEvent) => {
 		e.stopPropagation();
 
@@ -104,7 +108,7 @@ export default function ExamList({ exams, onPaymentSuccess }: ExamListProps) {
 
 	// Handle exam card click - show rules dialog first
 	const handleExamClick = (examId: number, canTake: boolean) => {
-		if (!canTake) return;
+		if (!canTake || isNavigating) return;
 		setSelectedExamId(examId);
 		setRulesDialogOpen(true);
 	};
@@ -112,6 +116,7 @@ export default function ExamList({ exams, onPaymentSuccess }: ExamListProps) {
 	// Handle rules confirmation - navigate to exam
 	const handleRulesConfirm = () => {
 		if (selectedExamId) {
+			setIsNavigating(true);
 			router.push(`/exam/${selectedExamId}`);
 		}
 	};
@@ -126,6 +131,18 @@ export default function ExamList({ exams, onPaymentSuccess }: ExamListProps) {
 
 	return (
 		<>
+			{/* Loading Overlay */}
+			{isNavigating && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+					<div className="flex flex-col items-center gap-4">
+						<Loader2 className="w-12 h-12 animate-spin text-primary" />
+						<p className="text-sm font-medium text-foreground">
+							Шалгалт ачааллаж байна...
+						</p>
+					</div>
+				</div>
+			)}
+
 			{exams.map((exam, index) => {
 				const isActive = exam.flag === 1;
 				const isPaid =
@@ -159,7 +176,7 @@ export default function ExamList({ exams, onPaymentSuccess }: ExamListProps) {
 							aria-label={`${exam.title} шалгалт`}
 							className={cn(
 								"group h-full relative flex flex-col overflow-hidden rounded-lg sm:rounded-xl border border-border/40 bg-card/50 backdrop-blur-md transition-all duration-500 ease-out",
-								canTakeExam
+								canTakeExam && !isNavigating
 									? "cursor-pointer hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20"
 									: "opacity-60 cursor-not-allowed",
 							)}

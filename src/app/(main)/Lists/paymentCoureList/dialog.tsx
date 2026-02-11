@@ -128,19 +128,16 @@ export default function QPayDialog({
 								initial={{ scale: 0.9, opacity: 0 }}
 								animate={{ scale: 1, opacity: 1 }}
 								exit={{ scale: 0.9, opacity: 0 }}
-								className="p-6 bg-orange-50 dark:bg-orange-950/20 rounded-2xl border-2 border-orange-200 dark:border-orange-800"
+								className="p-3 bg-orange-50 dark:bg-orange-950/20 rounded-2xl border-2 border-orange-200 dark:border-orange-800"
 							>
 								<div className="flex items-center gap-4">
-									<div className="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center">
-										<XCircle className="w-7 h-7 text-white" />
+									<div className="w-6 h-6 rounded-full  flex items-center justify-center">
+										<XCircle className="w-4 h-4 " />
 									</div>
 									<div>
-										<h3 className="text-lg font-bold text-orange-800 dark:text-orange-200">
+										<h3 className=" font-bold text-orange-800 dark:text-orange-200">
 											Төлбөр төлөгдөөгүй байна
 										</h3>
-										<p className="text-sm text-orange-600 dark:text-orange-300">
-											Төлбөр төлсний дараа "Төлбөр шалгах" товчийг дарна уу.
-										</p>
 									</div>
 								</div>
 							</motion.div>

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import "./globals.css";
+import type { Metadata } from "next";
 import Script from "next/script";
 import Providers from "@/app/Providers";
 
@@ -7,10 +8,14 @@ interface RootLayoutProps {
 	children: ReactNode;
 }
 
+export const metadata: Metadata = {
+	// Your metadata here
+};
+
 export default function RootLayout({ children }: RootLayoutProps) {
 	return (
 		<html lang="mn" suppressHydrationWarning>
-			<head>
+			<body suppressHydrationWarning>
 				<Script
 					id="mathjax-config"
 					strategy="beforeInteractive"
@@ -26,12 +31,12 @@ export default function RootLayout({ children }: RootLayoutProps) {
 									parseNodes: true,
 								},
 								startup: {
-									typeset: false  // Changed: false илүү сайн performance
+									typeset: false
 								},
 								options: {
 									skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
 									ignoreHtmlClass: 'tex2jax_ignore',
-									processHtmlClass: 'math-content'  // Changed: MathContent component-тэй тохирох
+									processHtmlClass: 'math-content'
 								},
 								chtml: {
 									scale: 1,
@@ -58,8 +63,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
 					strategy="beforeInteractive"
 					id="mathjax-script"
 				/>
-			</head>
-			<body>
 				<Providers>{children}</Providers>
 			</body>
 		</html>

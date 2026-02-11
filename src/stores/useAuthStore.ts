@@ -40,7 +40,6 @@ export const useAuthStore = create<AuthState>()(
 			setImgUrl: (imgUrl) => set({ imgUrl }),
 			clearUserId: () => set({ userId: null }),
 			clearAuth: () => {
-				// Clear all state
 				set({
 					userId: null,
 					token: null,
@@ -49,14 +48,7 @@ export const useAuthStore = create<AuthState>()(
 					imgUrl: null,
 				});
 
-				// Remove from localStorage
 				localStorage.removeItem("auth-storage");
-
-				// Clear all localStorage (optional - use with caution)
-				// localStorage.clear();
-
-				// Clear all sessionStorage (optional)
-				// sessionStorage.clear();
 			},
 			isAuthenticated: () => get().userId !== null,
 		}),

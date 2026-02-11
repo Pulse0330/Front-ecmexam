@@ -167,10 +167,10 @@ export default function ExamResultList() {
 			<div className="h-full flex flex-col">
 				<div className="max-w-[1600px] mx-auto w-full flex flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 					{/* Header */}
-					<header className="text-center space-y-1 animate-in fade-in-0 slide-in-from-top-4 duration-500">
-						<h1 className="text-3xl sm:text-4xl font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+					<header className="text-start space-y-1 animate-in fade-in-0 slide-in-from-top-4 duration-500">
+						<h3 className="text-lg sm:text-2xl font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent">
 							Шалгалтын үр дүн
-						</h1>
+						</h3>
 					</header>
 					{/* Stats Section */}
 					{finishedExams.length > 0 && (

@@ -221,7 +221,7 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 						<div className="absolute bottom-1.5 left-1.5 right-1.5 sm:bottom-2 sm:left-2 sm:right-2 text-center py-1.5 sm:py-2 bg-gray-50 rounded-lg border border-dashed border-gray-200">
 							<XCircle className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 mx-auto mb-0.5" />
 							<p className="text-[8px] sm:text-[9px] font-semibold text-gray-600">
-								Шалгалт дуусаагүй
+								Шалгалтын хугацаа дуусаагүй байна
 							</p>
 						</div>
 					)}

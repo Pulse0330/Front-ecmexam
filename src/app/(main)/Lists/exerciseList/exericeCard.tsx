@@ -1,12 +1,10 @@
 import {
 	ArrowRight,
-	BookOpen,
 	CheckCircle2,
 	Minus,
 	MinusIcon,
 	Plus,
 	PlusIcon,
-	Search,
 } from "lucide-react";
 import { memo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
@@ -43,22 +41,24 @@ export const SkeletonCard = memo(() => (
 ));
 SkeletonCard.displayName = "SkeletonCard";
 
-export const EmptyState = memo(({ searchQuery }: { searchQuery: string }) => (
-	<div className="text-center py-12 sm:py-16 md:py-20 w-full col-span-full">
-		<div className="relative inline-block mb-4 sm:mb-6">
-			<BookOpen className="w-16 h-16 sm:w-20 sm:h-20 text-slate-300 dark:text-slate-600" />
-			<div className="absolute -top-2 -right-2 w-6 h-6 sm:w-8 sm:h-8 bg-emerald-500 dark:bg-emerald-600 rounded-full flex items-center justify-center">
-				<Search className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-			</div>
+export const EmptyState = memo(() => (
+	<div className="col-span-full flex flex-col items-center justify-center py-12 sm:py-16 md:py-20">
+		<div className="w-16 h-16 sm:w-20 sm:h-20 mb-4 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+			<svg
+				className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400"
+				fill="none"
+				viewBox="0 0 24 24"
+				stroke="currentColor"
+			>
+				<title>as</title>
+				<path
+					strokeLinecap="round"
+					strokeLinejoin="round"
+					strokeWidth={2}
+					d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+				/>
+			</svg>
 		</div>
-		<h3 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-200 mb-1.5 sm:mb-2">
-			{searchQuery ? "Хайлт олдсонгүй" : "Тест олдсонгүй"}
-		</h3>
-		<p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-			{searchQuery
-				? "Өөр түлхүүр үг ашиглан дахин оролдоно уу"
-				: "Тестийн бүлгүүд удахгүй нэмэгдэх болно"}
-		</p>
 	</div>
 ));
 EmptyState.displayName = "EmptyState";
@@ -196,8 +196,20 @@ export const TestItemCard = memo(
 	}) => {
 		const handleInputChange = useCallback(
 			(e: React.ChangeEvent<HTMLInputElement>) => {
-				let val = parseInt(e.target.value, 10);
-				if (Number.isNaN(val)) val = 0;
+				const inputValue = e.target.value;
+
+				// Allow empty string for better UX
+				if (inputValue === "") {
+					onCountChange(item.id, 0);
+					return;
+				}
+
+				// Only allow digits
+				if (!/^\d+$/.test(inputValue)) {
+					return; // Ignore non-numeric input
+				}
+
+				let val = parseInt(inputValue, 10);
 				val = Math.max(0, Math.min(item.cnt, val));
 				onCountChange(item.id, val);
 			},
@@ -338,7 +350,9 @@ export const TestListItem = memo(
 						size="sm"
 						variant="outline"
 						onClick={handleDecrease}
+						disabled={selectedCount === 0}
 						className="rounded-lg h-7 w-7 sm:h-8 sm:w-8 p-0"
+						aria-label="Decrease count"
 					>
 						<Minus className="w-3 h-3 sm:w-4 sm:h-4" />
 					</Button>
@@ -350,7 +364,9 @@ export const TestListItem = memo(
 					<Button
 						size="sm"
 						onClick={handleIncrease}
+						disabled={selectedCount >= item.cnt}
 						className="rounded-lg h-7 w-7 sm:h-8 sm:w-8 p-0"
+						aria-label="Increase count"
 					>
 						<Plus className="w-3 h-3 sm:w-4 sm:h-4" />
 					</Button>

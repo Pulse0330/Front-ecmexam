@@ -8,16 +8,15 @@ interface ExamTimerProps {
 	examStartTime: string;
 	examEndTime: string;
 	examMinutes: number;
-	startedDate?: string;
+	startedDate?: string; // ✅ ШАЛГАЛТ ЭХЭЛСЭН БОДИТ ЦАГ (API-аас ирнэ)
 	onTimeUp?: (isTimeUp: boolean) => void;
 	onAutoFinish?: () => void;
 }
 
-// ✅ Memoize component to prevent unnecessary re-renders
 const ExamTimer = memo(function ExamTimer({
 	examEndTime,
 	examMinutes,
-	startedDate,
+	startedDate, // ✅ Энэ нь хэрэглэгч анх шалгалт эхлүүлсэн цаг
 	onTimeUp,
 	onAutoFinish,
 }: ExamTimerProps) {
@@ -28,13 +27,12 @@ const ExamTimer = memo(function ExamTimer({
 	const onTimeUpRef = useRef(onTimeUp);
 	const onAutoFinishRef = useRef(onAutoFinish);
 
-	// ✅ Update refs without triggering re-renders
 	useEffect(() => {
 		onTimeUpRef.current = onTimeUp;
 		onAutoFinishRef.current = onAutoFinish;
 	}, [onTimeUp, onAutoFinish]);
 
-	// ✅ Cache parsed dates to avoid repeated parsing
+	// ✅ Parse dates ONCE
 	const { endDateTime, startDateTime } = useMemo(() => {
 		return {
 			endDateTime: new Date(examEndTime),
@@ -44,9 +42,8 @@ const ExamTimer = memo(function ExamTimer({
 
 	const currentTimeMs = currentTime?.getTime() ?? null;
 
-	// ✅ Optimized calculation with early returns
+	// ✅ ГООЛ ТООЦОО: Хэрэв startedDate байгаа бол тэр цагаас тооцох
 	const { status, remainingSec, percentage } = useMemo(() => {
-		// Early return if no current time
 		if (currentTimeMs === null) {
 			return {
 				status: "before" as const,
@@ -57,30 +54,31 @@ const ExamTimer = memo(function ExamTimer({
 
 		const totalSec = examMinutes * 60;
 
-		// Early return if not started
-		if (!startDateTime) {
+		// ✅ ГООЛ: Хэрэв startDateTime байгаа бол тэр цагаас тооцоолох
+		if (startDateTime) {
+			const elapsedMs = currentTimeMs - startDateTime.getTime();
+			const elapsedSec = Math.floor(elapsedMs / 1000);
+			const remaining = Math.max(0, totalSec - elapsedSec);
+
+			const stat: "before" | "ongoing" | "ended" =
+				elapsedSec < 0 ? "before" : remaining > 0 ? "ongoing" : "ended";
+
+			const pct = totalSec > 0 ? (remaining / totalSec) * 100 : 0;
+
 			return {
-				status: "before" as const,
-				remainingSec: totalSec,
-				percentage: 100,
+				status: stat,
+				remainingSec: remaining,
+				percentage: Math.max(0, Math.min(100, pct)),
 			};
 		}
 
-		// Calculate remaining time
+		// ✅ FALLBACK: Хэрэв startDateTime байхгүй бол endTime-аас тооцох (хуучин логик)
 		const remainingMs = endDateTime.getTime() - currentTimeMs;
 		const remaining = Math.max(0, Math.floor(remainingMs / 1000));
 
-		// Determine status
-		let stat: "before" | "ongoing" | "ended";
-		if (currentTimeMs < startDateTime.getTime()) {
-			stat = "before";
-		} else if (remainingMs <= 0) {
-			stat = "ended";
-		} else {
-			stat = "ongoing";
-		}
+		const stat: "before" | "ongoing" | "ended" =
+			remainingMs <= 0 ? "ended" : "ongoing";
 
-		// Calculate percentage
 		const pct = totalSec > 0 ? (remaining / totalSec) * 100 : 0;
 
 		return {
@@ -90,20 +88,18 @@ const ExamTimer = memo(function ExamTimer({
 		};
 	}, [currentTimeMs, endDateTime, examMinutes, startDateTime]);
 
-	// ✅ Auto-finish logic - only runs when status changes to "ended"
+	// ✅ Auto-finish logic
 	useEffect(() => {
 		if (status !== "ended") return;
 
 		console.log("🔴 Status = ended, auto-finish эхэллээ");
 
-		// Step 1: onTimeUp notification
 		if (!hasNotifiedTimeUp.current) {
 			hasNotifiedTimeUp.current = true;
 			console.log("⏰ Цаг дууслаа - onTimeUp дуудаж байна");
 			onTimeUpRef.current?.(true);
 		}
 
-		// Step 2: Auto-finish
 		if (!hasAutoFinished.current && onAutoFinishRef.current) {
 			hasAutoFinished.current = true;
 			console.log("⏰ Auto-finish ШУУД дуудагдаж байна");
@@ -111,7 +107,7 @@ const ExamTimer = memo(function ExamTimer({
 		}
 	}, [status]);
 
-	// ✅ Memoize format function
+	// ✅ Format time
 	const formatTime = useMemo(() => {
 		return (sec: number) => {
 			const h = Math.floor(sec / 3600);
@@ -121,7 +117,6 @@ const ExamTimer = memo(function ExamTimer({
 		};
 	}, []);
 
-	// ✅ Memoize time remaining text
 	const timeRemainingText = useMemo(() => {
 		const totalMinutes = Math.floor(remainingSec / 60);
 		const hours = Math.floor(totalMinutes / 60);
@@ -129,7 +124,6 @@ const ExamTimer = memo(function ExamTimer({
 		return hours > 0 ? `${hours} цаг ${minutes} минут` : `${minutes} минут`;
 	}, [remainingSec]);
 
-	// ✅ Memoize warning states
 	const { isWarning, isDanger } = useMemo(() => {
 		return {
 			isWarning: percentage <= 20 && percentage > 10,
@@ -137,7 +131,6 @@ const ExamTimer = memo(function ExamTimer({
 		};
 	}, [percentage]);
 
-	// ✅ Memoize status config
 	const config = useMemo(() => {
 		if (status === "ended") {
 			return {
@@ -171,12 +164,10 @@ const ExamTimer = memo(function ExamTimer({
 		};
 	}, [status, isDanger, isWarning]);
 
-	// ✅ Memoize formatted time string
 	const formattedTime = useMemo(() => {
 		return formatTime(remainingSec);
 	}, [remainingSec, formatTime]);
 
-	// Loading state
 	if (isLoading || currentTimeMs === null) {
 		return (
 			<div className="bg-white dark:bg-slate-900 rounded-lg sm:rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 sm:p-4">

@@ -47,7 +47,7 @@ export default function SorilPage() {
 	const { id } = useParams();
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 	const [_visibleQuestionIndex, _setVisibleQuestionIndex] = useState(0);
-	const [saveError, setSaveError] = useState<string | null>(null);
+	const [saveError, _setSaveError] = useState<string | null>(null);
 	const [bookmarkedQuestions, setBookmarkedQuestions] = useState<Set<number>>(
 		new Set(),
 	);
@@ -547,13 +547,6 @@ export default function SorilPage() {
 					failedSaves.push([questionId, pending]);
 				}
 			});
-		}
-
-		if (failedSaves.length > 0) {
-			setSaveError(
-				`${failedSaves.length} хариулт хадгалагдсангүй. Дахин оролдож байна...`,
-			);
-			setTimeout(() => setSaveError(null), 5000);
 		}
 
 		isSavingRef.current = false;
@@ -1174,13 +1167,6 @@ export default function SorilPage() {
 							</div>
 						</div>
 					</div>
-
-					{/* ✅ НЭМЭХ: Mobile-д ExamTimer харуулах (optional, хэрэв том харуулмаар бол) */}
-					{examData?.ExamInfo?.[0] && (
-						<div className="px-3 pb-2">
-							<ExamTimer onElapsedChange={handleElapsedTimeChange} />
-						</div>
-					)}
 				</div>
 
 				<div className="flex-1 overflow-y-auto px-3 py-3">

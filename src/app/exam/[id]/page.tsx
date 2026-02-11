@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import parse from "html-react-parser";
 import {
 	Bookmark,
 	BookmarkCheck,
@@ -32,11 +31,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { deleteExamAnswer, getExamById, saveExamAnswer } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { AnswerValue } from "@/types/exam/exam";
-// import { AdvancedExamProctor } from "../component/examguard";
 import ExamTimer from "../component/Itime";
 import MathContent from "../component/question/MathContent";
 import QuestionImage from "../component/question/questionImage";
 
+const SAVE_DELAYS = {
+	DEFAULT: 1000,
+	TYPE_3_NUMBER: 1500,
+	TYPE_4_FILL: 1500,
+	TYPE_5_ORDER: 2000,
+	TYPE_6_MATCH: 3000,
+} as const;
+
+const BATCH_SIZE = 5;
+const TYPING_INDICATOR_DELAY = 1500;
 interface PendingAnswer {
 	questionId: number;
 	answer: AnswerValue;
@@ -45,12 +53,91 @@ interface PendingAnswer {
 	timestamp: number;
 }
 
+const normalizeMatchingAnswer = (
+	answer: Record<number, number | number[]>,
+): Map<number, number[]> => {
+	const normalized = new Map<number, number[]>();
+
+	Object.entries(answer).forEach(([qRefIdStr, value]) => {
+		const qRefId = Number(qRefIdStr);
+		const aRefIds = Array.isArray(value) ? value : [value];
+
+		// Filter out invalid IDs
+		const validIds = aRefIds.filter(
+			(id) => id && id !== 0 && !Number.isNaN(id),
+		);
+
+		if (validIds.length > 0) {
+			normalized.set(qRefId, validIds);
+		}
+	});
+
+	return normalized;
+};
+
+const extractAnswerIds = (matches: Map<number, number[]>): Set<number> => {
+	const ids = new Set<number>();
+
+	for (const aRefIds of matches.values()) {
+		for (const id of aRefIds) {
+			ids.add(id);
+		}
+	}
+	return ids;
+};
+
+const areAnswersEqual = (
+	a: AnswerValue | undefined,
+	b: AnswerValue | undefined,
+): boolean => {
+	if (a === b) return true;
+	if (a === undefined || b === undefined) return false;
+
+	const aType = Array.isArray(a) ? "array" : typeof a;
+	const bType = Array.isArray(b) ? "array" : typeof b;
+	if (aType !== bType) return false;
+
+	if (Array.isArray(a) && Array.isArray(b)) {
+		if (a.length !== b.length) return false;
+		return a.every((v, i) => v === b[i]);
+	}
+
+	if (
+		typeof a === "object" &&
+		typeof b === "object" &&
+		a !== null &&
+		b !== null
+	) {
+		const aKeys = Object.keys(a);
+		const bKeys = Object.keys(b);
+		if (aKeys.length !== bKeys.length) return false;
+
+		const aRecord = a as Record<number, number | number[] | string>;
+		const bRecord = b as Record<number, number | number[] | string>;
+
+		return aKeys.every((key) => {
+			const numKey = Number(key);
+			const aVal = aRecord[numKey];
+			const bVal = bRecord[numKey];
+
+			if (Array.isArray(aVal) && Array.isArray(bVal)) {
+				if (aVal.length !== bVal.length) return false;
+				return aVal.every((v, i) => v === bVal[i]);
+			}
+
+			return aVal === bVal;
+		});
+	}
+
+	return false;
+};
+
 export default function ExamPage() {
 	const { userId } = useAuthStore();
 	const { id } = useParams();
+
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-	const [_visibleQuestionIndex, _setVisibleQuestionIndex] = useState(0);
-	const [saveError, setSaveError] = useState<string | null>(null);
+	const [saveError, _setSaveError] = useState<string | null>(null);
 	const [bookmarkedQuestions, setBookmarkedQuestions] = useState<Set<number>>(
 		new Set(),
 	);
@@ -61,11 +148,11 @@ export default function ExamPage() {
 	const [typingQuestions, setTypingQuestions] = useState<Set<number>>(
 		new Set(),
 	);
-	const savingQuestions = useRef<Set<number>>(new Set());
 	const [isTimeUp, setIsTimeUp] = useState(false);
 	const [showMobileMinimapOverlay, setShowMobileMinimapOverlay] =
 		useState(false);
-	// Auto-finish refs
+
+	const savingQuestions = useRef<Set<number>>(new Set());
 	const finishDialogRef = useRef<FinishExamDialogHandle>(null);
 	const hasAutoFinished = useRef(false);
 	const isAutoSubmitting = useRef(false);
@@ -73,9 +160,8 @@ export default function ExamPage() {
 	const pendingAnswers = useRef<Map<number, PendingAnswer>>(new Map());
 	const saveTimer = useRef<NodeJS.Timeout | null>(null);
 	const lastSavedAnswers = useRef<Map<number, AnswerValue>>(new Map());
-	const _questionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 	const isSavingRef = useRef(false);
-	const AUTO_SAVE_DELAY = 1000;
+
 	const {
 		data: examData,
 		isLoading,
@@ -86,86 +172,19 @@ export default function ExamPage() {
 		enabled: !!userId && !!id,
 	});
 
-	const areAnswersEqual = useCallback(
-		(a: AnswerValue | undefined, b: AnswerValue | undefined): boolean => {
-			if (a === b) return true;
-			if (a === undefined || b === undefined) return false;
-
-			const aType = Array.isArray(a) ? "array" : typeof a;
-			const bType = Array.isArray(b) ? "array" : typeof b;
-			if (aType !== bType) return false;
-
-			if (Array.isArray(a) && Array.isArray(b)) {
-				if (a.length !== b.length) return false;
-				return a.every((v, i) => v === b[i]);
-			}
-
-			if (
-				typeof a === "object" &&
-				typeof b === "object" &&
-				a !== null &&
-				b !== null
-			) {
-				const aKeys = Object.keys(a);
-				const bKeys = Object.keys(b);
-				if (aKeys.length !== bKeys.length) return false;
-
-				const aRecord = a as Record<number, number | number[]>;
-				const bRecord = b as Record<number, number | number[]>;
-
-				return aKeys.every((key) => {
-					const numKey = Number(key);
-					const aVal = aRecord[numKey];
-					const bVal = bRecord[numKey];
-
-					// Хоёулаа array бол
-					if (Array.isArray(aVal) && Array.isArray(bVal)) {
-						if (aVal.length !== bVal.length) return false;
-						return aVal.every((v, i) => v === bVal[i]);
-					}
-
-					// Хоёулаа number бол
-					if (typeof aVal === "number" && typeof bVal === "number") {
-						return aVal === bVal;
-					}
-
-					// Хоёулаа string бол (Type 3)
-					if (typeof aVal === "string" && typeof bVal === "string") {
-						return aVal === bVal;
-					}
-
-					// Төрөл таарахгүй бол false
-					return false;
-				});
-			}
-
-			return false;
-		},
-		[],
-	);
 	const saveQuestion = useCallback(
 		async (pending: PendingAnswer, examId: number): Promise<boolean> => {
 			const { questionId, answer, queTypeId, rowNum } = pending;
 
-			// ✅ Race condition шалгах - хэрэв хадгалагдаж байгаа бол skip
+			// Prevent race conditions
 			if (savingQuestions.current.has(questionId)) {
-				console.log(
-					`⚠️ Question ${questionId} is already being saved, skipping...`,
-				);
+				console.log(`⚠️ Q${questionId} already saving, skipping...`);
 				return false;
 			}
 
 			try {
-				// ✅ Хадгалалт эхлэх
 				savingQuestions.current.add(questionId);
-
 				const previousAnswer = lastSavedAnswers.current.get(questionId);
-
-				// ============================================
-				// STEP 1: DELETE OLD ANSWERS BASED ON TYPE
-				// ============================================
-
-				// Type 1: Delete old single-select answer
 				if (
 					queTypeId === 1 &&
 					typeof previousAnswer === "number" &&
@@ -178,14 +197,11 @@ export default function ExamPage() {
 							questionId,
 							previousAnswer,
 						);
-					} catch (_error) {
-						console.log(
-							`Failed to delete old answer for type 1 question ${questionId}`,
-						);
+					} catch (error) {
+						console.error(`Failed to delete Type 1 Q${questionId}:`, error);
 					}
 				}
 
-				// Type 2: Delete all old multi-select answers
 				if (
 					queTypeId === 2 &&
 					Array.isArray(previousAnswer) &&
@@ -197,14 +213,11 @@ export default function ExamPage() {
 								deleteExamAnswer(userId || 0, examId, questionId, answerId),
 							),
 						);
-					} catch (_error) {
-						console.log(
-							`Failed to delete old answers for type 2 question ${questionId}`,
-						);
+					} catch (error) {
+						console.error(`Failed to delete Type 2 Q${questionId}:`, error);
 					}
 				}
 
-				// Type 3: Delete old number input answer
 				if (queTypeId === 3 && previousAnswer !== undefined) {
 					try {
 						if (
@@ -215,10 +228,8 @@ export default function ExamPage() {
 							const prevMap = previousAnswer as Record<number, string>;
 							const prevIds = Object.keys(prevMap)
 								.map((k) => Number(k))
-								.filter(
-									(id) =>
-										id && id !== 0 && prevMap[id] && prevMap[id].trim() !== "",
-								);
+								.filter((id) => id && id !== 0 && prevMap[id]?.trim());
+
 							if (prevIds.length > 0) {
 								await Promise.allSettled(
 									prevIds.map((answerId) =>
@@ -227,106 +238,99 @@ export default function ExamPage() {
 								);
 							}
 						}
-					} catch (_error) {
-						console.log(
-							`Failed to delete old answers for type 3 question ${questionId}`,
-						);
+					} catch (error) {
+						console.error(`Failed to delete Type 3 Q${questionId}:`, error);
 					}
 				}
 
-				// Type 4: Delete old fill-in-blank answer
 				if (queTypeId === 4 && previousAnswer !== undefined) {
 					try {
 						const type4Answer = examData?.Answers?.find(
 							(ans) => ans.question_id === questionId && ans.answer_type === 4,
 						);
-
-						await deleteExamAnswer(
-							userId || 0,
-							examId,
-							questionId,
-							type4Answer?.answer_id || 0,
-						);
-					} catch (_error) {
-						console.log(
-							`Failed to delete old answer for type 4 question ${questionId}`,
-						);
+						if (type4Answer) {
+							await deleteExamAnswer(
+								userId || 0,
+								examId,
+								questionId,
+								type4Answer.answer_id,
+							);
+						}
+					} catch (error) {
+						console.error(`Failed to delete Type 4 Q${questionId}:`, error);
 					}
 				}
 
-				// Type 5: Delete all old ordered answers
 				if (
 					queTypeId === 5 &&
 					Array.isArray(previousAnswer) &&
 					previousAnswer.length > 0
 				) {
 					try {
-						// ✅ Valid answer IDs шүүх
 						const validPrevAnswers = previousAnswer.filter(
 							(id) => id && id !== 0 && !Number.isNaN(id),
 						);
 
 						if (validPrevAnswers.length > 0) {
-							console.log(
-								`🗑️ Type 5 Q${questionId}: Deleting ${validPrevAnswers.length} old answers`,
-							);
 							await Promise.allSettled(
 								validPrevAnswers.map((answerId) =>
 									deleteExamAnswer(userId || 0, examId, questionId, answerId),
 								),
 							);
 						}
-					} catch (_error) {
-						console.log(
-							`Failed to delete old answers for type 5 question ${questionId}`,
-						);
+					} catch (error) {
+						console.error(`Failed to delete Type 5 Q${questionId}:`, error);
 					}
 				}
 
-				// Type 6: Delete all old matching answers
 				if (
 					queTypeId === 6 &&
-					typeof previousAnswer === "object" &&
-					previousAnswer !== null &&
-					!Array.isArray(previousAnswer)
+					typeof answer === "object" &&
+					answer !== null &&
+					!Array.isArray(answer)
 				) {
-					const oldMatches = previousAnswer as Record<
-						number,
-						number | number[]
-					>;
-					const oldAnswerIds: number[] = [];
+					const currentMatches = normalizeMatchingAnswer(
+						answer as Record<number, number | number[]>,
+					);
+					const currentAnswerIds = extractAnswerIds(currentMatches);
 
-					// Хоёр төрлийн утгыг хоёуланг нь боловсруулах
-					Object.values(oldMatches).forEach((value) => {
-						if (Array.isArray(value)) {
-							// Олон хариулт
-							oldAnswerIds.push(...value);
-						} else if (typeof value === "number") {
-							// Нэг хариулт (хуучин format)
-							oldAnswerIds.push(value);
+					const previousAnswerIds = new Set<number>();
+					if (
+						typeof previousAnswer === "object" &&
+						previousAnswer !== null &&
+						!Array.isArray(previousAnswer)
+					) {
+						const previousMatches = normalizeMatchingAnswer(
+							previousAnswer as Record<number, number | number[]>,
+						);
+
+						for (const aRefIds of previousMatches.values()) {
+							for (const id of aRefIds) {
+								previousAnswerIds.add(id);
+							}
 						}
-					});
+					}
 
-					if (oldAnswerIds.length > 0) {
+					const answersToDelete = Array.from(previousAnswerIds).filter(
+						(id) => !currentAnswerIds.has(id),
+					);
+
+					if (answersToDelete.length > 0) {
+						console.log(
+							`🗑️ Type 6 Q${questionId}: Deleting ${answersToDelete.length} changed answers`,
+						);
 						try {
 							await Promise.allSettled(
-								oldAnswerIds.map((answerId) =>
+								answersToDelete.map((answerId) =>
 									deleteExamAnswer(userId || 0, examId, questionId, answerId),
 								),
 							);
-						} catch (_error) {
-							console.log(
-								`Failed to delete old answers for type 6 question ${questionId}`,
-							);
+						} catch (error) {
+							console.error(`Failed to delete Type 6 Q${questionId}:`, error);
 						}
 					}
 				}
 
-				// ============================================
-				// STEP 2: SAVE NEW ANSWERS BASED ON TYPE
-				// ============================================
-
-				// Type 1: Save single-select answer
 				if (queTypeId === 1 && typeof answer === "number" && answer !== 0) {
 					await saveExamAnswer(
 						userId || 0,
@@ -339,7 +343,6 @@ export default function ExamPage() {
 					);
 				}
 
-				// Type 2: Save multi-select answers
 				if (queTypeId === 2 && Array.isArray(answer) && answer.length > 0) {
 					await Promise.all(
 						answer.map((answerId) =>
@@ -356,7 +359,6 @@ export default function ExamPage() {
 					);
 				}
 
-				// Type 3: Save number input answer (answerId + typed value)
 				if (
 					queTypeId === 3 &&
 					typeof answer === "object" &&
@@ -366,7 +368,8 @@ export default function ExamPage() {
 					const valuesMap = answer as Record<number, string>;
 					const entries = Object.entries(valuesMap)
 						.map(([k, v]) => [Number(k), v as string] as [number, string])
-						.filter(([aid, val]) => aid && aid !== 0 && val.trim() !== "");
+						.filter(([aid, val]) => aid && aid !== 0 && val.trim());
+
 					if (entries.length > 0) {
 						await Promise.all(
 							entries.map(([answerId, val]) =>
@@ -384,104 +387,72 @@ export default function ExamPage() {
 					}
 				}
 
-				// Type 4: Save fill-in-blank answer
-				if (
-					queTypeId === 4 &&
-					typeof answer === "string" &&
-					answer.trim() !== ""
-				) {
+				if (queTypeId === 4 && typeof answer === "string" && answer.trim()) {
 					const type4Answer = examData?.Answers?.find(
 						(ans) => ans.question_id === questionId && ans.answer_type === 4,
 					);
-
-					await saveExamAnswer(
-						userId || 0,
-						examId,
-						questionId,
-						type4Answer?.answer_id || 0,
-						queTypeId,
-						answer,
-						rowNum,
-					);
+					if (type4Answer) {
+						await saveExamAnswer(
+							userId || 0,
+							examId,
+							questionId,
+							type4Answer.answer_id,
+							queTypeId,
+							answer,
+							rowNum,
+						);
+					}
 				}
 
-				// Type 5: Save drag-and-drop order
 				if (queTypeId === 5 && Array.isArray(answer) && answer.length > 0) {
-					// ✅ Valid answer IDs шүүх
 					const validAnswers = answer.filter(
 						(id) =>
 							id && id !== 0 && !Number.isNaN(id) && typeof id === "number",
 					);
 
-					if (validAnswers.length === 0) {
-						console.warn(`⚠️ Type 5 Q${questionId}: No valid answers to save`);
-						lastSavedAnswers.current.set(questionId, answer);
-						return true;
-					}
-
-					console.log(
-						`💾 Type 5 Q${questionId}: Saving ${validAnswers.length} answers`,
-						validAnswers,
-					);
-
-					await Promise.all(
-						validAnswers.map((answerId, index) =>
-							saveExamAnswer(
-								userId || 0,
-								examId,
-								questionId,
-								answerId,
-								queTypeId,
-								(index + 1).toString(),
-								rowNum,
+					if (validAnswers.length > 0) {
+						await Promise.all(
+							validAnswers.map((answerId, index) =>
+								saveExamAnswer(
+									userId || 0,
+									examId,
+									questionId,
+									answerId,
+									queTypeId,
+									(index + 1).toString(),
+									rowNum,
+								),
 							),
-						),
-					);
-
-					console.log(`✅ Type 5 Q${questionId}: Saved successfully`);
+						);
+					}
 				}
 
-				// Type 6: Save matching answers
 				if (
 					queTypeId === 6 &&
 					typeof answer === "object" &&
 					answer !== null &&
 					!Array.isArray(answer)
 				) {
-					const matches = answer as Record<number, number | number[]>;
+					const currentMatches = normalizeMatchingAnswer(
+						answer as Record<number, number | number[]>,
+					);
 					const savePromises: Promise<unknown>[] = [];
 
-					Object.entries(matches).forEach(([qRefIdStr, value]) => {
-						if (Array.isArray(value)) {
-							// Олон хариулт
-							value.forEach((aRefId) => {
-								savePromises.push(
-									saveExamAnswer(
-										userId || 0,
-										examId,
-										questionId,
-										aRefId,
-										queTypeId,
-										qRefIdStr,
-										rowNum,
-									),
-								);
-							});
-						} else if (typeof value === "number") {
-							// Нэг хариулт (backward compatibility)
+					for (const [qRefId, aRefIds] of currentMatches.entries()) {
+						for (const aRefId of aRefIds) {
 							savePromises.push(
 								saveExamAnswer(
 									userId || 0,
 									examId,
 									questionId,
-									value,
+									aRefId,
 									queTypeId,
-									qRefIdStr,
+									String(qRefId),
 									rowNum,
 								),
 							);
 						}
-					});
+					}
 
 					if (savePromises.length > 0) {
 						await Promise.all(savePromises);
@@ -491,7 +462,7 @@ export default function ExamPage() {
 				lastSavedAnswers.current.set(questionId, answer);
 				return true;
 			} catch (error) {
-				console.error(`❌ Failed to save question ${questionId}:`, error);
+				console.error(`❌ Failed to save Q${questionId}:`, error);
 				return false;
 			} finally {
 				savingQuestions.current.delete(questionId);
@@ -500,15 +471,6 @@ export default function ExamPage() {
 		[userId, examData],
 	);
 
-	useEffect(() => {
-		return () => {
-			for (const timer of typingTimers.current.values()) {
-				clearTimeout(timer);
-			}
-			typingTimers.current.clear();
-			savingQuestions.current.clear(); // ✅ НЭМЭХ
-		};
-	}, []);
 	const processPendingAnswers = useCallback(async () => {
 		if (
 			isSavingRef.current ||
@@ -520,14 +482,13 @@ export default function ExamPage() {
 
 		isSavingRef.current = true;
 		setIsSaving(true);
-		const examId = examData.ExamInfo[0].id;
 
+		const examId = examData.ExamInfo[0].id;
 		const answersToSave = Array.from(pendingAnswers.current.entries());
 		const failedSaves: [number, PendingAnswer][] = [];
 
 		answersToSave.sort((a, b) => a[1].timestamp - b[1].timestamp);
 
-		const BATCH_SIZE = 5;
 		for (let i = 0; i < answersToSave.length; i += BATCH_SIZE) {
 			const batch = answersToSave.slice(i, i + BATCH_SIZE);
 			const results = await Promise.allSettled(
@@ -544,48 +505,110 @@ export default function ExamPage() {
 			});
 		}
 
-		if (failedSaves.length > 0) {
-			setSaveError(
-				`${failedSaves.length} хариулт хадгалагдсангүй. Дахин оролдож байна...`,
-			);
-			setTimeout(() => setSaveError(null), 5000);
-		}
-
 		isSavingRef.current = false;
 		setIsSaving(false);
 	}, [examData, saveQuestion]);
 
+	const scheduleAutoSave = useCallback(
+		(delay: number = SAVE_DELAYS.DEFAULT) => {
+			if (saveTimer.current) clearTimeout(saveTimer.current);
+			saveTimer.current = setTimeout(() => {
+				processPendingAnswers();
+			}, delay);
+		},
+		[processPendingAnswers],
+	);
+
+	const handleAnswerChange = useCallback(
+		(questionId: number, answer: AnswerValue) => {
+			if (!examData) return;
+
+			const question = examData.Questions.find(
+				(q) => q.question_id === questionId,
+			);
+			if (!question) return;
+
+			const lastSaved = lastSavedAnswers.current.get(questionId);
+			if (areAnswersEqual(lastSaved, answer)) return;
+
+			const rowNum = Number(question.row_num);
+			const queTypeId = question.que_type_id;
+			const existingTimer = typingTimers.current.get(questionId);
+			if (existingTimer) {
+				clearTimeout(existingTimer);
+			}
+
+			setTypingQuestions((prev) => new Set(prev).add(questionId));
+
+			const typingTimer = setTimeout(() => {
+				setTypingQuestions((prev) => {
+					const newSet = new Set(prev);
+					newSet.delete(questionId);
+					return newSet;
+				});
+				typingTimers.current.delete(questionId);
+			}, TYPING_INDICATOR_DELAY);
+
+			typingTimers.current.set(questionId, typingTimer);
+
+			setSelectedAnswers((prev) => ({ ...prev, [questionId]: answer }));
+
+			pendingAnswers.current.set(questionId, {
+				questionId,
+				answer,
+				queTypeId,
+				rowNum,
+				timestamp: Date.now(),
+			});
+
+			const delay =
+				queTypeId === 6
+					? SAVE_DELAYS.TYPE_6_MATCH
+					: queTypeId === 5
+						? SAVE_DELAYS.TYPE_5_ORDER
+						: queTypeId === 4
+							? SAVE_DELAYS.TYPE_4_FILL
+							: queTypeId === 3
+								? SAVE_DELAYS.TYPE_3_NUMBER
+								: SAVE_DELAYS.DEFAULT;
+
+			scheduleAutoSave(delay);
+		},
+		[examData, scheduleAutoSave],
+	);
+
+	const handleManualSave = useCallback(() => {
+		if (saveTimer.current) clearTimeout(saveTimer.current);
+		processPendingAnswers();
+	}, [processPendingAnswers]);
+
 	const handleAutoSubmit = useCallback(async () => {
-		// Давхар дуудагдахаас сэргийлэх
 		if (hasAutoFinished.current || isAutoSubmitting.current) {
-			console.log("⚠️ Auto-submit аль хэдийн явагдаж байна");
+			console.log("⚠️ Auto-submit already in progress");
 			return;
 		}
 
 		hasAutoFinished.current = true;
 		isAutoSubmitting.current = true;
 
-		console.log("🔴 Цаг дууслаа - Автоматаар дуусгаж байна...");
+		console.log("🔴 Time's up - Auto-submitting...");
 
 		try {
-			// ✅ STEP 1: Хадгалаагүй хариултуудыг эхлээд хадгална
 			if (pendingAnswers.current.size > 0) {
 				console.log(
-					`💾 ${pendingAnswers.current.size} хариулт хадгалж байна...`,
+					`💾 Saving ${pendingAnswers.current.size} pending answers...`,
 				);
 				await processPendingAnswers();
-				console.log("✅ Бүх хариулт хадгалагдлаа");
+				console.log("✅ All answers saved");
 			}
 
-			// ✅ STEP 2: Exam type шалгаж, зөв параметр дамжуулах
 			const examInfo = examData?.ExamInfo?.[0];
 			if (!examInfo) {
-				console.error("❌ Exam info олдсонгүй");
+				console.error("❌ Exam info not found");
 				return;
 			}
 
-			// ✅ STEP 3: Dialog-оор автомат дуусгах
-			console.log("📤 Шалгалт дуусгах API дуудаж байна...");
+			console.log("📤 Submitting exam...");
 			finishDialogRef.current?.triggerFinish();
 		} catch (error) {
 			console.error("❌ Auto submit error:", error);
@@ -598,6 +621,7 @@ export default function ExamPage() {
 		if (isLoading || !examData?.ChoosedAnswer) return;
 
 		const answersMap: Record<number, AnswerValue> = {};
+
 		const groupedAnswers = examData.ChoosedAnswer.reduce(
 			(acc, item) => {
 				const key = `${item.QueID}_${item.QueType}`;
@@ -610,60 +634,78 @@ export default function ExamPage() {
 
 		Object.values(groupedAnswers).forEach((items) => {
 			if (items.length === 0) return;
+
 			const { QueID, QueType } = items[0];
 			if (QueID == null) return;
 
-			if (QueType === 1) {
-				const lastItem = items[items.length - 1];
-				const ansId = lastItem.AnsID ?? null;
-				answersMap[QueID] = ansId && ansId !== 0 ? ansId : null;
-			} else if (QueType === 2) {
-				const uniqueIds = [
-					...new Set(
-						items
-							.map((i) => i.AnsID)
-							.filter((id): id is number => id !== null && id !== 0),
-					),
-				];
-				answersMap[QueID] = uniqueIds;
-			} else if (QueType === 3) {
-				const map: Record<number, string> = {};
-				items.forEach((it) => {
-					const ansId = it.AnsID ?? 0;
-					const val = (it as { Answer?: string }).Answer ?? "";
-					if (ansId && ansId !== 0) {
-						map[ansId] = val;
-					}
-				});
-				answersMap[QueID] = map;
-			} else if (QueType === 4) {
-				const lastItem = items[items.length - 1];
-				answersMap[QueID] = (lastItem as { Answer?: string }).Answer || "";
-			} else if (QueType === 5) {
-				const sortedItems = [...items].sort((a, b) => {
-					const aOrder = Number((a as { Answer?: string }).Answer) || 999;
-					const bOrder = Number((b as { Answer?: string }).Answer) || 999;
-					return aOrder - bOrder;
-				});
-				answersMap[QueID] = sortedItems
-					.map((i) => i.AnsID)
-					.filter((id): id is number => id !== null && id !== 0);
-			} else if (QueType === 6) {
-				const matchMap: Record<number, number[]> = {};
+			switch (QueType) {
+				case 1: {
+					const lastItem = items[items.length - 1];
+					const ansId = lastItem.AnsID ?? null;
+					answersMap[QueID] = ansId && ansId !== 0 ? ansId : null;
+					break;
+				}
+				case 2: {
+					const uniqueIds = [
+						...new Set(
+							items
+								.map((i) => i.AnsID)
+								.filter((id): id is number => id !== null && id !== 0),
+						),
+					];
+					answersMap[QueID] = uniqueIds;
+					break;
+				}
 
-				items.forEach((item) => {
-					const qRefId = Number((item as { Answer?: string }).Answer);
-					const aRefId = item.AnsID;
-
-					if (qRefId && aRefId) {
-						if (!matchMap[qRefId]) {
-							matchMap[qRefId] = [];
+				case 3: {
+					const map: Record<number, string> = {};
+					items.forEach((it) => {
+						const ansId = it.AnsID ?? 0;
+						const val = (it as { Answer?: string }).Answer ?? "";
+						if (ansId && ansId !== 0) {
+							map[ansId] = val;
 						}
-						matchMap[qRefId].push(aRefId);
-					}
-				});
+					});
+					answersMap[QueID] = map;
+					break;
+				}
 
-				answersMap[QueID] = matchMap;
+				case 4: {
+					const lastItem = items[items.length - 1];
+					answersMap[QueID] = (lastItem as { Answer?: string }).Answer || "";
+					break;
+				}
+
+				case 5: {
+					// Drag and drop
+					const sortedItems = [...items].sort((a, b) => {
+						const aOrder = Number((a as { Answer?: string }).Answer) || 999;
+						const bOrder = Number((b as { Answer?: string }).Answer) || 999;
+						return aOrder - bOrder;
+					});
+					answersMap[QueID] = sortedItems
+						.map((i) => i.AnsID)
+						.filter((id): id is number => id !== null && id !== 0);
+					break;
+				}
+
+				case 6: {
+					// Matching
+					const matchMap: Record<number, number[]> = {};
+					items.forEach((item) => {
+						const qRefId = Number((item as { Answer?: string }).Answer);
+						const aRefId = item.AnsID;
+
+						if (qRefId && aRefId) {
+							if (!matchMap[qRefId]) {
+								matchMap[qRefId] = [];
+							}
+							matchMap[qRefId].push(aRefId);
+						}
+					});
+					answersMap[QueID] = matchMap;
+					break;
+				}
 			}
 		});
 
@@ -689,7 +731,6 @@ export default function ExamPage() {
 			[1, 2, 3, 4, 5, 6].includes(q.que_type_id),
 		).map((q) => {
 			const questionAnswers = answersByQuestionId.get(q.question_id) || [];
-
 			const filteredAnswers = questionAnswers
 				.filter((a) => a.answer_type === q.que_type_id)
 				.map((a) => ({
@@ -707,6 +748,7 @@ export default function ExamPage() {
 	}, [examData?.Questions, examData?.Answers]);
 
 	const totalCount = allQuestions.length;
+
 	const answeredCount = useMemo(() => {
 		let count = 0;
 
@@ -719,93 +761,17 @@ export default function ExamPage() {
 			if (Array.isArray(ans)) {
 				if (ans.length > 0) count++;
 			} else if (typeof ans === "string") {
-				if (ans !== "" && ans.trim() !== "") count++;
+				if (ans.trim()) count++;
 			} else if (typeof ans === "number") {
 				if (ans !== 0 && !Number.isNaN(ans)) count++;
 			} else {
-				// Object check
-				for (const _k in ans) {
-					count++;
-					break;
-				}
+				// Object - has at least one property
+				if (Object.keys(ans).length > 0) count++;
 			}
 		}
 
 		return count;
 	}, [selectedAnswers]);
-
-	const scheduleAutoSave = useCallback(() => {
-		if (saveTimer.current) clearTimeout(saveTimer.current);
-		saveTimer.current = setTimeout(() => {
-			processPendingAnswers();
-		}, AUTO_SAVE_DELAY);
-	}, [processPendingAnswers]);
-
-	const handleManualSave = useCallback(() => {
-		if (saveTimer.current) clearTimeout(saveTimer.current);
-		processPendingAnswers();
-	}, [processPendingAnswers]);
-
-	const handleAnswerChange = useCallback(
-		(questionId: number, answer: AnswerValue) => {
-			if (!examData) return;
-			const question = examData.Questions.find(
-				(q) => q.question_id === questionId,
-			);
-			if (!question) return;
-
-			const lastSaved = lastSavedAnswers.current.get(questionId);
-			if (areAnswersEqual(lastSaved, answer)) return;
-
-			const rowNum = Number(question.row_num);
-			const queTypeId = question.que_type_id;
-			const existingTimer = typingTimers.current.get(questionId);
-			if (existingTimer) {
-				clearTimeout(existingTimer);
-			}
-
-			setTypingQuestions((prev) => new Set(prev).add(questionId));
-			const timer = setTimeout(() => {
-				setTypingQuestions((prev) => {
-					const newSet = new Set(prev);
-					newSet.delete(questionId);
-					return newSet;
-				});
-				typingTimers.current.delete(questionId);
-			}, 1500);
-
-			typingTimers.current.set(questionId, timer);
-
-			setSelectedAnswers((prev) => ({ ...prev, [questionId]: answer }));
-			pendingAnswers.current.set(questionId, {
-				questionId,
-				answer,
-				queTypeId,
-				rowNum,
-				timestamp: Date.now(),
-			});
-
-			scheduleAutoSave();
-		},
-		[examData, scheduleAutoSave, areAnswersEqual],
-	);
-
-	useEffect(() => {
-		return () => {
-			for (const timer of typingTimers.current.values()) {
-				clearTimeout(timer);
-			}
-			typingTimers.current.clear();
-		};
-	}, []);
-
-	useEffect(
-		() => () => {
-			if (saveTimer.current) clearTimeout(saveTimer.current);
-			if (pendingAnswers.current.size > 0) processPendingAnswers();
-		},
-		[processPendingAnswers],
-	);
 
 	const toggleBookmark = useCallback((questionId: number) => {
 		setBookmarkedQuestions((prev) => {
@@ -820,8 +786,9 @@ export default function ExamPage() {
 	const goToQuestion = useCallback((index: number) => {
 		setCurrentQuestionIndex(index);
 		const element = document.getElementById(`question-${index}`);
-		if (element && window.innerWidth >= 1024)
+		if (element && window.innerWidth >= 1024) {
 			element.scrollIntoView({ behavior: "smooth", block: "center" });
+		}
 	}, []);
 
 	const goToPreviousQuestion = useCallback(() => {
@@ -850,10 +817,7 @@ export default function ExamPage() {
 			} else if (typeof answer === "number") {
 				isAnswered = !Number.isNaN(answer) && answer !== 0;
 			} else if (typeof answer === "object" && answer !== null) {
-				for (const _key in answer) {
-					isAnswered = true;
-					break;
-				}
+				isAnswered = Object.keys(answer).length > 0;
 			}
 
 			const isBookmarked = bookmarkedQuestions.has(questionId);
@@ -869,140 +833,156 @@ export default function ExamPage() {
 		[selectedAnswers, bookmarkedQuestions, typingQuestions],
 	);
 
-	const renderQuestion = (q: (typeof allQuestions)[0]) => {
-		if (q.que_type_id === 1) {
-			return (
-				<>
-					{q.question_img && (
-						<QuestionImage src={q.question_img} alt="Асуултын зураг" />
-					)}
-					{(q.source_name || q.source_img) && (
-						<div className="mt-3 p-3 border rounded-lg ">
-							{/* Эх сурвалж зураг */}
-							{q.source_img && (
-								<img
-									src={q.source_img}
-									alt="source"
-									className="w-14 h-14 object-cover rounded-md mb-2"
-								/>
-							)}
-
-							{/* Эх сурвалж name (HTML-тэй учраас parse ашиглана) */}
-							{q.source_name && (
-								<div className="text-sm text-gray-700 leading-relaxed">
-									{" "}
-									<span className="font-semibold">Эх сурвалж:</span>{" "}
-									<div className="mt-1">{parse(q.source_name)}</div>{" "}
-								</div>
-							)}
-						</div>
-					)}
-
-					<SingleSelectQuestion
-						questionId={q.question_id}
-						questionText={q.question_name}
-						answers={q.answers}
-						selectedAnswer={selectedAnswers[q.question_id] as number | null}
-						onAnswerChange={handleAnswerChange}
-					/>
-				</>
-			);
-		}
-
-		if (
-			q.que_type_id === 2 ||
-			q.que_type_id === 3 ||
-			q.que_type_id === 4 ||
-			q.que_type_id === 6
-		) {
-			return (
-				<>
-					{q.question_img && (
-						<QuestionImage src={q.question_img} alt="Асуултын зураг" />
-					)}
-					{q.que_type_id === 2 && (
-						<MultiSelectQuestion
+	const renderQuestion = useCallback(
+		(q: (typeof allQuestions)[0]) => {
+			if (q.que_type_id === 1) {
+				return (
+					<>
+						{q.question_img && (
+							<QuestionImage src={q.question_img} alt="Асуултын зураг" />
+						)}
+						{(q.source_name || q.source_img) && (
+							<div className="mt-3 p-3 border rounded-lg">
+								{q.source_img && (
+									<img
+										src={q.source_img}
+										alt="source"
+										className="w-14 h-14 object-cover rounded-md mb-2"
+									/>
+								)}
+								{q.source_name && (
+									<div className="text-sm text-gray-700 leading-relaxed">
+										<span className="font-semibold">Эх сурвалж:</span>
+										<MathContent html={q.source_name} />
+									</div>
+								)}
+							</div>
+						)}
+						<SingleSelectQuestion
 							questionId={q.question_id}
 							questionText={q.question_name}
 							answers={q.answers}
-							mode="exam"
-							selectedAnswers={
-								(selectedAnswers[q.question_id] as number[]) || []
-							}
+							selectedAnswer={selectedAnswers[q.question_id] as number | null}
 							onAnswerChange={handleAnswerChange}
 						/>
-					)}
-					{q.que_type_id === 3 && (
-						<NumberInputQuestion
+					</>
+				);
+			}
+
+			if ([2, 3, 4, 6].includes(q.que_type_id)) {
+				return (
+					<>
+						{q.question_img && (
+							<QuestionImage src={q.question_img} alt="Асуултын зураг" />
+						)}
+						{q.que_type_id === 2 && (
+							<MultiSelectQuestion
+								questionId={q.question_id}
+								questionText={q.question_name}
+								answers={q.answers}
+								mode="exam"
+								selectedAnswers={
+									(selectedAnswers[q.question_id] as number[]) || []
+								}
+								onAnswerChange={handleAnswerChange}
+							/>
+						)}
+						{q.que_type_id === 3 && (
+							<NumberInputQuestion
+								questionId={q.question_id}
+								questionText={q.question_name}
+								answers={q.answers}
+								selectedValues={
+									selectedAnswers[q.question_id] as Record<number, string>
+								}
+								onAnswerChange={(qId, values) =>
+									handleAnswerChange(qId, values as AnswerValue)
+								}
+							/>
+						)}
+						{q.que_type_id === 4 && (
+							<FillInTheBlankQuestion
+								questionId={q.question_id}
+								questionText={q.question_name}
+								value={(selectedAnswers[q.question_id] as string) || ""}
+								onAnswerChange={handleAnswerChange}
+							/>
+						)}
+						{q.que_type_id === 6 && (
+							<MatchingByLine
+								answers={q.answers.map((a) => ({
+									refid: a.refid,
+									answer_id: a.answer_id,
+									question_id: a.question_id,
+									answer_name_html: a.answer_name_html,
+									answer_descr: a.answer_descr,
+									answer_img: a.answer_img || null,
+									ref_child_id: a.ref_child_id,
+									is_true: a.is_true,
+								}))}
+								onMatchChange={(matches) =>
+									handleAnswerChange(q.question_id, matches)
+								}
+								userAnswers={
+									(selectedAnswers[q.question_id] as Record<
+										number,
+										number[]
+									>) || {}
+								}
+							/>
+						)}
+					</>
+				);
+			}
+
+			if (q.que_type_id === 5) {
+				return (
+					<>
+						{q.question_img && (
+							<QuestionImage src={q.question_img} alt="Асуултын зураг" />
+						)}
+						<DragAndDropQuestion
 							questionId={q.question_id}
-							questionText={q.question_name}
-							answers={q.answers}
-							selectedValues={
-								selectedAnswers[q.question_id] as Record<number, string>
-							}
-							onAnswerChange={(qId, values) =>
-								handleAnswerChange(qId, values as AnswerValue)
-							}
-						/>
-					)}
-					{q.que_type_id === 4 && (
-						<FillInTheBlankQuestion
-							questionId={q.question_id}
-							questionText={q.question_name}
-							value={(selectedAnswers[q.question_id] as string) || ""}
-							onAnswerChange={handleAnswerChange}
-						/>
-					)}
-					{q.que_type_id === 6 && (
-						<MatchingByLine
+							examId={examData?.ExamInfo?.[0]?.id}
+							userId={userId || 0}
 							answers={q.answers.map((a) => ({
-								refid: a.refid,
 								answer_id: a.answer_id,
-								question_id: a.question_id,
-								answer_name_html: a.answer_name_html,
-								answer_descr: a.answer_descr,
-								answer_img: a.answer_img || null,
-								ref_child_id: a.ref_child_id,
-								is_true: a.is_true,
+								answer_name_html: a.answer_name_html || a.answer_name || "",
 							}))}
-							onMatchChange={(matches) =>
-								handleAnswerChange(q.question_id, matches)
-							}
-							userAnswers={
-								(selectedAnswers[q.question_id] as Record<number, number[]>) ||
-								{}
+							userAnswers={(selectedAnswers[q.question_id] as number[]) || []}
+							onOrderChange={(orderedIds) =>
+								handleAnswerChange(q.question_id, orderedIds)
 							}
 						/>
-					)}
-				</>
-			);
-		}
+					</>
+				);
+			}
 
-		if (q.que_type_id === 5) {
-			return (
-				<>
-					{q.question_img && (
-						<QuestionImage src={q.question_img} alt="Асуултын зураг" />
-					)}
-					<DragAndDropQuestion
-						questionId={q.question_id}
-						examId={examData?.ExamInfo?.[0]?.id}
-						userId={userId || 0}
-						answers={q.answers.map((a) => ({
-							answer_id: a.answer_id,
-							answer_name_html: a.answer_name_html || a.answer_name || "",
-						}))}
-						userAnswers={(selectedAnswers[q.question_id] as number[]) || []}
-						onOrderChange={(orderedIds) =>
-							handleAnswerChange(q.question_id, orderedIds)
-						}
-					/>
-				</>
-			);
-		}
+			return null;
+		},
+		[selectedAnswers, handleAnswerChange, examData, userId],
+	);
 
-		return null;
-	};
+	useEffect(() => {
+		return () => {
+			for (const timer of typingTimers.current.values()) {
+				clearTimeout(timer);
+			}
+			typingTimers.current.clear();
+			savingQuestions.current.clear();
+
+			if (saveTimer.current) clearTimeout(saveTimer.current);
+		};
+	}, []);
+
+	useEffect(() => {
+		return () => {
+			if (saveTimer.current) clearTimeout(saveTimer.current);
+			if (pendingAnswers.current.size > 0) {
+				processPendingAnswers();
+			}
+		};
+	}, [processPendingAnswers]);
 
 	if (isLoading) {
 		return (
@@ -1049,16 +1029,6 @@ export default function ExamPage() {
 
 	return (
 		<div className="min-h-screen">
-			{/* <AdvancedExamProctor
-				maxViolations={100}
-				strictMode={true}
-				enableFullscreen={true}
-				onSubmit={handleAutoSubmit}
-				onLogout={() => {
-					console.log("Хэрэглэгч гарлаа");
-				}}
-			/> */}
-
 			{saveError && (
 				<div className="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">
 					{saveError}
@@ -1146,16 +1116,8 @@ export default function ExamPage() {
 									examEndTime={examData.ExamInfo[0].end_time}
 									examMinutes={examData.ExamInfo[0].minut}
 									startedDate={examData.ExamInfo[0].starteddate}
-									onTimeUp={(timeUp) => {
-										console.log("⏰ onTimeUp дуудагдлаа:", timeUp);
-										setIsTimeUp(timeUp);
-									}}
-									onAutoFinish={() => {
-										console.log(
-											"🔥 onAutoFinish дуудагдлаа - handleAutoSubmit дуудах",
-										);
-										handleAutoSubmit();
-									}}
+									onTimeUp={setIsTimeUp}
+									onAutoFinish={handleAutoSubmit}
 								/>
 							)}
 						</div>
@@ -1180,16 +1142,8 @@ export default function ExamPage() {
 												examEndTime={examData.ExamInfo[0].end_time}
 												examMinutes={examData.ExamInfo[0].minut}
 												startedDate={examData.ExamInfo[0].starteddate}
-												onTimeUp={(timeUp) => {
-													console.log("⏰ onTimeUp дуудагдлаа:", timeUp);
-													setIsTimeUp(timeUp);
-												}}
-												onAutoFinish={() => {
-													console.log(
-														"🔥 onAutoFinish дуудагдлаа - handleAutoSubmit дуудах",
-													);
-													handleAutoSubmit();
-												}}
+												onTimeUp={setIsTimeUp}
+												onAutoFinish={handleAutoSubmit}
 											/>
 										</div>
 										<div className="text-[10px] text-slate-500 dark:text-slate-400">
@@ -1213,7 +1167,7 @@ export default function ExamPage() {
 						<div className="flex items-center gap-2">
 							<div className="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
 								<div
-									className="h-full bg-linear-to-r from-green-500 to-emerald-600 transition-all"
+									className="h-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all"
 									style={{ width: `${(answeredCount / totalCount) * 100}%` }}
 								/>
 							</div>
@@ -1232,12 +1186,12 @@ export default function ExamPage() {
 						>
 							<CardContent className="p-4">
 								<div className="flex items-start gap-3 mb-4">
-									<div className="shrink-0 w-9 h-9 rounded-lg bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-md">
+									<div className="shrink-0 w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-md">
 										{currentQuestionIndex + 1}
 									</div>
 									<div className="flex-1 min-w-0">
 										<div className="font-semibold leading-relaxed prose prose-sm max-w-none text-sm">
-											{parse(currentQuestion.question_name)}
+											<MathContent html={currentQuestion.question_name} />
 										</div>
 									</div>
 									<div className="flex items-center gap-2 shrink-0">

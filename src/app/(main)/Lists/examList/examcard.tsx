@@ -11,10 +11,10 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import ExamRulesDialog from "@/components/examRuleDialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ExamlistsData } from "@/types/exam/examList";
-import ExamRulesDialog from "./dialog";
 
 interface ExamCardProps {
 	exam: ExamlistsData;
