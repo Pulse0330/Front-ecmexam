@@ -3,7 +3,13 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+	useTransition,
+} from "react";
 import { Button } from "@/components/ui/button";
 import {
 	getTestFilter,
@@ -31,7 +37,11 @@ import {
 // CUSTOM HOOKS
 // ============================================
 
-function useLocalStorage<T>(key: string, initialValue: T) {
+function useDebouncedLocalStorage<T>(
+	key: string,
+	initialValue: T,
+	delay = 500,
+) {
 	const [storedValue, setStoredValue] = useState<T>(() => {
 		if (typeof window === "undefined") return initialValue;
 		try {
@@ -43,6 +53,8 @@ function useLocalStorage<T>(key: string, initialValue: T) {
 		}
 	});
 
+	const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+
 	const setValue = useCallback(
 		(value: T | ((val: T) => T)) => {
 			try {
@@ -50,17 +62,28 @@ function useLocalStorage<T>(key: string, initialValue: T) {
 					const valueToStore =
 						value instanceof Function ? value(prevValue) : value;
 
-					if (typeof window !== "undefined") {
-						window.localStorage.setItem(key, JSON.stringify(valueToStore));
+					if (timeoutId) {
+						clearTimeout(timeoutId);
 					}
 
+					const newTimeoutId = setTimeout(() => {
+						if (typeof window !== "undefined") {
+							try {
+								window.localStorage.setItem(key, JSON.stringify(valueToStore));
+							} catch (e) {
+								console.error(`Error writing to localStorage: ${e}`);
+							}
+						}
+					}, delay);
+
+					setTimeoutId(newTimeoutId);
 					return valueToStore;
 				});
 			} catch (error) {
-				console.error(`Error writing localStorage key "${key}":`, error);
+				console.error(`Error updating state for key "${key}":`, error);
 			}
 		},
-		[key],
+		[key, delay, timeoutId],
 	);
 
 	return [storedValue, setValue] as const;
@@ -101,8 +124,6 @@ const LIST_CLASSES = "flex flex-col gap-2 sm:gap-2.5 md:gap-3";
 
 const SKELETON_COUNT = 12;
 
-const IS_DEV = process.env.NODE_ENV === "development";
-
 const RETRY_CONFIG = {
 	attempts: 3,
 	delay: 1000,
@@ -116,38 +137,76 @@ const DEFAULT_STATS: LessonStats = {
 };
 
 // ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+function calculateLessonStats(
+	lessonGroups: LessonGroup[],
+	lessonTestsMap: Map<number, TestGroupItem[]>,
+	selectedTests: Record<number, number>,
+): Map<number, LessonStats> {
+	const stats = new Map<number, LessonStats>();
+
+	const selectedTestsMap = new Map(
+		Object.entries(selectedTests).map(([k, v]) => [Number(k), v]),
+	);
+
+	for (const lesson of lessonGroups) {
+		const lessonTests = lessonTestsMap.get(lesson.lesson_id);
+		if (!lessonTests) {
+			stats.set(lesson.lesson_id, DEFAULT_STATS);
+			continue;
+		}
+
+		let selectedCount = 0;
+		let totalQuestions = 0;
+
+		for (const test of lessonTests) {
+			const count = selectedTestsMap.get(test.id);
+			if (count !== undefined) {
+				selectedCount++;
+				totalQuestions += count;
+			}
+		}
+
+		stats.set(lesson.lesson_id, { selectedCount, totalQuestions });
+	}
+
+	return stats;
+}
+
+// ============================================
 // MAIN COMPONENT
 // ============================================
 
 export default function TestGroupPage() {
 	const { userId } = useAuthStore();
 	const router = useRouter();
+	const [isPending, startTransition] = useTransition();
+	const [isMounted, setIsMounted] = useState(false);
 
-	// State management
-	const [selectedTests, setSelectedTests] = useLocalStorage<
+	const [selectedTests, setSelectedTests] = useDebouncedLocalStorage<
 		Record<number, number>
 	>("selectedTests", {});
-	const [selectedLesson, setSelectedLesson] = useLocalStorage<number | null>(
-		"selectedLesson",
-		null,
-	);
-	const [selectedCategory, setSelectedCategory] = useLocalStorage<
+	const [selectedLesson, setSelectedLesson] = useDebouncedLocalStorage<
+		number | null
+	>("selectedLesson", null);
+	const [selectedCategory, setSelectedCategory] = useDebouncedLocalStorage<
 		string | null
 	>("selectedCategory", null);
 	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-	const [retryCount, setRetryCount] = useState(0);
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-	// Generate stable skeleton keys once
+	// Prevent hydration mismatch
+	useEffect(() => {
+		setIsMounted(true);
+	}, []);
+
 	const skeletonKeys = useMemo(
-		() =>
-			Array.from(
-				{ length: SKELETON_COUNT },
-				(_, i) => `skeleton-${i}-${crypto.randomUUID()}`,
-			),
+		() => Array.from({ length: SKELETON_COUNT }, (_, i) => `skeleton-${i}`),
 		[],
 	);
 
-	// Data fetching
 	const {
 		data: lessonData,
 		isLoading: isLoadingLessons,
@@ -158,6 +217,7 @@ export default function TestGroupPage() {
 		enabled: !!userId && !selectedLesson,
 		retry: RETRY_CONFIG.attempts,
 		retryDelay: RETRY_CONFIG.delay,
+		staleTime: 5 * 60 * 1000,
 	});
 
 	const { data: allLessonsData } = useQuery<GetTestGroupResponse>({
@@ -166,6 +226,7 @@ export default function TestGroupPage() {
 		enabled: !!userId,
 		retry: RETRY_CONFIG.attempts,
 		retryDelay: RETRY_CONFIG.delay,
+		staleTime: 5 * 60 * 1000,
 	});
 
 	const {
@@ -178,37 +239,29 @@ export default function TestGroupPage() {
 		enabled: !!userId && !!selectedLesson,
 		retry: RETRY_CONFIG.attempts,
 		retryDelay: RETRY_CONFIG.delay,
+		staleTime: 5 * 60 * 1000,
 	});
 
-	// Mutations
 	const handleTestMutation = useCallback(
 		async (tests: { testcnt: number; rlesson_id: number }[]) => {
-			if (IS_DEV) {
-				console.log("Starting test mutation:", tests);
-			}
-
-			let lastError: Error | null = null;
-
 			for (let attempt = 0; attempt < RETRY_CONFIG.attempts; attempt++) {
 				try {
 					const mixedResponse = await getTestMixed(userId || 0, tests);
 
 					if (!mixedResponse.RetResponse?.ResponseType) {
-						await new Promise((resolve) =>
-							setTimeout(resolve, RETRY_CONFIG.delay * (attempt + 1)),
-						);
-						continue;
-					}
-
-					if (IS_DEV) {
-						console.log("Mixed response success, fetching test fill");
+						if (attempt < RETRY_CONFIG.attempts - 1) {
+							await new Promise((resolve) =>
+								setTimeout(resolve, RETRY_CONFIG.delay * (attempt + 1)),
+							);
+							continue;
+						}
+						throw new Error("Failed to mix tests");
 					}
 
 					return await gettTestFill(userId || 0);
 				} catch (error) {
-					lastError = error as Error;
-					if (IS_DEV) {
-						console.log(`Attempt ${attempt + 1} failed, retrying...`);
+					if (attempt === RETRY_CONFIG.attempts - 1) {
+						throw error;
 					}
 					await new Promise((resolve) =>
 						setTimeout(
@@ -218,8 +271,6 @@ export default function TestGroupPage() {
 					);
 				}
 			}
-
-			throw lastError || new Error("Operation failed");
 		},
 		[userId],
 	);
@@ -232,16 +283,16 @@ export default function TestGroupPage() {
 				localStorage.removeItem("selectedLesson");
 				localStorage.removeItem("selectedCategory");
 				router.push("/exercise");
+			} else {
+				setErrorMessage("Тест эхлүүлэхэд алдаа гарлаа. Дахин оролдоно уу.");
 			}
 		},
-		onError: () => {
-			if (IS_DEV) {
-				console.log("Mutation failed, silent retry active");
-			}
+		onError: (error) => {
+			console.error("Mutation error:", error);
+			setErrorMessage("Сүлжээний алдаа. Дахин оролдоно уу.");
 		},
 	});
 
-	// Computed values
 	const lessonGroups = useMemo(() => {
 		if (!lessonData?.RetData) return [];
 
@@ -296,42 +347,19 @@ export default function TestGroupPage() {
 	}, [allLessonsData]);
 
 	const lessonStats = useMemo(() => {
-		const stats = new Map<number, LessonStats>();
-
-		lessonGroups.forEach((lesson) => {
-			const lessonTests = lessonTestsMap.get(lesson.lesson_id) || [];
-			const lessonTestIds = lessonTests.map((t) => t.id);
-
-			const lessonSelectedTests = Object.entries(selectedTests).filter(
-				([testId]) => lessonTestIds.includes(Number(testId)),
-			);
-
-			stats.set(lesson.lesson_id, {
-				selectedCount: lessonSelectedTests.length,
-				totalQuestions: lessonSelectedTests.reduce(
-					(sum, [, count]) => sum + (count as number),
-					0,
-				),
-			});
-		});
-
-		return stats;
+		return calculateLessonStats(lessonGroups, lessonTestsMap, selectedTests);
 	}, [lessonGroups, lessonTestsMap, selectedTests]);
 
 	const totals = useMemo(() => {
-		const values = Object.values(selectedTests);
-		const questionCount = values.reduce(
-			(sum, count) => sum + (count as number),
-			0,
-		);
+		const entries = Object.values(selectedTests);
+		const questionCount = entries.reduce((sum, count) => sum + count, 0);
 
 		return {
-			groupCount: values.length,
+			groupCount: entries.length,
 			questionCount,
 		};
 	}, [selectedTests]);
 
-	// Event handlers
 	const handleTestChange = useCallback(
 		(id: number, count: number) => {
 			setSelectedTests((prev) => {
@@ -346,137 +374,112 @@ export default function TestGroupPage() {
 	);
 
 	const handleBackToLessons = useCallback(() => {
-		setSelectedLesson(null);
-		setSelectedCategory(null);
+		startTransition(() => {
+			setSelectedLesson(null);
+			setSelectedCategory(null);
+		});
 	}, [setSelectedLesson, setSelectedCategory]);
 
 	const handleLessonClick = useCallback(
 		(lessonId: number) => {
-			setSelectedLesson(lessonId);
+			startTransition(() => {
+				setSelectedLesson(lessonId);
+			});
 		},
 		[setSelectedLesson],
 	);
 
 	const handleCategoryClick = useCallback(
 		(categoryKey: string) => {
-			setSelectedCategory(categoryKey);
+			startTransition(() => {
+				setSelectedCategory(categoryKey);
+			});
 		},
 		[setSelectedCategory],
 	);
 
-	const handleCategoryBack = useCallback(() => {
-		setSelectedCategory(null);
-	}, [setSelectedCategory]);
-
 	const handleStartTest = useCallback(() => {
-		setRetryCount(0);
+		setErrorMessage(null);
 		const payload = Object.entries(selectedTests).map(([id, count]) => ({
-			testcnt: count as number,
+			testcnt: count,
 			rlesson_id: Number(id),
 		}));
 
-		const attemptMutation = (currentPayload: typeof payload, attempt = 0) => {
-			mutation.mutate(currentPayload, {
-				onError: () => {
-					if (attempt < RETRY_CONFIG.maxRetries) {
-						setRetryCount(attempt + 1);
-						setTimeout(
-							() => {
-								attemptMutation(currentPayload, attempt + 1);
-							},
-							RETRY_CONFIG.delay * (attempt + 1),
-						);
-					}
-				},
-			});
-		};
-
-		attemptMutation(payload);
+		mutation.mutate(payload);
 	}, [selectedTests, mutation]);
 
-	// Render helpers
-	const renderSkeletons = () => (
-		<output
-			className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 3xl:grid-cols-10 gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6"
-			aria-label="Loading lessons"
-		>
-			{skeletonKeys.map((key) => (
-				<SkeletonCard key={key} />
-			))}
-			<span className="sr-only">Хичээлүүдийг ачааллаж байна...</span>
-		</output>
+	const renderSkeletons = useMemo(
+		() => (
+			<output
+				className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 3xl:grid-cols-10 gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6"
+				aria-label="Хичээлүүдийг ачааллаж байна"
+			>
+				{skeletonKeys.map((key) => (
+					<SkeletonCard key={key} />
+				))}
+				<span className="sr-only">Хичээлүүдийг ачааллаж байна...</span>
+			</output>
+		),
+		[skeletonKeys],
 	);
 
-	const renderLessonCards = () => (
-		<ul className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 3xl:grid-cols-11 gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6 animate-in slide-in-from-bottom-4 duration-500 list-none">
-			{lessonGroups.map((lesson) => {
-				const stats = lessonStats.get(lesson.lesson_id) || DEFAULT_STATS;
+	const renderLessonCards = useMemo(
+		() => (
+			<ul className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 3xl:grid-cols-11 gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6 list-none">
+				{lessonGroups.map((lesson) => {
+					const stats = lessonStats.get(lesson.lesson_id) || DEFAULT_STATS;
 
-				return (
-					<li key={lesson.lesson_id}>
-						<LessonCard
-							lesson={lesson}
-							selectedCount={stats.selectedCount}
-							totalQuestions={stats.totalQuestions}
-							onClick={() => handleLessonClick(lesson.lesson_id)}
+					return (
+						<li key={lesson.lesson_id}>
+							<LessonCard
+								lesson={lesson}
+								selectedCount={stats.selectedCount}
+								totalQuestions={stats.totalQuestions}
+								onClick={() => handleLessonClick(lesson.lesson_id)}
+							/>
+						</li>
+					);
+				})}
+				{lessonGroups.length === 0 && <EmptyState />}
+			</ul>
+		),
+		[lessonGroups, lessonStats, handleLessonClick],
+	);
+
+	const renderCategoryCards = useMemo(
+		() => (
+			<ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-3 sm:gap-4 md:gap-5 lg:gap-6 list-none">
+				{[...groupedData.entries()].map(([key, category]) => (
+					<li key={key}>
+						<CategoryCard
+							category={category}
+							categorySelectedCount={
+								category.items.filter((i) => selectedTests[i.id]).length
+							}
+							categoryTotalQuestions={category.items.reduce(
+								(sum, i) => sum + (selectedTests[i.id] || 0),
+								0,
+							)}
+							onClick={() => handleCategoryClick(key)}
 						/>
 					</li>
-				);
-			})}
-			{lessonGroups.length === 0 && <EmptyState />}
-		</ul>
+				))}
+				{groupedData.size === 0 && <EmptyState />}
+			</ul>
+		),
+		[groupedData, selectedTests, handleCategoryClick],
 	);
 
-	const renderCategoryCards = () => (
-		<ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-3 sm:gap-4 md:gap-5 lg:gap-6 animate-in slide-in-from-bottom-4 duration-500 list-none">
-			{[...groupedData.entries()].map(([key, category]) => (
-				<li key={key}>
-					<CategoryCard
-						category={category}
-						categorySelectedCount={
-							category.items.filter((i: TestGroupItem) => selectedTests[i.id])
-								.length
-						}
-						categoryTotalQuestions={category.items.reduce(
-							(sum: number, i: TestGroupItem) =>
-								sum + ((selectedTests[i.id] as number) || 0),
-							0,
-						)}
-						onClick={() => handleCategoryClick(key)}
-					/>
-				</li>
-			))}
-			{groupedData.size === 0 && <EmptyState />}
-		</ul>
-	);
-
-	const renderTestItems = () => {
+	const renderTestItems = useCallback(() => {
 		if (!selectedCategory) return null;
 
 		const categoryItems = groupedData.get(selectedCategory);
 		if (!categoryItems) return null;
 
 		return (
-			<div className="space-y-3 sm:space-y-4 md:space-y-5 animate-in fade-in duration-300 relative z-10">
+			<div className="min-h-screen bg-slate-50/50 dark:bg-slate-950/50">
 				<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3 md:gap-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-2.5 sm:p-3 md:p-4 rounded-lg sm:rounded-xl md:rounded-2xl shadow-sm border border-slate-100/50 dark:border-slate-800/50">
 					<div className="flex items-center gap-2 w-full sm:w-auto overflow-hidden">
-						<Button
-							onClick={handleCategoryBack}
-							variant="ghost"
-							size="sm"
-							className="flex items-center gap-1 sm:gap-1.5 text-slate-500 font-bold hover:text-emerald-500 transition-colors p-1.5 sm:p-2 shrink-0 min-w-9 sm:min-w-10"
-							aria-label="Буцах"
-						>
-							<ArrowLeft
-								className="w-3.5 h-3.5 sm:w-4 sm:h-4"
-								aria-hidden="true"
-							/>
-							<span className="text-xs sm:text-sm xs:inline">Буцах</span>
-						</Button>
-						<div
-							className="h-4 sm:h-5 md:h-6 w-px bg-slate-200 dark:bg-slate-700 mx-0.5 sm:mx-1 shrink-0"
-							aria-hidden="true"
-						/>
 						<h2
 							className="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-slate-800 dark:text-slate-200 truncate flex-1 min-w-0"
 							id="category-title"
@@ -486,7 +489,7 @@ export default function TestGroupPage() {
 					</div>
 
 					<fieldset className="flex bg-slate-100 dark:bg-slate-800 p-0.5 sm:p-1 rounded-md sm:rounded-lg gap-0.5 sm:gap-1 shrink-0 border-0">
-						<legend className="sr-only">View mode toggle</legend>
+						<legend className="sr-only">Харагдах төрөл сонгох</legend>
 						<Button
 							variant="ghost"
 							size="sm"
@@ -495,7 +498,7 @@ export default function TestGroupPage() {
 								"rounded-md px-2 sm:px-2.5 h-7 sm:h-8 transition-all",
 								viewMode === "grid" && "bg-white dark:bg-slate-700 shadow-sm",
 							)}
-							aria-label="Grid view"
+							aria-label="Торны харагдац"
 							aria-pressed={viewMode === "grid"}
 						>
 							<div
@@ -516,7 +519,7 @@ export default function TestGroupPage() {
 								"rounded-md px-2 sm:px-2.5 h-7 sm:h-8 transition-all",
 								viewMode === "list" && "bg-white dark:bg-slate-700 shadow-sm",
 							)}
-							aria-label="List view"
+							aria-label="Жагсаалтын харагдац"
 							aria-pressed={viewMode === "list"}
 						>
 							<div
@@ -538,7 +541,7 @@ export default function TestGroupPage() {
 					)}
 					aria-labelledby="category-title"
 				>
-					{categoryItems.items.map((item: TestGroupItem) => (
+					{categoryItems.items.map((item) => (
 						<li key={item.id}>
 							{viewMode === "grid" ? (
 								<TestItemCard
@@ -558,20 +561,39 @@ export default function TestGroupPage() {
 				</ul>
 			</div>
 		);
-	};
+	}, [
+		selectedCategory,
+		groupedData,
+		viewMode,
+		selectedTests,
+		handleTestChange,
+	]);
 
 	const isLoading = selectedLesson ? isLoadingDetails : isLoadingLessons;
-	const _error = selectedLesson ? detailsError : lessonError;
+	const error = selectedLesson ? detailsError : lessonError;
 
 	if (!userId) {
 		return (
 			<output
 				className="h-screen flex items-center justify-center"
-				aria-label="Loading user authentication"
+				aria-label="Нэвтэрч байна"
 			>
 				<Loader2 className="w-8 h-8 animate-spin text-slate-400" />
 				<span className="sr-only">Нэвтэрч байна...</span>
 			</output>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="h-screen flex items-center justify-center">
+				<div className="text-center">
+					<p className="text-red-500 mb-4">Алдаа гарлаа</p>
+					<Button onClick={() => window.location.reload()}>
+						Дахин ачаалах
+					</Button>
+				</div>
+			</div>
 		);
 	}
 
@@ -591,7 +613,8 @@ export default function TestGroupPage() {
 									variant="ghost"
 									size="sm"
 									className="flex items-center gap-1 sm:gap-1.5 md:gap-2 text-slate-500 font-bold hover:text-emerald-500 transition-colors p-1.5 sm:p-2 min-w-9 sm:min-w-10"
-									aria-label="Back to lessons"
+									aria-label="Хичээл рүү буцах"
+									disabled={isPending}
 								>
 									<ArrowLeft
 										className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5"
@@ -607,23 +630,31 @@ export default function TestGroupPage() {
 							</div>
 						</div>
 					</div>
+
+					{errorMessage && (
+						<div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+							<p className="text-sm text-red-600 dark:text-red-400">
+								{errorMessage}
+							</p>
+						</div>
+					)}
 				</header>
 
 				<main>
 					{isLoading
-						? renderSkeletons()
+						? renderSkeletons
 						: !selectedLesson
-							? renderLessonCards()
+							? renderLessonCards
 							: !selectedCategory
-								? renderCategoryCards()
+								? renderCategoryCards
 								: renderTestItems()}
 				</main>
 			</div>
 
-			{totals.questionCount > 0 && (
+			{isMounted && totals.questionCount > 0 && (
 				<section
 					className="fixed bottom-2 sm:bottom-3 md:bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] md:w-auto max-w-2xl z-50 px-2 sm:px-0"
-					aria-label="Test summary and start button"
+					aria-label="Тестийн хураангуй"
 				>
 					<output className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl rounded-full px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 shadow-2xl border-2 border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between gap-2 sm:gap-3 md:gap-4">
 						<div
@@ -658,26 +689,15 @@ export default function TestGroupPage() {
 							className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 rounded-full px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 md:py-2.5 font-semibold text-xs sm:text-sm md:text-base transition-all active:scale-95 shrink-0 min-w-[72px] sm:min-w-20 md:min-w-[100px]"
 							aria-label={
 								mutation.isPending
-									? "Loading test"
-									: `Start test with ${totals.questionCount} questions`
+									? "Тест ачааллаж байна"
+									: `${totals.questionCount} асуулттай тест эхлүүлэх`
 							}
 						>
 							{mutation.isPending ? (
-								<div className="flex flex-col items-center gap-1">
-									<Loader2
-										className="animate-spin w-3.5 h-3.5 sm:w-4 sm:h-4"
-										aria-hidden="true"
-									/>
-									<span className="sr-only">Уншиж байна...</span>
-									{retryCount > 0 && (
-										<span
-											className="text-[8px] sm:text-[9px] opacity-70"
-											aria-live="polite"
-										>
-											Уншиж байна...
-										</span>
-									)}
-								</div>
+								<Loader2
+									className="animate-spin w-3.5 h-3.5 sm:w-4 sm:h-4"
+									aria-hidden="true"
+								/>
 							) : (
 								<div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 group cursor-pointer justify-center">
 									<span>Эхлэх</span>

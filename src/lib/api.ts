@@ -369,7 +369,7 @@ export const getexamFinishFiltertLists = async (
 export const getSorillists = async (
 	userId: number,
 ): Promise<ApiSorillistsResponse> => {
-	const { data } = await api.post<ApiSorillistsResponse>("/getexamlists", {
+	const { data } = await api.post<ApiSorillistsResponse>("/webgetexamlists", {
 		user_id: userId,
 		optype: 1,
 	});

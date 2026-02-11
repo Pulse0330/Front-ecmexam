@@ -4,13 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import {
 	Award,
 	CheckCircle,
-	ChevronDown,
 	Eye,
 	EyeOff,
 	FileQuestion,
-	Search,
 	TrendingUp,
-	X,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
@@ -20,10 +17,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
 	getexamFinishFiltertLists,
 	getexamresultlists,
@@ -35,10 +33,19 @@ import type { ExamresultListResponseType } from "@/types/exam/examResultList";
 import { ExamListItem } from "./card";
 import RankModal from "./rank";
 
-// Dynamic import for Result Modal to avoid build errors
+// Dynamic import for Result Modal
 const ExamAnswersDialog = dynamic(() => import("./result"), {
 	ssr: false,
-	loading: () => <div>Loading...</div>,
+	loading: () => (
+		<div className="flex items-center justify-center p-8">
+			<UseAnimations
+				animation={loading2}
+				size={40}
+				strokeColor="hsl(var(--primary))"
+				loop
+			/>
+		</div>
+	),
 });
 
 interface Lesson {
@@ -62,16 +69,14 @@ export default function ExamResultList() {
 	const [selectedExamId, setSelectedExamId] = useState<number | null>(null);
 	const [selectedTestId, setSelectedTestId] = useState<number | null>(null);
 	const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
-
 	const [globalShowScore, setGlobalShowScore] = useState(false);
-	const [isResultsOpen, setIsResultsOpen] = useState(true);
-	const [searchQuery, setSearchQuery] = useState("");
 
 	// Fetch lesson filter options
 	const { data: lessonData } = useQuery<TestFilterResponse>({
 		queryKey: ["testFilter", userId],
 		queryFn: () => getTestFilter(userId || 0),
 		enabled: !!userId,
+		staleTime: 5 * 60 * 1000,
 	});
 
 	// Auto-select "Бүгд" (lesson_id: 0) when lessons are loaded
@@ -81,7 +86,7 @@ export default function ExamResultList() {
 		}
 	}, [lessonData, selectedLessonId]);
 
-	// Fetch exam results - uses API filtering based on selected lesson
+	// Fetch exam results
 	const { data, isLoading } = useQuery<ExamresultListResponseType>({
 		queryKey: ["examResults", userId, selectedLessonId],
 		queryFn: async (): Promise<ExamresultListResponseType> => {
@@ -91,17 +96,11 @@ export default function ExamResultList() {
 			return getexamFinishFiltertLists(userId || 0, selectedLessonId || 0);
 		},
 		enabled: !!userId && selectedLessonId !== null,
+		staleTime: 2 * 60 * 1000,
 	});
 
 	const lessons = useMemo(() => lessonData?.RetData || [], [lessonData]);
 	const exams = useMemo(() => data?.RetData || [], [data]);
-
-	// Filter exams based on search query
-	const filteredExams = useMemo(() => {
-		if (!searchQuery.trim()) return exams;
-		const query = searchQuery.toLowerCase();
-		return exams.filter((exam) => exam.title?.toLowerCase().includes(query));
-	}, [exams, searchQuery]);
 
 	// Handler for viewing results modal
 	const handleViewResults = (_examId: number, testId: number) => {
@@ -134,6 +133,16 @@ export default function ExamResultList() {
 		[finishedExams],
 	);
 
+	const hasApiError = useMemo(
+		() => !data?.RetResponse?.ResponseType,
+		[data?.RetResponse?.ResponseType],
+	);
+
+	const selectedLessonName = useMemo(
+		() => lessons.find((l) => l.lesson_id === selectedLessonId)?.lesson_name,
+		[lessons, selectedLessonId],
+	);
+
 	// Loading state
 	if (isLoading) {
 		return (
@@ -159,103 +168,136 @@ export default function ExamResultList() {
 		);
 	}
 
-	// API error check
-	const hasApiError = !data?.RetResponse?.ResponseType;
-
 	return (
-		<>
+		<TooltipProvider>
 			<div className="h-full flex flex-col">
 				<div className="max-w-[1600px] mx-auto w-full flex flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 					{/* Header */}
-					<header className="text-start space-y-1 animate-in fade-in-0 slide-in-from-top-4 duration-500">
-						<h3 className="text-lg sm:text-2xl font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-							Шалгалтын үр дүн
-						</h3>
+					<header className="flex items-center justify-between animate-in fade-in-0 slide-in-from-top-4 duration-500">
+						<div className="text-start">
+							<h3 className="text-lg sm:text-2xl font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+								Шалгалтын үр дүн
+							</h3>
+						</div>
+
+						{finishedExams.length > 0 && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => setGlobalShowScore(!globalShowScore)}
+										className="h-8 text-xs gap-2 shadow-sm hover:shadow-md transition-all"
+									>
+										{globalShowScore ? (
+											<>
+												<EyeOff className="w-3.5 h-3.5" />
+												Оноо нуух
+											</>
+										) : (
+											<>
+												<Eye className="w-3.5 h-3.5" />
+												Оноо харуулах
+											</>
+										)}
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									<p>
+										{globalShowScore
+											? "Үр дүнгийн статистик нуух"
+											: "Үр дүнгийн статистик харуулах"}
+									</p>
+								</TooltipContent>
+							</Tooltip>
+						)}
 					</header>
+
 					{/* Stats Section */}
-					{finishedExams.length > 0 && (
-						<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700">
-							<div className="flex justify-end mb-3">
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() => setGlobalShowScore(!globalShowScore)}
-									className="h-8 text-xs gap-2 shadow-sm hover:shadow-md transition-all"
-								>
-									{globalShowScore ? (
-										<>
-											<EyeOff className="w-3.5 h-3.5" />
-											Оноонуудыг нуух
-										</>
-									) : (
-										<>
-											<Eye className="w-3.5 h-3.5" />
-											Оноонуудыг харуулах
-										</>
-									)}
-								</Button>
+					{finishedExams.length > 0 && globalShowScore && (
+						<div className="animate-in fade-in-0 slide-in-from-top-2 duration-500">
+							<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Card className="border-none shadow-md bg-linear-to-br from-blue-500 to-blue-600 text-white overflow-hidden group hover:shadow-lg transition-all duration-300">
+											<CardContent className="p-4 relative">
+												<div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-500" />
+												<div className="relative flex items-center gap-3">
+													<div className="w-11 h-11 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
+														<CheckCircle className="w-5 h-5" />
+													</div>
+													<div className="flex-1 min-w-0">
+														<div className="text-2xl font-bold mb-0.5">
+															{finishedExams.length}
+														</div>
+														<div className="text-xs opacity-90">
+															Дууссан шалгалт
+														</div>
+													</div>
+												</div>
+											</CardContent>
+										</Card>
+									</TooltipTrigger>
+									<TooltipContent>
+										<p>Таны бүрэн гүйцэтгэсэн шалгалтын тоо</p>
+									</TooltipContent>
+								</Tooltip>
+
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Card className="border-none shadow-md bg-linear-to-br from-emerald-500 to-emerald-600 text-white overflow-hidden group hover:shadow-lg transition-all duration-300">
+											<CardContent className="p-4 relative">
+												<div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-500" />
+												<div className="relative flex items-center gap-3">
+													<div className="w-11 h-11 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
+														<TrendingUp className="w-5 h-5" />
+													</div>
+													<div className="flex-1 min-w-0">
+														<div className="text-2xl font-bold mb-0.5">
+															{avgScore}%
+														</div>
+														<div className="text-xs opacity-90">
+															Дундаж үр дүн
+														</div>
+													</div>
+												</div>
+											</CardContent>
+										</Card>
+									</TooltipTrigger>
+									<TooltipContent>
+										<p>
+											Таны бүх шалгалтын дундаж амжилт: {finishedExams.length}{" "}
+											шалгалт
+										</p>
+									</TooltipContent>
+								</Tooltip>
+
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Card className="border-none shadow-md bg-linear-to-br from-amber-500 to-orange-500 text-white overflow-hidden group hover:shadow-lg transition-all duration-300">
+											<CardContent className="p-4 relative">
+												<div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-500" />
+												<div className="relative flex items-center gap-3">
+													<div className="w-11 h-11 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
+														<Award className="w-5 h-5" />
+													</div>
+													<div className="flex-1 min-w-0">
+														<div className="text-2xl font-bold mb-0.5">
+															{highScore}%
+														</div>
+														<div className="text-xs opacity-90">
+															Хамгийн өндөр
+														</div>
+													</div>
+												</div>
+											</CardContent>
+										</Card>
+									</TooltipTrigger>
+									<TooltipContent>
+										<p>Таны хамгийн өндөр оноо</p>
+									</TooltipContent>
+								</Tooltip>
 							</div>
-
-							{globalShowScore && (
-								<div className="grid grid-cols-1 md:grid-cols-3 gap-3 animate-in fade-in-0 slide-in-from-top-2 duration-500">
-									<Card className="border-none shadow-md bg-linear-to-br from-blue-500 to-blue-600 text-white overflow-hidden group hover:shadow-lg transition-all duration-300">
-										<CardContent className="p-4 relative">
-											<div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-500" />
-											<div className="relative flex items-center gap-3">
-												<div className="w-11 h-11 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
-													<CheckCircle className="w-5 h-5" />
-												</div>
-												<div className="flex-1 min-w-0">
-													<div className="text-2xl font-bold mb-0.5">
-														{finishedExams.length}
-													</div>
-													<div className="text-xs opacity-90">
-														Дууссан шалгалт
-													</div>
-												</div>
-											</div>
-										</CardContent>
-									</Card>
-
-									<Card className="border-none shadow-md bg-linear-to-br from-emerald-500 to-emerald-600 text-white overflow-hidden group hover:shadow-lg transition-all duration-300">
-										<CardContent className="p-4 relative">
-											<div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-500" />
-											<div className="relative flex items-center gap-3">
-												<div className="w-11 h-11 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
-													<TrendingUp className="w-5 h-5" />
-												</div>
-												<div className="flex-1 min-w-0">
-													<div className="text-2xl font-bold mb-0.5">
-														{avgScore}%
-													</div>
-													<div className="text-xs opacity-90">
-														Дундаж үр дүн
-													</div>
-												</div>
-											</div>
-										</CardContent>
-									</Card>
-
-									<Card className="border-none shadow-md bg-linear-to-br from-amber-500 to-orange-500 text-white overflow-hidden group hover:shadow-lg transition-all duration-300">
-										<CardContent className="p-4 relative">
-											<div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-500" />
-											<div className="relative flex items-center gap-3">
-												<div className="w-11 h-11 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
-													<Award className="w-5 h-5" />
-												</div>
-												<div className="flex-1 min-w-0">
-													<div className="text-2xl font-bold mb-0.5">
-														{highScore}%
-													</div>
-													<div className="text-xs opacity-90">
-														Хамгийн өндөр
-													</div>
-												</div>
-											</div>
-										</CardContent>
-									</Card>
-								</div>
-							)}
 						</div>
 					)}
 
@@ -266,26 +308,30 @@ export default function ExamResultList() {
 								{/* Desktop - Horizontal buttons */}
 								<div className="hidden md:flex gap-2 flex-wrap">
 									{lessons.map((lesson) => (
-										<Button
-											key={lesson.lesson_id}
-											type="button"
-											onClick={() => setSelectedLessonId(lesson.lesson_id)}
-											variant={
-												selectedLessonId === lesson.lesson_id
-													? "default"
-													: "outline"
-											}
-											className={cn(
-												"px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap",
-												selectedLessonId === lesson.lesson_id && "shadow-lg",
-											)}
-										>
-											{lesson.lesson_name}
-										</Button>
+										<Tooltip key={lesson.lesson_id}>
+											<TooltipTrigger asChild>
+												<Button
+													type="button"
+													onClick={() => setSelectedLessonId(lesson.lesson_id)}
+													variant={
+														selectedLessonId === lesson.lesson_id
+															? "default"
+															: "outline"
+													}
+													className={cn(
+														"px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap",
+														selectedLessonId === lesson.lesson_id &&
+															"shadow-lg",
+													)}
+												>
+													{lesson.lesson_name}
+												</Button>
+											</TooltipTrigger>
+										</Tooltip>
 									))}
 								</div>
 
-								{/* Mobile - Combobox/Select */}
+								{/* Mobile - Select dropdown */}
 								<select
 									value={selectedLessonId ?? ""}
 									onChange={(e) => setSelectedLessonId(Number(e.target.value))}
@@ -304,125 +350,62 @@ export default function ExamResultList() {
 
 					{/* Results Section */}
 					<div className="animate-in fade-in-0 duration-700 delay-300">
-						<Collapsible open={isResultsOpen} onOpenChange={setIsResultsOpen}>
-							<CardHeader>
-								<CollapsibleTrigger className="w-full">
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-4">
-											<div className="relative">
-												<div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
-											</div>
-											<h2 className="text-2xl md:text-3xl font-bold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-												{selectedLessonId === 0
-													? "Бүх шалгалтууд"
-													: `${lessons.find((l) => l.lesson_id === selectedLessonId)?.lesson_name || ""} - Шалгалтууд`}
-											</h2>
-										</div>
-										<div className="flex items-center gap-3">
-											<Badge
-												variant="secondary"
-												className="text-sm font-semibold shadow-sm"
-											>
-												{exams.length} шалгалт
-											</Badge>
-											<ChevronDown
-												className={`w-6 h-6 text-muted-foreground transition-transform duration-300 ${
-													isResultsOpen ? "rotate-180" : ""
-												}`}
+						<CardHeader>
+							<div className="flex items-center justify-between">
+								<div className="flex items-center gap-4">
+									<h2 className="text-lg  font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent ">
+										{selectedLessonId === 0
+											? "Шалгалтууд"
+											: `${selectedLessonName || ""} - Шалгалтууд`}
+									</h2>
+								</div>
+								<Badge
+									variant="secondary"
+									className="text-sm font-semibold shadow-sm"
+								>
+									{exams.length} шалгалт
+								</Badge>
+							</div>
+						</CardHeader>
+
+						<CardContent className="p-6 space-y-5">
+							{/* Exam Grid or Empty State */}
+							{exams.length > 0 ? (
+								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+									{exams.map((exam) => (
+										<div
+											key={exam.exam_id}
+											className="animate-in fade-in-0 slide-in-from-bottom-4"
+										>
+											<ExamListItem
+												exam={exam}
+												onViewRank={setSelectedExamId}
+												onViewResults={handleViewResults}
+												globalShowScore={globalShowScore}
 											/>
 										</div>
+									))}
+								</div>
+							) : (
+								<div className="flex flex-col items-center justify-center py-16 text-center">
+									<div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+										<FileQuestion className="w-8 h-8 text-muted-foreground" />
 									</div>
-								</CollapsibleTrigger>
-							</CardHeader>
-							<CollapsibleContent>
-								<CardContent className="p-6 space-y-5">
-									{/* Search Bar */}
-									{exams.length > 0 && (
-										<div className="relative">
-											<Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
-											<input
-												type="text"
-												placeholder="Шалгалтын нэр эсвэл хичээлээр хайх..."
-												value={searchQuery}
-												onChange={(e) => setSearchQuery(e.target.value)}
-												className="w-full pl-12 pr-10 h-12 border-2 border-input focus:border-primary focus:outline-none rounded-xl shadow-sm transition-all duration-200 text-sm bg-background"
-											/>
-											{searchQuery && (
-												<button
-													type="button"
-													onClick={() => setSearchQuery("")}
-													className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1.5 hover:bg-accent rounded-full transition-colors"
-												>
-													<X className="w-4 h-4 text-muted-foreground" />
-												</button>
-											)}
-										</div>
-									)}
-
-									{/* Results Count */}
-									{searchQuery && exams.length > 0 && (
-										<div className="flex items-center gap-2 text-sm text-muted-foreground">
-											<span className="font-medium">
-												{filteredExams.length}
-											</span>
-											<span>үр дүн олдлоо</span>
-											{filteredExams.length !== exams.length && (
-												<span className="text-muted-foreground/60">
-													({exams.length}-аас)
-												</span>
-											)}
-										</div>
-									)}
-
-									{/* Exam Grid or Empty State */}
-									{filteredExams.length > 0 ? (
-										<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-											{filteredExams.map((exam, index) => (
-												<div
-													key={exam.exam_id}
-													className="animate-in fade-in-0 slide-in-from-bottom-4"
-													style={{
-														animationDelay: `${index * 50}ms`,
-														animationFillMode: "both",
-													}}
-												>
-													<ExamListItem
-														exam={exam}
-														onViewRank={setSelectedExamId}
-														onViewResults={handleViewResults}
-														globalShowScore={globalShowScore}
-													/>
-												</div>
-											))}
-										</div>
-									) : (
-										<div className="flex flex-col items-center justify-center py-16 text-center">
-											<div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-												{hasApiError ? (
-													<FileQuestion className="w-8 h-8 text-muted-foreground" />
-												) : (
-													<Search className="w-8 h-8 text-muted-foreground" />
-												)}
-											</div>
-											<h3 className="text-lg font-semibold text-foreground mb-2">
-												{hasApiError
-													? "Шалгалт олдсонгүй"
-													: "Өөр хайлт эсвэл шүүлтүүр ашиглан дахин оролдоно уу"}
-											</h3>
-											<p className="text-sm text-muted-foreground max-w-sm">
-												{hasApiError
-													? "Үр дүн татахад алдаа гарлаа. Дахин оролдоно уу."
-													: searchQuery
-														? `"${searchQuery}" хайлтад тохирох шалгалт олдсонгүй. Өөр нэрээр хайж үзнэ үү.`
-														: selectedLessonId === 0
-															? "Танд одоогоор шалгалтын үр дүн байхгүй байна."
-															: `${lessons.find((l) => l.lesson_id === selectedLessonId)?.lesson_name || "Энэ хичээл"}-д шалгалтын үр дүн байхгүй байна.`}
-											</p>
-										</div>
-									)}
-								</CardContent>
-							</CollapsibleContent>
-						</Collapsible>
+									<h3 className="text-lg font-semibold text-foreground mb-2">
+										{hasApiError
+											? "Шалгалт олдсонгүй"
+											: "Шалгалт байхгүй байна"}
+									</h3>
+									<p className="text-sm text-muted-foreground max-w-sm">
+										{hasApiError
+											? "Үр дүн татахад алдаа гарлаа. Дахин оролдоно уу."
+											: selectedLessonId === 0
+												? "Танд одоогоор шалгалтын үр дүн байхгүй байна."
+												: `${selectedLessonName || "Энэ хичээл"}-д шалгалтын үр дүн байхгүй байна.`}
+									</p>
+								</div>
+							)}
+						</CardContent>
 					</div>
 				</div>
 			</div>
@@ -445,6 +428,6 @@ export default function ExamResultList() {
 					onOpenChange={setGlobalShowScore}
 				/>
 			)}
-		</>
+		</TooltipProvider>
 	);
 }

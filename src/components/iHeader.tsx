@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/useAuthStore";
+import ServerDate from "./serverDate";
 
 // Navigation links configuration
 const NAV_LINKS = [
@@ -498,7 +499,7 @@ export const Navbar01: React.FC = () => {
 	const [showLogoutDialog, setShowLogoutDialog] = React.useState(false);
 	const pathname = usePathname();
 	const router = useRouter();
-	const queryClient = useQueryClient(); // ← Hook-ийг энд дуудна
+	const queryClient = useQueryClient();
 	const { user, firstname, imgUrl, clearAuth } = useAuthStore();
 
 	const userInfo = React.useMemo(
@@ -520,38 +521,26 @@ export const Navbar01: React.FC = () => {
 
 	const handleLogout = async () => {
 		try {
-			// 1. Call logout API if available
-			// await logoutAPI();
-
-			// 2. Clear cookies
 			const cookiesToRemove = ["auth-token", "user-id", "firstname", "img-url"];
 			cookiesToRemove.forEach((cookie) => {
 				Cookies.remove(cookie, { path: "/" });
 			});
 
-			// 3. Clear Zustand (includes localStorage cleanup)
 			clearAuth();
-
-			// 4. Clear session storage
 			sessionStorage.clear();
-
-			// 5. Clear React Query cache
 			queryClient.clear();
-
-			// 6. Navigate to login
 			router.push("/login");
 		} catch (error) {
 			console.error("Logout error:", error);
-			// Force reload as fallback
 			window.location.href = "/login";
 		}
 	};
 
 	return (
 		<>
-			<header className="w-full border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 rounded-2xl shadow-lg ">
+			<header className="w-full border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 rounded-2xl shadow-lg">
 				<div className="flex h-16 items-center justify-between gap-4 px-6">
-					{/* Logo - Pushed Left */}
+					{/* Logo */}
 					<Link href="/" className="flex items-center gap-2 shrink-0">
 						<Image
 							src="/image/logoLogin.png"
@@ -599,8 +588,8 @@ export const Navbar01: React.FC = () => {
 						/>
 					</nav>
 
-					{/* Right Actions - Pushed Right */}
-					<div className="flex items-center gap-3 shrink-0">
+					{/* Right Actions */}
+					<div className="flex items-center gap-2 sm:gap-3 shrink-0">
 						{/* Mobile Menu Button */}
 						<button
 							type="button"
@@ -611,6 +600,11 @@ export const Navbar01: React.FC = () => {
 						>
 							<Menu className="w-5 h-5" />
 						</button>
+
+						{/* Server Date - Desktop only */}
+						<div className="block">
+							<ServerDate />
+						</div>
 
 						{/* User Dropdown */}
 						<DropdownMenu>
@@ -663,6 +657,13 @@ export const Navbar01: React.FC = () => {
 									</div>
 								</DropdownMenuLabel>
 								<DropdownMenuSeparator />
+
+								{/* Server Date - Mobile (inside dropdown) */}
+								<div className="md:hidden px-2 py-2">
+									<ServerDate />
+								</div>
+								<DropdownMenuSeparator className="md:hidden" />
+
 								<div className="px-2 py-1.5">
 									<AnimatedThemeToggler />
 								</div>

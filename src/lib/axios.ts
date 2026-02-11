@@ -59,10 +59,9 @@ api.interceptors.response.use(
 		return response;
 	},
 	(error) => {
-		// Network error эсвэл бусад алдаа
 		if (!error.response) {
-			toast.error("Сүлжээний алдаа", {
-				description: "Серверт хандах боломжгүй байна",
+			toast.warning("Өө", {
+				description: "Refresh хийгээд үздээ бро",
 			});
 		}
 		return Promise.reject(error);

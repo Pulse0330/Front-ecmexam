@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, Search, X } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -32,11 +32,11 @@ interface TestFilterResponse {
 export default function Sorillists() {
 	const { userId } = useAuthStore();
 	const router = useRouter();
-	const [searchTerm, setSearchTerm] = useState("");
-	const [selectedCategory, setSelectedCategory] =
+	const [searchTerm, _setSearchTerm] = useState("");
+	const [selectedCategory, _setSelectedCategory] =
 		useState<SorilCategory>("all");
 	const [selectedLessonId, setSelectedLessonId] = useState<number>(0); // 0 = Бүгд
-
+	const SKELETON_KEYS = Array.from({ length: 6 }, (_, i) => `skeleton-${i}`);
 	// Lesson filter API - хичээлийн жагсаалт
 	const { data: lessonData } = useQuery<TestFilterResponse>({
 		queryKey: ["testFilter", userId],
@@ -54,7 +54,7 @@ export default function Sorillists() {
 	const data = useMemo(() => queryData?.RetData || [], [queryData]);
 	const lessons = useMemo(() => lessonData?.RetData || [], [lessonData]);
 
-	const skeletonIds = [1, 2, 3, 4, 5, 6];
+	const _skeletonIds = [1, 2, 3, 4, 5, 6];
 
 	const categorizedData = useMemo(() => {
 		return {
@@ -96,89 +96,15 @@ export default function Sorillists() {
 		return sorils;
 	}, [data, categorizedData, selectedCategory, searchTerm]);
 
-	const clearSearch = () => setSearchTerm("");
-
-	if (isPending) {
-		return (
-			<div className="min-h-screen flex items-center justify-center">
-				<div className="text-center space-y-2">
-					<div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-					<p className="text-gray-600 dark:text-gray-400">Уншиж байна...</p>
-				</div>
-			</div>
-		);
-	}
-
 	return (
 		<div className="min-h-screen flex flex-col overflow-auto">
-			<div className="max-w-[1600px] mx-auto w-full flex flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+			<div className="max-w-[1600px] mx-auto w-full flex flex-col px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
 				{/* Header */}
-				<header className="text-center space-y-1">
-					<h1 className="text-3xl sm:text-4xl font-extrabold ">
+				<header className="mb-4 sm:mb-6">
+					<h3 className="text-lg sm:text-2xl font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent ">
 						Сорилын жагсаалт
-					</h1>
+					</h3>
 				</header>
-
-				{/* Search & Filter */}
-				<div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-					{/* Search */}
-					<div className="relative w-full sm:max-w-md">
-						<Search
-							className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-							size={18}
-						/>
-						<input
-							type="text"
-							placeholder="Сорилын нэрээр хайх..."
-							value={searchTerm}
-							onChange={(e) => setSearchTerm(e.target.value)}
-							className="w-full pl-10 pr-8 py-2.5 rounded-2xl border-2 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-sm sm:text-base text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-						/>
-						{searchTerm && (
-							<Button
-								type="button"
-								onClick={clearSearch}
-								className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
-								aria-label="Хайлт цэвэрлэх"
-							>
-								<X size={16} />
-							</Button>
-						)}
-					</div>
-
-					{/* Filter Badges */}
-					<div className="flex flex-wrap gap-2 justify-center sm:justify-end">
-						{[
-							{
-								key: "all",
-								label: "Бүгд",
-
-								count: data.length,
-							},
-							{
-								key: "notstarted",
-								label: "Шинэ",
-
-								count: categorizedData.notstarted.length,
-							},
-							{
-								key: "completed",
-								label: "Дууссан",
-
-								count: categorizedData.completed.length,
-							},
-						].map((cat) => (
-							<CategoryBadge
-								key={cat.key}
-								active={selectedCategory === cat.key}
-								onClick={() => setSelectedCategory(cat.key as SorilCategory)}
-								count={cat.count}
-								label={cat.label}
-								variant={cat.key as SorilCategory}
-							/>
-						))}
-					</div>
-				</div>
 
 				{/* Lesson Filter - Хичээлийн сонголт */}
 				{lessons.length > 0 && (
@@ -258,13 +184,13 @@ export default function Sorillists() {
 				{/* Soril Grid */}
 				<div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4 pb-4">
 					{isPending
-						? skeletonIds.map((id) => <SkeletonCard key={id} />)
-						: filteredData.map((soril, index) => (
+						? SKELETON_KEYS.map((key) => <SkeletonCard key={key} />)
+						: filteredData.map((soril) => (
 								<SorilCard
 									key={soril.exam_id}
 									exam={soril}
 									onClick={() => router.push(`/soril/${soril.exam_id}`)}
-									index={index}
+									// index prop устгах
 								/>
 							))}
 				</div>
@@ -335,7 +261,7 @@ interface CategoryBadgeProps {
 	icon?: React.ReactNode;
 }
 
-const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(
+const _CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(
 	function CategoryBadge({ active, onClick, count, label, variant, icon }) {
 		const getStyle = () => {
 			if (!active)

@@ -2,10 +2,15 @@
 
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { AlertCircle, Search, X } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import { AlertCircle } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import {
+	Tooltip,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useServerTime } from "@/hooks/useServerTime";
 import { getexamfiltertlists, getTestFilter } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -17,8 +22,6 @@ import type {
 import type { QPayInvoiceResponse } from "@/types/Qpay/qpayinvoice";
 import ExamCard from "./examcard";
 import QPayDialog from "./qpayDialog";
-
-type ExamCategory = "all" | "active" | "upcoming" | "free" | "paid" | "expired";
 
 interface Lesson {
 	lesson_id: number;
@@ -38,11 +41,10 @@ interface TestFilterResponse {
 
 export default function ExamListPage() {
 	const { userId } = useAuthStore();
-	const { currentTime, isLoading: isTimeLoading } = useServerTime();
-	const [searchTerm, setSearchTerm] = useState("");
-	const [selectedCategory, setSelectedCategory] = useState<ExamCategory>("all");
+	const { isLoading: isTimeLoading } = useServerTime();
+	const [searchTerm, _setSearchTerm] = useState("");
 	const [selectedLessonId, setSelectedLessonId] = useState<number>(0);
-
+	const SKELETON_KEYS = Array.from({ length: 6 }, (_, i) => `skeleton-${i}`);
 	// QPay states
 	const [qpayDialogOpen, setQpayDialogOpen] = useState(false);
 	const [qpayData, setQpayData] = useState<QPayInvoiceResponse | null>(null);
@@ -67,6 +69,7 @@ export default function ExamListPage() {
 	const data = useMemo(() => queryData?.RetData || [], [queryData]);
 	const lessons = useMemo(() => lessonData?.RetData || [], [lessonData]);
 
+	// Remove duplicates by exam_id
 	const uniqueData = useMemo(() => {
 		const seen = new Set<number>();
 		return data.filter((exam) => {
@@ -76,84 +79,15 @@ export default function ExamListPage() {
 		});
 	}, [data]);
 
-	const skeletonIds = [1, 2, 3, 4, 5, 6];
-
-	const categorizedData = useMemo(() => {
-		if (!currentTime)
-			return {
-				active: [],
-				upcoming: [],
-				free: [],
-				paid: [],
-				expired: [],
-				now: new Date(),
-			};
-
-		const now = currentTime;
-
-		return {
-			active: uniqueData.filter((exam) => {
-				const start = new Date(exam.ognoo);
-				const canAccess =
-					exam.ispurchased === 1 || exam.ispaydescr === "Төлбөргүй";
-				return now >= start && canAccess && exam.flag !== 3;
-			}),
-
-			upcoming: uniqueData.filter((exam) => {
-				const start = new Date(exam.ognoo);
-				return now < start;
-			}),
-
-			free: uniqueData.filter((exam) => exam.ispaydescr === "Төлбөргүй"),
-
-			paid: uniqueData.filter(
-				(exam) => exam.ispaydescr === "Төлбөртэй" && exam.ispurchased === 0,
-			),
-
-			expired: uniqueData.filter((exam) => {
-				return exam.flag === 3 || exam.flag_name === "Хугацаа дууссан";
-			}),
-
-			now,
-		};
-	}, [uniqueData, currentTime]);
-
+	// Filter exams by search term
 	const filteredData = useMemo(() => {
-		let exams: ExamlistsData[] = [];
+		if (!searchTerm.trim()) return uniqueData;
 
-		switch (selectedCategory) {
-			case "all":
-				exams = uniqueData;
-				break;
-			case "active":
-				exams = categorizedData.active;
-				break;
-			case "upcoming":
-				exams = categorizedData.upcoming;
-				break;
-			case "free":
-				exams = categorizedData.free;
-				break;
-			case "paid":
-				exams = categorizedData.paid;
-				break;
-			case "expired":
-				exams = categorizedData.expired;
-				break;
-			default:
-				exams = uniqueData;
-		}
-
-		if (searchTerm.trim()) {
-			exams = exams.filter((exam) =>
-				exam.title.toLowerCase().includes(searchTerm.toLowerCase()),
-			);
-		}
-
-		return exams;
-	}, [uniqueData, categorizedData, selectedCategory, searchTerm]);
-
-	const clearSearch = () => setSearchTerm("");
+		const lowercaseSearch = searchTerm.toLowerCase();
+		return uniqueData.filter((exam) =>
+			exam.title.toLowerCase().includes(lowercaseSearch),
+		);
+	}, [uniqueData, searchTerm]);
 
 	const handleCreateInvoice = async (exam: ExamlistsData) => {
 		if (!userId) {
@@ -172,8 +106,6 @@ export default function ExamListPage() {
 				bilid: exam.exam_id.toString(),
 				classroom_id: "0",
 			});
-
-			console.log("QPay Invoice Created:", response.data);
 
 			if (response.data) {
 				setQpayData(response.data);
@@ -203,100 +135,43 @@ export default function ExamListPage() {
 	}
 
 	return (
-		<>
+		<TooltipProvider>
 			<div className="min-h-screen flex flex-col overflow-auto">
-				<div className="max-w-[1600px] mx-auto w-full flex flex-col gap-4 sm:gap-6 px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-					<header className="text-center space-y-1">
-						<h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold">
+				<div className="max-w-[1600px] mx-auto w-full flex flex-col px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+					{/* Header */}
+					<header className="mb-4 sm:mb-6">
+						<h3 className="text-lg sm:text-2xl font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent">
 							Шалгалтын жагсаалт
-						</h1>
+						</h3>
 					</header>
 
-					<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-						<div className="relative w-full sm:max-w-md">
-							<Search
-								className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-								size={18}
-							/>
-							<input
-								type="text"
-								placeholder="Шалгалтын нэрээр хайх..."
-								value={searchTerm}
-								onChange={(e) => setSearchTerm(e.target.value)}
-								className="w-full pl-10 pr-8 py-2.5 rounded-2xl border-2 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-sm sm:text-base text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-							/>
-							{searchTerm && (
-								<Button
-									type="button"
-									onClick={clearSearch}
-									className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
-									aria-label="Хайлт цэвэрлэх"
-								>
-									<X size={16} />
-								</Button>
-							)}
-						</div>
-
-						<div className="flex flex-wrap gap-2 justify-center sm:justify-end">
-							{[
-								{
-									key: "all",
-									label: "Бүгд",
-									icon: null,
-									count: uniqueData.length,
-								},
-								{
-									key: "active",
-									label: "Идэвхтэй",
-									count: categorizedData.active.length,
-								},
-								{
-									key: "paid",
-									label: "Төлбөртэй",
-									count: categorizedData.paid.length,
-								},
-								{
-									key: "expired",
-									label: "Дууссан",
-									count: categorizedData.expired.length,
-								},
-							].map((cat) => (
-								<CategoryBadge
-									key={cat.key}
-									active={selectedCategory === cat.key}
-									onClick={() => setSelectedCategory(cat.key as ExamCategory)}
-									count={cat.count}
-									label={cat.label}
-									icon={cat.icon || undefined}
-									variant={cat.key as ExamCategory}
-								/>
-							))}
-						</div>
-					</div>
-
-					<div className="flex flex-col gap-3 pb-2">
-						{/* Lesson Filter Buttons - Desktop & Tablet */}
+					{/* Lesson Filter */}
+					<div className="mb-4">
+						{/* Desktop & Tablet */}
 						<div className="hidden sm:flex gap-2 flex-wrap">
 							{lessons.map((lesson) => (
-								<Button
-									key={lesson.lesson_id}
-									type="button"
-									onClick={() => setSelectedLessonId(lesson.lesson_id)}
-									className={cn(
-										"px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap",
-										selectedLessonId === lesson.lesson_id
-											? ""
-											: "bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700",
-									)}
-									aria-label={`${lesson.lesson_name} хичээл сонгох`}
-									aria-pressed={selectedLessonId === lesson.lesson_id}
-								>
-									{lesson.lesson_name}
-								</Button>
+								<Tooltip key={lesson.lesson_id}>
+									<TooltipTrigger asChild>
+										<Button
+											type="button"
+											onClick={() => setSelectedLessonId(lesson.lesson_id)}
+											className={cn(
+												"px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap",
+												selectedLessonId === lesson.lesson_id
+													? ""
+													: "bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700",
+											)}
+											aria-label={`${lesson.lesson_name} хичээл сонгох`}
+											aria-pressed={selectedLessonId === lesson.lesson_id}
+										>
+											{lesson.lesson_name}
+										</Button>
+									</TooltipTrigger>
+								</Tooltip>
 							))}
 						</div>
 
-						{/* Lesson Filter Select - Mobile */}
+						{/* Mobile */}
 						<select
 							value={selectedLessonId}
 							onChange={(e) => setSelectedLessonId(Number(e.target.value))}
@@ -311,8 +186,9 @@ export default function ExamListPage() {
 						</select>
 					</div>
 
+					{/* Search Results Info */}
 					{(searchTerm || selectedLessonId !== 0) && (
-						<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+						<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
 							<AlertCircle size={16} />
 							<span>
 								<strong>{filteredData.length}</strong> шалгалт олдлоо
@@ -338,15 +214,14 @@ export default function ExamListPage() {
 						</div>
 					)}
 
-					{/* Improved Grid with consistent card heights */}
+					{/* Exam Cards Grid */}
 					<div className="grid grid-cols-3 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-6 gap-3 sm:gap-4 pb-4 auto-rows-fr">
 						{isPending
-							? skeletonIds.map((id) => <SkeletonCard key={id} />)
-							: filteredData.map((exam, index) => (
+							? SKELETON_KEYS.map((key) => <SkeletonCard key={key} />)
+							: filteredData.map((exam) => (
 									<ExamCard
 										key={exam.exam_id}
 										exam={exam}
-										index={index}
 										isPaid={
 											exam.ispaydescr === "Төлбөртэй" && exam.ispurchased === 0
 										}
@@ -359,6 +234,7 @@ export default function ExamListPage() {
 								))}
 					</div>
 
+					{/* Empty State */}
 					{!isPending && filteredData.length === 0 && (
 						<div className="text-center py-12 space-y-3">
 							<AlertCircle
@@ -383,7 +259,7 @@ export default function ExamListPage() {
 				userId={userId}
 				onPaymentSuccess={handlePaymentSuccess}
 			/>
-		</>
+		</TooltipProvider>
 	);
 }
 
@@ -419,62 +295,4 @@ const SkeletonCard = () => (
 			<div className="h-7 w-full bg-slate-200 dark:bg-slate-800 rounded-lg" />
 		</div>
 	</div>
-);
-
-interface CategoryBadgeProps {
-	active: boolean;
-	onClick: () => void;
-	count: number;
-	label: string;
-	variant: ExamCategory;
-	icon?: React.ReactNode;
-}
-
-const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(
-	function CategoryBadge({ active, onClick, count, label, variant, icon }) {
-		const getStyle = () => {
-			if (!active)
-				return "bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700";
-
-			switch (variant) {
-				case "all":
-					return "";
-				case "active":
-					return "";
-				case "paid":
-					return "";
-				case "expired":
-					return "";
-				default:
-					return "";
-			}
-		};
-
-		return (
-			<Button
-				type="button"
-				onClick={onClick}
-				className={cn(
-					"inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap",
-					getStyle(),
-					active ? "scale-105" : "hover:scale-102",
-				)}
-				aria-label={`${label} категори сонгох`}
-				aria-pressed={active}
-			>
-				{icon && <span className="shrink-0">{icon}</span>}
-				<span>{label}</span>
-				<span
-					className={cn(
-						"ml-0.5 sm:ml-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold",
-						active
-							? "bg-white/30 text-white"
-							: "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300",
-					)}
-				>
-					{count}
-				</span>
-			</Button>
-		);
-	},
 );

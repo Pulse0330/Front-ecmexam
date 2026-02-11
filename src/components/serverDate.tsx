@@ -5,7 +5,11 @@ import { Calendar, Clock } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getServerDate } from "@/lib/api";
 
-export default function ServerDate() {
+interface ServerDateProps {
+	variant?: "navbar" | "fixed";
+}
+
+export default function ServerDate({ variant = "navbar" }: ServerDateProps) {
 	const { data: serverDateString, isLoading } = useQuery({
 		queryKey: ["serverTime"],
 		queryFn: getServerDate,
@@ -44,9 +48,9 @@ export default function ServerDate() {
 
 	if (isLoading || !currentTime) {
 		return (
-			<div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg">
+			<div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50">
 				<Clock className="w-4 h-4 animate-spin" />
-				<span className="font-mono text-sm">--:--:--</span>
+				<span className="font-mono text-xs sm:text-sm">--:--:--</span>
 			</div>
 		);
 	}
@@ -58,34 +62,80 @@ export default function ServerDate() {
 	const minutes = String(currentTime.getUTCMinutes()).padStart(2, "0");
 	const seconds = String(currentTime.getUTCSeconds()).padStart(2, "0");
 
-	return (
-		<div
-			className=" fixed bottom-6 left-6 z-40  p-2 shadow-mdg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60
-       shadow-lg  transition-all duration-300 hover:scale-110
-       inline-flex items-center gap-3 px-4 py-2 bg-secondary rounded-2xl "
-		>
-			{/* 🖥️ Desktop / Tablet view */}
-			<div className="hidden sm:flex items-center gap-3">
-				<div className="flex items-center gap-2">
-					<Calendar className="w-4 h-4" />
-					<span className="text-sm font-semibold tabular-nums">
-						{year}.{month}.{day}
-					</span>
+	// Fixed position variant (original behavior)
+	if (variant === "fixed") {
+		return (
+			<div className="fixed bottom-6 left-6 z-40 p-2 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 shadow-lg rounded-2xl transition-all duration-300 hover:scale-110 inline-flex items-center gap-3 px-4 py-2">
+				{/* Desktop / Tablet view */}
+				<div className="hidden sm:flex items-center gap-3">
+					<div className="flex items-center gap-2">
+						<Calendar className="w-4 h-4" />
+						<span className="text-sm font-semibold tabular-nums">
+							{year}.{month}.{day}
+						</span>
+					</div>
+					<div className="w-px h-5 bg-gray-400 dark:bg-gray-600" />
+					<div className="flex items-center gap-2">
+						<Clock className="w-4 h-4 animate-pulse" />
+						<div className="font-mono text-sm font-semibold tabular-nums">
+							{hours}:{minutes}:{seconds}
+						</div>
+					</div>
 				</div>
-				<div className="w-px h-5 bg-gray-400 dark:bg-gray-600"></div>
-				<div className="flex items-center gap-2">
+
+				{/* Mobile view */}
+				<div className="flex sm:hidden items-center gap-2">
 					<Clock className="w-4 h-4 animate-pulse" />
 					<div className="font-mono text-sm font-semibold tabular-nums">
 						{hours}:{minutes}:{seconds}
 					</div>
 				</div>
 			</div>
+		);
+	}
 
-			{/* 📱 Mobile view — зөвхөн цаг */}
-			<div className="flex sm:hidden items-center gap-2">
-				<Clock className="w-4 h-4 animate-pulse" />
-				<div className="font-mono text-sm font-semibold tabular-nums">
-					{hours}:{minutes}:{seconds}
+	// Navbar variant (inline)
+	return (
+		<div className="inline-flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1.5 sm:py-2 bg-secondary/50 rounded-lg sm:rounded-xl border border-border/50 hover:bg-secondary/70 transition-colors">
+			{/* Desktop / Tablet view */}
+			<div className="hidden lg:flex items-center gap-3">
+				<div className="flex items-center gap-1.5">
+					<Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+					<span className="text-xs font-medium tabular-nums">
+						{year}.{month}.{day}
+					</span>
+				</div>
+				<div className="w-px h-4 bg-border" />
+				<div className="flex items-center gap-1.5">
+					<Clock className="w-3.5 h-3.5 text-muted-foreground animate-pulse" />
+					<div className="font-mono text-xs font-medium tabular-nums">
+						{hours}:{minutes}:{seconds}
+					</div>
+				</div>
+			</div>
+
+			{/* Tablet view - date + time compact */}
+			<div className="hidden sm:flex lg:hidden items-center gap-2">
+				<div className="flex items-center gap-1.5">
+					<Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+					<span className="text-xs font-medium tabular-nums">
+						{month}.{day}
+					</span>
+				</div>
+				<div className="w-px h-4 bg-border" />
+				<div className="flex items-center gap-1.5">
+					<Clock className="w-3.5 h-3.5 text-muted-foreground animate-pulse" />
+					<div className="font-mono text-xs font-medium tabular-nums">
+						{hours}:{minutes}
+					</div>
+				</div>
+			</div>
+
+			{/* Mobile view - time only */}
+			<div className="flex sm:hidden items-center gap-1.5">
+				<Clock className="w-3.5 h-3.5 text-muted-foreground animate-pulse" />
+				<div className="font-mono text-xs font-medium tabular-nums">
+					{hours}:{minutes}
 				</div>
 			</div>
 		</div>

@@ -11,19 +11,19 @@ import {
 import Image from "next/image";
 import type React from "react";
 import { Badge } from "@/components/ui/badge";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { SorillistsData } from "@/types/soril/sorilLists";
 
 interface SorilCardProps {
 	exam: SorillistsData;
 	onClick?: () => void;
-	index?: number;
 }
 
-export const SorilCard: React.FC<SorilCardProps> = ({
-	exam,
-	onClick,
-	index = 0,
-}) => {
+export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 	const formatDate = (dateStr: string | Date) => {
 		try {
 			const date = new Date(dateStr);
@@ -51,7 +51,7 @@ export const SorilCard: React.FC<SorilCardProps> = ({
 		<motion.div
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
-			transition={{ duration: 0.4, delay: index * 0.05 }}
+			transition={{ duration: 0.4 }}
 			className="h-full"
 		>
 			<button
@@ -60,8 +60,7 @@ export const SorilCard: React.FC<SorilCardProps> = ({
 				aria-label={`${exam.soril_name} сорил нээх`}
 				className="group h-full w-full relative flex flex-col border border-border/40 bg-card/50 backdrop-blur-md cursor-pointer transition-all duration-500 ease-out hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20 rounded-lg sm:rounded-xl overflow-hidden text-left"
 			>
-				{/* Image Header - багасгасан aspect ratio */}
-				<div className="relative w-full aspect-[5/2] bg-muted shrink-0">
+				<div className="relative w-full aspect-5/2 bg-muted shrink-0">
 					{exam.filename ? (
 						<Image
 							src={exam.filename}
@@ -70,16 +69,15 @@ export const SorilCard: React.FC<SorilCardProps> = ({
 							className="object-cover transition-transform duration-700"
 							sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
 							quality={90}
-							priority={index < 6}
 						/>
 					) : (
-						<div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-background flex items-center justify-center">
+						<div className="absolute inset-0 bg-linear-to-br from-primary/20 via-primary/10 to-background flex items-center justify-center">
 							<Sparkles className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-primary/30" />
 						</div>
 					)}
 
 					{/* Gradient Overlay */}
-					<div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/50 to-transparent" />
+					<div className="absolute inset-0 bg-linear-to-t from-background/85 via-background/50 to-transparent" />
 
 					{/* Status Badge on image - Responsive */}
 					<div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 z-10">
@@ -103,12 +101,19 @@ export const SorilCard: React.FC<SorilCardProps> = ({
 
 					{/* Date on Image - Responsive */}
 					<div className="absolute bottom-0 left-0 right-0 p-1 sm:p-1.5 z-10">
-						<div className="flex items-center gap-0.5 sm:gap-1">
-							<Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white/90 shrink-0" />
-							<span className="font-medium text-[8px] sm:text-[9px] md:text-xs text-white/90 truncate">
-								{formatDate(exam.sorildate)}
-							</span>
-						</div>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<div className="flex items-center gap-0.5 sm:gap-1">
+									<Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3  shrink-0" />
+									<span className="font-medium text-[8px] sm:text-[9px] md:text-xs  truncate">
+										{formatDate(exam.sorildate)}
+									</span>
+								</div>
+							</TooltipTrigger>
+							<TooltipContent>
+								<p>Сорилын огноо: {formatDate(exam.sorildate)}</p>
+							</TooltipContent>
+						</Tooltip>
 					</div>
 				</div>
 
@@ -123,28 +128,51 @@ export const SorilCard: React.FC<SorilCardProps> = ({
 
 					{/* Title Section - line-clamp-1 */}
 					<div className="space-y-0.5 flex-1 min-h-0">
-						<h3
-							className="text-[10px] sm:text-xs md:text-sm font-semibold text-foreground line-clamp-1 leading-tight group-hover:text-primary transition-colors duration-300"
-							title={exam.soril_name}
-						>
-							{exam.soril_name}
-						</h3>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<h3 className="text-[10px] sm:text-xs md:text-sm font-semibold text-foreground line-clamp-1 leading-tight group-hover:text-primary transition-colors duration-300">
+									{exam.soril_name}
+								</h3>
+							</TooltipTrigger>
+							<TooltipContent className="max-w-xs">
+								<p>{exam.soril_name}</p>
+							</TooltipContent>
+						</Tooltip>
 					</div>
 
 					{/* Stats Grid - багасгасан */}
 					<div className="flex items-center justify-between gap-1 sm:gap-1.5 pt-1 border-t border-border/50">
-						<div className="flex items-center gap-0.5 sm:gap-1 text-muted-foreground min-w-0">
-							<Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
-							<span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate">
-								{exam.minut > 0 ? `${exam.minut} мин` : "∞"}
-							</span>
-						</div>
-						<div className="flex items-center gap-0.5 sm:gap-1 text-muted-foreground min-w-0">
-							<ClipboardCheck className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
-							<span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate">
-								{exam.que_cnt} асуулт
-							</span>
-						</div>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<div className="flex items-center gap-0.5 sm:gap-1 text-muted-foreground min-w-0">
+									<Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
+									<span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate">
+										{exam.minut > 0 ? `${exam.minut} мин` : "∞"}
+									</span>
+								</div>
+							</TooltipTrigger>
+							<TooltipContent>
+								<p>
+									{exam.minut > 0
+										? `Сорилын хугацаа: ${exam.minut} минут`
+										: "Хугацаа хязгааргүй"}
+								</p>
+							</TooltipContent>
+						</Tooltip>
+
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<div className="flex items-center gap-0.5 sm:gap-1 text-muted-foreground min-w-0">
+									<ClipboardCheck className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
+									<span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate">
+										{exam.que_cnt} асуулт
+									</span>
+								</div>
+							</TooltipTrigger>
+							<TooltipContent>
+								<p>Нийт асуулт: {exam.que_cnt}</p>
+							</TooltipContent>
+						</Tooltip>
 					</div>
 
 					{/* Action Button - багасгасан */}

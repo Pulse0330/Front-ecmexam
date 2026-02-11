@@ -16,6 +16,12 @@ import { useRouter } from "next/navigation";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { getHomeScreen, getUserProfile } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUserStore } from "@/stores/useUserStore";
@@ -116,91 +122,115 @@ const ExamCard = memo(({ exam, index }: ExamCardProps) => {
 			transition={{ duration: 0.4, delay: index * ANIMATION_STAGGER }}
 			className="h-full"
 		>
-			<button
-				type="button"
-				onClick={handleClick}
-				aria-label={`${exam.soril_name} сорил нээх`}
-				className="group h-full w-full relative flex flex-col border border-border/40 bg-card/50 backdrop-blur-md cursor-pointer transition-all duration-500 ease-out hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20 rounded-lg sm:rounded-xl overflow-hidden text-left"
-			>
-				{/* Image Header */}
-				<div className="relative w-full aspect-2/1 bg-muted shrink-0">
-					{exam.filename ? (
-						<Image
-							src={exam.filename}
-							alt={exam.soril_name}
-							fill
-							quality={75}
-							priority={index < 4}
-							sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
-							className="object-cover"
-						/>
-					) : (
-						<div className="absolute inset-0 bg-linear-to-br from-primary/20 via-primary/10 to-background" />
-					)}
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<button
+						type="button"
+						onClick={handleClick}
+						aria-label={`${exam.soril_name} сорил нээх`}
+						className="group h-full w-full relative flex flex-col border border-border/40 bg-card/50 backdrop-blur-md cursor-pointer transition-all duration-500 ease-out hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20 rounded-lg sm:rounded-xl overflow-hidden text-left"
+					>
+						{/* Image Header */}
+						<div className="relative w-full aspect-2/1 shrink-0">
+							{exam.filename ? (
+								<Image
+									src={exam.filename}
+									alt={exam.soril_name}
+									fill
+									quality={75}
+									priority={index < 4}
+									sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+									className="object-cover"
+								/>
+							) : (
+								<div className="absolute inset-0 " />
+							)}
 
-					{/* Gradient Overlay */}
-					<div className="absolute inset-0 bg-linear-to-t from-background/85 via-background/50 to-transparent" />
-
-					{/* Status Badge */}
-					<div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 z-10">
-						{isCompleted ? (
-							<Badge className="border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
-								Гүйцэтгэсэн
-							</Badge>
-						) : (
-							<Badge className="border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
-								Гүйцэтгээгүй
-							</Badge>
-						)}
-					</div>
-
-					{/* Date */}
-					<div className="absolute bottom-0 left-0 right-0 p-1.5 sm:p-2 z-10">
-						<div className="flex items-center gap-1 sm:gap-1.5">
-							<Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 shrink-0" />
-							<span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate">
-								{formatSorilDate(exam.sorildate)}
-							</span>
-						</div>
-					</div>
-				</div>
-
-				{/* Content Section */}
-				<div className="p-1.5 sm:p-2 md:p-3 pb-9 sm:pb-10 md:pb-12 flex flex-col flex-1 space-y-1.5 sm:space-y-2 md:space-y-3">
-					{/* Title */}
-					<div className="space-y-0.5 flex-1 min-h-0">
-						<h3
-							className="text-[10px] sm:text-xs md:text-sm font-semibold text-foreground line-clamp-2 leading-tight group-hover:text-primary transition-colors duration-300"
-							title={exam.soril_name}
-						>
-							{exam.soril_name}
-						</h3>
-					</div>
-
-					{/* Stats */}
-					<div className="space-y-1 sm:space-y-1.5">
-						<div className="flex items-center justify-between gap-1 sm:gap-1.5 md:gap-2 pt-1 sm:pt-1.5 md:pt-2 border-t border-border/50">
-							<div className="flex items-center gap-0.5 sm:gap-1 text-muted-foreground min-w-0">
-								<Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 shrink-0" />
-								<span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate">
-									{exam.minut > 0 ? `${exam.minut} минут` : "∞"}
-								</span>
+							{/* Status Badge */}
+							<div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 z-10">
+								{isCompleted ? (
+									<Badge className="border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
+										Гүйцэтгэсэн
+									</Badge>
+								) : (
+									<Badge className="border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
+										Гүйцэтгээгүй
+									</Badge>
+								)}
 							</div>
-							<div className="flex items-center gap-0.5 sm:gap-1 text-muted-foreground min-w-0">
-								<ClipboardCheck className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 shrink-0" />
-								<span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate">
-									{exam.que_cnt} асуулт
-								</span>
+
+							{/* Date */}
+							<div className="absolute bottom-0 left-0 right-0 p-1.5 sm:p-2 z-10">
+								<div className="flex items-center gap-1 sm:gap-1.5">
+									<Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 shrink-0" />
+									<span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate">
+										{formatSorilDate(exam.sorildate)}
+									</span>
+								</div>
 							</div>
 						</div>
-					</div>
 
-					{/* Action Button */}
-					<div className="absolute bottom-2 right-2 sm:bottom-2.5 sm:right-2.5 md:bottom-3 md:right-3 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-full bg-muted/50 flex items-center justify-center group-hover:bg-foreground group-hover:scale-110 transition-all duration-300">
-						<ArrowRight className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 text-muted-foreground group-hover:text-background group-hover:translate-x-0.5 transition-all" />
-					</div>
-				</div>
-			</button>
+						{/* Content Section */}
+						<div className="p-1.5 sm:p-2 md:p-3 pb-9 sm:pb-10 md:pb-12 flex flex-col flex-1 space-y-1.5 sm:space-y-2 md:space-y-3">
+							{/* Title */}
+							<div className="space-y-0.5 flex-1 min-h-0">
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<h3 className="text-[10px] sm:text-xs md:text-sm font-semibold  line-clamp-2 leading-tight group-hover:text-primary transition-colors duration-300">
+											{exam.soril_name}
+										</h3>
+									</TooltipTrigger>
+									<TooltipContent className="max-w-xs">
+										<p>{exam.soril_name}</p>
+									</TooltipContent>
+								</Tooltip>
+							</div>
+
+							{/* Stats */}
+							<div className="space-y-1 sm:space-y-1.5">
+								<div className="flex items-center justify-between gap-1 sm:gap-1.5 md:gap-2 pt-1 sm:pt-1.5 md:pt-2 border-t border-border/50">
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<div className="flex items-center gap-0.5 sm:gap-1 min-w-0">
+												<Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 shrink-0" />
+												<span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate">
+													{exam.minut > 0 ? `${exam.minut} минут` : "∞"}
+												</span>
+											</div>
+										</TooltipTrigger>
+										<TooltipContent>
+											<p>
+												{exam.minut > 0
+													? "Сорилын нийт хугацаа"
+													: "Хугацаа хязгааргүй"}
+											</p>
+										</TooltipContent>
+									</Tooltip>
+
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<div className="flex items-center gap-0.5 sm:gap-1  min-w-0">
+												<ClipboardCheck className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 shrink-0" />
+												<span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate">
+													{exam.que_cnt} асуулт
+												</span>
+											</div>
+										</TooltipTrigger>
+										<TooltipContent>
+											<p>Нийт асуултын тоо</p>
+										</TooltipContent>
+									</Tooltip>
+								</div>
+							</div>
+
+							{/* Action Button */}
+							<div className="absolute bottom-2 right-2 sm:bottom-2.5 sm:right-2.5 md:bottom-3 md:right-3 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-full bg-muted/50 flex items-center justify-center group-hover:bg-foreground group-hover:scale-110 transition-all duration-300">
+								<ArrowRight className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 text-muted-foreground group-hover:text-background group-hover:translate-x-0.5 transition-all" />
+							</div>
+						</div>
+					</button>
+				</TooltipTrigger>
+			</Tooltip>
 		</motion.div>
 	);
 });
@@ -459,92 +489,94 @@ export default function HomePage() {
 	// Even if there's an error, show the page with whatever data we have
 	// Errors are logged to console but not shown to user
 	return (
-		<div className="min-h-screen bg-linear-to-br from-background via-muted/30 to-background relative overflow-hidden">
-			{/* Animated Background */}
-			<AnimatedBackground mousePosition={mousePosition} />
+		<TooltipProvider>
+			<div className="min-h-screen bg-linear-to-br from-background via-muted/30 to-background relative overflow-hidden">
+				{/* Animated Background */}
+				<AnimatedBackground mousePosition={mousePosition} />
 
-			{/* Main Content */}
-			<div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8 relative z-10">
-				{/* Hero Section */}
-				<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700">
-					<HeroSection username={username} />
+				{/* Main Content */}
+				<div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8 relative z-10">
+					{/* Hero Section */}
+					<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700">
+						<HeroSection username={username} />
+					</div>
+
+					{/* Exam Lists Section */}
+					{hasExams && homeData?.RetDataThirt && (
+						<>
+							<SectionDivider
+								title="Идэвхтэй шалгалтууд"
+								href="/Lists/examList"
+							/>
+							<div className="animate-in fade-in-0 duration-700 delay-300">
+								<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 px-2">
+									<ExamLists exams={homeData.RetDataThirt} />
+								</div>
+							</div>
+						</>
+					)}
+
+					{/* Soril Lists Section */}
+					{hasSorils && homeData?.RetDataFourth && (
+						<>
+							<SectionDivider title="Сорилууд" href="/Lists/sorilList" />
+							<div className="animate-in fade-in-0 duration-700 delay-500">
+								<SorilLists pastExams={homeData.RetDataFourth} />
+							</div>
+						</>
+					)}
 				</div>
 
-				{/* Exam Lists Section */}
-				{hasExams && homeData?.RetDataThirt && (
-					<>
-						<SectionDivider
-							title="Идэвхтэй шалгалтууд"
-							href="/Lists/examList"
-						/>
-						<div className="animate-in fade-in-0 duration-700 delay-300">
-							<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 px-2">
-								<ExamLists exams={homeData.RetDataThirt} />
-							</div>
-						</div>
-					</>
-				)}
+				{/* Global Styles */}
+				<style jsx>{`
+					@keyframes float {
+						0%, 100% { transform: translateY(0px) rotate(0deg); }
+						50% { transform: translateY(-20px) rotate(5deg); }
+					}
 
-				{/* Soril Lists Section */}
-				{hasSorils && homeData?.RetDataFourth && (
-					<>
-						<SectionDivider title="Сорилууд" href="/Lists/sorilList" />
-						<div className="animate-in fade-in-0 duration-700 delay-500">
-							<SorilLists pastExams={homeData.RetDataFourth} />
-						</div>
-					</>
-				)}
-			</div>
+					.orb-move {
+						transform: translate(var(--mouse-x), var(--mouse-y));
+						transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+						animation-delay: 0s;
+					}
 
-			{/* Global Styles */}
-			<style jsx>{`
-				@keyframes float {
-					0%, 100% { transform: translateY(0px) rotate(0deg); }
-					50% { transform: translateY(-20px) rotate(5deg); }
-				}
+					.orb-move-reverse {
+						transform: translate(calc(var(--mouse-x) * -1), calc(var(--mouse-y) * -1));
+						transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+						animation-delay: 1s;
+					}
 
-				.orb-move {
-					transform: translate(var(--mouse-x), var(--mouse-y));
-					transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-					animation-delay: 0s;
-				}
+					.orb-move-slow {
+						transform: translate(calc(var(--mouse-x) * 0.5), calc(var(--mouse-y) * 0.5));
+						transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+						animation-delay: 2s;
+					}
 
-				.orb-move-reverse {
-					transform: translate(calc(var(--mouse-x) * -1), calc(var(--mouse-y) * -1));
-					transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-					animation-delay: 1s;
-				}
-
-				.orb-move-slow {
-					transform: translate(calc(var(--mouse-x) * 0.5), calc(var(--mouse-y) * 0.5));
-					transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-					animation-delay: 2s;
-				}
-
-				.grid-move {
-					transform: translate(calc(var(--mouse-x) * 0.2), calc(var(--mouse-y) * 0.2));
-					transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-				}
-
-				.will-change-transform {
-					will-change: transform;
-				}
-
-				/* Reduce animations on low-end devices */
-				@media (prefers-reduced-motion: reduce) {
-					.orb-move,
-					.orb-move-reverse,
-					.orb-move-slow,
 					.grid-move {
-						transform: none !important;
-						transition: none !important;
+						transform: translate(calc(var(--mouse-x) * 0.2), calc(var(--mouse-y) * 0.2));
+						transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 					}
-					
-					.animate-pulse {
-						animation: none !important;
+
+					.will-change-transform {
+						will-change: transform;
 					}
-				}
-			`}</style>
-		</div>
+
+					/* Reduce animations on low-end devices */
+					@media (prefers-reduced-motion: reduce) {
+						.orb-move,
+						.orb-move-reverse,
+						.orb-move-slow,
+						.grid-move {
+							transform: none !important;
+							transition: none !important;
+						}
+						
+						.animate-pulse {
+							animation: none !important;
+						}
+					}
+				`}</style>
+			</div>
+		</TooltipProvider>
 	);
 }

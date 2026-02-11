@@ -10,7 +10,7 @@ export interface QPayBankUrl {
 export interface QPayInvoiceResponse {
 	invoice_id: string;
 	qr_text: string;
-	qr_image: string; // Base64 encoded image
+	qr_image: string;
 	qPay_shortUrl: string;
 	urls: QPayBankUrl[];
 }

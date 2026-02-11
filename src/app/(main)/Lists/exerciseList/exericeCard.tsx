@@ -1,12 +1,5 @@
-import {
-	ArrowRight,
-	CheckCircle2,
-	Minus,
-	MinusIcon,
-	Plus,
-	PlusIcon,
-} from "lucide-react";
-import { memo, useCallback } from "react";
+import { ArrowRight, CheckCircle2, Minus, Plus } from "lucide-react";
+import { memo, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Tooltip,
@@ -34,9 +27,9 @@ export interface CategoryGroup {
 
 export const SkeletonCard = memo(() => (
 	<div className="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 border border-slate-200 dark:border-slate-700 animate-pulse">
-		<div className="h-4 sm:h-5 md:h-6 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2 sm:mb-3"></div>
-		<div className="h-3 sm:h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2 mb-1.5 sm:mb-2"></div>
-		<div className="h-3 sm:h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3"></div>
+		<div className="h-4 sm:h-5 md:h-6 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2 sm:mb-3" />
+		<div className="h-3 sm:h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2 mb-1.5 sm:mb-2" />
+		<div className="h-3 sm:h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3" />
 	</div>
 ));
 SkeletonCard.displayName = "SkeletonCard";
@@ -49,8 +42,8 @@ export const EmptyState = memo(() => (
 				fill="none"
 				viewBox="0 0 24 24"
 				stroke="currentColor"
+				aria-hidden="true"
 			>
-				<title>as</title>
 				<path
 					strokeLinecap="round"
 					strokeLinejoin="round"
@@ -59,6 +52,9 @@ export const EmptyState = memo(() => (
 				/>
 			</svg>
 		</div>
+		<p className="text-slate-500 dark:text-slate-400 text-sm">
+			Өгөгдөл олдсонгүй
+		</p>
 	</div>
 ));
 EmptyState.displayName = "EmptyState";
@@ -82,8 +78,9 @@ export const LessonCard = memo(
 				type="button"
 				onClick={onClick}
 				className="group bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 transition-colors duration-200 text-left relative overflow-hidden w-full"
+				aria-label={`${lesson.lesson_name}${hasSelection ? `, ${totalQuestions} асуулт сонгосон` : ""}`}
 			>
-				<div className="absolute inset-0 bg-emerald-50 dark:bg-emerald-950/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+				<div className="absolute inset-0 bg-emerald-50 dark:bg-emerald-950/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
 				<div className="relative flex flex-col h-full min-h-[50px] sm:min-h-[60px]">
 					<div className="flex-1">
 						<div className="mb-2 sm:mb-3">
@@ -138,8 +135,9 @@ export const CategoryCard = memo(
 				type="button"
 				onClick={onClick}
 				className="group bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 transition-colors duration-200 text-left relative overflow-hidden w-full"
+				aria-label={`${category.ulesson_name}, ${category.items.length} бүлэг тест${hasSelection ? `, ${categoryTotalQuestions} асуулт сонгосон` : ""}`}
 			>
-				<div className="absolute inset-0 bg-emerald-50 dark:bg-emerald-950/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+				<div className="absolute inset-0 bg-emerald-50 dark:bg-emerald-950/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
 				<div className="relative flex flex-col h-full min-h-[140px] sm:min-h-40">
 					<div className="flex-1">
 						<div className="flex items-center justify-center mb-2 sm:mb-3 gap-2">
@@ -156,7 +154,7 @@ export const CategoryCard = memo(
 						</div>
 						<div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
 							<p className="flex items-center gap-1.5 sm:gap-2">
-								<span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-emerald-500 dark:bg-emerald-400 rounded-full shrink-0"></span>
+								<span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-emerald-500 dark:bg-emerald-400 rounded-full shrink-0" />
 								<span className="truncate">{category.coursename}</span>
 							</p>
 							<p className="font-semibold text-slate-700 dark:text-slate-300">
@@ -194,23 +192,22 @@ export const TestItemCard = memo(
 		selectedCount: number;
 		onCountChange: (id: number, count: number) => void;
 	}) => {
+		const inputRef = useRef<HTMLInputElement>(null);
+
 		const handleInputChange = useCallback(
 			(e: React.ChangeEvent<HTMLInputElement>) => {
 				const inputValue = e.target.value;
 
-				// Allow empty string for better UX
 				if (inputValue === "") {
 					onCountChange(item.id, 0);
 					return;
 				}
 
-				// Only allow digits
 				if (!/^\d+$/.test(inputValue)) {
-					return; // Ignore non-numeric input
+					return;
 				}
 
-				let val = parseInt(inputValue, 10);
-				val = Math.max(0, Math.min(item.cnt, val));
+				const val = Math.max(0, Math.min(item.cnt, parseInt(inputValue, 10)));
 				onCountChange(item.id, val);
 			},
 			[item.cnt, item.id, onCountChange],
@@ -231,6 +228,18 @@ export const TestItemCard = memo(
 			[item.id, onCountChange],
 		);
 
+		// Auto-focus optimization removed for better performance
+		useEffect(() => {
+			if (
+				selectedCount > 0 &&
+				inputRef.current &&
+				document.activeElement !== inputRef.current
+			) {
+				// Only focus if not already focused to prevent scroll jumps
+				inputRef.current.focus();
+			}
+		}, [selectedCount]);
+
 		const isAtMin = selectedCount === 0;
 		const isAtMax = selectedCount >= item.cnt;
 
@@ -239,9 +248,9 @@ export const TestItemCard = memo(
 				<TooltipProvider>
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<h1 className="text-xs sm:text-sm leading-tight font-semibold text-slate-800 dark:text-slate-100 line-clamp-2 min-h-8 sm:min-h-9">
+							<h4 className="text-xs sm:text-sm leading-tight font-semibold text-slate-800 dark:text-slate-100 line-clamp-2 min-h-8 sm:min-h-9">
 								{item.name}
-							</h1>
+							</h4>
 						</TooltipTrigger>
 						<TooltipContent>
 							<p className="max-w-xs">{item.name}</p>
@@ -249,7 +258,8 @@ export const TestItemCard = memo(
 					</Tooltip>
 				</TooltipProvider>
 
-				<div className="flex justify-center">
+				<fieldset className="flex justify-center border-0 p-0 m-0">
+					<legend className="sr-only">{item.name} асуултын тоо сонгох</legend>
 					<div className="flex w-full items-stretch">
 						<Button
 							variant="outline"
@@ -257,13 +267,14 @@ export const TestItemCard = memo(
 							onClick={handleDecrease}
 							disabled={isAtMin}
 							className="h-8 lg:h-9 w-8 lg:w-9 p-0 shrink-0 rounded-r-none border-r-0"
-							aria-label="Decrease count"
+							aria-label="Багасгах"
 						>
-							<MinusIcon className="w-3 h-3 lg:w-4 lg:h-4" />
+							<Minus className="w-3 h-3 lg:w-4 lg:h-4" />
 						</Button>
 
 						<div className="flex-1 min-w-0 relative border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
 							<input
+								ref={inputRef}
 								type="number"
 								min="0"
 								max={item.cnt}
@@ -273,6 +284,7 @@ export const TestItemCard = memo(
 								className="w-full h-full text-center bg-transparent outline-none border-none tabular-nums pr-8 text-slate-900 dark:text-slate-100"
 								inputMode="numeric"
 								pattern="[0-9]*"
+								aria-label="Асуултын тоо"
 								style={{
 									fontSize: "13px",
 									padding: "0 4px",
@@ -281,6 +293,7 @@ export const TestItemCard = memo(
 							<span
 								className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500 dark:text-slate-400 whitespace-nowrap select-none"
 								style={{ fontSize: "10px" }}
+								aria-hidden="true"
 							>
 								/{item.cnt}
 							</span>
@@ -292,12 +305,12 @@ export const TestItemCard = memo(
 							onClick={handleIncrease}
 							disabled={isAtMax}
 							className="h-8 lg:h-9 w-8 lg:w-9 p-0 shrink-0 rounded-l-none border-l-0"
-							aria-label="Increase count"
+							aria-label="Нэмэгдүүлэх"
 						>
-							<PlusIcon className="w-3 h-3 lg:w-4 lg:h-4" />
+							<Plus className="w-3 h-3 lg:w-4 lg:h-4" />
 						</Button>
 					</div>
-				</div>
+				</fieldset>
 
 				<div className="px-0.5 sm:px-1">
 					<input
@@ -307,7 +320,7 @@ export const TestItemCard = memo(
 						value={selectedCount}
 						onChange={handleRangeChange}
 						className="w-full h-1.5 lg:h-2 rounded-lg appearance-none cursor-pointer accent-emerald-500 dark:accent-emerald-400 bg-slate-200 dark:bg-slate-700"
-						aria-label="Select count"
+						aria-label="Асуултын тоо сонгох"
 					/>
 				</div>
 			</div>
@@ -334,6 +347,9 @@ export const TestListItem = memo(
 			onCountChange(item.id, Math.min(item.cnt, selectedCount + 1));
 		}, [item.id, item.cnt, selectedCount, onCountChange]);
 
+		const isAtMin = selectedCount === 0;
+		const isAtMax = selectedCount >= item.cnt;
+
 		return (
 			<div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700 transition-colors">
 				<div className="flex-1 w-full sm:w-auto text-center sm:text-left">
@@ -345,32 +361,36 @@ export const TestListItem = memo(
 					</p>
 				</div>
 
-				<div className="flex items-center gap-2 sm:gap-3">
+				<fieldset className="flex items-center gap-2 sm:gap-3 border-0 p-0 m-0">
+					<legend className="sr-only">{item.name} асуултын тоо</legend>
 					<Button
 						size="sm"
 						variant="outline"
 						onClick={handleDecrease}
-						disabled={selectedCount === 0}
+						disabled={isAtMin}
 						className="rounded-lg h-7 w-7 sm:h-8 sm:w-8 p-0"
-						aria-label="Decrease count"
+						aria-label="Багасгах"
 					>
 						<Minus className="w-3 h-3 sm:w-4 sm:h-4" />
 					</Button>
 
-					<div className="w-10 sm:w-12 text-center font-bold text-base sm:text-lg text-slate-900 dark:text-slate-100">
+					<output
+						className="w-10 sm:w-12 text-center font-bold text-base sm:text-lg text-slate-900 dark:text-slate-100"
+						aria-live="polite"
+					>
 						{selectedCount}
-					</div>
+					</output>
 
 					<Button
 						size="sm"
 						onClick={handleIncrease}
-						disabled={selectedCount >= item.cnt}
+						disabled={isAtMax}
 						className="rounded-lg h-7 w-7 sm:h-8 sm:w-8 p-0"
-						aria-label="Increase count"
+						aria-label="Нэмэгдүүлэх"
 					>
 						<Plus className="w-3 h-3 sm:w-4 sm:h-4" />
 					</Button>
-				</div>
+				</fieldset>
 			</div>
 		);
 	},
