@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
 				hostname: "**",
 				pathname: "/**",
 			},
+			{
+				protocol: "http",
+				hostname: "**",
+				pathname: "/**",
+			},
 		],
 	},
 	// Add production optimizations
