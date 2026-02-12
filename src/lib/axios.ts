@@ -1,5 +1,6 @@
 // src/lib/axios.ts
 import axios from "axios";
+import { toast } from "sonner";
 
 const api = axios.create({
 	baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api",
@@ -12,7 +13,7 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
 	(config) => {
-		// Database connection мэдээлэл нэмэх
+		// Login эсвэл бусад request-д conn object нэмэх
 		if (config.data && typeof config.data === "object") {
 			config.data = {
 				...config.data,
@@ -26,72 +27,43 @@ api.interceptors.request.use(
 				},
 			};
 		}
+		console.log();
 		return config;
 	},
+
 	(error) => Promise.reject(error),
 );
 
+// Response interceptor
 api.interceptors.response.use(
 	(response) => {
 		const data = response.data;
 
+		// ResponseCode шалгах
 		if (data.RetResponse && data.RetResponse.StatusCode !== "200") {
+			// CheckSession endpoint-д алдаа шидэхгүй, response буцаа
 			if (response.config.url?.includes("/CheckSession")) {
+				console.warn(
+					"⚠️ CheckSession: ResponseCode !== 10, гэхдээ response буцаана",
+				);
 				return response;
 			}
 
-			console.error("❌ API Error:", {
-				url: response.config.url,
-				statusCode: data.RetResponse.StatusCode,
-				message: data.RetResponse.ResponseMessage,
-				timestamp: new Date().toISOString(),
+			// Бусад endpoint-д алдаа шидэх
+			toast.error(data.RetResponse.ResponseMessage || "Алдаа гарлаа", {
+				description: `Status code: ${data.RetResponse.StatusCode}`,
 			});
-
 			return Promise.reject(new Error(data.RetResponse.ResponseMessage));
 		}
 
 		return response;
 	},
 	(error) => {
-		// Интернэт холболтын алдаа шалгах
-		const isNetworkError =
-			!navigator.onLine ||
-			error.code === "ERR_NETWORK" ||
-			error.code === "ECONNABORTED" ||
-			error.message === "Network Error" ||
-			!error.response;
-
-		if (isNetworkError) {
-			console.error("🌐 Интернэт холболтын алдаа:", {
-				url: error.config?.url,
-				method: error.config?.method,
-				code: error.code,
-				message: error.message,
-				timestamp: new Date().toISOString(),
+		if (!error.response) {
+			toast.warning("Өө", {
+				description: "Refresh хийгээд үздээ бро",
 			});
-
-			// Хэрэглэгчид мэдэгдэл харуулах
-			if (typeof window !== "undefined") {
-				alert(
-					"⚠️ Интернэт холболт тасарсан байна.\n\nИнтернэт холболтоо шалгана уу.",
-				);
-
-				// Эсвэл toast notification ашиглаж болно:
-				// toast.error("Интернэт холболтоо шалгана уу");
-			}
-
-			return Promise.reject(new Error("Интернэт холболт тасарсан байна"));
 		}
-
-		// Бусад алдаа
-		console.error("❌ Network/Request Error:", {
-			url: error.config?.url,
-			method: error.config?.method,
-			code: error.code,
-			message: error.message,
-			timestamp: new Date().toISOString(),
-		});
-
 		return Promise.reject(error);
 	},
 );
