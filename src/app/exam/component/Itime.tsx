@@ -117,7 +117,7 @@ const ExamTimer = memo(function ExamTimer({
 		};
 	}, []);
 
-	const timeRemainingText = useMemo(() => {
+	const _timeRemainingText = useMemo(() => {
 		const totalMinutes = Math.floor(remainingSec / 60);
 		const hours = Math.floor(totalMinutes / 60);
 		const minutes = totalMinutes % 60;
@@ -134,33 +134,37 @@ const ExamTimer = memo(function ExamTimer({
 	const config = useMemo(() => {
 		if (status === "ended") {
 			return {
-				border: "border-red-300",
+				border: "border-red-300 dark:border-red-700",
+				bg: "bg-white dark:bg-slate-900",
 				icon: AlertCircle,
-				iconColor: "text-red-600",
-				timerColor: "text-red-600",
+				iconColor: "text-red-600 dark:text-red-400",
+				timerColor: "text-red-600 dark:text-red-400",
 			};
 		}
 		if (isDanger) {
 			return {
-				border: "border-red-300",
+				border: "border-red-300 dark:border-red-700",
+				bg: "bg-white dark:bg-slate-900",
 				icon: AlertCircle,
-				iconColor: "text-red-600",
-				timerColor: "text-red-600",
+				iconColor: "text-red-600 dark:text-red-400",
+				timerColor: "text-red-600 dark:text-red-400",
 			};
 		}
 		if (isWarning) {
 			return {
-				border: "border-yellow-300",
+				border: "border-yellow-300 dark:border-yellow-700",
+				bg: "bg-white dark:bg-slate-900",
 				icon: Clock,
-				iconColor: "text-yellow-600",
-				timerColor: "text-yellow-600",
+				iconColor: "text-yellow-600 dark:text-yellow-400",
+				timerColor: "text-yellow-600 dark:text-yellow-400",
 			};
 		}
 		return {
-			border: "border-green-200",
+			border: "border-green-200 dark:border-green-700",
+			bg: "bg-white dark:bg-slate-900",
 			icon: PlayCircle,
-			iconColor: "text-green-600",
-			timerColor: "text-green-600",
+			iconColor: "text-green-600 dark:text-green-400",
+			timerColor: "text-green-600 dark:text-green-400",
 		};
 	}, [status, isDanger, isWarning]);
 
@@ -170,58 +174,69 @@ const ExamTimer = memo(function ExamTimer({
 
 	if (isLoading || currentTimeMs === null) {
 		return (
-			<div className="bg-white dark:bg-slate-900 rounded-lg sm:rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 sm:p-4">
-				<div className="flex items-center justify-center gap-2 text-slate-600 dark:text-slate-400">
-					<Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
-					<span className="text-xs sm:text-sm">Ачааллаж байна...</span>
+			<div className="w-full max-w-2xl mx-auto">
+				<div className="bg-white dark:bg-slate-900 rounded-lg sm:rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 md:p-8">
+					<div className="flex items-center justify-center gap-2 sm:gap-3 text-slate-600 dark:text-slate-400">
+						<Clock className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 animate-spin" />
+						<span className="text-sm sm:text-base md:text-lg">
+							Ачааллаж байна...
+						</span>
+					</div>
 				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div
-			className={`rounded-lg sm:rounded-xl shadow-sm border-2 ${config.border} w-full overflow-hidden transition-all duration-300 relative`}
-		>
-			{!isOnline && (
-				<div className="absolute top-1 right-1 z-10">
-					<div className="bg-amber-500 text-white text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
-						<div className="w-1 h-1 bg-white rounded-full animate-pulse" />
-						Offline
+		<div className="w-full max-w-2xl mx-auto">
+			<div
+				className={`rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border-2 ${config.border} ${config.bg} w-full overflow-hidden transition-all duration-300 relative`}
+			>
+				{/* Offline Badge - Responsive */}
+				{!isOnline && (
+					<div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 md:top-3 md:right-3 z-10">
+						<div className="bg-amber-500 text-white text-[9px] sm:text-[10px] md:text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full font-bold flex items-center gap-1 shadow-md">
+							<div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-white rounded-full animate-pulse" />
+							<span className="hidden xs:inline">Offline</span>
+							<span className="xs:hidden">OFF</span>
+						</div>
 					</div>
-				</div>
-			)}
+				)}
 
-			<div className="p-3 sm:p-4">
-				<div className="mb-3 sm:mb-4 text-center">
-					<div
-						className={`font-mono font-black text-2xl sm:text-3xl md:text-4xl lg:text-5xl ${config.timerColor} tracking-tight mb-1 sm:mb-2`}
-					>
-						{formattedTime}
+				{/* Main Content - Responsive Padding */}
+				<div className="p-4 ">
+					{/* Timer Display - Responsive Sizes */}
+					<div className="text-center">
+						<div
+							className={`font-mono font-black  
+						
+							${config.timerColor} 
+							tracking-tight 
+							
+							`}
+						>
+							{formattedTime}
+						</div>
 					</div>
-					{status === "ongoing" && (
-						<p className="text-sm sm:text-base md:text-lg font-bold text-slate-700 dark:text-slate-300">
-							<span className={config.timerColor}>{timeRemainingText}</span>{" "}
-							үлдсэн
-						</p>
+
+					{/* Danger Warning - Responsive */}
+					{status === "ongoing" && isDanger && (
+						<div className="mt-4 sm:mt-6 md:mt-8 bg-red-100 dark:bg-red-900/40 border-2 border-red-300 dark:border-red-700 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 animate-pulse shadow-lg">
+							<p className="text-center font-black text-red-700 dark:text-red-300 text-sm sm:text-base md:text-lg lg:text-xl">
+								⚠️ Цаг дуусч байна! Шалгалтаа дүүргээрэй!
+							</p>
+						</div>
+					)}
+
+					{/* Time's Up Message - Responsive */}
+					{status === "ended" && (
+						<div className="mt-4 sm:mt-6 md:mt-8 bg-red-100 dark:bg-red-900/40 border-2 border-red-300 dark:border-red-700 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-lg">
+							<p className="text-center font-black text-red-700 dark:text-red-300 text-sm sm:text-base md:text-lg lg:text-xl">
+								🛑 Шалгалтын цаг дууслаа. Автоматаар дуусгаж байна...
+							</p>
+						</div>
 					)}
 				</div>
-
-				{status === "ongoing" && isDanger && (
-					<div className="mt-3 sm:mt-4 bg-red-100 dark:bg-red-900/40 border-2 border-red-300 dark:border-red-700 rounded-lg p-3 sm:p-4 animate-pulse shadow-lg">
-						<p className="text-center font-black text-red-700 dark:text-red-300">
-							⚠️ Цаг дуусч байна! Шалгалтаа дүүргээрэй!
-						</p>
-					</div>
-				)}
-
-				{status === "ended" && (
-					<div className="mt-3 sm:mt-4 bg-red-100 dark:bg-red-900/40 border-2 border-red-300 dark:border-red-700 rounded-lg p-3 sm:p-4 shadow-lg">
-						<p className="text-center font-black text-red-700 dark:text-red-300">
-							🛑 Шалгалтын цаг дууслаа. Автоматаар дуусгаж байна...
-						</p>
-					</div>
-				)}
 			</div>
 		</div>
 	);
