@@ -19,6 +19,7 @@ export interface SorillistsData {
 	flag_name: string; // Товчны текст ("Эхлүүлэх", "Үргэлжлүүлэх", гэх мэт)
 	plan_id: number; // Төлөвлөгөөний ID
 	plan_name: string; // Төлөвлөгөөний нэр
+	ispay: number;
 }
 
 export interface ApiSorillistsResponse {

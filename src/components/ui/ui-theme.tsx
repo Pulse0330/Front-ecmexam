@@ -82,7 +82,7 @@ export const ThemeSwitch = ({
 		>
 			{showLabels && (
 				<>
-					<span className="inline-flex items-center gap-1 text-xs shrink-0 whitespace-nowrap min-w-[3.5rem] text-foreground">
+					<span className="inline-flex items-center gap-1 text-xs shrink-0 whitespace-nowrap min-w-3.5rem text-foreground">
 						{!isDark ? (
 							<>
 								<Sun className="w-3.5 h-3.5 shrink-0 text-amber-500" />

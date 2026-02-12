@@ -134,7 +134,7 @@ const UserAvatar: React.FC<{
 	return (
 		<div
 			className={cn(
-				"rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center",
+				"rounded-full bg-linear-to-br from-primary/20 to-primary/10 flex items-center justify-center",
 				sizeMap[size],
 			)}
 		>

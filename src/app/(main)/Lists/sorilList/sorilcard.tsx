@@ -6,6 +6,7 @@ import {
 	Calendar,
 	ClipboardCheck,
 	Clock,
+	Lock,
 	Sparkles,
 } from "lucide-react";
 import Image from "next/image";
@@ -46,6 +47,7 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 	};
 
 	const isCompleted = exam.isguitset === 1;
+	const isPaid = exam.ispay === 1; // Check if exam is paid
 
 	return (
 		<motion.div
@@ -57,8 +59,12 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 			<button
 				type="button"
 				onClick={onClick}
-				aria-label={`${exam.soril_name} сорил нээх`}
-				className="group h-full w-full relative flex flex-col border border-border/40 bg-card/50 backdrop-blur-md cursor-pointer transition-all duration-500 ease-out hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20 rounded-lg sm:rounded-xl overflow-hidden text-left"
+				aria-label={`${exam.soril_name} сорил ${!isPaid ? "(Төлбөр шаардлагатай)" : "нээх"}`}
+				className={`group h-full w-full relative flex flex-col backdrop-blur-md cursor-pointer transition-all duration-500 ease-out rounded-lg sm:rounded-xl overflow-hidden text-left ${
+					!isPaid
+						? "border border-amber-500/40 bg-card/30 hover:shadow-lg hover:shadow-amber-500/20 hover:border-amber-500/60"
+						: "border border-border/40 bg-card/50 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20"
+				}`}
 			>
 				<div className="relative w-full aspect-5/2 bg-muted shrink-0">
 					{exam.filename ? (
@@ -66,7 +72,7 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 							src={exam.filename}
 							alt={exam.soril_name}
 							fill
-							className="object-cover transition-transform duration-700"
+							className={`object-cover transition-all duration-700 ${!isPaid ? "brightness-75 group-hover:brightness-90" : ""}`}
 							sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
 							quality={90}
 						/>
@@ -76,12 +82,26 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 						</div>
 					)}
 
+					{/* Lock Overlay for Unpaid Exams */}
+					{!isPaid && (
+						<div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-10">
+							<div className="">
+								<Lock className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
+							</div>
+						</div>
+					)}
+
 					{/* Gradient Overlay */}
 					<div className="absolute inset-0 bg-linear-to-t from-background/85 via-background/50 to-transparent" />
 
 					{/* Status Badge on image - Responsive */}
-					<div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 z-10">
-						{isCompleted ? (
+					<div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 z-20">
+						{!isPaid ? (
+							<Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
+								<Lock className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
+								Төлбөртэй
+							</Badge>
+						) : isCompleted ? (
 							<Badge className="bg-green-500/90 text-white border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
 								<ClipboardCheck className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
 								Гүйцэтгэсэн
@@ -130,12 +150,23 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 					<div className="space-y-0.5 flex-1 min-h-0">
 						<Tooltip>
 							<TooltipTrigger asChild>
-								<h3 className="text-[10px] sm:text-xs md:text-sm font-semibold text-foreground line-clamp-1 leading-tight group-hover:text-primary transition-colors duration-300">
+								<h3
+									className={`text-[10px] sm:text-xs md:text-sm font-semibold line-clamp-1 leading-tight transition-colors duration-300 ${
+										!isPaid
+											? "text-foreground group-hover:text-amber-500"
+											: "text-foreground group-hover:text-primary"
+									}`}
+								>
 									{exam.soril_name}
 								</h3>
 							</TooltipTrigger>
 							<TooltipContent className="max-w-xs">
 								<p>{exam.soril_name}</p>
+								{!isPaid && (
+									<p className="text-amber-500 mt-1">
+										Төлбөр төлөх шаардлагатай
+									</p>
+								)}
 							</TooltipContent>
 						</Tooltip>
 					</div>
@@ -176,8 +207,18 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 					</div>
 
 					{/* Action Button - багасгасан */}
-					<div className="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 md:bottom-2.5 md:right-2.5 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-full bg-muted/50 flex items-center justify-center group-hover:bg-foreground group-hover:scale-110 transition-all duration-300">
-						<ArrowRight className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 text-muted-foreground group-hover:text-background group-hover:translate-x-0.5 transition-all" />
+					<div
+						className={`absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 md:bottom-2.5 md:right-2.5 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center transition-all duration-300 ${
+							!isPaid
+								? "bg-amber-500/20 group-hover:bg-amber-500 group-hover:scale-110"
+								: "bg-muted/50 group-hover:bg-foreground group-hover:scale-110"
+						}`}
+					>
+						{!isPaid ? (
+							<Lock className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 text-amber-600 group-hover:text-white transition-all" />
+						) : (
+							<ArrowRight className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 text-muted-foreground group-hover:text-background group-hover:translate-x-0.5 transition-all" />
+						)}
 					</div>
 				</div>
 			</button>

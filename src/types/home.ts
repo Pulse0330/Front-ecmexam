@@ -74,6 +74,7 @@ export interface PastExam {
 	isguitset: 0 | 1; // 0 = Гүйцэтгээгүй, 1 = Гүйцэтгэсэн
 	test_resid: number; // Тестийн үр дүнгийн ID
 	filename: string; // Зургийн URL
+	ispay: number;
 }
 
 // Цахим сургалтын контент карт

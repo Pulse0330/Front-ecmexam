@@ -9,6 +9,7 @@ import {
 	ClipboardCheck,
 	Clock,
 	HelpCircle,
+	Lock,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -110,10 +111,16 @@ interface ExamCardProps {
 const ExamCard = memo(({ exam, index }: ExamCardProps) => {
 	const router = useRouter();
 	const isCompleted = isSorilCompleted(exam.isguitset);
+	const isPaid = exam.ispay === 1; // Check if exam is paid
 
 	const handleClick = useCallback(() => {
+		// If unpaid, redirect to payment page
+		if (!isPaid) {
+			router.push("/Lists/paymentCoureList");
+			return;
+		}
 		router.push(`/soril/${exam.exam_id}`);
-	}, [router, exam.exam_id]);
+	}, [router, exam.exam_id, isPaid]);
 
 	return (
 		<motion.div
@@ -127,8 +134,12 @@ const ExamCard = memo(({ exam, index }: ExamCardProps) => {
 					<button
 						type="button"
 						onClick={handleClick}
-						aria-label={`${exam.soril_name} сорил нээх`}
-						className="group h-full w-full relative flex flex-col border border-border/40 bg-card/50 backdrop-blur-md cursor-pointer transition-all duration-500 ease-out hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20 rounded-lg sm:rounded-xl overflow-hidden text-left"
+						aria-label={`${exam.soril_name} сорил ${!isPaid ? "(Төлбөр шаардлагатай)" : "нээх"}`}
+						className={`group h-full w-full relative flex flex-col backdrop-blur-md cursor-pointer transition-all duration-500 ease-out rounded-lg sm:rounded-xl overflow-hidden text-left ${
+							!isPaid
+								? "border border-amber-500/40 bg-card/30 hover:shadow-lg hover:shadow-amber-500/20 hover:border-amber-500/60"
+								: "border border-border/40 bg-card/50 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20"
+						}`}
 					>
 						{/* Image Header */}
 						<div className="relative w-full aspect-2/1 shrink-0">
@@ -140,15 +151,28 @@ const ExamCard = memo(({ exam, index }: ExamCardProps) => {
 									quality={75}
 									priority={index < 4}
 									sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
-									className="object-cover"
+									className={`object-cover transition-all duration-300 ${!isPaid ? "brightness-75 group-hover:brightness-90" : ""}`}
 								/>
 							) : (
 								<div className="absolute inset-0 " />
 							)}
 
+							{/* Lock Overlay for Unpaid Exams */}
+							{!isPaid && (
+								<div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-10">
+									<div className=" rounded-full p-2 sm:p-2.5 md:p-3 shadow-lg group-hover:scale-110 transition-transform duration-300">
+										<Lock className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
+									</div>
+								</div>
+							)}
+
 							{/* Status Badge */}
-							<div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 z-10">
-								{isCompleted ? (
+							<div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 z-20">
+								{!isPaid ? (
+									<Badge className="bg-amber-500 hover:bg-amber-600 border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
+										Төлбөртэй
+									</Badge>
+								) : isCompleted ? (
 									<Badge className="border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
 										Гүйцэтгэсэн
 									</Badge>
@@ -176,12 +200,23 @@ const ExamCard = memo(({ exam, index }: ExamCardProps) => {
 							<div className="space-y-0.5 flex-1 min-h-0">
 								<Tooltip>
 									<TooltipTrigger asChild>
-										<h3 className="text-[10px] sm:text-xs md:text-sm font-semibold  line-clamp-2 leading-tight group-hover:text-primary transition-colors duration-300">
+										<h3
+											className={`text-[10px] sm:text-xs md:text-sm font-semibold line-clamp-2 leading-tight transition-colors duration-300 ${
+												!isPaid
+													? "group-hover:text-amber-500"
+													: "group-hover:text-primary"
+											}`}
+										>
 											{exam.soril_name}
 										</h3>
 									</TooltipTrigger>
 									<TooltipContent className="max-w-xs">
 										<p>{exam.soril_name}</p>
+										{!isPaid && (
+											<p className="text-amber-500 mt-1">
+												Төлбөр төлөх шаардлагатай
+											</p>
+										)}
 									</TooltipContent>
 								</Tooltip>
 							</div>
@@ -224,8 +259,18 @@ const ExamCard = memo(({ exam, index }: ExamCardProps) => {
 							</div>
 
 							{/* Action Button */}
-							<div className="absolute bottom-2 right-2 sm:bottom-2.5 sm:right-2.5 md:bottom-3 md:right-3 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-full bg-muted/50 flex items-center justify-center group-hover:bg-foreground group-hover:scale-110 transition-all duration-300">
-								<ArrowRight className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 text-muted-foreground group-hover:text-background group-hover:translate-x-0.5 transition-all" />
+							<div
+								className={`absolute bottom-2 right-2 sm:bottom-2.5 sm:right-2.5 md:bottom-3 md:right-3 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center transition-all duration-300 ${
+									!isPaid
+										? "bg-amber-500/20 group-hover:bg-amber-500 group-hover:scale-110"
+										: "bg-muted/50 group-hover:bg-foreground group-hover:scale-110"
+								}`}
+							>
+								{!isPaid ? (
+									<Lock className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 text-amber-600 group-hover:text-white transition-all" />
+								) : (
+									<ArrowRight className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 text-muted-foreground group-hover:text-background group-hover:translate-x-0.5 transition-all" />
+								)}
 							</div>
 						</div>
 					</button>
@@ -246,6 +291,22 @@ interface SorilListsProps {
 }
 
 const SorilLists = memo(({ pastExams }: SorilListsProps) => {
+	const router = useRouter();
+
+	const _handleSorilClick = useCallback(
+		(exam: PastExam) => {
+			// If exam is unpaid (ispay === 0), redirect to payment page
+			if (exam.ispay === 0) {
+				router.push("/Lists/paymentCoureList");
+				return;
+			}
+
+			// If exam is paid, go to the exam page
+			router.push(`/soril/${exam.exam_id}`);
+		},
+		[router],
+	);
+
 	if (!pastExams?.length) {
 		return (
 			<div className="flex flex-col items-center py-24 opacity-40">

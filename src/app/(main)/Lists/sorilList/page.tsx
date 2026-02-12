@@ -3,12 +3,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getSorilFilteredlists, getTestFilter } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/useAuthStore";
-import type { ApiSorillistsResponse } from "@/types/soril/sorilLists";
+import type {
+	ApiSorillistsResponse,
+	SorillistsData,
+} from "@/types/soril/sorilLists";
 import { SorilCard } from "./sorilcard";
 
 type SorilCategory = "all" | "completed" | "notstarted";
@@ -37,6 +40,7 @@ export default function Sorillists() {
 		useState<SorilCategory>("all");
 	const [selectedLessonId, setSelectedLessonId] = useState<number>(0); // 0 = Бүгд
 	const SKELETON_KEYS = Array.from({ length: 6 }, (_, i) => `skeleton-${i}`);
+
 	// Lesson filter API - хичээлийн жагсаалт
 	const { data: lessonData } = useQuery<TestFilterResponse>({
 		queryKey: ["testFilter", userId],
@@ -96,6 +100,21 @@ export default function Sorillists() {
 		return sorils;
 	}, [data, categorizedData, selectedCategory, searchTerm]);
 
+	// Handle soril click with payment check
+	const handleSorilClick = useCallback(
+		(soril: SorillistsData) => {
+			// If exam is unpaid (ispay === 0), redirect to payment page
+			if (soril.ispay === 0) {
+				router.push("/Lists/paymentCoureList");
+				return;
+			}
+
+			// If exam is paid, go to the exam page
+			router.push(`/soril/${soril.exam_id}`);
+		},
+		[router],
+	);
+
 	return (
 		<div className="min-h-screen flex flex-col overflow-auto">
 			<div className="max-w-[1600px] mx-auto w-full flex flex-col px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
@@ -138,8 +157,6 @@ export default function Sorillists() {
 								if (value) {
 									setSelectedLessonId(Number(value));
 								}
-								// эсвэл анхны утга тохируулах
-								// else { setSelectedLessonId(lessons[0]?.lesson_id || 0); }
 							}}
 							className="md:hidden flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
 							aria-label="Хичээл сонгох"
@@ -155,7 +172,7 @@ export default function Sorillists() {
 
 				{/* Results Info */}
 				{(searchTerm || selectedLessonId !== 0) && (
-					<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+					<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
 						<AlertCircle size={16} />
 						<span>
 							<strong>{filteredData.length}</strong> сорил олдлоо
@@ -182,15 +199,14 @@ export default function Sorillists() {
 				)}
 
 				{/* Soril Grid */}
-				<div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4 pb-4">
+				<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4 pb-4">
 					{isPending
 						? SKELETON_KEYS.map((key) => <SkeletonCard key={key} />)
 						: filteredData.map((soril) => (
 								<SorilCard
 									key={soril.exam_id}
 									exam={soril}
-									onClick={() => router.push(`/soril/${soril.exam_id}`)}
-									// index prop устгах
+									onClick={() => handleSorilClick(soril)}
 								/>
 							))}
 				</div>
@@ -221,31 +237,26 @@ export default function Sorillists() {
 
 // Skeleton Card Component
 const SkeletonCard = () => (
-	<div className="h-[430px] w-full flex flex-col overflow-hidden rounded-[28px] border border-border/40 bg-card/50 backdrop-blur-md animate-pulse">
-		<div className="h-40 w-full bg-slate-200 dark:bg-slate-800 relative">
-			<div className="absolute top-4 left-4 flex flex-col gap-2">
-				<div className="h-6 w-20 bg-slate-300 dark:bg-slate-700 rounded-full" />
-				<div className="h-6 w-24 bg-slate-300 dark:bg-slate-700 rounded-full" />
+	<div className="h-full w-full flex flex-col overflow-hidden rounded-lg sm:rounded-xl border border-border/40 bg-card/50 backdrop-blur-md animate-pulse">
+		<div className="w-full aspect-5/2 bg-slate-200 dark:bg-slate-800 relative">
+			<div className="absolute top-2 left-2 flex flex-col gap-2">
+				<div className="h-5 w-16 bg-slate-300 dark:bg-slate-700 rounded-full" />
+			</div>
+			<div className="absolute bottom-2 left-2">
+				<div className="h-4 w-20 bg-slate-300 dark:bg-slate-700 rounded" />
 			</div>
 		</div>
-		<div className="flex flex-col grow p-5 gap-4">
-			<div className="space-y-3">
-				<div className="flex justify-between items-center">
-					<div className="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
-					<div className="h-4 w-4 bg-slate-200 dark:bg-slate-800 rounded-full" />
-				</div>
-				<div className="space-y-2">
-					<div className="h-5 w-full bg-slate-200 dark:bg-slate-800 rounded" />
-					<div className="h-5 w-2/3 bg-slate-200 dark:bg-slate-800 rounded" />
-				</div>
+		<div className="flex flex-col grow p-2 gap-2">
+			<div className="space-y-2">
+				<div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded" />
+				<div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-800 rounded" />
 			</div>
-			<div className="mt-auto pt-4 border-t border-border/50 flex items-center justify-between">
-				<div className="flex gap-4">
-					<div className="h-4 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
-					<div className="h-4 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
-					<div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
+			<div className="mt-auto pt-2 border-t border-border/50 flex items-center justify-between">
+				<div className="flex gap-2">
+					<div className="h-3 w-10 bg-slate-200 dark:bg-slate-800 rounded" />
+					<div className="h-3 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
 				</div>
-				<div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-800" />
+				<div className="h-6 w-6 rounded-full bg-slate-200 dark:bg-slate-800" />
 			</div>
 		</div>
 	</div>
