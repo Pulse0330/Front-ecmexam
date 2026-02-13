@@ -174,22 +174,21 @@ export default function PaymentCoursesPage() {
 	};
 
 	return (
-		<div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+		<div className="container mx-auto w-full flex flex-col gap-4 sm:gap-6 px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8  ">
 			{/* FIXED: Container өргөн үргэлж тогтмол, sidebar нь overlay болно */}
 			<div
 				className={cn(
-					"max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:px-8",
 					"transition-none", // Animation асаагаагүй - card хэмжээ өөрчлөгдөхгүй
 				)}
 			>
 				{/* Худалдаж авсан хичээлүүд */}
 				{purchasedCourses.length > 0 && (
 					<div className="mb-8 sm:mb-12">
-						<div className="flex items-center justify-between mb-4 sm:mb-6">
+						<div className="  mb-4 sm:mb-6">
 							<div>
-								<h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-1">
+								<h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-1">
 									Миний хичээлүүд
-								</h2>
+								</h3>
 								<p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
 									{purchasedCourses.length} Хичээл
 								</p>
@@ -230,7 +229,7 @@ export default function PaymentCoursesPage() {
 					<div className="mb-8">
 						<div className="flex items-center justify-between mb-6 sm:mb-8">
 							<div>
-								<h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-1">
+								<h2 className="text-lg sm:text-2xl font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent">
 									{purchasedCourses.length > 0
 										? "Бусад хичээлүүд"
 										: "Бүх хичээлүүд"}

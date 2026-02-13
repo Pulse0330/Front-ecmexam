@@ -2,18 +2,13 @@
 
 import { useQuery } from "@tanstack/react-query";
 import parse from "html-react-parser";
-import {
-	AlertCircle,
-	ArrowLeft,
-	CheckCircle,
-	MinusCircle,
-	XCircle,
-} from "lucide-react";
+import { AlertCircle, CheckCircle, MinusCircle, XCircle } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import UseAnimations from "react-useanimations";
 import loading2 from "react-useanimations/lib/loading2";
+import StyledBackButton from "@/components/backButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getExamDun, getExamResultMore } from "@/lib/api";
@@ -424,17 +419,18 @@ function ExamResultDetailPage() {
 
 	const dunInfo = dunData?.RetData?.[0];
 	return (
-		<div className="min-h-screen bg-linear-to-br from-background via-background to-muted/20 py-8 px-4">
+		<div className=" mx-auto w-full  py-8 px-4">
+			<div className="fixed ">
+				<StyledBackButton
+					variant="default"
+					showIcon={true}
+					showConfirm={true}
+					confirmTitle="Та итгэлтэй байна уу?"
+					confirmMessage=""
+					ariaLabel=""
+				/>
+			</div>
 			<div className="max-w-6xl mx-auto space-y-6">
-				<button
-					type="button"
-					onClick={() => router.back()}
-					className="group flex items-center gap-3 pl-2 pr-5 py-6 duration-300 cursor-pointer bg-transparent border-none"
-				>
-					<div className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 transition-colors duration-300">
-						<ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:-translate-x-0.5 transition-all duration-300" />
-					</div>
-				</button>
 				{examSummary && (
 					<div className="bg-linear-to-br from-card to-card/50 border border-border/50 rounded-3xl p-8 shadow-xl backdrop-blur-sm">
 						{/* Толгой хэсэг */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
 	useCallback,
@@ -10,6 +10,7 @@ import {
 	useState,
 	useTransition,
 } from "react";
+import StyledBackButton from "@/components/backButton";
 import { Button } from "@/components/ui/button";
 import {
 	getTestFilter,
@@ -118,9 +119,9 @@ interface LessonDataResponse {
 // ============================================
 
 const GRID_CLASSES =
-	"grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 2xl:grid-cols-8 3xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6";
+	"grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 2xl:grid-cols-8 3xl:grid-cols-8 gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3 xl:gap-3.5";
 
-const LIST_CLASSES = "flex flex-col gap-2 sm:gap-2.5 md:gap-3";
+const LIST_CLASSES = "flex flex-col gap-1.5 sm:gap-2";
 
 const SKELETON_COUNT = 12;
 
@@ -185,15 +186,19 @@ export default function TestGroupPage() {
 	const [_isPending, _startTransition] = useTransition();
 	const [isMounted, setIsMounted] = useState(false);
 
+	// FIX: Зөв destructuring хэлбэр
 	const [selectedTests, setSelectedTests] = useDebouncedLocalStorage<
 		Record<number, number>
 	>("selectedTests", {});
+
 	const [selectedLesson, setSelectedLesson] = useDebouncedLocalStorage<
 		number | null
 	>("selectedLesson", null);
+
 	const [selectedCategory, setSelectedCategory] = useDebouncedLocalStorage<
 		string | null
 	>("selectedCategory", null);
+
 	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 	const [_errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -343,9 +348,13 @@ export default function TestGroupPage() {
 		return calculateLessonStats(lessonGroups, lessonTestsMap, selectedTests);
 	}, [lessonGroups, lessonTestsMap, selectedTests]);
 
+	// FIX: Type-safe totals
 	const totals = useMemo(() => {
 		const entries = Object.values(selectedTests);
-		const questionCount = entries.reduce((sum, count) => sum + count, 0);
+		const questionCount = entries.reduce(
+			(sum: number, count: number) => sum + count,
+			0,
+		);
 
 		return {
 			groupCount: entries.length,
@@ -355,7 +364,7 @@ export default function TestGroupPage() {
 
 	const handleTestChange = useCallback(
 		(id: number, count: number) => {
-			setSelectedTests((prev) => {
+			setSelectedTests((prev: Record<number, number>) => {
 				if (count > 0) {
 					return { ...prev, [id]: count };
 				}
@@ -367,15 +376,12 @@ export default function TestGroupPage() {
 	);
 
 	const handleBackToLessons = useCallback(() => {
-		// Хэрэв category сонгосон бол зөвхөн category-г цэвэрлэ
 		if (selectedCategory) {
 			if (typeof window !== "undefined") {
 				window.localStorage.removeItem("selectedCategory");
 			}
 			setSelectedCategory(null);
-		}
-		// Хэрэв зөвхөн lesson сонгосон бол lesson-г цэвэрлэ
-		else if (selectedLesson) {
+		} else if (selectedLesson) {
 			if (typeof window !== "undefined") {
 				window.localStorage.removeItem("selectedLesson");
 			}
@@ -390,7 +396,6 @@ export default function TestGroupPage() {
 
 	const handleLessonClick = useCallback(
 		(lessonId: number) => {
-			// Write immediately to localStorage
 			if (typeof window !== "undefined") {
 				window.localStorage.setItem("selectedLesson", JSON.stringify(lessonId));
 			}
@@ -401,7 +406,6 @@ export default function TestGroupPage() {
 
 	const handleCategoryClick = useCallback(
 		(categoryKey: string) => {
-			// Write immediately to localStorage
 			if (typeof window !== "undefined") {
 				window.localStorage.setItem(
 					"selectedCategory",
@@ -426,7 +430,7 @@ export default function TestGroupPage() {
 	const renderSkeletons = useMemo(
 		() => (
 			<output
-				className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 3xl:grid-cols-10 gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6"
+				className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 3xl:grid-cols-10 gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3 xl:gap-3.5"
 				aria-label="Хичээлүүдийг ачааллаж байна"
 			>
 				{skeletonKeys.map((key) => (
@@ -440,7 +444,7 @@ export default function TestGroupPage() {
 
 	const renderLessonCards = useMemo(
 		() => (
-			<ul className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 3xl:grid-cols-11 gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6 list-none">
+			<ul className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 3xl:grid-cols-11 gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3 xl:gap-3.5 list-none">
 				{lessonGroups.map((lesson) => {
 					const stats = lessonStats.get(lesson.lesson_id) || DEFAULT_STATS;
 
@@ -463,7 +467,7 @@ export default function TestGroupPage() {
 
 	const renderCategoryCards = useMemo(
 		() => (
-			<ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-3 sm:gap-4 md:gap-5 lg:gap-6 list-none">
+			<ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-2 sm:gap-2.5 md:gap-3 lg:gap-3.5 list-none">
 				{[...groupedData.entries()].map(([key, category]) => (
 					<li key={key}>
 						<CategoryCard
@@ -492,89 +496,31 @@ export default function TestGroupPage() {
 		if (!categoryItems) return null;
 
 		return (
-			<div>
-				<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3 md:gap-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-2.5 sm:p-3 md:p-4 rounded-lg sm:rounded-xl md:rounded-2xl shadow-sm border border-slate-100/50 dark:border-slate-800/50 mb-3 sm:mb-4 md:mb-5">
-					<div className="flex items-center gap-2 w-full sm:w-auto overflow-hidden">
-						<h2
-							className="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-slate-800 dark:text-slate-200 truncate flex-1 min-w-0"
-							id="category-title"
-						>
-							{categoryItems.ulesson_name}
-						</h2>
-					</div>
-
-					<fieldset className="flex bg-slate-100 dark:bg-slate-800 p-0.5 sm:p-1 rounded-md sm:rounded-lg gap-0.5 sm:gap-1 shrink-0 border-0">
-						<legend className="sr-only">Харагдах төрөл сонгох</legend>
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => setViewMode("grid")}
-							className={cn(
-								"rounded-md px-2 sm:px-2.5 h-7 sm:h-8 transition-all",
-								viewMode === "grid" && "bg-white dark:bg-slate-700 shadow-sm",
-							)}
-							aria-label="Торны харагдац"
-							aria-pressed={viewMode === "grid"}
-						>
-							<div
-								className="grid grid-cols-2 gap-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5"
-								aria-hidden="true"
-							>
-								<div className="bg-current rounded-sm opacity-60" />
-								<div className="bg-current rounded-sm opacity-60" />
-								<div className="bg-current rounded-sm opacity-60" />
-								<div className="bg-current rounded-sm opacity-60" />
-							</div>
-						</Button>
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => setViewMode("list")}
-							className={cn(
-								"rounded-md px-2 sm:px-2.5 h-7 sm:h-8 transition-all",
-								viewMode === "list" && "bg-white dark:bg-slate-700 shadow-sm",
-							)}
-							aria-label="Жагсаалтын харагдац"
-							aria-pressed={viewMode === "list"}
-						>
-							<div
-								className="flex flex-col gap-0.5 w-3 sm:w-3.5"
-								aria-hidden="true"
-							>
-								<div className="h-0.5 sm:h-1 w-full bg-current rounded-full opacity-60" />
-								<div className="h-0.5 sm:h-1 w-full bg-current rounded-full opacity-60" />
-								<div className="h-0.5 sm:h-1 w-full bg-current rounded-full opacity-60" />
-							</div>
-						</Button>
-					</fieldset>
-				</div>
-
-				<ul
-					className={cn(
-						viewMode === "grid" ? GRID_CLASSES : LIST_CLASSES,
-						"list-none",
-					)}
-					aria-labelledby="category-title"
-				>
-					{categoryItems.items.map((item) => (
-						<li key={item.id}>
-							{viewMode === "grid" ? (
-								<TestItemCard
-									item={item}
-									selectedCount={selectedTests[item.id] || 0}
-									onCountChange={handleTestChange}
-								/>
-							) : (
-								<TestListItem
-									item={item}
-									selectedCount={selectedTests[item.id] || 0}
-									onCountChange={handleTestChange}
-								/>
-							)}
-						</li>
-					))}
-				</ul>
-			</div>
+			<ul
+				className={cn(
+					viewMode === "grid" ? GRID_CLASSES : LIST_CLASSES,
+					"list-none",
+				)}
+				aria-labelledby="category-title"
+			>
+				{categoryItems.items.map((item) => (
+					<li key={item.id}>
+						{viewMode === "grid" ? (
+							<TestItemCard
+								item={item}
+								selectedCount={selectedTests[item.id] || 0}
+								onCountChange={handleTestChange}
+							/>
+						) : (
+							<TestListItem
+								item={item}
+								selectedCount={selectedTests[item.id] || 0}
+								onCountChange={handleTestChange}
+							/>
+						)}
+					</li>
+				))}
+			</ul>
 		);
 	}, [
 		selectedCategory,
@@ -600,31 +546,25 @@ export default function TestGroupPage() {
 
 	return (
 		<div className="h-full">
-			<div className="max-w-[2000px] mx-auto w-full flex flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-				<header className="mb-3 sm:mb-4 md:mb-5 lg:mb-6 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-2.5 sm:p-3 md:p-4 lg:p-5 rounded-xl sm:rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100/50 dark:border-slate-800/50 relative overflow-hidden">
+			<div className="max-w-[2000px] mx-auto w-full flex flex-col gap-4 px-3 sm:px-4 lg:px-6 py-4 sm:py-5">
+				<header className="mb-2 sm:mb-3 md:mb-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-2 sm:p-2.5 md:p-3 lg:p-4 rounded-xl sm:rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100/50 dark:border-slate-800/50 relative overflow-hidden">
 					<div
 						className="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"
 						aria-hidden="true"
 					/>
-					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 md:gap-4">
-						<div className="flex items-center gap-2 sm:gap-2.5 md:gap-3">
+					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+						<div className="flex items-center gap-2">
 							{selectedLesson && (
-								<Button
+								<StyledBackButton
 									onClick={handleBackToLessons}
 									variant="ghost"
-									size="sm"
 									className="flex items-center gap-1 sm:gap-1.5 text-slate-500 font-bold hover:text-emerald-500 transition-colors p-1.5 sm:p-2 min-w-9 sm:min-w-10"
-									aria-label={
+									ariaLabel={
 										selectedCategory
 											? "Бүлэг сэдэв рүү буцах"
 											: "Хичээл рүү буцах"
 									}
-								>
-									<ArrowLeft
-										className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5"
-										aria-hidden="true"
-									/>
-								</Button>
+								/>
 							)}
 
 							<div>
@@ -633,6 +573,56 @@ export default function TestGroupPage() {
 								</h1>
 							</div>
 						</div>
+
+						{/* View mode toggle - only show when category is selected */}
+						{selectedCategory && (
+							<fieldset className="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-md sm:rounded-lg gap-0.5 shrink-0 border-0">
+								<legend className="sr-only">Харагдах төрөл сонгох</legend>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => setViewMode("grid")}
+									className={cn(
+										"rounded-md px-2 sm:px-2.5 h-7 sm:h-8 transition-all",
+										viewMode === "grid" &&
+											"bg-white dark:bg-slate-700 shadow-sm",
+									)}
+									aria-label="Торны харагдац"
+									aria-pressed={viewMode === "grid"}
+								>
+									<div
+										className="grid grid-cols-2 gap-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5"
+										aria-hidden="true"
+									>
+										<div className="bg-current rounded-sm opacity-60" />
+										<div className="bg-current rounded-sm opacity-60" />
+										<div className="bg-current rounded-sm opacity-60" />
+										<div className="bg-current rounded-sm opacity-60" />
+									</div>
+								</Button>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => setViewMode("list")}
+									className={cn(
+										"rounded-md px-2 sm:px-2.5 h-7 sm:h-8 transition-all",
+										viewMode === "list" &&
+											"bg-white dark:bg-slate-700 shadow-sm",
+									)}
+									aria-label="Жагсаалтын харагдац"
+									aria-pressed={viewMode === "list"}
+								>
+									<div
+										className="flex flex-col gap-0.5 w-3 sm:w-3.5"
+										aria-hidden="true"
+									>
+										<div className="h-0.5 sm:h-1 w-full bg-current rounded-full opacity-60" />
+										<div className="h-0.5 sm:h-1 w-full bg-current rounded-full opacity-60" />
+										<div className="h-0.5 sm:h-1 w-full bg-current rounded-full opacity-60" />
+									</div>
+								</Button>
+							</fieldset>
+						)}
 					</div>
 				</header>
 

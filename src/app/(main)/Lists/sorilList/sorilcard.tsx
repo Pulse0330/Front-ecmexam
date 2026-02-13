@@ -47,7 +47,12 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 	};
 
 	const isCompleted = exam.isguitset === 1;
-	const isPaid = exam.isopensoril === 1 || exam.ispay === 0;
+	// ЗАСВАРЛАСАН ЗӨВ ЛОГИК:
+	// isopensoril: 1 = нээлттэй сорил (чөлөөтэй)
+	// isopensoril: 0 = ispay шалгах шаардлагатай
+	//   - ispay: 1 = төлсөн (нээх боломжтой)
+	//   - ispay: 0 = төлөөгүй (түгжээтэй)
+	const isPaid = exam.isopensoril === 1 || exam.ispay === 1;
 
 	return (
 		<motion.div

@@ -112,13 +112,16 @@ const ExamCard = memo(({ exam, index }: ExamCardProps) => {
 	const router = useRouter();
 	const isCompleted = isSorilCompleted(exam.isguitset);
 
-	// Логик:
-	// - isopensoril === 0 && ispay === 1 -> Төлбөртэй, хаалттай (цоож харуулна)
-	// - isopensoril === 1 || ispay === 0 -> Нээлттэй эсвэл төлбөргүй (цоожгүй)
+	// ЗАСВАРЛАСАН ЗӨВ ЛОГИК:
+	// isopensoril: 1 = нээлттэй сорил (чөлөөтэй)
+	// isopensoril: 0 = ispay шалгах шаардлагатай
+	//   - ispay: 1 = төлсөн (нээх боломжтой)
+	//   - ispay: 0 = төлөөгүй (түгжээтэй)
+	const isAccessible = exam.isopensoril === 1 || exam.ispay === 1;
+	const isLocked = !isAccessible;
 
-	const isLocked = exam.isopensoril === 1 || exam.ispay === 0;
 	const handleClick = useCallback(() => {
-		// Хэрвээ цоожтой бол төлбөрийн хуудас руу шилжүүлнэ
+		// Хэрвээ түгжээтэй бол төлбөрийн хуудас руу шилжүүлнэ
 		if (isLocked) {
 			router.push("/Lists/paymentCoureList");
 			return;
@@ -141,7 +144,7 @@ const ExamCard = memo(({ exam, index }: ExamCardProps) => {
 						aria-label={`${exam.soril_name} сорил ${isLocked ? "(Төлбөр шаардлагатай)" : "нээх"}`}
 						className={`group h-full w-full relative flex flex-col backdrop-blur-md cursor-pointer transition-all duration-500 ease-out rounded-lg sm:rounded-xl overflow-hidden text-left ${
 							isLocked
-								? "border "
+								? "border border-amber-500/40 bg-card/30 hover:shadow-lg hover:shadow-amber-500/20 hover:border-amber-500/60"
 								: "border border-border/40 bg-card/50 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20"
 						}`}
 					>
@@ -164,7 +167,7 @@ const ExamCard = memo(({ exam, index }: ExamCardProps) => {
 							{/* Lock Overlay for Locked Exams */}
 							{isLocked && (
 								<div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-10">
-									<div className=" rounded-full p-2 sm:p-2.5 md:p-3 shadow-lg group-hover:scale-110 transition-transform duration-300">
+									<div className="rounded-full p-2 sm:p-2.5 md:p-3 shadow-lg group-hover:scale-110 transition-transform duration-300">
 										<Lock className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
 									</div>
 								</div>
@@ -173,15 +176,17 @@ const ExamCard = memo(({ exam, index }: ExamCardProps) => {
 							{/* Status Badge */}
 							<div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 z-20">
 								{isLocked ? (
-									<Badge className="bg-amber-500 hover:bg-amber-600 border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
+									<Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
+										<Lock className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
 										Төлбөртэй
 									</Badge>
-								) : exam.ispay === 1 ? (
-									<Badge className="bg-green-500 hover:bg-green-600 border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
+								) : exam.isopensoril === 1 ? (
+									<Badge className="bg-green-500/90 text-white hover:bg-green-600 border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
 										Нээлттэй
 									</Badge>
 								) : isCompleted ? (
-									<Badge className="border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
+									<Badge className="bg-green-500/90 text-white border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
+										<ClipboardCheck className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
 										Гүйцэтгэсэн
 									</Badge>
 								) : (
@@ -211,8 +216,8 @@ const ExamCard = memo(({ exam, index }: ExamCardProps) => {
 										<h3
 											className={`text-[10px] sm:text-xs md:text-sm font-semibold line-clamp-2 leading-tight transition-colors duration-300 ${
 												isLocked
-													? "group-hover:text-amber-500"
-													: "group-hover:text-primary"
+													? "text-foreground group-hover:text-amber-500"
+													: "text-foreground group-hover:text-primary"
 											}`}
 										>
 											{exam.soril_name}
@@ -225,7 +230,7 @@ const ExamCard = memo(({ exam, index }: ExamCardProps) => {
 												Төлбөр төлөх шаардлагатай
 											</p>
 										)}
-										{exam.ispay === 1 && exam.isopensoril === 1 && (
+										{exam.isopensoril === 1 && (
 											<p className="text-green-500 mt-1">Нээлттэй сорил</p>
 										)}
 									</TooltipContent>
@@ -302,22 +307,6 @@ interface SorilListsProps {
 }
 
 const SorilLists = memo(({ pastExams }: SorilListsProps) => {
-	const router = useRouter();
-
-	const _handleSorilClick = useCallback(
-		(exam: PastExam) => {
-			// Логик: isopensoril === 0 && ispay === 1 бол төлбөрийн хуудас руу
-			if (exam.isopensoril === 0 && exam.ispay === 1) {
-				router.push("/Lists/paymentCoureList");
-				return;
-			}
-
-			// Бусад тохиолдолд сорилын хуудас руу
-			router.push(`/soril/${exam.exam_id}`);
-		},
-		[router],
-	);
-
 	if (!pastExams?.length) {
 		return (
 			<div className="flex flex-col items-center py-24 opacity-40">

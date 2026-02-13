@@ -6,6 +6,14 @@ import { useRouter } from "next/navigation";
 import React, { useCallback, useMemo, useState } from "react";
 import LessonFilter from "@/components/LessonFilter";
 import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { getSorilFilteredlists, getTestFilter } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -40,6 +48,11 @@ export default function Sorillists() {
 	const [selectedCategory, _setSelectedCategory] =
 		useState<SorilCategory>("all");
 	const [selectedLessonId, setSelectedLessonId] = useState<number>(0); // 0 = Бүгд
+	const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+	const [selectedSoril, setSelectedSoril] = useState<SorillistsData | null>(
+		null,
+	);
+
 	const SKELETON_KEYS = Array.from({ length: 6 }, (_, i) => `skeleton-${i}`);
 
 	// Lesson filter API - хичээлийн жагсаалт
@@ -58,8 +71,6 @@ export default function Sorillists() {
 
 	const data = useMemo(() => queryData?.RetData || [], [queryData]);
 	const lessons = useMemo(() => lessonData?.RetData || [], [lessonData]);
-
-	const _skeletonIds = [1, 2, 3, 4, 5, 6];
 
 	const categorizedData = useMemo(() => {
 		return {
@@ -104,17 +115,37 @@ export default function Sorillists() {
 	// Handle soril click with payment check
 	const handleSorilClick = useCallback(
 		(soril: SorillistsData) => {
-			// If exam is unpaid (ispay === 0), redirect to payment page
-			if (soril.ispay === 0) {
-				router.push("/Lists/paymentCoureList");
+			// ЗАСВАРЛАСАН ЗӨВ ЛОГИК:
+			// isopensoril: 1 = нээлттэй сорил (чөлөөтэй)
+			// isopensoril: 0 = ispay шалгах шаардлагатай
+			//   - ispay: 1 = төлсөн (нээх боломжтой)
+			//   - ispay: 0 = төлөөгүй (түгжээтэй)
+			const isAccessible = soril.isopensoril === 1 || soril.ispay === 1;
+
+			if (!isAccessible) {
+				// Төлбөртэй сорил бөгөөд төлөөгүй бол dialog харуулах
+				setSelectedSoril(soril);
+				setShowPaymentDialog(true);
 				return;
 			}
 
-			// If exam is paid, go to the exam page
+			// Нээлттэй эсвэл төлсөн сорил - шууд нээх
 			router.push(`/soril/${soril.exam_id}`);
 		},
 		[router],
 	);
+
+	// Handle payment confirmation
+	const handlePaymentConfirm = useCallback(() => {
+		setShowPaymentDialog(false);
+		router.push("/Lists/paymentCoureList");
+	}, [router]);
+
+	// Handle payment dialog close
+	const handlePaymentCancel = useCallback(() => {
+		setShowPaymentDialog(false);
+		setSelectedSoril(null);
+	}, []);
 
 	return (
 		<div className="h-full">
@@ -195,6 +226,41 @@ export default function Sorillists() {
 					</div>
 				)}
 			</div>
+
+			{/* Payment Dialog */}
+			<Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+				<DialogContent className="sm:max-w-md">
+					<DialogHeader>
+						<DialogTitle>Төлбөртэй сорил</DialogTitle>
+						<DialogDescription className="pt-4 space-y-2">
+							<p className="font-medium text-foreground">
+								{selectedSoril?.soril_name}
+							</p>
+							<p>
+								Энэхүү сорил төлбөртэй юм. Үргэлжлүүлэхийн тулд төлбөр төлөх
+								шаардлагатай.
+							</p>
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter className="flex-row gap-2 sm:gap-0">
+						<Button
+							type="button"
+							variant="outline"
+							onClick={handlePaymentCancel}
+							className="flex-1 sm:flex-none"
+						>
+							Цуцлах
+						</Button>
+						<Button
+							type="button"
+							onClick={handlePaymentConfirm}
+							className="flex-1 sm:flex-none"
+						>
+							Төлбөр төлөх
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
