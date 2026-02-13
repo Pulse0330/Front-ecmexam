@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Suspense } from "react";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import LoginAnimation from "../animation";
@@ -38,7 +39,51 @@ export default function LoginPage() {
 						</div>
 					}
 				>
-					<LoginForm />
+					<div className="w-full max-w-md space-y-8">
+						<LoginForm />
+
+						<div className="relative">
+							<div className="absolute inset-0 flex items-center">
+								<div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
+							</div>
+							<div className="relative flex justify-center text-sm">
+								<span className="px-4 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400">
+									Шалгалтанд бүртгүүлэх
+								</span>
+							</div>
+						</div>
+
+						<Link
+							href="/register/mongolian-exam"
+							className="group relative w-full flex items-center justify-center gap-2 px-6 py-4 
+								bg-gradient-to-r from-emerald-500 to-teal-600 
+								dark:from-emerald-600 dark:to-teal-700
+								text-white font-semibold rounded-xl
+								hover:from-emerald-600 hover:to-teal-700
+								dark:hover:from-emerald-700 dark:hover:to-teal-800
+								transform hover:-translate-y-0.5 transition-all duration-300
+								shadow-lg hover:shadow-xl
+								overflow-hidden"
+						>
+							<span className="relative z-10">
+								🇲🇳 Монгол хэл бичгийн шалгалт
+							</span>
+							<svg
+								className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<title>asd</title>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth={2}
+									d="M13 7l5 5m0 0l-5 5m5-5H6"
+								/>
+							</svg>
+						</Link>
+					</div>
 				</Suspense>
 			</div>
 		</main>

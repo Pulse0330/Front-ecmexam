@@ -18,7 +18,6 @@ import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -712,275 +711,267 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 						</div>
 
 						{/* Right Column - Combined View/Edit Forms */}
-						<div className="lg:col-span-2 space-y-6">
-							{/* Personal Info - Only show when editing */}
+						<div className="lg:col-span-2">
+							{/* Edit Mode - 2 Column Layout */}
 							{isEditing && (
-								<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-4 sm:p-6">
-									<div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-										<div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center ">
-											<User2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-										</div>
-										<h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-											Хувийн мэдээлэл
-										</h3>
-									</div>
-
-									<div className="space-y-3">
-										<div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-											<div className="flex items-start gap-2 sm:gap-3 mb-2">
-												<User2 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 mt-2 shrink-0" />
-												<div className="flex-1 min-w-0">
-													<Label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
-														Овог
-													</Label>
-													<Input
-														value={editForm.lastname}
-														onChange={(e) =>
-															setEditForm({
-																...editForm,
-																lastname: e.target.value,
-															})
-														}
-														required
-														className="h-9 sm:h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-blue-500 rounded-lg text-sm"
-														placeholder="Овог"
-													/>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+									{/* Personal Info */}
+									<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-6">
+										<div className="space-y-4">
+											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+												<div className="flex items-center gap-3 flex-1">
+													<User2 className="w-5 h-5 text-blue-500" />
+													<div className="flex-1">
+														<p className="text-xs text-slate-500 dark:text-slate-400">
+															Овог
+														</p>
+														<Input
+															value={editForm.lastname}
+															onChange={(e) =>
+																setEditForm({
+																	...editForm,
+																	lastname: e.target.value,
+																})
+															}
+															required
+															className="mt-1 h-8 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus-visible:ring-0"
+															placeholder="Овог"
+														/>
+													</div>
 												</div>
 											</div>
-										</div>
 
-										<div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-											<div className="flex items-start gap-2 sm:gap-3 mb-2">
-												<User2 className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500 mt-2 shrink-0" />
-												<div className="flex-1 min-w-0">
-													<Label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
-														Нэр
-													</Label>
-													<Input
-														value={editForm.firstname}
-														onChange={(e) =>
-															setEditForm({
-																...editForm,
-																firstname: e.target.value,
-															})
-														}
-														required
-														className="h-9 sm:h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-blue-500 rounded-lg text-sm"
-														placeholder="Нэр"
-													/>
+											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+												<div className="flex items-center gap-3 flex-1">
+													<User2 className="w-5 h-5 text-indigo-500" />
+													<div className="flex-1">
+														<p className="text-xs text-slate-500 dark:text-slate-400">
+															Нэр
+														</p>
+														<Input
+															value={editForm.firstname}
+															onChange={(e) =>
+																setEditForm({
+																	...editForm,
+																	firstname: e.target.value,
+																})
+															}
+															required
+															className="mt-1 h-8 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus-visible:ring-0"
+															placeholder="Нэр"
+														/>
+													</div>
 												</div>
 											</div>
-										</div>
 
-										<div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-											<div className="flex items-start gap-2 sm:gap-3 mb-2">
-												<Mail className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 mt-2 shrink-0" />
-												<div className="flex-1 min-w-0">
-													<Label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
-														Имэйл
-													</Label>
-													<Input
-														type="email"
-														value={editForm.email}
-														onChange={(e) =>
-															setEditForm({
-																...editForm,
-																email: e.target.value,
-															})
-														}
-														required
-														className="h-9 sm:h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-blue-500 rounded-lg text-sm"
-														placeholder="email@example.com"
-													/>
+											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+												<div className="flex items-center gap-3 flex-1">
+													<Mail className="w-5 h-5 text-emerald-500" />
+													<div className="flex-1">
+														<p className="text-xs text-slate-500 dark:text-slate-400">
+															Имэйл
+														</p>
+														<Input
+															type="email"
+															value={editForm.email}
+															onChange={(e) =>
+																setEditForm({
+																	...editForm,
+																	email: e.target.value,
+																})
+															}
+															required
+															className="mt-1 h-8 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus-visible:ring-0"
+															placeholder="email@example.com"
+														/>
+													</div>
 												</div>
 											</div>
-										</div>
 
-										<div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-											<div className="flex items-start gap-2 sm:gap-3 mb-2">
-												<Phone className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-500 mt-2 shrink-0" />
-												<div className="flex-1 min-w-0">
-													<Label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
-														Утас
-													</Label>
-													<Input
-														type="tel"
-														value={editForm.Phone}
-														onChange={(e) =>
-															setEditForm({
-																...editForm,
-																Phone: e.target.value,
-															})
-														}
-														className="h-9 sm:h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-blue-500 rounded-lg text-sm"
-														placeholder="Утасны дугаар"
-													/>
+											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+												<div className="flex items-center gap-3 flex-1">
+													<Phone className="w-5 h-5 text-cyan-500" />
+													<div className="flex-1">
+														<p className="text-xs text-slate-500 dark:text-slate-400">
+															Утас
+														</p>
+														<Input
+															type="tel"
+															value={editForm.Phone}
+															onChange={(e) =>
+																setEditForm({
+																	...editForm,
+																	Phone: e.target.value,
+																})
+															}
+															className="mt-1 h-8 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus-visible:ring-0"
+															placeholder="Утасны дугаар"
+														/>
+													</div>
 												</div>
 											</div>
 										</div>
 									</div>
-								</div>
-							)}
 
-							{/* Location & School - Edit mode */}
-							{isEditing && (
-								<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-4 sm:p-6">
-									<div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-										<div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl  flex items-center justify-center">
-											<School className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-										</div>
-										<h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-											Байршил ба сургууль
-										</h3>
-									</div>
-
-									<div className="space-y-3">
-										<div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-											<div className="flex items-start gap-2 sm:gap-3 mb-2">
-												<MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 mt-2 shrink-0" />
-												<div className="flex-1 min-w-0">
-													<Label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
-														Аймаг/Хот
-													</Label>
-													<Select
-														value={selectedAimag}
-														onValueChange={handleAimagChange}
-														disabled={aimagLoading}
-													>
-														<SelectTrigger className="h-9 sm:h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-lg text-sm">
-															<SelectValue
-																placeholder={
-																	aimagLoading
-																		? "Уншиж байна..."
-																		: user.aimag_name || "Сонгох"
-																}
-															/>
-														</SelectTrigger>
-														<SelectContent>
-															{aimagList.map((a) => (
-																<SelectItem key={a.mid} value={a.mAcode}>
-																	{a.mName}
-																</SelectItem>
-															))}
-														</SelectContent>
-													</Select>
-												</div>
-											</div>
-										</div>
-
-										<div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-											<div className="flex items-start gap-2 sm:gap-3 mb-2">
-												<MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-500 mt-2 shrink-0" />
-												<div className="flex-1 min-w-0">
-													<Label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
-														Дүүрэг/Сум
-													</Label>
-													<Select
-														value={selectedDistrict}
-														onValueChange={handleDistrictChange}
-														disabled={!selectedAimag || districtLoading}
-													>
-														<SelectTrigger className="h-9 sm:h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-lg text-sm">
-															<SelectValue
-																placeholder={
-																	districtLoading
-																		? "Уншиж байна..."
-																		: !selectedAimag
-																			? "Аймаг сонгоно уу"
-																			: user.sym_name || "Сонгох"
-																}
-															/>
-														</SelectTrigger>
-														<SelectContent>
-															{districtList.map((d) => (
-																<SelectItem key={d.id} value={d.id.toString()}>
-																	{d.name}
-																</SelectItem>
-															))}
-														</SelectContent>
-													</Select>
-												</div>
-											</div>
-										</div>
-
-										<div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-											<div className="flex items-start gap-2 sm:gap-3 mb-2">
-												<School className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500 mt-2 shrink-0" />
-												<div className="flex-1 min-w-0">
-													<Label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
-														Сургууль
-													</Label>
-													<Select
-														value={selectedSchool}
-														onValueChange={handleSchoolChange}
-														disabled={!selectedDistrict || schoolLoading}
-													>
-														<SelectTrigger
-															className="h-auto min-h-36px sm:min-h-40px py-2 px-3 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-lg text-xs sm:text-sm [&>span]:whitespace-normal! [&>span]:text-left! [&>span]:wrap-break-words! [&>span]:leading-tight! [&>span]:text-xs! [&>span]:sm:text-sm!"
-															title={selectedSchool || ""}
+									{/* Location & School */}
+									<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-6">
+										<div className="space-y-4">
+											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+												<div className="flex items-center gap-3 flex-1">
+													<MapPin className="w-5 h-5 text-emerald-500" />
+													<div className="flex-1">
+														<p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+															Аймаг/Хот
+														</p>
+														<Select
+															value={selectedAimag}
+															onValueChange={handleAimagChange}
+															disabled={aimagLoading}
 														>
-															<SelectValue
-																placeholder={
-																	schoolLoading
-																		? "Уншиж байна..."
-																		: !selectedDistrict
-																			? "Дүүрэг сонгоно уу"
-																			: user.sch_name || "Сонгох"
-																}
-															/>
-														</SelectTrigger>
-														<SelectContent className="max-w-[calc(100vw-2rem)]">
-															{schoolList.map((s, i) => (
-																<SelectItem
-																	key={`${s.dbname}-${i}`}
-																	value={s.sName}
-																	className="whitespace-normal py-2 text-xs sm:text-sm leading-tight"
-																>
-																	{s.sName}
-																</SelectItem>
-															))}
-														</SelectContent>
-													</Select>
-												</div>
-											</div>
-										</div>
-
-										<div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-											<div className="flex items-start gap-2 sm:gap-3 mb-2">
-												<School className="w-4 h-4 sm:w-5 sm:h-5 text-violet-500 mt-2 shrink-0" />
-												<div className="flex-1 min-w-0">
-													<Label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
-														Анги
-													</Label>
-													<Select
-														value={selectedClass}
-														onValueChange={setSelectedClass}
-														disabled={!selectedSchool || classLoading}
-													>
-														<SelectTrigger className="h-9 sm:h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-lg text-sm">
-															<SelectValue
-																placeholder={
-																	classLoading
-																		? "Уншиж байна..."
-																		: !selectedSchool
-																			? "Сургууль сонгоно уу"
-																			: user.studentgroupname || "Сонгох"
-																}
-															/>
-														</SelectTrigger>
-														<SelectContent>
-															{classList
-																.filter((c) => c.class_name.trim() !== "")
-																.map((c) => (
-																	<SelectItem
-																		key={c.studentgroupid}
-																		value={c.studentgroupid}
-																	>
-																		{c.class_name}
+															<SelectTrigger className="h-9 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus:ring-0 focus-visible:ring-0">
+																<SelectValue
+																	placeholder={
+																		aimagLoading
+																			? "Уншиж байна..."
+																			: user.aimag_name || "Сонгох"
+																	}
+																/>
+															</SelectTrigger>
+															<SelectContent>
+																{aimagList.map((a) => (
+																	<SelectItem key={a.mid} value={a.mAcode}>
+																		{a.mName}
 																	</SelectItem>
 																))}
-														</SelectContent>
-													</Select>
+															</SelectContent>
+														</Select>
+													</div>
+												</div>
+											</div>
+
+											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+												<div className="flex items-center gap-3 flex-1">
+													<MapPin className="w-5 h-5 text-cyan-500" />
+													<div className="flex-1">
+														<p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+															Дүүрэг/Сум
+														</p>
+														<Select
+															value={selectedDistrict}
+															onValueChange={handleDistrictChange}
+															disabled={!selectedAimag || districtLoading}
+														>
+															<SelectTrigger className="h-9 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus:ring-0 focus-visible:ring-0">
+																<SelectValue
+																	placeholder={
+																		districtLoading
+																			? "Уншиж байна..."
+																			: !selectedAimag
+																				? "Аймаг сонгоно уу"
+																				: user.sym_name || "Сонгох"
+																	}
+																/>
+															</SelectTrigger>
+															<SelectContent>
+																{districtList.map((d) => (
+																	<SelectItem
+																		key={d.id}
+																		value={d.id.toString()}
+																	>
+																		{d.name}
+																	</SelectItem>
+																))}
+															</SelectContent>
+														</Select>
+													</div>
+												</div>
+											</div>
+
+											<div className="flex items-start justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+												<div className="flex items-start gap-3 flex-1 min-w-0">
+													<School className="w-5 h-5 text-indigo-500 mt-1 shrink-0" />
+													<div className="flex-1 min-w-0 w-full">
+														<p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+															Сургууль
+														</p>
+														<div className="relative">
+															<Select
+																value={selectedSchool}
+																onValueChange={handleSchoolChange}
+																disabled={!selectedDistrict || schoolLoading}
+															>
+																<SelectTrigger
+																	className="w-full h-auto min-h-[40px] py-2 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus:ring-0 focus-visible:ring-0"
+																	style={{ whiteSpace: "normal" }}
+																>
+																	<div className="text-left w-full pr-4 whitespace-normal break-words leading-tight">
+																		{selectedSchool || (
+																			<span className="text-slate-500">
+																				{schoolLoading
+																					? "Уншиж байна..."
+																					: !selectedDistrict
+																						? "Дүүрэг сонгоно уу"
+																						: user.sch_name || "Сонгох"}
+																			</span>
+																		)}
+																	</div>
+																</SelectTrigger>
+																<SelectContent className="max-w-[90vw] sm:max-w-md">
+																	{schoolList.map((s, i) => (
+																		<SelectItem
+																			key={`${s.dbname}-${i}`}
+																			value={s.sName}
+																			className="whitespace-normal py-3 text-sm leading-tight min-h-[40px]"
+																		>
+																			<div className="whitespace-normal break-words">
+																				{s.sName}
+																			</div>
+																		</SelectItem>
+																	))}
+																</SelectContent>
+															</Select>
+														</div>
+													</div>
+												</div>
+											</div>
+
+											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+												<div className="flex items-center gap-3 flex-1">
+													<School className="w-5 h-5 text-violet-500" />
+													<div className="flex-1">
+														<p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+															Анги
+														</p>
+														<Select
+															value={selectedClass}
+															onValueChange={setSelectedClass}
+															disabled={!selectedSchool || classLoading}
+														>
+															<SelectTrigger className="h-9 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus:ring-0 focus-visible:ring-0">
+																<SelectValue
+																	placeholder={
+																		classLoading
+																			? "Уншиж байна..."
+																			: !selectedSchool
+																				? "Сургууль сонгоно уу"
+																				: user.studentgroupname || "Сонгох"
+																	}
+																/>
+															</SelectTrigger>
+															<SelectContent>
+																{classList
+																	.filter((c) => c.class_name.trim() !== "")
+																	.map((c) => (
+																		<SelectItem
+																			key={c.studentgroupid}
+																			value={c.studentgroupid}
+																		>
+																			{c.class_name}
+																		</SelectItem>
+																	))}
+															</SelectContent>
+														</Select>
+													</div>
 												</div>
 											</div>
 										</div>
@@ -1025,14 +1016,14 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 										)}
 
 										{user.sch_name && (
-											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-												<div className="flex items-center gap-3">
-													<School className="w-5 h-5 text-indigo-500" />
-													<div>
+											<div className="flex items-start justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+												<div className="flex items-start gap-3">
+													<School className="w-5 h-5 text-indigo-500 mt-0.5 shrink-0" />
+													<div className="flex-1 min-w-0">
 														<p className="text-xs text-slate-500 dark:text-slate-400">
 															Сургууль
 														</p>
-														<p className="text-sm font-semibold text-slate-900 dark:text-white">
+														<p className="text-sm font-semibold text-slate-900 dark:text-white break-words">
 															{user.sch_name}
 														</p>
 													</div>

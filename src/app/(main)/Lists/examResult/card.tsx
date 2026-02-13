@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import {
 	ArrowRight,
-	Award,
 	Calendar,
 	Clock,
 	Eye,
@@ -213,7 +212,7 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 					{finished ? (
 						<div className="absolute bottom-1.5 left-1.5 right-1.5 sm:bottom-2 sm:left-2 sm:right-2 flex flex-col gap-1 sm:gap-1.5">
 							{/* Top Row - Rank & Score */}
-							<div className="flex items-center gap-1 sm:gap-1.5">
+							{/* <div className="flex items-center gap-1 sm:gap-1.5">
 								<Button
 									onClick={() => onViewResults?.(exam.exam_id, exam.test_id)}
 									size="sm"
@@ -238,7 +237,7 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 										Ранк
 									</Button>
 								)}
-							</div>
+							</div> */}
 							{/* Bottom Row - Details */}
 
 							<Button
