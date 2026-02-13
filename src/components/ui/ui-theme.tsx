@@ -6,8 +6,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
-interface ThemeSwitchProps extends React.ComponentPropsWithoutRef<"button"> {
+interface ThemeSwitchProps extends React.ComponentPropsWithoutRef<"div"> {
 	duration?: number;
 	showLabels?: boolean;
 }
@@ -20,7 +21,7 @@ export const ThemeSwitch = ({
 }: ThemeSwitchProps) => {
 	const { setTheme, resolvedTheme } = useTheme();
 	const [mounted, setMounted] = useState(false);
-	const buttonRef = useRef<HTMLButtonElement>(null);
+	const containerRef = useRef<HTMLDivElement>(null);
 
 	const isDark = resolvedTheme === "dark";
 
@@ -29,7 +30,7 @@ export const ThemeSwitch = ({
 	}, []);
 
 	const toggleTheme = useCallback(async () => {
-		if (!buttonRef.current || !mounted) return;
+		if (!containerRef.current || !mounted) return;
 
 		const newTheme = isDark ? "light" : "dark";
 
@@ -40,7 +41,7 @@ export const ThemeSwitch = ({
 				});
 			}).ready;
 
-			const { top, left, width, height } = buttonRef.current.getBoundingClientRect();
+			const { top, left, width, height } = containerRef.current!.getBoundingClientRect();
 			const x = left + width / 2;
 			const y = top + height / 2;
 			const maxRadius = Math.hypot(
@@ -66,65 +67,38 @@ export const ThemeSwitch = ({
 		}
 	}, [isDark, mounted, setTheme, duration]);
 
+	if (!mounted) {
+		return null;
+	}
+
 	return (
-		<button
-			ref={buttonRef}
-			type="button"
-			role="switch"
-			aria-checked={isDark}
-			aria-label={isDark ? "Dark mode идэвхтэй" : "Light mode идэвхтэй"}
-			onClick={toggleTheme}
-			className={cn(
-				"relative inline-flex items-center gap-2 shrink-0",
-				className,
-			)}
+		<div
+			ref={containerRef}
+			className={cn("flex items-center justify-between w-full", className)}
 			{...props}
 		>
-			{showLabels && (
-				<>
-					<span className="inline-flex items-center gap-1 text-xs shrink-0 whitespace-nowrap min-w-3.5rem text-foreground">
-						{!isDark ? (
-							<>
-								<Sun className="w-3.5 h-3.5 shrink-0 text-amber-500" />
-								<span className="font-semibold">Light</span>
-							</>
-						) : (
-							<>
-								<Moon className="w-3.5 h-3.5 shrink-0 text-primary" />
-								<span className="font-semibold">Dark</span>
-							</>
-						)}
-					</span>
-					<div
-						className={cn(
-							"relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0",
-							isDark ? "bg-primary" : "bg-muted",
-						)}
-					>
-						<span
-							className={cn(
-								"absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-200",
-								isDark ? "left-6" : "left-1",
-							)}
-						/>
-					</div>
-				</>
-			)}
-			{!showLabels && (
-				<div
-					className={cn(
-						"relative w-11 h-6 rounded-full transition-colors duration-200",
-						isDark ? "bg-primary" : "bg-muted",
-					)}
-				>
-					<span
-						className={cn(
-							"absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-200",
-							isDark ? "left-6" : "left-1",
-						)}
-					/>
-				</div>
-			)}
-		</button>
+			<button
+				type="button"
+				onClick={toggleTheme}
+				className="inline-flex items-center gap-2 text-sm cursor-pointer text-foreground hover:opacity-80 transition-opacity"
+			>
+				{!isDark ? (
+					<>
+						<Sun className="w-5 h-5 shrink-0 text-amber-500" />
+						{showLabels && <span className="font-medium">Light</span>}
+					</>
+				) : (
+					<>
+						<Moon className="w-5 h-5 shrink-0 text-primary" />
+						{showLabels && <span className="font-medium">Dark</span>}
+					</>
+				)}
+			</button>
+			<Switch
+				checked={isDark}
+				onCheckedChange={toggleTheme}
+				aria-label={isDark ? "Dark mode идэвхтэй" : "Light mode идэвхтэй"}
+			/>
+		</div>
 	);
 };

@@ -75,6 +75,7 @@ export interface PastExam {
 	test_resid: number; // Тестийн үр дүнгийн ID
 	filename: string; // Зургийн URL
 	ispay: number;
+	isopensoril: number;
 }
 
 // Цахим сургалтын контент карт

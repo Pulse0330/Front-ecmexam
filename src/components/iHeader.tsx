@@ -12,9 +12,7 @@ import {
 	LogOut,
 	type LucideIcon,
 	Menu,
-	Moon,
 	School,
-	Sun,
 	TrendingUp,
 	User,
 	UserCircle,
@@ -43,6 +41,12 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { ThemeSwitch } from "@/components/ui/ui-theme";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -511,7 +515,7 @@ export const Navbar01: React.FC = () => {
 	const { user, firstname, imgUrl, clearAuth } = useAuthStore();
 
 	const { resolvedTheme } = useTheme();
-	const isDark = resolvedTheme === "dark";
+	const _isDark = resolvedTheme === "dark";
 
 	const userInfo = React.useMemo(
 		() => ({
@@ -658,17 +662,29 @@ export const Navbar01: React.FC = () => {
 										size="md"
 										showOnlineStatus
 									/>
-									<div className="flex-1 min-w-0">
-										<p className="text-sm font-semibold truncate">
-											{userInfo.userName}
-										</p>
-										{userInfo.schoolName && (
-											<p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
-												<School className="w-3 h-3 shrink-0" />
-												{userInfo.schoolName}
+									<TooltipProvider>
+										<div className="flex-1 min-w-0">
+											<p className="text-sm font-semibold truncate cursor-help">
+												{userInfo.userName}
 											</p>
-										)}
-									</div>
+
+											{userInfo.schoolName && (
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5 cursor-help">
+															<School className="w-3 h-3 shrink-0" />
+															<span className="truncate">
+																{userInfo.schoolName}
+															</span>
+														</p>
+													</TooltipTrigger>
+													<TooltipContent>
+														<p>{userInfo.schoolName}</p>
+													</TooltipContent>
+												</Tooltip>
+											)}
+										</div>
+									</TooltipProvider>
 									<ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
 								</div>
 								<div className="lg:hidden px-4 py-3 border-b">
@@ -684,16 +700,6 @@ export const Navbar01: React.FC = () => {
 									</DropdownMenuItem>
 
 									<div className="flex items-center justify-between gap-3 px-3 py-3 rounded-lg hover:bg-accent/50 focus-within:bg-accent/50 transition-colors">
-										<div className="flex items-center gap-3 shrink-0">
-											{isDark ? (
-												<Moon className="w-4 h-4 shrink-0 text-muted-foreground" />
-											) : (
-												<Sun className="w-4 h-4 shrink-0 text-muted-foreground" />
-											)}
-											<span className="text-sm font-medium">
-												{isDark ? "" : ""}
-											</span>
-										</div>
 										<ThemeSwitch className="p-0 min-w-0 hover:opacity-90 transition-opacity" />
 									</div>
 									<DropdownMenuSeparator className="my-1" />

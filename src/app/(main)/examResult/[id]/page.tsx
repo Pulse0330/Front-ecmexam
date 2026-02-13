@@ -425,19 +425,19 @@ function ExamResultDetailPage() {
 	const dunInfo = dunData?.RetData?.[0];
 	return (
 		<div className="min-h-screen bg-linear-to-br from-background via-background to-muted/20 py-8 px-4">
+			<Button onClick={() => router.back()} variant="outline" className="gap-2">
+				<ArrowLeft className="w-5 h-5" />
+				Буцах
+			</Button>
 			<div className="max-w-6xl mx-auto space-y-6">
-				<button
-					type="button"
-					onClick={() => router.back()}
-					className="group flex items-center gap-3 pl-2 pr-5 py-6 duration-300 cursor-pointer bg-transparent border-none"
-				>
-					<div className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 transition-colors duration-300">
-						<ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:-translate-x-0.5 transition-all duration-300" />
-					</div>
-				</button>
 				{examSummary && (
 					<div className="bg-linear-to-br from-card to-card/50 border border-border/50 rounded-3xl p-8 shadow-xl backdrop-blur-sm">
 						{/* Толгой хэсэг */}
+						<div className="flex justify-end border-border ">
+							{dunInfo && (
+								<p className="text-right text-xl font-bold ">{dunInfo.title}</p>
+							)}
+						</div>
 
 						<div className="mb-6 pb-6 border-b border-border/50">
 							<div className="flex items-center gap-3">
@@ -491,13 +491,6 @@ function ExamResultDetailPage() {
 								<p className="text-4xl font-bold text-primary">
 									{examSummary.test_ttl}
 								</p>
-								<div className="flex justify-start mt-4">
-									{dunInfo && (
-										<p className="text-right text-xl font-bold wrap-break-word ">
-											{dunInfo.title}
-										</p>
-									)}
-								</div>
 							</div>
 
 							{/* Оноо харьцуулалт */}
@@ -1893,7 +1886,7 @@ function ExamResultDetailPage() {
 																			</p>
 																			<div className="space-y-3">
 																				{/* ЗАСВАР: 
-																				дээр loop хийх (А багана) */}
+                                                                                дээр loop хийх (А багана) */}
 																				{answersOnly.map((answerItem) => {
 																					// answerItem.ref_child_id нь зөв question-ий refid
 																					const correctQuestion =

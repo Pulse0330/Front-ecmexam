@@ -3,20 +3,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	AlertCircle,
+	Camera,
 	Check,
-	Lock,
+	CheckCircle2,
+	Edit2,
+	Mail,
 	MapPin,
-	Save,
-	Upload,
-	User,
+	Phone,
+	School,
+	User2,
 	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import UseAnimations from "react-useanimations";
-import loading2 from "react-useanimations/lib/loading2";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -186,17 +186,24 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 	const [selectedClass, setSelectedClass] = useState<string>("");
 	const [isUploadingImage, setIsUploadingImage] = useState(false);
 	const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
+	const [showToast, setShowToast] = useState(false);
+	const [isEditing, setIsEditing] = useState(false);
 
 	const [editForm, setEditForm] = useState({
 		lastname: user.lastname || "",
 		firstname: user.firstname || "",
 		email: user.email || "",
 		Phone: user.Phone || "",
-		newPassword: user.password || "",
-		confirmPassword: user.password || "",
 	});
 
-	const [passwordError, setPasswordError] = useState("");
+	useEffect(() => {
+		setEditForm({
+			lastname: user.lastname || "",
+			firstname: user.firstname || "",
+			email: user.email || "",
+			Phone: user.Phone || "",
+		});
+	}, [user.lastname, user.firstname, user.email, user.Phone]);
 
 	const { data: aimagData, isLoading: aimagLoading } = useQuery<AimagResponse>({
 		queryKey: ["aimagList"],
@@ -334,56 +341,56 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["userProfilePage", userId] });
+			setShowToast(true);
+			setTimeout(() => setShowToast(false), 3000);
 			setSelectedImage(null);
 			setImagePreview("");
 			setUploadedImageUrl("");
-			setEditForm({
-				...editForm,
-				newPassword: "",
-				confirmPassword: "",
-			});
-			setPasswordError("");
+			setIsEditing(false);
 		},
 	});
 
-	const compressImage = (file: File): Promise<string> => {
+	const convertToWebP = async (
+		file: File,
+		quality: number = 0.8,
+		maxWidth: number = 1920,
+		maxHeight: number = 1080,
+	): Promise<Blob> => {
 		return new Promise((resolve, reject) => {
-			const reader = new FileReader();
-			reader.onload = (e) => {
-				const img = new Image();
-				img.onload = () => {
-					const canvas = document.createElement("canvas");
-					const ctx = canvas.getContext("2d");
+			const img = new Image();
+			const canvas = document.createElement("canvas");
+			const ctx = canvas.getContext("2d");
 
-					const MAX_WIDTH = 400;
-					const MAX_HEIGHT = 400;
-					let width = img.width;
-					let height = img.height;
+			img.onload = () => {
+				let width = img.width;
+				let height = img.height;
 
-					if (width > height) {
-						if (width > MAX_WIDTH) {
-							height *= MAX_WIDTH / width;
-							width = MAX_WIDTH;
+				if (width > maxWidth || height > maxHeight) {
+					const ratio = Math.min(maxWidth / width, maxHeight / height);
+					width = width * ratio;
+					height = height * ratio;
+				}
+
+				canvas.width = width;
+				canvas.height = height;
+
+				ctx?.drawImage(img, 0, 0, width, height);
+
+				canvas.toBlob(
+					(blob) => {
+						if (blob) {
+							resolve(blob);
+						} else {
+							reject(new Error("WebP хөрвүүлэлт амжилтгүй"));
 						}
-					} else {
-						if (height > MAX_HEIGHT) {
-							width *= MAX_HEIGHT / height;
-							height = MAX_HEIGHT;
-						}
-					}
-
-					canvas.width = width;
-					canvas.height = height;
-					ctx?.drawImage(img, 0, 0, width, height);
-
-					const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.7);
-					resolve(compressedDataUrl);
-				};
-				img.onerror = reject;
-				img.src = e.target?.result as string;
+					},
+					"image/webp",
+					quality,
+				);
 			};
-			reader.onerror = reject;
-			reader.readAsDataURL(file);
+
+			img.onerror = () => reject(new Error("Зураг уншихад алдаа гарлаа"));
+			img.src = URL.createObjectURL(file);
 		});
 	};
 
@@ -403,17 +410,17 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 		try {
 			setIsUploadingImage(true);
 
-			const compressedImage = await compressImage(file);
-			setImagePreview(compressedImage);
+			const webpBlob = await convertToWebP(file, 0.85);
+			const previewUrl = URL.createObjectURL(webpBlob);
+			setImagePreview(previewUrl);
 
 			const formData = new FormData();
-			const blob = await fetch(compressedImage).then((r) => r.blob());
-			formData.append("file", blob, file.name);
+			const webpFileName = file.name.replace(/\.[^/.]+$/, ".webp");
+			formData.append("file", webpBlob, webpFileName);
 
 			const result = await uploadImage(formData);
 
 			let imageUrl = "";
-
 			if (Array.isArray(result) && result.length > 0) {
 				imageUrl = result[0]?.url || result[0]?.path || result[0];
 			} else if (result?.url) {
@@ -445,18 +452,6 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-
-		if (editForm.newPassword || editForm.confirmPassword) {
-			if (editForm.newPassword !== editForm.confirmPassword) {
-				setPasswordError("Нууц үг таарахгүй байна");
-				return;
-			}
-			if (editForm.newPassword.length < 3) {
-				setPasswordError("Нууц үг хамгийн багадаа 3 тэмдэгт байх ёстой");
-				return;
-			}
-		}
-		setPasswordError("");
 
 		let finalImageUrl = "";
 		if (uploadedImageUrl) {
@@ -494,7 +489,7 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 				"",
 			user_id: userId,
 			img_url: String(finalImageUrl),
-			password: editForm.newPassword || "",
+			password: "",
 		};
 
 		if (typeof profileData.img_url !== "string") {
@@ -534,350 +529,549 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 	};
 
 	return (
-		<div className="min-h-screen bg-backgroundp-3 md:p-4">
-			<div className="max-w-3xl mx-auto space-y-3">
-				<div>
-					<h1 className="text-xl font-bold">Профайл</h1>
-					<p className="text-xs text-muted-foreground">Мэдээллээ засварлах</p>
+		<div className="min-h-screen  p-4 md:p-6 lg:p-8">
+			{/* Toast Notification */}
+			{showToast && (
+				<div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-5 fade-in duration-500">
+					<div className="bg-linear-to-r from-emerald-500 to-green-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 min-w-[280px]">
+						<CheckCircle2 className="w-5 h-5" strokeWidth={2.5} />
+						<div>
+							<p className="font-bold text-sm">Амжилттай!</p>
+							<p className="text-xs opacity-90">Мэдээлэл шинэчлэгдлээ</p>
+						</div>
+						<Button
+							onClick={() => setShowToast(false)}
+							variant="ghost"
+							size="icon"
+							className="w-7 h-7 hover:bg-white/20"
+						>
+							<X className="w-4 h-4" />
+						</Button>
+					</div>
 				</div>
+			)}
 
-				<Card className="overflow-hidden bg-gray-50">
-					<CardContent className="p-6">
-						<form onSubmit={handleSubmit} className="space-y-6">
-							<div className="flex flex-col items-center gap-1 border-b pb-2">
-								{/* Avatar */}
-								<div className="relative">
-									<Avatar className="w-24 h-24 border-2">
-										<AvatarImage
-											src={imagePreview || user.img_url || undefined}
-										/>
-										<AvatarFallback className="text-xl bg-muted">
-											{getInitials(user.username)}
-										</AvatarFallback>
-									</Avatar>
+			<div className="max-w-6xl mx-auto">
+				<form onSubmit={handleSubmit}>
+					<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+						{/* Left Column - Profile Card */}
+						<div className="lg:col-span-1">
+							<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-8 relative overflow-hidden">
+								{/* Gradient Background Accent */}
+								<div className="absolute top-0 left-0 right-0 h-32" />
 
-									{selectedImage && (
-										<button
-											type="button"
-											onClick={() => {
-												setSelectedImage(null);
-												setImagePreview(user.img_url || "");
-												setUploadedImageUrl("");
-											}}
-											className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
-										>
-											<X className="w-3 h-3" />
-										</button>
-									)}
-								</div>
+								<div className="relative space-y-6">
+									{/* Avatar */}
+									<div className="flex flex-col items-center">
+										<div className="relative group">
+											<Avatar className="w-32 h-32 border-4 border-white dark:border-slate-800 shadow-xl">
+												<AvatarImage
+													src={imagePreview || user.img_url || undefined}
+													className="object-cover"
+												/>
+												<AvatarFallback className="text-2xl font-bold">
+													{getInitials(user.username)}
+												</AvatarFallback>
+											</Avatar>
 
-								<div className="flex flex-col items-center space-y-1">
-									<h2 className="text-lg font-semibold">{user.username}</h2>
-									<p className="text-sm text-muted-foreground">{user.email}</p>
+											{isEditing && (
+												<>
+													<label
+														htmlFor="image-upload"
+														className="absolute bottom-1 right-1 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-all shadow-lg border-3 border-white dark:border-slate-800 bg-blue-500"
+													>
+														<Camera className="w-5 h-5 text-white" />
+													</label>
 
-									<Label htmlFor="image-upload" className="cursor-pointer">
-										<div className="inline-flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded-lg text-sm font-medium">
-											<Upload className="w-4 h-4" />
-											<span>
-												{isUploadingImage ? "Уншиж байна..." : "Зураг солих"}
-											</span>
+													{selectedImage && (
+														<button
+															type="button"
+															onClick={() => {
+																setSelectedImage(null);
+																setImagePreview(user.img_url || "");
+																setUploadedImageUrl("");
+															}}
+															className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center hover:scale-110 transition-all shadow-lg"
+														>
+															<X className="w-4 h-4" />
+														</button>
+													)}
+												</>
+											)}
 										</div>
-									</Label>
 
-									<Input
-										id="image-upload"
-										type="file"
-										accept="image/*"
-										className="hidden"
-										onChange={handleImageChange}
-										disabled={isUploadingImage}
-									/>
+										{isEditing && (
+											<>
+												<Input
+													id="image-upload"
+													type="file"
+													accept="image/*"
+													className="hidden"
+													onChange={handleImageChange}
+													disabled={isUploadingImage}
+												/>
 
-									{selectedImage && (
-										<p className="text-xs text-green-600 mt-1">
-											✓ {selectedImage.name}
+												{isUploadingImage && (
+													<p className="text-xs mt-2 animate-pulse">
+														Уншиж байна...
+													</p>
+												)}
+											</>
+										)}
+									</div>
+
+									{/* Profile Info */}
+									<div className="text-center border-t border-slate-200 dark:border-slate-700 pt-6">
+										<h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
+											{user.username}
+										</h2>
+										<p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+											{user.email}
 										</p>
-									)}
-									{uploadedImageUrl && (
-										<p className="text-xs text-blue-600 mt-1">
-											✓ Амжилттай хадгаллаа
-										</p>
+									</div>
+
+									{/* Info Items */}
+									<div className="space-y-3">
+										<div className="flex items-start gap-3 text-sm">
+											<div className="w-5 h-5 mt-0.5 text-slate-400">
+												<User2 className="w-full h-full" />
+											</div>
+											<div className="flex-1">
+												<p className="text-slate-500 dark:text-slate-400 text-xs">
+													Нэр
+												</p>
+												<p className="text-slate-900 dark:text-white font-medium">
+													{user.lastname} {user.firstname}
+												</p>
+											</div>
+										</div>
+
+										<div className="flex items-start gap-3 text-sm">
+											<div className="w-5 h-5 mt-0.5 text-slate-400">
+												<Mail className="w-full h-full" />
+											</div>
+											<div className="flex-1">
+												<p className="text-slate-500 dark:text-slate-400 text-xs">
+													Имэйл
+												</p>
+												<p className="text-slate-900 dark:text-white font-medium break-all">
+													{user.email}
+												</p>
+											</div>
+										</div>
+
+										{user.Phone && (
+											<div className="flex items-start gap-3 text-sm">
+												<div className="w-5 h-5 mt-0.5 text-slate-400">
+													<Phone className="w-full h-full" />
+												</div>
+												<div className="flex-1">
+													<p className="text-slate-500 dark:text-slate-400 text-xs">
+														Утас
+													</p>
+													<p className="text-slate-900 dark:text-white font-medium">
+														{user.Phone}
+													</p>
+												</div>
+											</div>
+										)}
+									</div>
+
+									{/* Edit Button */}
+									<Button
+										type="button"
+										onClick={() => setIsEditing(!isEditing)}
+										className="w-full rounded-xl h-11"
+									>
+										<Edit2 className="w-4 h-4 mr-2" />
+										{isEditing ? "Буцах" : "Засах"}
+									</Button>
+
+									{/* Save Button */}
+									{isEditing && (
+										<Button
+											type="submit"
+											disabled={updateMutation.isPending}
+											className="w-full bg-linear-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-xl h-11"
+										>
+											{updateMutation.isPending ? (
+												<>
+													<div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+													Хадгалж байна...
+												</>
+											) : (
+												<>
+													<Check className="w-4 h-4 mr-2" />
+													Хадгалах
+												</>
+											)}
+										</Button>
 									)}
 								</div>
 							</div>
+						</div>
 
-							<Card className="p-4 ">
-								<CardContent className="space-y-3">
-									<h3 className="text-sm font-semibold flex items-center gap-2">
-										<User className="w-4 h-4" /> Хувийн мэдээлэл
-									</h3>
-									<div className="grid gap-3 md:grid-cols-2">
-										<div className="space-y-1">
-											<Label className="text-xs">Овог</Label>
-											<Input
-												value={editForm.lastname}
-												onChange={(e) =>
-													setEditForm({ ...editForm, lastname: e.target.value })
-												}
-												required
-												className="h-9 text-sm"
-											/>
+						{/* Right Column - Combined View/Edit Forms */}
+						<div className="lg:col-span-2 space-y-6">
+							{/* Personal Info - Only show when editing */}
+							{isEditing && (
+								<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-4 sm:p-6">
+									<div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+										<div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center ">
+											<User2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
 										</div>
-										<div className="space-y-1">
-											<Label className="text-xs">Нэр</Label>
-											<Input
-												value={editForm.firstname}
-												onChange={(e) =>
-													setEditForm({
-														...editForm,
-														firstname: e.target.value,
-													})
-												}
-												required
-												className="h-9 text-sm"
-											/>
-										</div>
-										<div className="space-y-1">
-											<Label className="text-xs">Имэйл</Label>
-											<Input
-												type="email"
-												value={editForm.email}
-												onChange={(e) =>
-													setEditForm({ ...editForm, email: e.target.value })
-												}
-												required
-												className="h-9 text-sm"
-											/>
-										</div>
-										<div className="space-y-1">
-											<Label className="text-xs">Утас</Label>
-											<Input
-												type="tel"
-												value={editForm.Phone}
-												onChange={(e) =>
-													setEditForm({ ...editForm, Phone: e.target.value })
-												}
-												className="h-9 text-sm"
-											/>
-										</div>
+										<h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+											Хувийн мэдээлэл
+										</h3>
 									</div>
-								</CardContent>
-							</Card>
 
-							<Card className="p-4  ">
-								<CardContent className="space-y-3">
-									<h3 className="text-sm font-semibold flex items-center gap-2">
-										<Lock className="w-4 h-4" /> Нууц үг
-									</h3>
-									<div className="grid gap-3 md:grid-cols-2">
-										{[
-											{ label: "Шинэ нууц үг", key: "newPassword" },
-											{ label: "Баталгаажуулах", key: "confirmPassword" },
-										].map(({ label, key }) => (
-											<div key={key} className="space-y-1">
-												<Label className="text-xs">{label}</Label>
-												<Input
-													type="password"
-													value={editForm[key as keyof typeof editForm]}
-													onChange={(e) =>
-														setEditForm({ ...editForm, [key]: e.target.value })
-													}
-													placeholder="••••••••"
-													className="h-8 text-sm px-2"
-													autoComplete="new-password"
-												/>
+									<div className="space-y-3">
+										<div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-start gap-2 sm:gap-3 mb-2">
+												<User2 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 mt-2 shrink-0" />
+												<div className="flex-1 min-w-0">
+													<Label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
+														Овог
+													</Label>
+													<Input
+														value={editForm.lastname}
+														onChange={(e) =>
+															setEditForm({
+																...editForm,
+																lastname: e.target.value,
+															})
+														}
+														required
+														className="h-9 sm:h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-blue-500 rounded-lg text-sm"
+														placeholder="Овог"
+													/>
+												</div>
 											</div>
-										))}
+										</div>
+
+										<div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-start gap-2 sm:gap-3 mb-2">
+												<User2 className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500 mt-2 shrink-0" />
+												<div className="flex-1 min-w-0">
+													<Label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
+														Нэр
+													</Label>
+													<Input
+														value={editForm.firstname}
+														onChange={(e) =>
+															setEditForm({
+																...editForm,
+																firstname: e.target.value,
+															})
+														}
+														required
+														className="h-9 sm:h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-blue-500 rounded-lg text-sm"
+														placeholder="Нэр"
+													/>
+												</div>
+											</div>
+										</div>
+
+										<div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-start gap-2 sm:gap-3 mb-2">
+												<Mail className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 mt-2 shrink-0" />
+												<div className="flex-1 min-w-0">
+													<Label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
+														Имэйл
+													</Label>
+													<Input
+														type="email"
+														value={editForm.email}
+														onChange={(e) =>
+															setEditForm({
+																...editForm,
+																email: e.target.value,
+															})
+														}
+														required
+														className="h-9 sm:h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-blue-500 rounded-lg text-sm"
+														placeholder="email@example.com"
+													/>
+												</div>
+											</div>
+										</div>
+
+										<div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-start gap-2 sm:gap-3 mb-2">
+												<Phone className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-500 mt-2 shrink-0" />
+												<div className="flex-1 min-w-0">
+													<Label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
+														Утас
+													</Label>
+													<Input
+														type="tel"
+														value={editForm.Phone}
+														onChange={(e) =>
+															setEditForm({
+																...editForm,
+																Phone: e.target.value,
+															})
+														}
+														className="h-9 sm:h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-blue-500 rounded-lg text-sm"
+														placeholder="Утасны дугаар"
+													/>
+												</div>
+											</div>
+										</div>
 									</div>
-									{passwordError && (
-										<div className="p-2 bg-destructive/10 border border-destructive/30 rounded flex items-start gap-2 text-xs text-destructive">
-											<AlertCircle className="w-4 h-4 mt-0.5" /> {passwordError}
+								</div>
+							)}
+
+							{/* Location & School - Edit mode */}
+							{isEditing && (
+								<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-4 sm:p-6">
+									<div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+										<div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl  flex items-center justify-center">
+											<School className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
 										</div>
-									)}
-								</CardContent>
-							</Card>
+										<h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+											Байршил ба сургууль
+										</h3>
+									</div>
 
-							<Card className="p-4 ">
-								<CardContent className="space-y-4">
-									<h3 className="text-sm font-semibold flex items-center gap-2">
-										<MapPin className="w-4 h-4" /> Байршил
-									</h3>
-
-									<div className="grid gap-4 sm:grid-cols-2">
-										{/* Аймаг */}
-										<div className="flex flex-col space-y-1">
-											<Label className="text-xs">Аймаг/Хот</Label>
-											<Select
-												value={selectedAimag}
-												onValueChange={handleAimagChange}
-												disabled={aimagLoading}
-											>
-												<SelectTrigger className="h-9 text-sm w-full">
-													<SelectValue
-														placeholder={
-															aimagLoading
-																? "Уншиж байна..."
-																: user.aimag_name || "Сонгох"
-														}
-													/>
-												</SelectTrigger>
-												<SelectContent className="max-h-[200px] w-full">
-													{aimagList.map((a) => (
-														<SelectItem key={a.mid} value={a.mAcode}>
-															{a.mName}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</div>
-
-										{/* Дүүрэг */}
-										<div className="flex flex-col space-y-1">
-											<Label className="text-xs">Дүүрэг/Сум</Label>
-											<Select
-												value={selectedDistrict}
-												onValueChange={handleDistrictChange}
-												disabled={!selectedAimag || districtLoading}
-											>
-												<SelectTrigger className="h-9 text-sm w-full">
-													<SelectValue
-														placeholder={
-															districtLoading
-																? "Уншиж байна..."
-																: !selectedAimag
-																	? "Аймаг сонгоно уу"
-																	: user.sym_name || "Сонгох"
-														}
-													/>
-												</SelectTrigger>
-												<SelectContent className="max-h-[200px] w-full">
-													{districtList.map((d) => (
-														<SelectItem key={d.id} value={d.id.toString()}>
-															{d.name}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
+									<div className="space-y-3">
+										<div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-start gap-2 sm:gap-3 mb-2">
+												<MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 mt-2 shrink-0" />
+												<div className="flex-1 min-w-0">
+													<Label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
+														Аймаг/Хот
+													</Label>
+													<Select
+														value={selectedAimag}
+														onValueChange={handleAimagChange}
+														disabled={aimagLoading}
+													>
+														<SelectTrigger className="h-9 sm:h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-lg text-sm">
+															<SelectValue
+																placeholder={
+																	aimagLoading
+																		? "Уншиж байна..."
+																		: user.aimag_name || "Сонгох"
+																}
+															/>
+														</SelectTrigger>
+														<SelectContent>
+															{aimagList.map((a) => (
+																<SelectItem key={a.mid} value={a.mAcode}>
+																	{a.mName}
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+												</div>
+											</div>
 										</div>
 
-										{/* Сургууль */}
-										<div className="flex flex-col space-y-1">
-											<Label className="text-xs">Сургууль</Label>
-											<Select
-												value={selectedSchool}
-												onValueChange={handleSchoolChange}
-												disabled={!selectedDistrict || schoolLoading}
-											>
-												<SelectTrigger className="h-9 text-sm w-full">
-													<SelectValue
-														placeholder={
-															schoolLoading
-																? "Уншиж байна..."
-																: !selectedDistrict
-																	? "Дүүрэг сонгоно уу"
-																	: user.sch_name || "Сонгох"
-														}
-													/>
-												</SelectTrigger>
-												<SelectContent className="max-h-[200px] w-full">
-													{schoolList.map((s, i) => (
-														<SelectItem
-															key={`${s.dbname}-${i}`}
-															value={s.sName}
+										<div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-start gap-2 sm:gap-3 mb-2">
+												<MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-500 mt-2 shrink-0" />
+												<div className="flex-1 min-w-0">
+													<Label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
+														Дүүрэг/Сум
+													</Label>
+													<Select
+														value={selectedDistrict}
+														onValueChange={handleDistrictChange}
+														disabled={!selectedAimag || districtLoading}
+													>
+														<SelectTrigger className="h-9 sm:h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-lg text-sm">
+															<SelectValue
+																placeholder={
+																	districtLoading
+																		? "Уншиж байна..."
+																		: !selectedAimag
+																			? "Аймаг сонгоно уу"
+																			: user.sym_name || "Сонгох"
+																}
+															/>
+														</SelectTrigger>
+														<SelectContent>
+															{districtList.map((d) => (
+																<SelectItem key={d.id} value={d.id.toString()}>
+																	{d.name}
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+												</div>
+											</div>
+										</div>
+
+										<div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-start gap-2 sm:gap-3 mb-2">
+												<School className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500 mt-2 shrink-0" />
+												<div className="flex-1 min-w-0">
+													<Label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
+														Сургууль
+													</Label>
+													<Select
+														value={selectedSchool}
+														onValueChange={handleSchoolChange}
+														disabled={!selectedDistrict || schoolLoading}
+													>
+														<SelectTrigger
+															className="h-auto min-h-36px sm:min-h-40px py-2 px-3 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-lg text-xs sm:text-sm [&>span]:whitespace-normal! [&>span]:text-left! [&>span]:wrap-break-words! [&>span]:leading-tight! [&>span]:text-xs! [&>span]:sm:text-sm!"
+															title={selectedSchool || ""}
 														>
-															{s.sName}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
+															<SelectValue
+																placeholder={
+																	schoolLoading
+																		? "Уншиж байна..."
+																		: !selectedDistrict
+																			? "Дүүрэг сонгоно уу"
+																			: user.sch_name || "Сонгох"
+																}
+															/>
+														</SelectTrigger>
+														<SelectContent className="max-w-[calc(100vw-2rem)]">
+															{schoolList.map((s, i) => (
+																<SelectItem
+																	key={`${s.dbname}-${i}`}
+																	value={s.sName}
+																	className="whitespace-normal py-2 text-xs sm:text-sm leading-tight"
+																>
+																	{s.sName}
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+												</div>
+											</div>
 										</div>
 
-										{/* Анги */}
-										<div className="flex flex-col space-y-1">
-											<Label className="text-xs">Анги</Label>
-											<Select
-												value={selectedClass}
-												onValueChange={setSelectedClass}
-												disabled={!selectedSchool || classLoading}
-											>
-												<SelectTrigger className="h-9 text-sm w-full">
-													<SelectValue
-														placeholder={
-															classLoading
-																? "Уншиж байна..."
-																: !selectedSchool
-																	? "Сургууль сонгоно уу"
-																	: user.studentgroupname || "Сонгох"
-														}
-													/>
-												</SelectTrigger>
-												<SelectContent className="max-h-[200px] w-full">
-													{classList
-														.filter((c) => c.class_name.trim() !== "")
-														.map((c) => (
-															<SelectItem
-																key={c.studentgroupid}
-																value={c.studentgroupid}
-															>
-																{c.class_name}
-															</SelectItem>
-														))}
-												</SelectContent>
-											</Select>
+										<div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-start gap-2 sm:gap-3 mb-2">
+												<School className="w-4 h-4 sm:w-5 sm:h-5 text-violet-500 mt-2 shrink-0" />
+												<div className="flex-1 min-w-0">
+													<Label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
+														Анги
+													</Label>
+													<Select
+														value={selectedClass}
+														onValueChange={setSelectedClass}
+														disabled={!selectedSchool || classLoading}
+													>
+														<SelectTrigger className="h-9 sm:h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-lg text-sm">
+															<SelectValue
+																placeholder={
+																	classLoading
+																		? "Уншиж байна..."
+																		: !selectedSchool
+																			? "Сургууль сонгоно уу"
+																			: user.studentgroupname || "Сонгох"
+																}
+															/>
+														</SelectTrigger>
+														<SelectContent>
+															{classList
+																.filter((c) => c.class_name.trim() !== "")
+																.map((c) => (
+																	<SelectItem
+																		key={c.studentgroupid}
+																		value={c.studentgroupid}
+																	>
+																		{c.class_name}
+																	</SelectItem>
+																))}
+														</SelectContent>
+													</Select>
+												</div>
+											</div>
 										</div>
 									</div>
-								</CardContent>
-							</Card>
+								</div>
+							)}
 
-							<Button
-								type="submit"
-								disabled={updateMutation.isPending}
-								className="h-9 px-3 text-sm flex items-center justify-center gap-2 ml-auto"
-							>
-								{updateMutation.isPending ? (
-									<span className="flex items-center gap-2">
-										<UseAnimations
-											animation={loading2}
-											size={16}
-											strokeColor="currentColor"
-											loop
-										/>
-										<span>Хадгалж байна...</span>
-									</span>
-								) : (
-									<span className="flex items-center gap-2">
-										<Save className="w-4 h-4" />
-										<span>Хадгалах</span>
-									</span>
-								)}
-							</Button>
-						</form>
-					</CardContent>
-				</Card>
+							{/* Info Display when not editing */}
+							{!isEditing && (
+								<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-6">
+									<div className="space-y-4">
+										{user.aimag_name && (
+											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+												<div className="flex items-center gap-3">
+													<MapPin className="w-5 h-5 text-emerald-500" />
+													<div>
+														<p className="text-xs text-slate-500 dark:text-slate-400">
+															Аймаг/Хот
+														</p>
+														<p className="text-sm font-semibold text-slate-900 dark:text-white">
+															{user.aimag_name}
+														</p>
+													</div>
+												</div>
+											</div>
+										)}
 
-				{updateMutation.isError && (
-					<div className="p-3 bg-destructive/10 border border-destructive/30 rounded flex items-start gap-2">
-						<AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-						<div>
-							<p className="text-sm font-semibold text-destructive">
-								Алдаа гарлаа
-							</p>
-							<p className="text-xs text-destructive/80">
-								{(updateMutation.error as Error).message}
-							</p>
+										{user.sym_name && (
+											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+												<div className="flex items-center gap-3">
+													<MapPin className="w-5 h-5 text-cyan-500" />
+													<div>
+														<p className="text-xs text-slate-500 dark:text-slate-400">
+															Дүүрэг/Сум
+														</p>
+														<p className="text-sm font-semibold text-slate-900 dark:text-white">
+															{user.sym_name}
+														</p>
+													</div>
+												</div>
+											</div>
+										)}
+
+										{user.sch_name && (
+											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+												<div className="flex items-center gap-3">
+													<School className="w-5 h-5 text-indigo-500" />
+													<div>
+														<p className="text-xs text-slate-500 dark:text-slate-400">
+															Сургууль
+														</p>
+														<p className="text-sm font-semibold text-slate-900 dark:text-white">
+															{user.sch_name}
+														</p>
+													</div>
+												</div>
+											</div>
+										)}
+
+										{user.studentgroupname && (
+											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+												<div className="flex items-center gap-3">
+													<School className="w-5 h-5 text-violet-500" />
+													<div>
+														<p className="text-xs text-slate-500 dark:text-slate-400">
+															Анги
+														</p>
+														<p className="text-sm font-semibold text-slate-900 dark:text-white">
+															{user.studentgroupname}
+														</p>
+													</div>
+												</div>
+											</div>
+										)}
+									</div>
+								</div>
+							)}
 						</div>
 					</div>
-				)}
+				</form>
 
-				{updateMutation.isSuccess && (
-					<div className="p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded flex items-start gap-2">
-						<Check className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+				{/* Error Message */}
+				{updateMutation.isError && (
+					<div className="mt-6 bg-red-50 dark:bg-red-950/20 border-2 border-red-200 dark:border-red-800 rounded-2xl p-4 flex items-start gap-3">
+						<AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
 						<div>
-							<p className="text-sm font-semibold text-green-900 dark:text-green-100">
-								Амжилттай
+							<p className="text-sm font-bold text-red-700 dark:text-red-400">
+								Алдаа гарлаа
 							</p>
-							<p className="text-xs text-green-700 dark:text-green-300">
-								Мэдээлэл шинэчлэгдлээ
+							<p className="text-xs text-red-600 dark:text-red-300 mt-1">
+								{(updateMutation.error as Error).message}
 							</p>
 						</div>
 					</div>

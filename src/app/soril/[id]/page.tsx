@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ExamHeader } from "@/app/exam/component/examInfo";
 import ExamMinimap from "@/app/exam/component/minimap";
 import FillInTheBlankQuestion from "@/app/exam/component/question/fillblank";
 import MathContent from "@/app/exam/component/question/MathContent";
@@ -24,6 +25,7 @@ import MultiSelectQuestion from "@/app/exam/component/question/multiselect";
 import NumberInputQuestion from "@/app/exam/component/question/numberinput";
 import DragAndDropQuestion from "@/app/exam/component/question/order";
 import SingleSelectQuestion from "@/app/exam/component/question/singleSelect";
+import StyledBackButton from "@/components/backButton";
 import FixedScrollButton from "@/components/FixedScrollButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -1019,18 +1021,19 @@ export default function SorilPage() {
 
 			{/* Desktop Layout */}
 			<div className="hidden lg:block">
+				{examData?.ExamInfo?.[0] && (
+					<ExamHeader examInfo={examData.ExamInfo[0]} />
+				)}
+				<div className=" fixed flex flex-1 top-6 pl-4">
+					<StyledBackButton
+						showConfirm={true}
+						confirmMessage="Та гарахдаа итгэлтэй байна уу?"
+					/>
+				</div>
+
 				<div className="grid grid-cols-6 gap-6 max-w-[1800px] mx-auto p-6 xl:p-8">
 					<aside className="col-span-1">
 						<div className="sticky top-6 space-y-4">
-							<button
-								type="button"
-								onClick={() => router.back()}
-								className="group flex items-center gap-3 pl-2 pr-5 py-6 duration-300 cursor-pointer bg-transparent border-none"
-							>
-								<div className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 transition-colors duration-300">
-									<ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:-translate-x-0.5 transition-all duration-300" />
-								</div>
-							</button>
 							<ExamMinimap
 								totalCount={totalCount}
 								answeredCount={answeredCount}
@@ -1111,6 +1114,9 @@ export default function SorilPage() {
 
 			{/* Mobile Layout */}
 			<div className="lg:hidden min-h-screen flex flex-col">
+				{examData?.ExamInfo?.[0] && (
+					<ExamHeader examInfo={examData.ExamInfo[0]} />
+				)}
 				<div className="sticky top-0 z-20 bg-white dark:bg-slate-900 shadow-sm border-b border-slate-200 dark:border-slate-700">
 					<button
 						type="button"

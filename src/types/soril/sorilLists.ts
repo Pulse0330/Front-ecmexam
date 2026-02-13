@@ -20,6 +20,7 @@ export interface SorillistsData {
 	plan_id: number; // Төлөвлөгөөний ID
 	plan_name: string; // Төлөвлөгөөний нэр
 	ispay: number;
+	isopensoril: number;
 }
 
 export interface ApiSorillistsResponse {

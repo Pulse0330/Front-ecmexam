@@ -4,16 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { AlertCircle } from "lucide-react";
 import { useMemo, useState } from "react";
+import LessonFilter from "@/components/LessonFilter";
 
-import { Button } from "@/components/ui/button";
-import {
-	Tooltip,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useServerTime } from "@/hooks/useServerTime";
 import { getexamfiltertlists, getTestFilter } from "@/lib/api";
-import { cn } from "@/lib/utils";
+
 import { useAuthStore } from "@/stores/useAuthStore";
 import type {
 	ApiExamlistsResponse,
@@ -136,8 +132,8 @@ export default function ExamListPage() {
 
 	return (
 		<TooltipProvider>
-			<div className="min-h-screen flex flex-col overflow-auto">
-				<div className="max-w-[1600px] mx-auto w-full flex flex-col px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+			<div className="h-full">
+				<div className="container mx-auto w-full flex flex-col px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
 					{/* Header */}
 					<header className="mb-4 sm:mb-6">
 						<h3 className="text-lg sm:text-2xl font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent">
@@ -145,74 +141,11 @@ export default function ExamListPage() {
 						</h3>
 					</header>
 
-					{/* Lesson Filter */}
-					<div className="mb-4">
-						{/* Desktop & Tablet */}
-						<div className="hidden sm:flex gap-2 flex-wrap">
-							{lessons.map((lesson) => (
-								<Tooltip key={lesson.lesson_id}>
-									<TooltipTrigger asChild>
-										<Button
-											type="button"
-											onClick={() => setSelectedLessonId(lesson.lesson_id)}
-											className={cn(
-												"px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap",
-												selectedLessonId === lesson.lesson_id
-													? ""
-													: "bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700",
-											)}
-											aria-label={`${lesson.lesson_name} хичээл сонгох`}
-											aria-pressed={selectedLessonId === lesson.lesson_id}
-										>
-											{lesson.lesson_name}
-										</Button>
-									</TooltipTrigger>
-								</Tooltip>
-							))}
-						</div>
-
-						{/* Mobile */}
-						<select
-							value={selectedLessonId}
-							onChange={(e) => setSelectedLessonId(Number(e.target.value))}
-							className="sm:hidden w-full px-4 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
-							aria-label="Хичээл сонгох"
-						>
-							{lessons.map((lesson) => (
-								<option key={lesson.lesson_id} value={lesson.lesson_id}>
-									{lesson.lesson_name}
-								</option>
-							))}
-						</select>
-					</div>
-
-					{/* Search Results Info */}
-					{(searchTerm || selectedLessonId !== 0) && (
-						<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
-							<AlertCircle size={16} />
-							<span>
-								<strong>{filteredData.length}</strong> шалгалт олдлоо
-								{searchTerm && (
-									<>
-										{" "}
-										&ldquo;<strong>{searchTerm}</strong>&rdquo; гэсэн хайлтаар
-									</>
-								)}
-								{selectedLessonId !== 0 && (
-									<>
-										{" "}
-										<strong>
-											{
-												lessons.find((l) => l.lesson_id === selectedLessonId)
-													?.lesson_name
-											}
-										</strong>{" "}
-										хичээлд
-									</>
-								)}
-							</span>
-						</div>
-					)}
+					<LessonFilter
+						lessons={lessons}
+						selectedLessonId={selectedLessonId}
+						onLessonSelect={setSelectedLessonId}
+					/>
 
 					{/* Exam Cards Grid */}
 					<div className="grid grid-cols-3 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-6 gap-3 sm:gap-4 pb-4 auto-rows-fr">

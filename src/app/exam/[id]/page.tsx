@@ -31,6 +31,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { deleteExamAnswer, getExamById, saveExamAnswer } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { AnswerValue } from "@/types/exam/exam";
+import { ExamHeader } from "../component/examInfo";
 import ExamTimer from "../component/Itime";
 import MathContent from "../component/question/MathContent";
 import QuestionImage from "../component/question/questionImage";
@@ -1034,9 +1035,11 @@ export default function ExamPage() {
 					{saveError}
 				</div>
 			)}
-
 			{/* Desktop Layout */}
 			<div className="hidden lg:block">
+				{examData?.ExamInfo?.[0] && (
+					<ExamHeader examInfo={examData.ExamInfo[0]} />
+				)}
 				<div className="grid grid-cols-6 gap-6 max-w-[1800px] mx-auto p-6 xl:p-8">
 					<aside className="col-span-1">
 						<div className="sticky top-6 space-y-4">
@@ -1124,11 +1127,13 @@ export default function ExamPage() {
 					</aside>
 				</div>
 			</div>
-
 			{/* Mobile Layout */}
 			<div className="lg:hidden min-h-screen flex flex-col">
 				<div className="sticky top-0 z-20 bg-white dark:bg-slate-900 shadow-sm border-b border-slate-200 dark:border-slate-700">
 					<div className="px-3 py-2">
+						{examData?.ExamInfo?.[0] && (
+							<ExamHeader examInfo={examData.ExamInfo[0]} />
+						)}
 						{examData?.ExamInfo?.[0] && (
 							<div className="flex items-center justify-between mb-2">
 								<div className="flex items-center gap-2">
@@ -1167,7 +1172,7 @@ export default function ExamPage() {
 						<div className="flex items-center gap-2">
 							<div className="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
 								<div
-									className="h-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all"
+									className="h-full bg-linear-to-r from-green-500 to-emerald-600 transition-all"
 									style={{ width: `${(answeredCount / totalCount) * 100}%` }}
 								/>
 							</div>
@@ -1186,7 +1191,7 @@ export default function ExamPage() {
 						>
 							<CardContent className="p-4">
 								<div className="flex items-start gap-3 mb-4">
-									<div className="shrink-0 w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-md">
+									<div className="shrink-0 w-9 h-9 rounded-lg bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-md">
 										{currentQuestionIndex + 1}
 									</div>
 									<div className="flex-1 min-w-0">
@@ -1308,7 +1313,6 @@ export default function ExamPage() {
 					/>
 				)}
 			</div>
-
 			{/* Save button - Desktop */}
 			{pendingAnswers.current.size > 0 && !isTimeUp && (
 				<div className="fixed bottom-6 right-6 z-50 lg:block hidden">
@@ -1332,7 +1336,6 @@ export default function ExamPage() {
 					</Button>
 				</div>
 			)}
-
 			<FixedScrollButton />
 		</div>
 	);

@@ -27,19 +27,23 @@ export default function UserProfilePage() {
 				<div className="text-center space-y-6 max-w-md">
 					<div className="relative">
 						<div className="absolute inset-0 flex items-center justify-center">
-							<div className="w-24 h-24 bg-primary/10 rounded-full blur-xl" />
+							<div className="w-24 h-24 bg-primary/20 dark:bg-primary/10 rounded-full blur-2xl" />
 						</div>
-						<div className="relative bg-card border rounded-full w-20 h-20 mx-auto flex items-center justify-center shadow-sm">
+						<div className="relative bg-card border border-border rounded-full w-20 h-20 mx-auto flex items-center justify-center shadow-lg">
 							<User className="w-10 h-10 text-muted-foreground" />
 						</div>
 					</div>
 					<div className="space-y-2">
-						<h3 className="text-lg font-semibold">Нэвтрээгүй байна</h3>
+						<h3 className="text-xl font-semibold text-foreground">
+							Нэвтрээгүй байна
+						</h3>
 						<p className="text-sm text-muted-foreground">
 							Профайл үзэхийн тулд системд нэвтэрнэ үү
 						</p>
 					</div>
-					<Button className="mt-4">Нэвтрэх</Button>
+					<Button className="mt-4" size="lg">
+						Нэвтрэх
+					</Button>
 				</div>
 			</div>
 		);
@@ -50,7 +54,7 @@ export default function UserProfilePage() {
 			<div className="flex flex-col items-center justify-center min-h-[70vh] space-y-6 px-4">
 				<div className="relative">
 					<div className="absolute inset-0 flex items-center justify-center">
-						<div className="w-32 h-32 bg-primary/10 rounded-full blur-2xl animate-pulse" />
+						<div className="w-32 h-32 bg-primary/20 dark:bg-primary/10 rounded-full blur-2xl animate-pulse" />
 					</div>
 					<div className="relative">
 						<UseAnimations
@@ -62,7 +66,9 @@ export default function UserProfilePage() {
 					</div>
 				</div>
 				<div className="text-center space-y-2">
-					<p className="text-base font-medium">Профайл уншиж байна</p>
+					<p className="text-base font-medium text-foreground">
+						Профайл уншиж байна
+					</p>
 					<p className="text-sm text-muted-foreground">Түр хүлээнэ үү...</p>
 				</div>
 			</div>
@@ -113,7 +119,6 @@ export default function UserProfilePage() {
 	const user = data?.RetData?.[0];
 	const isSuccess = data?.RetResponse?.ResponseType === true;
 
-	// Data error - Сайжруулсан дизайн
 	if (!isSuccess || !user) {
 		return (
 			<div className="flex items-center justify-center min-h-[70vh] px-4">
