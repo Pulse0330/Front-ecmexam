@@ -139,7 +139,6 @@ export function LoginForm() {
 				});
 				router.push("/userProfile");
 			} else {
-				toast.success("Амжилттай нэвтэрлээ");
 				router.push(redirectUrl);
 			}
 		},
@@ -192,7 +191,7 @@ export function LoginForm() {
 												type="text"
 												autoComplete="username"
 												disabled={isPending}
-												className={hasRootError ? "border-destructive/50" : ""}
+												className={hasRootError ? "border-destructive/50 " : ""}
 												{...field}
 											/>
 										</FormControl>
@@ -259,21 +258,20 @@ export function LoginForm() {
               bg-gradient-to-r from-emerald-500 to-teal-600
               dark:from-emerald-600 dark:to-teal-700
               text-white rounded-xl hover:opacity-90 hover:-translate-y-0.5
-              transition-all duration-300 shadow-lg"
+              transition-all duration-300 shadow-lg cursor-pointer"
 					>
 						<span className="text-xs opacity-80">Шалгалтанд бүртгүүлэх</span>
 						<span className="font-bold text-base">
-							🇲🇳 Монгол хэл бичгийн шалгалт
+							Монгол хэл бичгийн шалгалт
 						</span>
 					</button>
 				</CardFooter>
 			</Card>
-
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
 					<DialogHeader>
 						<DialogTitle className="text-xl font-bold flex items-center gap-2">
-							🇲🇳 Монгол хэл бичгийн шалгалт
+							Монгол хэл бичгийн шалгалт
 						</DialogTitle>
 						<DialogDescription>
 							Шалгалтанд бүртгүүлэхийн тулд мэдээллээ оруулна уу

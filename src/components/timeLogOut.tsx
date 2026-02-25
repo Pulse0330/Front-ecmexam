@@ -6,7 +6,7 @@ import { deleteCookie } from "@/lib/cookie";
 import { useAuthStore } from "@/stores/useAuthStore";
 import Portal from "./portal";
 
-const IDLE_TIMEOUT = 5 * 60 * 1000;
+const IDLE_TIMEOUT = 20 * 1000;
 
 function clearTimers(
 	idle: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
