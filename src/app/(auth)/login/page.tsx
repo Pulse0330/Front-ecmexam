@@ -1,12 +1,21 @@
 "use client";
 
-import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import LoginAnimation from "../animation";
 import { LoginForm } from "./form";
+import { UserCheckForm } from "./userCreatedialog";
 
 export default function LoginPage() {
+	const [open, setOpen] = useState(false);
+
 	return (
 		<main
 			className="relative min-h-screen grid lg:grid-cols-2 
@@ -39,53 +48,45 @@ export default function LoginPage() {
 						</div>
 					}
 				>
-					<div className="w-full max-w-md space-y-8">
-						<LoginForm />
-
-						<div className="relative">
-							<div className="absolute inset-0 flex items-center">
-								<div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
-							</div>
-							<div className="relative flex justify-center text-sm">
-								<span className="px-4 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400">
-									Шалгалтанд бүртгүүлэх
-								</span>
-							</div>
-						</div>
-
-						<Link
-							href="/register/mongolian-exam"
-							className="group relative w-full flex items-center justify-center gap-2 px-6 py-4 
-								bg-gradient-to-r from-emerald-500 to-teal-600 
+					<div className="w-full max-w-md space-y-6">
+						{/* Шалгалтын товч - хамгийн дээр */}
+						<button
+							type="button"
+							onClick={() => setOpen(true)}
+							className="w-full flex flex-col items-center justify-center gap-1 px-6 py-4
+								bg-gradient-to-r from-emerald-500 to-teal-600
 								dark:from-emerald-600 dark:to-teal-700
-								text-white font-semibold rounded-xl
-								hover:from-emerald-600 hover:to-teal-700
-								dark:hover:from-emerald-700 dark:hover:to-teal-800
-								transform hover:-translate-y-0.5 transition-all duration-300
-								shadow-lg hover:shadow-xl
-								overflow-hidden"
+								text-white rounded-xl
+								hover:opacity-90 hover:-translate-y-0.5
+								transition-all duration-300 shadow-lg"
 						>
-							<span className="relative z-10">
+							<span className="text-xs opacity-80">Шалгалтанд бүртгүүлэх</span>
+							<span className="font-bold text-base">
 								🇲🇳 Монгол хэл бичгийн шалгалт
 							</span>
-							<svg
-								className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
-								<title>asd</title>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth={2}
-									d="M13 7l5 5m0 0l-5 5m5-5H6"
-								/>
-							</svg>
-						</Link>
+						</button>
+
+						{/* Login card */}
+						<LoginForm />
 					</div>
 				</Suspense>
 			</div>
+
+			{/* Dialog */}
+			<Dialog open={open} onOpenChange={setOpen}>
+				<DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+					<DialogHeader>
+						<DialogTitle className="text-xl font-bold flex items-center gap-2">
+							🇲🇳 Монгол хэл бичгийн шалгалт
+						</DialogTitle>
+						<DialogDescription>
+							Шалгалтанд бүртгүүлэхийн тулд мэдээллээ оруулна уу
+						</DialogDescription>
+					</DialogHeader>
+
+					<UserCheckForm />
+				</DialogContent>
+			</Dialog>
 		</main>
 	);
 }

@@ -41,8 +41,7 @@ const getScoreLevel = (score?: number) => {
 
 export const ExamListItem: React.FC<ExamListItemProps> = ({
 	exam,
-	onViewRank,
-	onViewResults,
+
 	globalShowScore = false,
 	index = 0,
 }) => {

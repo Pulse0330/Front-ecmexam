@@ -901,10 +901,10 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 																disabled={!selectedDistrict || schoolLoading}
 															>
 																<SelectTrigger
-																	className="w-full h-auto min-h-[40px] py-2 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus:ring-0 focus-visible:ring-0"
+																	className="w-full h-auto min-h-40px py-2 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus:ring-0 focus-visible:ring-0"
 																	style={{ whiteSpace: "normal" }}
 																>
-																	<div className="text-left w-full pr-4 whitespace-normal break-words leading-tight">
+																	<div className="text-left w-full pr-4 whitespace-normal wrap-break-words leading-tight">
 																		{selectedSchool || (
 																			<span className="text-slate-500">
 																				{schoolLoading
@@ -921,9 +921,9 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 																		<SelectItem
 																			key={`${s.dbname}-${i}`}
 																			value={s.sName}
-																			className="whitespace-normal py-3 text-sm leading-tight min-h-[40px]"
+																			className="whitespace-normal py-3 text-sm leading-tight min-h-40px"
 																		>
-																			<div className="whitespace-normal break-words">
+																			<div className="whitespace-normal wrap-break-words">
 																				{s.sName}
 																			</div>
 																		</SelectItem>
@@ -1023,7 +1023,7 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 														<p className="text-xs text-slate-500 dark:text-slate-400">
 															Сургууль
 														</p>
-														<p className="text-sm font-semibold text-slate-900 dark:text-white break-words">
+														<p className="text-sm font-semibold text-slate-900 dark:text-white wrap-break-words">
 															{user.sch_name}
 														</p>
 													</div>

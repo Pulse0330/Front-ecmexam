@@ -116,7 +116,7 @@ const CourseListPage = () => {
 
 	return (
 		<div className="min-h-screen flex flex-col overflow-auto">
-			<div className="container mx-auto w-full flex flex-col gap-4 sm:gap-6 px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+			<div className=" mx-auto w-full flex flex-col gap-4 sm:gap-6 px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
 				<header className=" space-y-1">
 					<h3 className="text-lg sm:text-2xl font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent">
 						Миний хичээлүүд
@@ -148,7 +148,7 @@ const CourseListPage = () => {
 				)}
 
 				{/* Course grid */}
-				<div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 gap-3 sm:gap-4 pb-4 auto-rows-fr">
+				<div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-7 xl:grid-cols-7 gap-3 sm:gap-4 pb-4 auto-rows-fr">
 					{courses.map((course, idx) => (
 						<CourseCard key={course.content_id} course={course} index={idx} />
 					))}

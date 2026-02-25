@@ -3,13 +3,18 @@ import "./globals.css";
 import type { Metadata } from "next";
 import Script from "next/script";
 import Providers from "@/app/Providers";
+import IdleTimerProvider from "@/components/timeLogOut"; // ✅ замаа өөрчил
 
 interface RootLayoutProps {
 	children: ReactNode;
 }
 
 export const metadata: Metadata = {
-	// Your metadata here
+	title: "Skuul",
+	icons: {
+		icon: "/image/logoLogin.png",
+		apple: "/image/logoLogin.png",
+	},
 };
 
 export default function RootLayout({ children }: RootLayoutProps) {
@@ -63,7 +68,13 @@ export default function RootLayout({ children }: RootLayoutProps) {
 					strategy="beforeInteractive"
 					id="mathjax-script"
 				/>
-				<Providers>{children}</Providers>
+				<Providers>
+					<IdleTimerProvider>
+						{" "}
+						{/* ✅ Providers-ийн доор wrap хий */}
+						{children}
+					</IdleTimerProvider>
+				</Providers>
 			</body>
 		</html>
 	);

@@ -28,7 +28,6 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-// import { notifyNewLogin } from "@/hooks/use-SessionCheker";
 import { createSessionRequest, loginTokenRequest } from "@/lib/api";
 import { setCookie } from "@/lib/cookie";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -54,7 +53,7 @@ export function LoginForm() {
 	useEffect(() => {
 		const sessionExpired = searchParams.get("session");
 		if (sessionExpired === "expired") {
-			toast.error(
+			toast.warning(
 				"Та үйлдэл хийгээгүй 5 минут болсон байна. Дахин нэвтэрнэ үү.",
 			);
 		}
@@ -62,7 +61,6 @@ export function LoginForm() {
 
 	const { mutate, isPending } = useMutation({
 		mutationFn: async (values: z.infer<typeof formSchema>) => {
-			// 1. Login
 			const loginRes = await loginTokenRequest(
 				values.username,
 				values.password,
@@ -70,12 +68,10 @@ export function LoginForm() {
 				"",
 			);
 
-			// ResponseType шалгах
 			if (!loginRes?.RetResponse?.ResponseType) {
 				throw new Error("Нэвтрэх нэр эсвэл нууц үг буруу байна");
 			}
 
-			// Data болон Token шалгах
 			if (!loginRes?.Data?.[0] || !loginRes.Token) {
 				throw new Error("Серверээс буруу хариу ирлээ");
 			}
@@ -83,13 +79,7 @@ export function LoginForm() {
 			const userData = loginRes.Data[0];
 			const token = loginRes.Token;
 
-			// 2. CreateSession
-			const sessionRes = await createSessionRequest(
-				userData.id,
-				token,
-				"", // IP хоосон
-				"", // Browser хоосон
-			);
+			const sessionRes = await createSessionRequest(userData.id, token, "", "");
 
 			if (!sessionRes?.RetResponse?.ResponseType) {
 				throw new Error("Session үүсгэх амжилтгүй");
@@ -98,24 +88,17 @@ export function LoginForm() {
 			return { userData, token };
 		},
 		onSuccess: ({ userData, token }) => {
-			// Store-д хадгалах
 			setUser(userData);
 			setToken(token);
 
-			// Cookies хадгалах
 			setCookie("auth-token", token, 7);
 			setCookie("user-id", userData.id.toString(), 7);
 			setCookie("firstname", userData.firstname || "", 7);
 			setCookie("img-url", userData.img_url || "", 7);
 
-			// // Бусад tab-д шинэ login мэдэгдэх
-			// notifyNewLogin(userData.id);
-
-			// ⭐ is_enabled шалгах - 0 бол профайл руу, 1 бол home руу
 			let finalRedirect = redirectUrl;
 
 			if (userData.is_enabled === 0) {
-				// Профайл бөглөөгүй бол профайл хуудас руу шилжүүлэх
 				finalRedirect = "/userProfile";
 				toast.info("Профайл мэдээллээ бөглөнө үү", {
 					description:
@@ -123,23 +106,19 @@ export function LoginForm() {
 					duration: 5000,
 				});
 			} else {
-				// Амжилттай нэвтэрсэн мэдэгдэл (is_enabled = 1)
 				toast.success("Амжилттай нэвтэрлээ");
 			}
 
-			// Redirect
 			setTimeout(() => {
 				window.location.href = finalRedirect;
 			}, 300);
 		},
 		onError: (error: Error) => {
-			// Формын дээр л алдаа харуулах (toast биш)
 			form.setError("root", {
 				type: "manual",
 				message: error.message || "Нэвтрэх нэр эсвэл нууц үг буруу байна",
 			});
 
-			// Нууц үг талбарыг цэвэрлэх
 			form.setValue("password", "");
 			form.setFocus("password");
 		},
@@ -151,6 +130,20 @@ export function LoginForm() {
 
 	return (
 		<Card className="w-full max-w-sm bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50">
+			{/* Шалгалтын товч - хамгийн дээр */}
+			<div className="px-6 pt-6 flex flex-col gap-4">
+				<div className="relative">
+					<div className="absolute inset-0 flex items-center">
+						<span className="w-full border-t border-gray-300 dark:border-gray-700" />
+					</div>
+					<div className="relative flex justify-center text-xs uppercase">
+						<span className="px-2 bg-white/60 dark:bg-gray-900/60 text-muted-foreground">
+							Эсвэл нэвтрэх
+						</span>
+					</div>
+				</div>
+			</div>
+
 			<CardHeader className="space-y-1">
 				<CardTitle className="text-2xl font-semibold">
 					Тавтай морилно уу
@@ -269,14 +262,12 @@ export function LoginForm() {
 				</p>
 			</CardFooter>
 
-			{/* Inline style for shake animation */}
 			<style jsx>{`
 				@keyframes shake {
 					0%, 100% { transform: translateX(0); }
 					10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
 					20%, 40%, 60%, 80% { transform: translateX(4px); }
 				}
-				
 				.animate-shake {
 					animation: shake 0.5s ease-in-out;
 				}

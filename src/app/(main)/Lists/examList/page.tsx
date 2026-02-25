@@ -133,7 +133,7 @@ export default function ExamListPage() {
 	return (
 		<TooltipProvider>
 			<div className="h-full">
-				<div className="container mx-auto w-full flex flex-col px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+				<div className=" mx-auto w-full flex flex-col px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
 					{/* Header */}
 					<header className="mb-4 sm:mb-6">
 						<h3 className="text-lg sm:text-2xl font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent">
@@ -148,7 +148,7 @@ export default function ExamListPage() {
 					/>
 
 					{/* Exam Cards Grid */}
-					<div className="grid grid-cols-3 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-6 gap-3 sm:gap-4 pb-4 auto-rows-fr">
+					<div className="grid grid-cols-3 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-7 gap-3 sm:gap-4 pb-4 auto-rows-fr">
 						{isPending
 							? SKELETON_KEYS.map((key) => <SkeletonCard key={key} />)
 							: filteredData.map((exam) => (

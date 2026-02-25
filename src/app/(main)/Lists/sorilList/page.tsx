@@ -53,7 +53,7 @@ export default function Sorillists() {
 		null,
 	);
 
-	const SKELETON_KEYS = Array.from({ length: 6 }, (_, i) => `skeleton-${i}`);
+	const SKELETON_KEYS = Array.from({ length: 8 }, (_, i) => `skeleton-${i}`);
 
 	// Lesson filter API - хичээлийн жагсаалт
 	const { data: lessonData } = useQuery<TestFilterResponse>({
@@ -112,24 +112,15 @@ export default function Sorillists() {
 		return sorils;
 	}, [data, categorizedData, selectedCategory, searchTerm]);
 
-	// Handle soril click with payment check
 	const handleSorilClick = useCallback(
 		(soril: SorillistsData) => {
-			// ЗАСВАРЛАСАН ЗӨВ ЛОГИК:
-			// isopensoril: 1 = нээлттэй сорил (чөлөөтэй)
-			// isopensoril: 0 = ispay шалгах шаардлагатай
-			//   - ispay: 1 = төлсөн (нээх боломжтой)
-			//   - ispay: 0 = төлөөгүй (түгжээтэй)
 			const isAccessible = soril.isopensoril === 1 || soril.ispay === 1;
 
 			if (!isAccessible) {
-				// Төлбөртэй сорил бөгөөд төлөөгүй бол dialog харуулах
 				setSelectedSoril(soril);
 				setShowPaymentDialog(true);
 				return;
 			}
-
-			// Нээлттэй эсвэл төлсөн сорил - шууд нээх
 			router.push(`/soril/${soril.exam_id}`);
 		},
 		[router],
@@ -148,8 +139,8 @@ export default function Sorillists() {
 	}, []);
 
 	return (
-		<div className="h-full">
-			<div className="container mx-auto w-full flex flex-col px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+		<div className="w-full">
+			<div className=" mx-auto  flex flex-col px-3 sm:px-8 lg:px-8 py-4 sm:py-8 lg:py-8">
 				{/* Header */}
 				<header className="mb-4 sm:mb-6">
 					<h3 className="text-lg sm:text-2xl font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent ">
@@ -194,7 +185,7 @@ export default function Sorillists() {
 				)}
 
 				{/* Soril Grid */}
-				<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4 pb-4">
+				<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2 sm:gap-3 md:gap-4 pb-4">
 					{isPending
 						? SKELETON_KEYS.map((key) => <SkeletonCard key={key} />)
 						: filteredData.map((soril) => (

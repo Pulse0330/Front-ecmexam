@@ -546,8 +546,8 @@ export default function TestGroupPage() {
 
 	return (
 		<div className="h-full">
-			<div className="max-w-[2000px] mx-auto w-full flex flex-col gap-4 px-3 sm:px-4 lg:px-6 py-4 sm:py-5">
-				<header className="mb-2 sm:mb-3 md:mb-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-2 sm:p-2.5 md:p-3 lg:p-4 rounded-xl sm:rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100/50 dark:border-slate-800/50 relative overflow-hidden">
+			<div className=" mx-auto w-full flex flex-col gap-4 px-3 sm:px-4 lg:px-6 py-4 sm:py-5">
+				<header className="mb-2 sm:mb-3 md:mb-4 backdrop-blur-md p-2 sm:p-2.5 md:p-3 lg:p-4 rounded-xl sm:rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100/50 dark:border-slate-800/50 relative overflow-hidden">
 					<div
 						className="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"
 						aria-hidden="true"

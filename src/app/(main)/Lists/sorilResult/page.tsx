@@ -139,7 +139,7 @@ export default function ExamResultList() {
 	return (
 		<TooltipProvider>
 			<div className="h-full flex flex-col">
-				<div className="container mx-auto w-full flex flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+				<div className=" mx-auto w-full flex flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 					{/* Header */}
 					<header className="flex items-center justify-between animate-in fade-in-0 slide-in-from-top-4 duration-500">
 						<div className="text-start">
@@ -293,7 +293,7 @@ export default function ExamResultList() {
 						<CardContent className="p-6 space-y-5">
 							{/* Exam Grid or Empty State */}
 							{exams.length > 0 ? (
-								<div className="grid grid-cols-2 xs:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-6 gap-3 sm:gap-4 pb-4 auto-rows-fr">
+								<div className="grid grid-cols-2 xs:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-7 gap-3 sm:gap-4 pb-4 auto-rows-fr">
 									{exams.map((exam, index) => (
 										<div
 											key={exam.exam_id}

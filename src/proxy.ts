@@ -5,7 +5,13 @@ export async function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 	const token = request.cookies.get("auth-token")?.value;
 
-	const publicRoutes = ["/login", "/sign", "/forgot", "/not-found"];
+	const publicRoutes = [
+		"/login",
+		"/sign",
+		"/forgot",
+		"/not-found",
+		"/userCheck",
+	];
 	const isPublicRoute = publicRoutes.some((route) =>
 		pathname.startsWith(route),
 	);
