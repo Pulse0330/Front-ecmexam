@@ -1,9 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
 
+// ─── Env variable — hardcoded URL-г тусгаарлав ───────────────────────────────
+const EXAM_API_BASE =
+	process.env.NEXT_PUBLIC_EXAM_API_URL ?? "https://ottapp.ecm.mn";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 type CheckState = "idle" | "loading" | "found" | "not_found" | "error";
 
 interface UserInfo {
@@ -56,48 +61,86 @@ interface StudentExamData {
 	sym_name: string;
 }
 
+// ─── API helpers ──────────────────────────────────────────────────────────────
 async function apiAimag() {
 	const r = await fetch("/api/sign/aimag", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({}),
 	});
-	if (!r.ok) throw new Error();
+	if (!r.ok) throw new Error("Аймгийн мэдээлэл авахад алдаа гарлаа");
 	return r.json();
 }
+
 async function apiDistrict(aimagId: number) {
 	const r = await fetch("/api/sign/district", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ aimag_id: aimagId }),
 	});
-	if (!r.ok) throw new Error();
+	if (!r.ok) throw new Error("Дүүргийн мэдээлэл авахад алдаа гарлаа");
 	return r.json();
 }
+
 async function apiSchool(aimagId: number, districtId: number) {
 	const r = await fetch("/api/sign/surguuli", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ aimag_id: aimagId, district_id: districtId }),
 	});
-	if (!r.ok) throw new Error();
+	if (!r.ok) throw new Error("Сургуулийн мэдээлэл авахад алдаа гарлаа");
 	return r.json();
 }
 
-// getstudentexam — хэрэглэгч шалгах болон submit хоёуланд ашиглана
 async function apiGetStudentExam(
 	dbname: string,
 	regnumber: string,
 ): Promise<StudentExamData | null> {
-	const r = await fetch("https://ottapp.ecm.mn/api/getstudentexam", {
+	const r = await fetch(`${EXAM_API_BASE}/api/getstudentexam`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ dbname, regnumber }),
 	});
 	if (!r.ok) throw new Error("Серверт холбогдоход алдаа гарлаа");
 	const d = await r.json();
-	if (!d?.RetData?.[0]) return null;
-	return d.RetData[0] as StudentExamData;
+	return (d?.RetData?.[0] as StudentExamData) ?? null;
+}
+
+// ─── Spinner SVG — тусдаа component болгон, давтагдахаас сэргийлнэ ──────────
+function Spinner({ className = "w-5 h-5" }: { className?: string }) {
+	return (
+		<svg
+			className={`animate-spin ${className}`}
+			fill="none"
+			viewBox="0 0 24 24"
+		>
+			<title>Уншиж байна</title>
+			<circle
+				className="opacity-25"
+				cx="12"
+				cy="12"
+				r="10"
+				stroke="currentColor"
+				strokeWidth="4"
+			/>
+			<path
+				className="opacity-75"
+				fill="currentColor"
+				d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+			/>
+		</svg>
+	);
+}
+
+// ─── Select component ─────────────────────────────────────────────────────────
+interface SelProps {
+	label: string;
+	placeholder: string;
+	options: { value: string; label: string }[];
+	value: string;
+	onChange: (v: string) => void;
+	disabled?: boolean;
+	loading?: boolean;
 }
 
 function Sel({
@@ -108,41 +151,12 @@ function Sel({
 	onChange,
 	disabled,
 	loading,
-}: {
-	label: string;
-	placeholder: string;
-	options: { value: string; label: string }[];
-	value: string;
-	onChange: (v: string) => void;
-	disabled?: boolean;
-	loading?: boolean;
-}) {
+}: SelProps) {
 	return (
 		<div className="space-y-1.5">
 			<Label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
 				{label}
-				{loading && (
-					<svg
-						className="animate-spin w-3.5 h-3.5 text-emerald-500"
-						fill="none"
-						viewBox="0 0 24 24"
-					>
-						<title>Уншиж байна</title>
-						<circle
-							className="opacity-25"
-							cx="12"
-							cy="12"
-							r="10"
-							stroke="currentColor"
-							strokeWidth="4"
-						/>
-						<path
-							className="opacity-75"
-							fill="currentColor"
-							d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-						/>
-					</svg>
-				)}
+				{loading && <Spinner className="w-3.5 h-3.5 text-emerald-500" />}
 			</Label>
 			<div className="relative">
 				<select
@@ -152,8 +166,9 @@ function Sel({
 					className="w-full px-4 py-3 pr-10 rounded-xl border-2 appearance-none cursor-pointer bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-200 dark:border-gray-700 focus:border-emerald-400 dark:focus:border-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 outline-none"
 				>
 					<option value="">{placeholder}</option>
-					{options.map((o, i) => (
-						<option key={`${o.value}-${i}`} value={o.value}>
+					{/* index key хэрэглэхгүй — value нь unique байна */}
+					{options.map((o) => (
+						<option key={o.value} value={o.value}>
 							{o.label}
 						</option>
 					))}
@@ -179,6 +194,62 @@ function Sel({
 	);
 }
 
+// ─── Alert component — давтагдах alert JSX-г нэгтгэв ─────────────────────────
+type AlertVariant = "error" | "success";
+
+function Alert({
+	variant,
+	children,
+}: {
+	variant: AlertVariant;
+	children: React.ReactNode;
+}) {
+	const isError = variant === "error";
+	const base =
+		"flex items-center gap-2.5 text-sm rounded-xl px-3.5 py-2.5 border";
+	const styles = isError
+		? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+		: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800";
+
+	return (
+		<div className={`${base} ${styles}`}>
+			{isError ? (
+				<svg
+					className="w-4 h-4 shrink-0"
+					fill="currentColor"
+					viewBox="0 0 20 20"
+				>
+					<title>Алдаа</title>
+					<path
+						fillRule="evenodd"
+						d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+						clipRule="evenodd"
+					/>
+				</svg>
+			) : (
+				<svg
+					className="w-4 h-4 shrink-0 text-emerald-500"
+					fill="currentColor"
+					viewBox="0 0 20 20"
+				>
+					<title>Амжилттай</title>
+					<path
+						fillRule="evenodd"
+						d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+						clipRule="evenodd"
+					/>
+				</svg>
+			)}
+			<span>{children}</span>
+		</div>
+	);
+}
+
+// ─── Монгол регистрийн дугаарын regex ─────────────────────────────────────────
+// Монгол кирилл: А-Я + Өөрийн үсгүүд (Ө, Ү) + Latin A-Z
+const REG_ALLOWED = /[^A-ZА-ЯӨҮa-zа-яөү0-9]/g;
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export function UserCheckForm() {
 	const router = useRouter();
 
@@ -200,82 +271,93 @@ export function UserCheckForm() {
 	const [checkError, setCheckError] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [submitError, setSubmitError] = useState("");
-
-	// checkUser-аас авсан өгөгдлийг хадгалж handleSubmit дахин дуудахгүй
 	const [studentData, setStudentData] = useState<StudentExamData | null>(null);
 
 	const aimagData = aimagList.find((a) => a.mAcode === aimag);
-	const districtData = districtList.find((d) => d.id.toString() === district);
 	const schoolData = schoolList.find((s) => s.sName === school);
 
 	useEffect(() => {
 		apiAimag()
-			.then((d) => setAimagList(d.RetData || []))
+			.then((d) => setAimagList(d.RetData ?? []))
 			.catch(() => setAimagList([]))
 			.finally(() => setAimagLoading(false));
 	}, []);
 
-	const clearReg = () => {
+	// useCallback — функцуудыг memoize хийж, шаардлагагүй re-render багасгана
+	const clearReg = useCallback(() => {
 		setReg("");
 		setCheckState("idle");
 		setUserInfo(null);
 		setStudentData(null);
 		setCheckError("");
 		setSubmitError("");
-	};
+	}, []);
 
-	const onAimag = async (val: string) => {
-		setAimag(val);
-		setDistrict("");
-		setSchool("");
-		setDistrictList([]);
-		setSchoolList([]);
-		clearReg();
-		if (!val) return;
-		const a = aimagList.find((x) => x.mAcode === val);
-		if (!a) return;
-		setDistrictLoading(true);
-		try {
-			const d = await apiDistrict(a.mid);
-			setDistrictList(d.RetData || []);
-		} catch {
+	const onAimag = useCallback(
+		async (val: string) => {
+			setAimag(val);
+			setDistrict("");
+			setSchool("");
 			setDistrictList([]);
-		}
-		setDistrictLoading(false);
-	};
-
-	const onDistrict = async (val: string) => {
-		setDistrict(val);
-		setSchool("");
-		setSchoolList([]);
-		clearReg();
-		if (!val || !aimagData) return;
-		setSchoolLoading(true);
-		try {
-			const d = await apiSchool(aimagData.mid, Number(val));
-			setSchoolList(d.RetData || []);
-		} catch {
 			setSchoolList([]);
-		}
-		setSchoolLoading(false);
-	};
+			clearReg();
+			if (!val) return;
+			const a = aimagList.find((x) => x.mAcode === val);
+			if (!a) return;
+			setDistrictLoading(true);
+			try {
+				const d = await apiDistrict(a.mid);
+				setDistrictList(d.RetData ?? []);
+			} catch {
+				setDistrictList([]);
+			} finally {
+				setDistrictLoading(false);
+			}
+		},
+		[aimagList, clearReg],
+	);
 
-	const onSchool = (val: string) => {
-		setSchool(val);
-		clearReg();
-	};
+	const onDistrict = useCallback(
+		async (val: string) => {
+			setDistrict(val);
+			setSchool("");
+			setSchoolList([]);
+			clearReg();
+			if (!val || !aimagData) return;
+			setSchoolLoading(true);
+			try {
+				const d = await apiSchool(aimagData.mid, Number(val));
+				setSchoolList(d.RetData ?? []);
+			} catch {
+				setSchoolList([]);
+			} finally {
+				setSchoolLoading(false);
+			}
+		},
+		[aimagData, clearReg],
+	);
 
-	const onRegInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const v = e.target.value
-			.replace(/[^a-zA-ZА-ЯҮҨа-яүҨ0-9]/g, "")
-			.toUpperCase()
-			.slice(0, 10);
-		setReg(v);
-		if (checkState !== "idle") clearReg();
-	};
+	const onSchool = useCallback(
+		(val: string) => {
+			setSchool(val);
+			clearReg();
+		},
+		[clearReg],
+	);
 
-	// "Шалгах" товч — getstudentexam дуудаж хэрэглэгч олдвол харуулна
-	const checkUser = async () => {
+	const onRegInput = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			const v = e.target.value
+				.replace(REG_ALLOWED, "")
+				.toUpperCase()
+				.slice(0, 10);
+			setReg(v);
+			if (checkState !== "idle") clearReg();
+		},
+		[checkState, clearReg],
+	);
+
+	const checkUser = useCallback(async () => {
 		if (reg.length < 8 || !schoolData) return;
 		setCheckState("loading");
 		setCheckError("");
@@ -295,11 +377,10 @@ export function UserCheckForm() {
 			setCheckState("error");
 			setCheckError(err instanceof Error ? err.message : "Алдаа гарлаа");
 		}
-	};
+	}, [reg, schoolData]);
 
-	// "Үргэлжлүүлэх" товч — checkUser-т аль хэдийн авсан өгөгдлийг ашиглана
-	const handleSubmit = async () => {
-		if (!aimagData || !districtData || !schoolData || !studentData) return;
+	const handleSubmit = useCallback(async () => {
+		if (!studentData) return;
 		setSubmitting(true);
 		setSubmitError("");
 		try {
@@ -309,7 +390,7 @@ export function UserCheckForm() {
 			setSubmitError(err instanceof Error ? err.message : "Алдаа гарлаа.");
 			setSubmitting(false);
 		}
-	};
+	}, [studentData, router]);
 
 	return (
 		<div className="space-y-5">
@@ -394,30 +475,11 @@ export function UserCheckForm() {
                 ${
 									checkState === "found"
 										? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border-2 border-gray-200 dark:border-gray-700"
-										: "bg-linear-to-r from-emerald-500 to-teal-600 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed"
+										: "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed"
 								}`}
 						>
 							{checkState === "loading" ? (
-								<svg
-									className="animate-spin w-5 h-5"
-									fill="none"
-									viewBox="0 0 24 24"
-								>
-									<title>Уншиж байна</title>
-									<circle
-										className="opacity-25"
-										cx="12"
-										cy="12"
-										r="10"
-										stroke="currentColor"
-										strokeWidth="4"
-									/>
-									<path
-										className="opacity-75"
-										fill="currentColor"
-										d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-									/>
-								</svg>
+								<Spinner />
 							) : checkState === "found" ? (
 								"Өөрчлөх"
 							) : (
@@ -427,95 +489,39 @@ export function UserCheckForm() {
 					</div>
 
 					{checkState === "not_found" && (
-						<div className="flex items-center gap-2.5 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-3.5 py-2.5">
-							<svg
-								className="w-4 h-4 shrink-0"
-								fill="currentColor"
-								viewBox="0 0 20 20"
-							>
-								<title>Олдсонгүй</title>
-								<path
-									fillRule="evenodd"
-									d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-									clipRule="evenodd"
-								/>
-							</svg>
-							<span>
-								<span className="font-mono font-bold">{reg}</span> регистртэй
-								хэрэглэгч олдсонгүй.
-							</span>
-						</div>
+						<Alert variant="error">
+							<span className="font-mono font-bold">{reg}</span> регистртэй
+							хэрэглэгч олдсонгүй.
+						</Alert>
 					)}
 
 					{checkState === "error" && (
-						<div className="flex items-center gap-2.5 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-3.5 py-2.5">
-							<svg
-								className="w-4 h-4 shrink-0"
-								fill="currentColor"
-								viewBox="0 0 20 20"
-							>
-								<title>Алдаа</title>
-								<path
-									fillRule="evenodd"
-									d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-									clipRule="evenodd"
-								/>
-							</svg>
-							<span>{checkError || "Сервертэй холбогдоход алдаа гарлаа."}</span>
-						</div>
+						<Alert variant="error">
+							{checkError || "Сервертэй холбогдоход алдаа гарлаа."}
+						</Alert>
 					)}
 
 					{checkState === "found" && userInfo && (
-						<div className="flex items-center gap-2.5 text-sm text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl px-3.5 py-2.5">
-							<svg
-								className="w-4 h-4 shrink-0 text-emerald-500"
-								fill="currentColor"
-								viewBox="0 0 20 20"
-							>
-								<title>Олдлоо</title>
-								<path
-									fillRule="evenodd"
-									d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-									clipRule="evenodd"
-								/>
-							</svg>
-							<span>
-								Сайн байна уу,{" "}
-								<span className="font-semibold">
-									{userInfo.lastname} {userInfo.firstname}
-								</span>
+						<Alert variant="success">
+							Сайн байна уу,{" "}
+							<span className="font-semibold">
+								{userInfo.lastname} {userInfo.firstname}
 							</span>
-						</div>
+						</Alert>
 					)}
 				</div>
 			)}
 
 			{checkState === "found" && school && (
 				<>
-					{submitError && (
-						<div className="flex items-center gap-2.5 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-3.5 py-2.5">
-							<svg
-								className="w-4 h-4 shrink-0"
-								fill="currentColor"
-								viewBox="0 0 20 20"
-							>
-								<title>Алдаа</title>
-								<path
-									fillRule="evenodd"
-									d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-									clipRule="evenodd"
-								/>
-							</svg>
-							<span>{submitError}</span>
-						</div>
-					)}
+					{submitError && <Alert variant="error">{submitError}</Alert>}
 
 					<button
 						type="button"
 						onClick={handleSubmit}
 						disabled={submitting}
 						className="w-full py-3.5 px-6 rounded-xl font-semibold text-white
-              bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700
+              bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700
               disabled:opacity-40 disabled:cursor-not-allowed
               shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30
               hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300
@@ -523,26 +529,7 @@ export function UserCheckForm() {
 					>
 						{submitting ? (
 							<>
-								<svg
-									className="animate-spin w-5 h-5"
-									fill="none"
-									viewBox="0 0 24 24"
-								>
-									<title>Шалгаж байна</title>
-									<circle
-										className="opacity-25"
-										cx="12"
-										cy="12"
-										r="10"
-										stroke="currentColor"
-										strokeWidth="4"
-									/>
-									<path
-										className="opacity-75"
-										fill="currentColor"
-										d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-									/>
-								</svg>
+								<Spinner />
 								Уншиж байна...
 							</>
 						) : (
