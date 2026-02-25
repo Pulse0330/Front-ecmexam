@@ -10,7 +10,7 @@ export async function proxy(request: NextRequest) {
 		"/sign",
 		"/forgot",
 		"/not-found",
-		"/userCheck",
+		"/mnUserCreate",
 	];
 	const isPublicRoute = publicRoutes.some((route) =>
 		pathname.startsWith(route),

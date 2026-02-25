@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label";
 type CheckState = "idle" | "loading" | "found" | "not_found" | "error";
 
 interface UserInfo {
-	id: number;
-	name: string;
+	firstname: string;
+	lastname: string;
 }
 interface AimagItem {
 	mAcode: string;
@@ -30,6 +30,30 @@ interface SchoolItem {
 	sort: number;
 	district_id: number;
 	serverip: string;
+}
+interface StudentExamData {
+	login_name: string;
+	firstname: string;
+	lastname: string;
+	reg_number: string;
+	gender: number;
+	phone: string | null;
+	email: string;
+	aimag_id: string;
+	sym_id: string;
+	class_id: number;
+	group_id: number;
+	img_url: string | null;
+	descr: string;
+	regdate: string;
+	dateofbirth: string;
+	personId: string;
+	schooldb: string;
+	schoolname: string;
+	studentgroupid: string;
+	studentgroupname: string;
+	aimag_name: string;
+	sym_name: string;
 }
 
 async function apiAimag() {
@@ -59,16 +83,21 @@ async function apiSchool(aimagId: number, districtId: number) {
 	if (!r.ok) throw new Error();
 	return r.json();
 }
-async function apiCheckUser(reg: string): Promise<UserInfo | null> {
-	const r = await fetch("/api/sign/check-user", {
+
+// getstudentexam — хэрэглэгч шалгах болон submit хоёуланд ашиглана
+async function apiGetStudentExam(
+	dbname: string,
+	regnumber: string,
+): Promise<StudentExamData | null> {
+	const r = await fetch("https://ottapp.ecm.mn/api/getstudentexam", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ registration_number: reg }),
+		body: JSON.stringify({ dbname, regnumber }),
 	});
-	if (!r.ok) throw new Error("Хэрэглэгч шалгахад алдаа гарлаа");
+	if (!r.ok) throw new Error("Серверт холбогдоход алдаа гарлаа");
 	const d = await r.json();
-	if (!d?.RetData) return null;
-	return { id: d.RetData.id, name: d.RetData.name };
+	if (!d?.RetData?.[0]) return null;
+	return d.RetData[0] as StudentExamData;
 }
 
 function Sel({
@@ -123,8 +152,8 @@ function Sel({
 					className="w-full px-4 py-3 pr-10 rounded-xl border-2 appearance-none cursor-pointer bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-200 dark:border-gray-700 focus:border-emerald-400 dark:focus:border-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 outline-none"
 				>
 					<option value="">{placeholder}</option>
-					{options.map((o) => (
-						<option key={o.value} value={o.value}>
+					{options.map((o, i) => (
+						<option key={`${o.value}-${i}`} value={o.value}>
 							{o.label}
 						</option>
 					))}
@@ -170,6 +199,10 @@ export function UserCheckForm() {
 	const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 	const [checkError, setCheckError] = useState("");
 	const [submitting, setSubmitting] = useState(false);
+	const [submitError, setSubmitError] = useState("");
+
+	// checkUser-аас авсан өгөгдлийг хадгалж handleSubmit дахин дуудахгүй
+	const [studentData, setStudentData] = useState<StudentExamData | null>(null);
 
 	const aimagData = aimagList.find((a) => a.mAcode === aimag);
 	const districtData = districtList.find((d) => d.id.toString() === district);
@@ -186,7 +219,9 @@ export function UserCheckForm() {
 		setReg("");
 		setCheckState("idle");
 		setUserInfo(null);
+		setStudentData(null);
 		setCheckError("");
+		setSubmitError("");
 	};
 
 	const onAimag = async (val: string) => {
@@ -239,29 +274,39 @@ export function UserCheckForm() {
 		if (checkState !== "idle") clearReg();
 	};
 
+	// "Шалгах" товч — getstudentexam дуудаж хэрэглэгч олдвол харуулна
 	const checkUser = async () => {
-		if (reg.length < 8) return;
+		if (reg.length < 8 || !schoolData) return;
 		setCheckState("loading");
 		setCheckError("");
 		try {
-			const user = await apiCheckUser(reg);
-			if (user) {
-				setUserInfo(user);
+			const student = await apiGetStudentExam(schoolData.dbname, reg);
+			if (student) {
+				setStudentData(student);
+				setUserInfo({
+					firstname: student.firstname,
+					lastname: student.lastname,
+				});
 				setCheckState("found");
-			} else setCheckState("not_found");
+			} else {
+				setCheckState("not_found");
+			}
 		} catch (err) {
 			setCheckState("error");
 			setCheckError(err instanceof Error ? err.message : "Алдаа гарлаа");
 		}
 	};
 
+	// "Үргэлжлүүлэх" товч — checkUser-т аль хэдийн авсан өгөгдлийг ашиглана
 	const handleSubmit = async () => {
-		if (!aimagData || !districtData || !schoolData || !userInfo) return;
+		if (!aimagData || !districtData || !schoolData || !studentData) return;
 		setSubmitting(true);
+		setSubmitError("");
 		try {
-			await new Promise((r) => setTimeout(r, 900));
-			router.push("/dashboard");
-		} catch {
+			sessionStorage.setItem("studentExam", JSON.stringify(studentData));
+			router.push("/mnUserCreate");
+		} catch (err) {
+			setSubmitError(err instanceof Error ? err.message : "Алдаа гарлаа.");
 			setSubmitting(false);
 		}
 	};
@@ -436,7 +481,9 @@ export function UserCheckForm() {
 							</svg>
 							<span>
 								Сайн байна уу,{" "}
-								<span className="font-semibold">{userInfo.name}</span>
+								<span className="font-semibold">
+									{userInfo.lastname} {userInfo.firstname}
+								</span>
 							</span>
 						</div>
 					)}
@@ -444,61 +491,81 @@ export function UserCheckForm() {
 			)}
 
 			{checkState === "found" && school && (
-				<button
-					type="button"
-					onClick={handleSubmit}
-					disabled={submitting}
-					className="w-full py-3.5 px-6 rounded-xl font-semibold text-white
-            bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700
-            disabled:opacity-40 disabled:cursor-not-allowed
-            shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30
-            hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300
-            flex items-center justify-center gap-2"
-				>
-					{submitting ? (
-						<>
+				<>
+					{submitError && (
+						<div className="flex items-center gap-2.5 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-3.5 py-2.5">
 							<svg
-								className="animate-spin w-5 h-5"
-								fill="none"
-								viewBox="0 0 24 24"
+								className="w-4 h-4 shrink-0"
+								fill="currentColor"
+								viewBox="0 0 20 20"
 							>
-								<title>Хадгалж байна</title>
-								<circle
-									className="opacity-25"
-									cx="12"
-									cy="12"
-									r="10"
-									stroke="currentColor"
-									strokeWidth="4"
-								/>
+								<title>Алдаа</title>
 								<path
-									className="opacity-75"
-									fill="currentColor"
-									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+									fillRule="evenodd"
+									d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+									clipRule="evenodd"
 								/>
 							</svg>
-							Хадгалж байна...
-						</>
-					) : (
-						<>
-							Үргэлжлүүлэх
-							<svg
-								className="w-4 h-4"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
-								<title>Дараах</title>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth={2}
-									d="M13 7l-5 5m0 0l5 5m-5-5H6"
-								/>
-							</svg>
-						</>
+							<span>{submitError}</span>
+						</div>
 					)}
-				</button>
+
+					<button
+						type="button"
+						onClick={handleSubmit}
+						disabled={submitting}
+						className="w-full py-3.5 px-6 rounded-xl font-semibold text-white
+              bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700
+              disabled:opacity-40 disabled:cursor-not-allowed
+              shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30
+              hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300
+              flex items-center justify-center gap-2"
+					>
+						{submitting ? (
+							<>
+								<svg
+									className="animate-spin w-5 h-5"
+									fill="none"
+									viewBox="0 0 24 24"
+								>
+									<title>Шалгаж байна</title>
+									<circle
+										className="opacity-25"
+										cx="12"
+										cy="12"
+										r="10"
+										stroke="currentColor"
+										strokeWidth="4"
+									/>
+									<path
+										className="opacity-75"
+										fill="currentColor"
+										d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+									/>
+								</svg>
+								Уншиж байна...
+							</>
+						) : (
+							<>
+								Үргэлжлүүлэх
+								<svg
+									className="w-4 h-4"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<title>Дараах</title>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth={2}
+										d="M13 7l-5 5m0 0l5 5m-5-5H6"
+									/>
+								</svg>
+							</>
+						)}
+					</button>
+				</>
 			)}
 		</div>
 	);
