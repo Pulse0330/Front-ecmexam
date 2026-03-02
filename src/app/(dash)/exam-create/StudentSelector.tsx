@@ -15,7 +15,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getStudents } from "@/lib/api";
+import { getStudents } from "@/lib/dash.api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { StudentItem } from "@/types/dashboard/exam.types";
 

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getExam } from "@/lib/api";
+import { getExam } from "@/lib/dash.api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { Exam, ExamDate } from "@/types/dashboard/exam.types";
 
