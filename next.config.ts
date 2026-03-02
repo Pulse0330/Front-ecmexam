@@ -4,12 +4,18 @@ const nextConfig: NextConfig = {
 	env: {
 		NEXT_PUBLIC_API_URL: "https://backend.skuul.mn/api",
 		NEXT_PUBLIC_OTP_API_URL: "https://api-message.ecm.mn",
+		NEXT_PUBLIC_EXAM_API_URL: "https://ottapp.ecm.mn",
 	},
 	images: {
 		unoptimized: true,
 		remotePatterns: [
 			{
 				protocol: "https",
+				hostname: "**",
+				pathname: "/**",
+			},
+			{
+				protocol: "http",
 				hostname: "**",
 				pathname: "/**",
 			},

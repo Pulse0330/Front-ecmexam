@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useCallback } from "react";
-import MathContent from "./MathContent";
+import MathContent from "../examUtils/MathContent";
 import QuestionImage from "./questionImage";
 
 interface AnswerData {

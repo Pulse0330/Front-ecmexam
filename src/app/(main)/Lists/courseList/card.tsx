@@ -96,7 +96,7 @@ export const CourseCard = ({ course, index = 0 }: CourseCardProps) => {
 				)}
 
 				{/* Image Header - Fixed aspect ratio */}
-				<div className="relative w-full aspect-4/2 bg-muted shrink-0">
+				<div className="relative w-full aspect-5/2 bg-muted shrink-0">
 					{course.filename ? (
 						<Image
 							src={course.filename}

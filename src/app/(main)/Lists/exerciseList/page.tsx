@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
 	useCallback,
@@ -10,6 +10,7 @@ import {
 	useState,
 	useTransition,
 } from "react";
+import StyledBackButton from "@/components/backButton";
 import { Button } from "@/components/ui/button";
 import {
 	getTestFilter,
@@ -118,9 +119,9 @@ interface LessonDataResponse {
 // ============================================
 
 const GRID_CLASSES =
-	"grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 2xl:grid-cols-8 3xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6";
+	"grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 2xl:grid-cols-8 3xl:grid-cols-8 gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3 xl:gap-3.5";
 
-const LIST_CLASSES = "flex flex-col gap-2 sm:gap-2.5 md:gap-3";
+const LIST_CLASSES = "flex flex-col gap-1.5 sm:gap-2";
 
 const SKELETON_COUNT = 12;
 
@@ -182,20 +183,24 @@ function calculateLessonStats(
 export default function TestGroupPage() {
 	const { userId } = useAuthStore();
 	const router = useRouter();
-	const [isPending, startTransition] = useTransition();
+	const [_isPending, _startTransition] = useTransition();
 	const [isMounted, setIsMounted] = useState(false);
 
+	// FIX: Зөв destructuring хэлбэр
 	const [selectedTests, setSelectedTests] = useDebouncedLocalStorage<
 		Record<number, number>
 	>("selectedTests", {});
+
 	const [selectedLesson, setSelectedLesson] = useDebouncedLocalStorage<
 		number | null
 	>("selectedLesson", null);
+
 	const [selectedCategory, setSelectedCategory] = useDebouncedLocalStorage<
 		string | null
 	>("selectedCategory", null);
+
 	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const [_errorMessage, setErrorMessage] = useState<string | null>(null);
 
 	// Prevent hydration mismatch
 	useEffect(() => {
@@ -207,18 +212,15 @@ export default function TestGroupPage() {
 		[],
 	);
 
-	const {
-		data: lessonData,
-		isLoading: isLoadingLessons,
-		error: lessonError,
-	} = useQuery<LessonDataResponse>({
-		queryKey: ["testGroupByLesson", userId],
-		queryFn: () => getTestFilter(userId || 0),
-		enabled: !!userId && !selectedLesson,
-		retry: RETRY_CONFIG.attempts,
-		retryDelay: RETRY_CONFIG.delay,
-		staleTime: 5 * 60 * 1000,
-	});
+	const { data: lessonData, isLoading: isLoadingLessons } =
+		useQuery<LessonDataResponse>({
+			queryKey: ["testGroupByLesson", userId],
+			queryFn: () => getTestFilter(userId || 0),
+			enabled: !!userId && !selectedLesson,
+			retry: RETRY_CONFIG.attempts,
+			retryDelay: RETRY_CONFIG.delay,
+			staleTime: 5 * 60 * 1000,
+		});
 
 	const { data: allLessonsData } = useQuery<GetTestGroupResponse>({
 		queryKey: ["allLessonsTests", userId],
@@ -229,11 +231,7 @@ export default function TestGroupPage() {
 		staleTime: 5 * 60 * 1000,
 	});
 
-	const {
-		data,
-		isLoading: isLoadingDetails,
-		error: detailsError,
-	} = useQuery<GetTestGroupResponse>({
+	const { data, isLoading: isLoadingDetails } = useQuery<GetTestGroupResponse>({
 		queryKey: ["testFiltered", userId, selectedLesson],
 		queryFn: () => getTestFiltered(userId || 0, selectedLesson || 0),
 		enabled: !!userId && !!selectedLesson,
@@ -350,9 +348,13 @@ export default function TestGroupPage() {
 		return calculateLessonStats(lessonGroups, lessonTestsMap, selectedTests);
 	}, [lessonGroups, lessonTestsMap, selectedTests]);
 
+	// FIX: Type-safe totals
 	const totals = useMemo(() => {
 		const entries = Object.values(selectedTests);
-		const questionCount = entries.reduce((sum, count) => sum + count, 0);
+		const questionCount = entries.reduce(
+			(sum: number, count: number) => sum + count,
+			0,
+		);
 
 		return {
 			groupCount: entries.length,
@@ -362,7 +364,7 @@ export default function TestGroupPage() {
 
 	const handleTestChange = useCallback(
 		(id: number, count: number) => {
-			setSelectedTests((prev) => {
+			setSelectedTests((prev: Record<number, number>) => {
 				if (count > 0) {
 					return { ...prev, [id]: count };
 				}
@@ -374,26 +376,43 @@ export default function TestGroupPage() {
 	);
 
 	const handleBackToLessons = useCallback(() => {
-		startTransition(() => {
-			setSelectedLesson(null);
+		if (selectedCategory) {
+			if (typeof window !== "undefined") {
+				window.localStorage.removeItem("selectedCategory");
+			}
 			setSelectedCategory(null);
-		});
-	}, [setSelectedLesson, setSelectedCategory]);
+		} else if (selectedLesson) {
+			if (typeof window !== "undefined") {
+				window.localStorage.removeItem("selectedLesson");
+			}
+			setSelectedLesson(null);
+		}
+	}, [
+		selectedCategory,
+		selectedLesson,
+		setSelectedCategory,
+		setSelectedLesson,
+	]);
 
 	const handleLessonClick = useCallback(
 		(lessonId: number) => {
-			startTransition(() => {
-				setSelectedLesson(lessonId);
-			});
+			if (typeof window !== "undefined") {
+				window.localStorage.setItem("selectedLesson", JSON.stringify(lessonId));
+			}
+			setSelectedLesson(lessonId);
 		},
 		[setSelectedLesson],
 	);
 
 	const handleCategoryClick = useCallback(
 		(categoryKey: string) => {
-			startTransition(() => {
-				setSelectedCategory(categoryKey);
-			});
+			if (typeof window !== "undefined") {
+				window.localStorage.setItem(
+					"selectedCategory",
+					JSON.stringify(categoryKey),
+				);
+			}
+			setSelectedCategory(categoryKey);
 		},
 		[setSelectedCategory],
 	);
@@ -411,7 +430,7 @@ export default function TestGroupPage() {
 	const renderSkeletons = useMemo(
 		() => (
 			<output
-				className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 3xl:grid-cols-10 gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6"
+				className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 3xl:grid-cols-10 gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3 xl:gap-3.5"
 				aria-label="Хичээлүүдийг ачааллаж байна"
 			>
 				{skeletonKeys.map((key) => (
@@ -425,7 +444,7 @@ export default function TestGroupPage() {
 
 	const renderLessonCards = useMemo(
 		() => (
-			<ul className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 3xl:grid-cols-11 gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6 list-none">
+			<ul className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 3xl:grid-cols-11 gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3 xl:gap-3.5 list-none">
 				{lessonGroups.map((lesson) => {
 					const stats = lessonStats.get(lesson.lesson_id) || DEFAULT_STATS;
 
@@ -448,7 +467,7 @@ export default function TestGroupPage() {
 
 	const renderCategoryCards = useMemo(
 		() => (
-			<ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-3 sm:gap-4 md:gap-5 lg:gap-6 list-none">
+			<ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-2 sm:gap-2.5 md:gap-3 lg:gap-3.5 list-none">
 				{[...groupedData.entries()].map(([key, category]) => (
 					<li key={key}>
 						<CategoryCard
@@ -477,89 +496,31 @@ export default function TestGroupPage() {
 		if (!categoryItems) return null;
 
 		return (
-			<div className="min-h-screen bg-slate-50/50 dark:bg-slate-950/50">
-				<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3 md:gap-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-2.5 sm:p-3 md:p-4 rounded-lg sm:rounded-xl md:rounded-2xl shadow-sm border border-slate-100/50 dark:border-slate-800/50">
-					<div className="flex items-center gap-2 w-full sm:w-auto overflow-hidden">
-						<h2
-							className="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-slate-800 dark:text-slate-200 truncate flex-1 min-w-0"
-							id="category-title"
-						>
-							{categoryItems.ulesson_name}
-						</h2>
-					</div>
-
-					<fieldset className="flex bg-slate-100 dark:bg-slate-800 p-0.5 sm:p-1 rounded-md sm:rounded-lg gap-0.5 sm:gap-1 shrink-0 border-0">
-						<legend className="sr-only">Харагдах төрөл сонгох</legend>
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => setViewMode("grid")}
-							className={cn(
-								"rounded-md px-2 sm:px-2.5 h-7 sm:h-8 transition-all",
-								viewMode === "grid" && "bg-white dark:bg-slate-700 shadow-sm",
-							)}
-							aria-label="Торны харагдац"
-							aria-pressed={viewMode === "grid"}
-						>
-							<div
-								className="grid grid-cols-2 gap-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5"
-								aria-hidden="true"
-							>
-								<div className="bg-current rounded-sm opacity-60" />
-								<div className="bg-current rounded-sm opacity-60" />
-								<div className="bg-current rounded-sm opacity-60" />
-								<div className="bg-current rounded-sm opacity-60" />
-							</div>
-						</Button>
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => setViewMode("list")}
-							className={cn(
-								"rounded-md px-2 sm:px-2.5 h-7 sm:h-8 transition-all",
-								viewMode === "list" && "bg-white dark:bg-slate-700 shadow-sm",
-							)}
-							aria-label="Жагсаалтын харагдац"
-							aria-pressed={viewMode === "list"}
-						>
-							<div
-								className="flex flex-col gap-0.5 w-3 sm:w-3.5"
-								aria-hidden="true"
-							>
-								<div className="h-0.5 sm:h-1 w-full bg-current rounded-full opacity-60" />
-								<div className="h-0.5 sm:h-1 w-full bg-current rounded-full opacity-60" />
-								<div className="h-0.5 sm:h-1 w-full bg-current rounded-full opacity-60" />
-							</div>
-						</Button>
-					</fieldset>
-				</div>
-
-				<ul
-					className={cn(
-						viewMode === "grid" ? GRID_CLASSES : LIST_CLASSES,
-						"list-none",
-					)}
-					aria-labelledby="category-title"
-				>
-					{categoryItems.items.map((item) => (
-						<li key={item.id}>
-							{viewMode === "grid" ? (
-								<TestItemCard
-									item={item}
-									selectedCount={selectedTests[item.id] || 0}
-									onCountChange={handleTestChange}
-								/>
-							) : (
-								<TestListItem
-									item={item}
-									selectedCount={selectedTests[item.id] || 0}
-									onCountChange={handleTestChange}
-								/>
-							)}
-						</li>
-					))}
-				</ul>
-			</div>
+			<ul
+				className={cn(
+					viewMode === "grid" ? GRID_CLASSES : LIST_CLASSES,
+					"list-none",
+				)}
+				aria-labelledby="category-title"
+			>
+				{categoryItems.items.map((item) => (
+					<li key={item.id}>
+						{viewMode === "grid" ? (
+							<TestItemCard
+								item={item}
+								selectedCount={selectedTests[item.id] || 0}
+								onCountChange={handleTestChange}
+							/>
+						) : (
+							<TestListItem
+								item={item}
+								selectedCount={selectedTests[item.id] || 0}
+								onCountChange={handleTestChange}
+							/>
+						)}
+					</li>
+				))}
+			</ul>
 		);
 	}, [
 		selectedCategory,
@@ -570,7 +531,6 @@ export default function TestGroupPage() {
 	]);
 
 	const isLoading = selectedLesson ? isLoadingDetails : isLoadingLessons;
-	const error = selectedLesson ? detailsError : lessonError;
 
 	if (!userId) {
 		return (
@@ -584,60 +544,86 @@ export default function TestGroupPage() {
 		);
 	}
 
-	if (error) {
-		return (
-			<div className="h-screen flex items-center justify-center">
-				<div className="text-center">
-					<p className="text-red-500 mb-4">Алдаа гарлаа</p>
-					<Button onClick={() => window.location.reload()}>
-						Дахин ачаалах
-					</Button>
-				</div>
-			</div>
-		);
-	}
-
 	return (
-		<div className="min-h-screen bg-slate-50/50 dark:bg-slate-950/50 relative overflow-hidden pb-24 sm:pb-28 md:pb-32">
-			<div className="container mx-auto px-3 sm:px-4 md:px-5 lg:px-6 xl:px-8 pt-3 sm:pt-4 md:pt-6 lg:pt-8 relative z-10 max-w-[2000px] h-full overflow-y-auto">
-				<header className="mb-4 sm:mb-6 md:mb-8 lg:mb-10 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100/50 dark:border-slate-800/50 relative overflow-hidden">
+		<div className="h-full">
+			<div className=" mx-auto w-full flex flex-col gap-4 px-3 sm:px-4 lg:px-6 py-4 sm:py-5">
+				<header className="mb-2 sm:mb-3 md:mb-4 backdrop-blur-md p-2 sm:p-2.5 md:p-3 lg:p-4 rounded-xl sm:rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100/50 dark:border-slate-800/50 relative overflow-hidden">
 					<div
 						className="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"
 						aria-hidden="true"
 					/>
-					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 md:gap-6">
-						<div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+						<div className="flex items-center gap-2">
 							{selectedLesson && (
-								<Button
+								<StyledBackButton
 									onClick={handleBackToLessons}
 									variant="ghost"
-									size="sm"
-									className="flex items-center gap-1 sm:gap-1.5 md:gap-2 text-slate-500 font-bold hover:text-emerald-500 transition-colors p-1.5 sm:p-2 min-w-9 sm:min-w-10"
-									aria-label="Хичээл рүү буцах"
-									disabled={isPending}
-								>
-									<ArrowLeft
-										className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5"
-										aria-hidden="true"
-									/>
-								</Button>
+									className="flex items-center gap-1 sm:gap-1.5 text-slate-500 font-bold hover:text-emerald-500 transition-colors p-1.5 sm:p-2 min-w-9 sm:min-w-10"
+									ariaLabel={
+										selectedCategory
+											? "Бүлэг сэдэв рүү буцах"
+											: "Хичээл рүү буцах"
+									}
+								/>
 							)}
 
 							<div>
-								<h1 className="flex items-center text-lg sm:text-xl md:text-2xl lg:text-3xl font-black">
+								<h1 className="flex items-center text-base sm:text-lg md:text-xl lg:text-2xl font-black">
 									{selectedLesson ? "Тест сонгох" : "Хичээл сонгох"}
 								</h1>
 							</div>
 						</div>
-					</div>
 
-					{errorMessage && (
-						<div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-							<p className="text-sm text-red-600 dark:text-red-400">
-								{errorMessage}
-							</p>
-						</div>
-					)}
+						{/* View mode toggle - only show when category is selected */}
+						{selectedCategory && (
+							<fieldset className="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-md sm:rounded-lg gap-0.5 shrink-0 border-0">
+								<legend className="sr-only">Харагдах төрөл сонгох</legend>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => setViewMode("grid")}
+									className={cn(
+										"rounded-md px-2 sm:px-2.5 h-7 sm:h-8 transition-all",
+										viewMode === "grid" &&
+											"bg-white dark:bg-slate-700 shadow-sm",
+									)}
+									aria-label="Торны харагдац"
+									aria-pressed={viewMode === "grid"}
+								>
+									<div
+										className="grid grid-cols-2 gap-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5"
+										aria-hidden="true"
+									>
+										<div className="bg-current rounded-sm opacity-60" />
+										<div className="bg-current rounded-sm opacity-60" />
+										<div className="bg-current rounded-sm opacity-60" />
+										<div className="bg-current rounded-sm opacity-60" />
+									</div>
+								</Button>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => setViewMode("list")}
+									className={cn(
+										"rounded-md px-2 sm:px-2.5 h-7 sm:h-8 transition-all",
+										viewMode === "list" &&
+											"bg-white dark:bg-slate-700 shadow-sm",
+									)}
+									aria-label="Жагсаалтын харагдац"
+									aria-pressed={viewMode === "list"}
+								>
+									<div
+										className="flex flex-col gap-0.5 w-3 sm:w-3.5"
+										aria-hidden="true"
+									>
+										<div className="h-0.5 sm:h-1 w-full bg-current rounded-full opacity-60" />
+										<div className="h-0.5 sm:h-1 w-full bg-current rounded-full opacity-60" />
+										<div className="h-0.5 sm:h-1 w-full bg-current rounded-full opacity-60" />
+									</div>
+								</Button>
+							</fieldset>
+						)}
+					</div>
 				</header>
 
 				<main>

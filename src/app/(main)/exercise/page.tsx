@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import parse from "html-react-parser";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
+import StyledBackButton from "@/components/backButton";
 import { Button } from "@/components/ui/button";
 import { gettTestFill } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -72,7 +73,7 @@ export default function ExercisePage() {
 		new Set(),
 	);
 
-	const { data, isLoading, isError, error } = useQuery<ExamFinishResponse>({
+	const { data, isLoading } = useQuery<ExamFinishResponse>({
 		queryKey: ["testFill", userId],
 		queryFn: () => gettTestFill(userId || 0),
 		enabled: !!userId,
@@ -521,15 +522,6 @@ export default function ExercisePage() {
 								)}
 							</>
 						)}
-
-						{/* Unknown question type warning */}
-						{![1, 2, 3, 4, 5, 6].includes(questionType) && (
-							<div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-lg">
-								<p className="text-red-800 dark:text-red-300 font-semibold text-sm">
-									⚠️ Тодорхойгүй асуултын төрөл: {questionType}
-								</p>
-							</div>
-						)}
 					</div>
 				</div>
 			);
@@ -579,21 +571,6 @@ export default function ExercisePage() {
 		);
 	}
 
-	if (isError) {
-		return (
-			<div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-				<div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-					<h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-						Алдаа гарлаа
-					</h2>
-					<p className="text-gray-600 dark:text-gray-400">
-						{(error as Error).message}
-					</p>
-				</div>
-			</div>
-		);
-	}
-
 	if (!examInfo || questions.length === 0) {
 		return (
 			<div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
@@ -614,12 +591,23 @@ export default function ExercisePage() {
 			</div>
 		);
 	}
-
 	return (
-		<div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-4 sm:py-8 px-4 sm:px-6 lg:px-8">
+		<div className="min-h-screen py-4 sm:py-8 px-4 sm:px-6 lg:px-8">
+			<div className="fixed ">
+				<StyledBackButton
+					variant="default"
+					showIcon={true}
+					showConfirm={true}
+					confirmTitle="Дасгалаас гарах уу?"
+					confirmMessage="Таны өгсөн хариултууд хадгалагдахгүй байж болно. Та итгэлтэй байна уу?"
+					ariaLabel="Дасгалын жагсаалт руу буцах"
+				/>
+			</div>
 			<div className="max-w-5xl mx-auto">
-				{/* Sticky Header */}
-				<div className="sticky top-0 z-10 bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 pb-4 mb-2">
+				{/* Back Button */}
+
+				{/* Header */}
+				<div className="pb-4 mb-2">
 					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-3">
 						<h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
 							{examInfo.title}
@@ -640,16 +628,6 @@ export default function ExercisePage() {
 
 				<div className="space-y-4 sm:space-y-6 md:space-y-8">
 					{questions.map((question, index) => renderQuestion(question, index))}
-				</div>
-
-				<div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 sticky bottom-4 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
-					<Button
-						variant="outline"
-						onClick={() => router.push("/Lists/exerciseList")}
-						className="flex-1 sm:flex-initial"
-					>
-						Буцах
-					</Button>
 				</div>
 			</div>
 		</div>

@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import {
 	ArrowRight,
-	Award,
 	Calendar,
 	Clock,
 	Eye,
@@ -42,8 +41,7 @@ const getScoreLevel = (score?: number) => {
 
 export const ExamListItem: React.FC<ExamListItemProps> = ({
 	exam,
-	onViewRank,
-	onViewResults,
+
 	globalShowScore = false,
 	index = 0,
 }) => {
@@ -192,7 +190,7 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 							</TooltipContent>
 						</Tooltip>
 
-						{finished && exam.test_time && (
+						{finished && (
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<div className="flex items-center gap-0.5 sm:gap-1 text-muted-foreground min-w-0">
@@ -213,7 +211,7 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 					{finished ? (
 						<div className="absolute bottom-1.5 left-1.5 right-1.5 sm:bottom-2 sm:left-2 sm:right-2 flex flex-col gap-1 sm:gap-1.5">
 							{/* Top Row - Rank & Score */}
-							<div className="flex items-center gap-1 sm:gap-1.5">
+							{/* <div className="flex items-center gap-1 sm:gap-1.5">
 								<Button
 									onClick={() => onViewResults?.(exam.exam_id, exam.test_id)}
 									size="sm"
@@ -238,7 +236,7 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 										Ранк
 									</Button>
 								)}
-							</div>
+							</div> */}
 							{/* Bottom Row - Details */}
 
 							<Button

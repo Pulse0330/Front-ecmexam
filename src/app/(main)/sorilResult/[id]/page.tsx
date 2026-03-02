@@ -2,18 +2,13 @@
 
 import { useQuery } from "@tanstack/react-query";
 import parse from "html-react-parser";
-import {
-	AlertCircle,
-	ArrowLeft,
-	CheckCircle,
-	MinusCircle,
-	XCircle,
-} from "lucide-react";
+import { AlertCircle, CheckCircle, MinusCircle, XCircle } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import UseAnimations from "react-useanimations";
 import loading2 from "react-useanimations/lib/loading2";
+import StyledBackButton from "@/components/backButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getExamDun, getExamResultMore } from "@/lib/api";
@@ -424,20 +419,21 @@ function ExamResultDetailPage() {
 
 	const dunInfo = dunData?.RetData?.[0];
 	return (
-		<div className="min-h-screen bg-linear-to-br from-background via-background to-muted/20 py-8 px-4">
-			<Button onClick={() => router.back()} variant="outline" className="gap-2">
-				<ArrowLeft className="w-5 h-5" />
-				Буцах
-			</Button>
+		<div className=" mx-auto w-full  py-8 px-4">
+			<div className="fixed ">
+				<StyledBackButton
+					variant="default"
+					showIcon={true}
+					showConfirm={true}
+					confirmTitle="Та итгэлтэй байна уу?"
+					confirmMessage=""
+					ariaLabel=""
+				/>
+			</div>
 			<div className="max-w-6xl mx-auto space-y-6">
 				{examSummary && (
 					<div className="bg-linear-to-br from-card to-card/50 border border-border/50 rounded-3xl p-8 shadow-xl backdrop-blur-sm">
 						{/* Толгой хэсэг */}
-						<div className="flex justify-end border-border ">
-							{dunInfo && (
-								<p className="text-right text-xl font-bold ">{dunInfo.title}</p>
-							)}
-						</div>
 
 						<div className="mb-6 pb-6 border-b border-border/50">
 							<div className="flex items-center gap-3">
@@ -491,6 +487,13 @@ function ExamResultDetailPage() {
 								<p className="text-4xl font-bold text-primary">
 									{examSummary.test_ttl}
 								</p>
+								<div className="flex justify-start mt-4">
+									{dunInfo && (
+										<p className="text-right text-xl font-bold wrap-break-word ">
+											{dunInfo.title}
+										</p>
+									)}
+								</div>
 							</div>
 
 							{/* Оноо харьцуулалт */}
@@ -1886,7 +1889,7 @@ function ExamResultDetailPage() {
 																			</p>
 																			<div className="space-y-3">
 																				{/* ЗАСВАР: 
-																				дээр loop хийх (А багана) */}
+                                                                                дээр loop хийх (А багана) */}
 																				{answersOnly.map((answerItem) => {
 																					// answerItem.ref_child_id нь зөв question-ий refid
 																					const correctQuestion =

@@ -13,6 +13,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import UseAnimations from "react-useanimations";
 import loading2 from "react-useanimations/lib/loading2";
+import LessonFilter from "@/components/LessonFilter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -27,7 +28,6 @@ import {
 	getexamresultlists,
 	getTestFilter,
 } from "@/lib/api";
-import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { ExamresultListResponseType } from "@/types/exam/examResultList";
 import { ExamListItem } from "./card";
@@ -171,7 +171,7 @@ export default function ExamResultList() {
 	return (
 		<TooltipProvider>
 			<div className="h-full flex flex-col">
-				<div className="max-w-[1600px] mx-auto w-full flex flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+				<div className=" mx-auto w-full flex flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 					{/* Header */}
 					<header className="flex items-center justify-between animate-in fade-in-0 slide-in-from-top-4 duration-500">
 						<div className="text-start">
@@ -301,64 +301,18 @@ export default function ExamResultList() {
 						</div>
 					)}
 
-					{/* Lesson Filter Section */}
-					{lessons.length > 0 && (
-						<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
-							<div className="flex items-center gap-3 pb-2">
-								{/* Desktop - Horizontal buttons */}
-								<div className="hidden md:flex gap-2 flex-wrap">
-									{lessons.map((lesson) => (
-										<Tooltip key={lesson.lesson_id}>
-											<TooltipTrigger asChild>
-												<Button
-													type="button"
-													onClick={() => setSelectedLessonId(lesson.lesson_id)}
-													variant={
-														selectedLessonId === lesson.lesson_id
-															? "default"
-															: "outline"
-													}
-													className={cn(
-														"px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap",
-														selectedLessonId === lesson.lesson_id &&
-															"shadow-lg",
-													)}
-												>
-													{lesson.lesson_name}
-												</Button>
-											</TooltipTrigger>
-										</Tooltip>
-									))}
-								</div>
-
-								{/* Mobile - Select dropdown */}
-								<select
-									value={selectedLessonId ?? ""}
-									onChange={(e) => setSelectedLessonId(Number(e.target.value))}
-									className="md:hidden flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-background border-2 border-input text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-									aria-label="Хичээл сонгох"
-								>
-									{lessons.map((lesson) => (
-										<option key={lesson.lesson_id} value={lesson.lesson_id}>
-											{lesson.lesson_name}
-										</option>
-									))}
-								</select>
-							</div>
-						</div>
+					{selectedLessonId !== null && (
+						<LessonFilter
+							lessons={lessons}
+							selectedLessonId={selectedLessonId}
+							onLessonSelect={setSelectedLessonId}
+						/>
 					)}
 
 					{/* Results Section */}
 					<div className="animate-in fade-in-0 duration-700 delay-300">
 						<CardHeader>
 							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-4">
-									<h2 className="text-lg  font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent ">
-										{selectedLessonId === 0
-											? "Шалгалтууд"
-											: `${selectedLessonName || ""} - Шалгалтууд`}
-									</h2>
-								</div>
 								<Badge
 									variant="secondary"
 									className="text-sm font-semibold shadow-sm"
@@ -371,7 +325,7 @@ export default function ExamResultList() {
 						<CardContent className="p-6 space-y-5">
 							{/* Exam Grid or Empty State */}
 							{exams.length > 0 ? (
-								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+								<div className="grid grid-cols-2 xs:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-7 gap-3 sm:gap-4 pb-4 auto-rows-fr">
 									{exams.map((exam) => (
 										<div
 											key={exam.exam_id}
@@ -415,6 +369,7 @@ export default function ExamResultList() {
 				<RankModal
 					examId={selectedExamId}
 					userId={userId}
+					open={!!selectedExamId}
 					onClose={() => setSelectedExamId(null)}
 				/>
 			)}

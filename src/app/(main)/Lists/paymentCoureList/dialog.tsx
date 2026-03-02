@@ -90,9 +90,7 @@ export default function QPayDialog({
 						)}
 					</DialogTitle>
 					<DialogDescription>
-						{paymentStatus === "success"
-							? "Төлбөр амжилттай төлөгдлөө!"
-							: "Доорх банкны аппликейшнуудаас сонгон төлбөр төлнө үү"}
+						{paymentStatus === "success" ? "Төлбөр амжилттай төлөгдлөө!" : ""}
 					</DialogDescription>
 				</DialogHeader>
 

@@ -2,18 +2,13 @@
 
 import { useQuery } from "@tanstack/react-query";
 import parse from "html-react-parser";
-import {
-	AlertCircle,
-	ArrowLeft,
-	CheckCircle,
-	MinusCircle,
-	XCircle,
-} from "lucide-react";
+import { AlertCircle, CheckCircle, MinusCircle, XCircle } from "lucide-react";
 import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 import UseAnimations from "react-useanimations";
 import loading2 from "react-useanimations/lib/loading2";
+import StyledBackButton from "@/components/backButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getExamDun, getExamResultMore } from "@/lib/api";
@@ -29,7 +24,7 @@ import type {
 
 function ExamResultDetailPage() {
 	const params = useParams();
-	const router = useRouter();
+
 	const { userId } = useAuthStore();
 	const [answerFilter, setAnswerFilter] = useState<"all" | "correct" | "wrong">(
 		"all",
@@ -40,12 +35,11 @@ function ExamResultDetailPage() {
 	const examId = Number(examIdStr);
 	const testId = Number(testIdStr);
 
-	const { data, isLoading, isError, error } =
-		useQuery<ExamResponseMoreApiResponse>({
-			queryKey: ["examResultDetail", testId, examId, userId],
-			queryFn: () => getExamResultMore(testId, examId, userId || 0),
-			enabled: !!userId && !!examId && !!testId,
-		});
+	const { data, isLoading } = useQuery<ExamResponseMoreApiResponse>({
+		queryKey: ["examResultDetail", testId, examId, userId],
+		queryFn: () => getExamResultMore(testId, examId, userId || 0),
+		enabled: !!userId && !!examId && !!testId,
+	});
 	const pointPerc = data?.RetDataFirst?.[0]?.point_perc;
 
 	const { data: dunData, isLoading: isLoadingDun } =
@@ -338,26 +332,6 @@ function ExamResultDetailPage() {
 		return "incorrect";
 	};
 
-	if (!userId) {
-		return (
-			<div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-background to-muted/20 p-4">
-				<div className="text-center space-y-4 p-8 rounded-2xl bg-card/80 backdrop-blur-sm border border-border shadow-2xl max-w-md">
-					<div className="w-20 h-20 mx-auto bg-linear-to-br from-orange-500/20 to-red-500/20 rounded-full flex items-center justify-center">
-						<AlertCircle className="w-10 h-10 text-orange-500" />
-					</div>
-					<div>
-						<h3 className="text-2xl font-bold mb-2">
-							Хэрэглэгч нэвтрээгүй байна
-						</h3>
-						<p className="text-muted-foreground">
-							Та эхлээд системд нэвтэрнэ үү
-						</p>
-					</div>
-				</div>
-			</div>
-		);
-	}
-
 	if (isLoading) {
 		return (
 			<div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-background to-muted/20">
@@ -382,38 +356,9 @@ function ExamResultDetailPage() {
 		);
 	}
 
-	if (isError) {
-		return (
-			<div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-background to-muted/20 p-4">
-				<div className="max-w-md w-full bg-card rounded-2xl p-8 shadow-2xl text-center space-y-4">
-					<div className="w-20 h-20 mx-auto bg-linear-to-br from-destructive/20 to-red-500/20 rounded-full flex items-center justify-center">
-						<AlertCircle className="w-10 h-10 text-destructive" />
-					</div>
-					<h3 className="text-2xl font-bold text-destructive">Алдаа гарлаа</h3>
-					<p className="text-sm text-destructive/80">
-						{(error as Error).message}
-					</p>
-					<Button onClick={() => router.back()}>Буцах</Button>
-				</div>
-			</div>
-		);
-	}
-
 	if (!data?.RetResponse?.ResponseType || !data?.RetDataSecond) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-background to-muted/20 p-4">
-				<div className="text-center space-y-6 p-8 rounded-2xl bg-card/80 backdrop-blur-sm border shadow-2xl max-w-md">
-					<div className="w-20 h-20 mx-auto bg-linear-to-br from-orange-500/20 to-amber-500/20 rounded-full flex items-center justify-center">
-						<AlertCircle className="w-10 h-10 text-orange-500" />
-					</div>
-					<h3 className="text-2xl font-bold">Мэдээлэл олдсонгүй</h3>
-					<p className="text-muted-foreground">
-						{data?.RetResponse?.ResponseMessage ||
-							"Шалгалтын дэлгэрэнгүй мэдээлэл олдсонгүй"}
-					</p>
-					<Button onClick={() => router.back()}>Буцах</Button>
-				</div>
-			</div>
+			<div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-background to-muted/20 p-4"></div>
 		);
 	}
 
@@ -424,20 +369,27 @@ function ExamResultDetailPage() {
 
 	const dunInfo = dunData?.RetData?.[0];
 	return (
-		<div className="min-h-screen bg-linear-to-br from-background via-background to-muted/20 py-8 px-4">
+		<div className=" mx-auto w-full  py-8 px-4">
+			<div className="fixed">
+				<StyledBackButton
+					variant="default"
+					showIcon={true}
+					showConfirm={true}
+					confirmTitle="Та итгэлтэй байна уу?"
+					confirmMessage=""
+					ariaLabel=""
+				/>
+			</div>
+
 			<div className="max-w-6xl mx-auto space-y-6">
-				<button
-					type="button"
-					onClick={() => router.back()}
-					className="group flex items-center gap-3 pl-2 pr-5 py-6 duration-300 cursor-pointer bg-transparent border-none"
-				>
-					<div className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 transition-colors duration-300">
-						<ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:-translate-x-0.5 transition-all duration-300" />
-					</div>
-				</button>
 				{examSummary && (
 					<div className="bg-linear-to-br from-card to-card/50 border border-border/50 rounded-3xl p-8 shadow-xl backdrop-blur-sm">
 						{/* Толгой хэсэг */}
+						<div className="flex justify-end border-border ">
+							{dunInfo && (
+								<p className="text-right text-xl font-bold ">{dunInfo.title}</p>
+							)}
+						</div>
 
 						<div className="mb-6 pb-6 border-b border-border/50">
 							<div className="flex items-center gap-3">
@@ -491,13 +443,6 @@ function ExamResultDetailPage() {
 								<p className="text-4xl font-bold text-primary">
 									{examSummary.test_ttl}
 								</p>
-								<div className="flex justify-start mt-4">
-									{dunInfo && (
-										<p className="text-right text-xl font-bold wrap-break-word ">
-											{dunInfo.title}
-										</p>
-									)}
-								</div>
 							</div>
 
 							{/* Оноо харьцуулалт */}
@@ -1893,7 +1838,7 @@ function ExamResultDetailPage() {
 																			</p>
 																			<div className="space-y-3">
 																				{/* ЗАСВАР: 
-																				дээр loop хийх (А багана) */}
+                                                                                дээр loop хийх (А багана) */}
 																				{answersOnly.map((answerItem) => {
 																					// answerItem.ref_child_id нь зөв question-ий refid
 																					const correctQuestion =

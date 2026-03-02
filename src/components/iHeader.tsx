@@ -4,8 +4,10 @@ import Cookies from "js-cookie";
 import {
 	BarChart3,
 	ChevronDown,
+	ChevronUp,
 	ClipboardList,
 	CreditCard,
+	FeatherIcon,
 	FileText,
 	LogOut,
 	type LucideIcon,
@@ -14,12 +16,12 @@ import {
 	TrendingUp,
 	User,
 	UserCircle,
-	Users,
 	X,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import * as React from "react";
 import {
 	AlertDialog,
@@ -31,16 +33,21 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuLabel,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { ThemeSwitch } from "@/components/ui/ui-theme";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/useAuthStore";
 import ServerDate from "./serverDate";
@@ -52,6 +59,11 @@ const NAV_LINKS = [
 ];
 
 const EXAM_LINKS: Array<{ href: string; label: string; icon: LucideIcon }> = [
+	{
+		href: "",
+		label: "Монгол хэлний шалгалт",
+		icon: FeatherIcon,
+	},
 	{
 		href: "/Lists/examList",
 		label: "Шалгалтын жагсаалт",
@@ -502,6 +514,9 @@ export const Navbar01: React.FC = () => {
 	const queryClient = useQueryClient();
 	const { user, firstname, imgUrl, clearAuth } = useAuthStore();
 
+	const { resolvedTheme } = useTheme();
+	const _isDark = resolvedTheme === "dark";
+
 	const userInfo = React.useMemo(
 		() => ({
 			userName: user?.fname || firstname || "Хэрэглэгч",
@@ -521,26 +536,38 @@ export const Navbar01: React.FC = () => {
 
 	const handleLogout = async () => {
 		try {
+			// 1. Call logout API if available
+			// await logoutAPI();
+
+			// 2. Clear cookies
 			const cookiesToRemove = ["auth-token", "user-id", "firstname", "img-url"];
 			cookiesToRemove.forEach((cookie) => {
 				Cookies.remove(cookie, { path: "/" });
 			});
 
+			// 3. Clear Zustand (includes localStorage cleanup)
 			clearAuth();
+
+			// 4. Clear session storage
 			sessionStorage.clear();
+
+			// 5. Clear React Query cache
 			queryClient.clear();
+
+			// 6. Navigate to login
 			router.push("/login");
 		} catch (error) {
 			console.error("Logout error:", error);
+			// Force reload as fallback
 			window.location.href = "/login";
 		}
 	};
 
 	return (
 		<>
-			<header className="w-full border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 rounded-2xl shadow-lg">
+			<header className="w-full border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 rounded-2xl shadow-lg ">
 				<div className="flex h-16 items-center justify-between gap-4 px-6">
-					{/* Logo */}
+					{/* Logo - Pushed Left */}
 					<Link href="/" className="flex items-center gap-2 shrink-0">
 						<Image
 							src="/image/logoLogin.png"
@@ -587,9 +614,12 @@ export const Navbar01: React.FC = () => {
 							isActive={isCourseActive}
 						/>
 					</nav>
+					<div className="hidden lg:block">
+						<ServerDate />
+					</div>
 
-					{/* Right Actions */}
-					<div className="flex items-center gap-2 sm:gap-3 shrink-0">
+					{/* Right Actions - Pushed Right */}
+					<div className="flex items-center gap-3 shrink-0">
 						{/* Mobile Menu Button */}
 						<button
 							type="button"
@@ -601,17 +631,12 @@ export const Navbar01: React.FC = () => {
 							<Menu className="w-5 h-5" />
 						</button>
 
-						{/* Server Date - Desktop only */}
-						<div className="block">
-							<ServerDate />
-						</div>
-
-						{/* User Dropdown */}
-						<DropdownMenu>
+						{/* User Profile Pop-over */}
+						<DropdownMenu modal={false}>
 							<DropdownMenuTrigger asChild>
 								<Button
 									variant="ghost"
-									className="gap-2 px-3 py-2 h-auto hover:bg-accent"
+									className="gap-2 px-3 py-2 h-auto hover:bg-accent rounded-lg"
 								>
 									<UserAvatar
 										userImage={userInfo.userImage}
@@ -622,66 +647,70 @@ export const Navbar01: React.FC = () => {
 									<span className="hidden md:block text-sm font-medium max-w-[120px] truncate">
 										{userInfo.userName}
 									</span>
+									<ChevronDown className="w-4 h-4 hidden md:block" />
 								</Button>
 							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end" className="w-64">
-								<DropdownMenuLabel>
-									<div className="flex items-center gap-3">
-										<UserAvatar
-											userImage={userInfo.userImage}
-											userName={userInfo.userName}
-											size="md"
-											showOnlineStatus
-										/>
+							<DropdownMenuContent
+								align="end"
+								className="w-72 rounded-xl shadow-lg p-0 overflow-x-auto"
+							>
+								{/* Header: Avatar + Name + Chevron */}
+								<div className="flex items-center gap-3 p-4 border-b">
+									<UserAvatar
+										userImage={userInfo.userImage}
+										userName={userInfo.userName}
+										size="md"
+										showOnlineStatus
+									/>
+									<TooltipProvider>
 										<div className="flex-1 min-w-0">
-											<p className="text-sm font-semibold truncate">
+											<p className="text-sm font-semibold truncate cursor-help">
 												{userInfo.userName}
 											</p>
+
 											{userInfo.schoolName && (
-												<div className="flex items-center gap-1 mt-1">
-													<School className="w-3 h-3 text-blue-600" />
-													<p className="text-xs text-muted-foreground truncate">
-														{userInfo.schoolName}
-													</p>
-												</div>
-											)}
-											{userInfo.studentGroup && (
-												<div className="flex items-center gap-1 mt-0.5">
-													<Users className="w-3 h-3 text-green-600" />
-													<p className="text-xs text-muted-foreground truncate">
-														{userInfo.studentGroup}
-													</p>
-												</div>
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5 cursor-help">
+															<School className="w-3 h-3 shrink-0" />
+															<span className="truncate">
+																{userInfo.schoolName}
+															</span>
+														</p>
+													</TooltipTrigger>
+													<TooltipContent>
+														<p>{userInfo.schoolName}</p>
+													</TooltipContent>
+												</Tooltip>
 											)}
 										</div>
-									</div>
-								</DropdownMenuLabel>
-								<DropdownMenuSeparator />
-
-								{/* Server Date - Mobile (inside dropdown) */}
-								<div className="md:hidden px-2 py-2">
+									</TooltipProvider>
+									<ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+								</div>
+								<div className="lg:hidden px-4 py-3 border-b">
 									<ServerDate />
 								</div>
-								<DropdownMenuSeparator className="md:hidden" />
+								<div className="p-2 space-y-0.5">
+									<DropdownMenuItem
+										onClick={() => router.push("/userProfile")}
+										className="cursor-pointer rounded-lg px-3 py-3 gap-3 focus:bg-accent"
+									>
+										<UserCircle className="w-4 h-4 shrink-0 text-muted-foreground" />
+										<span className="font-medium">Профайл</span>
+									</DropdownMenuItem>
 
-								<div className="px-2 py-1.5">
-									<AnimatedThemeToggler />
+									<div className="flex items-center justify-between gap-3 px-3 py-3 rounded-lg hover:bg-accent/50 focus-within:bg-accent/50 transition-colors">
+										<ThemeSwitch className="p-0 min-w-0 hover:opacity-90 transition-opacity" />
+									</div>
+									<DropdownMenuSeparator className="my-1" />
+									<DropdownMenuItem
+										onClick={() => setShowLogoutDialog(true)}
+										className="cursor-pointer rounded-lg px-3 py-3 gap-3 text-destructive focus:text-destructive focus:bg-destructive/10 hover:bg-destructive/10"
+									>
+										<LogOut className="w-4 h-4 shrink-0" />
+										<span className="font-medium">Гарах</span>
+									</DropdownMenuItem>
 								</div>
-								<DropdownMenuItem
-									onClick={() => router.push("/userProfile")}
-									className="cursor-pointer"
-								>
-									<UserCircle className="w-4 h-4 mr-2" />
-									Профайл
-								</DropdownMenuItem>
-								<DropdownMenuSeparator />
-								<DropdownMenuItem
-									onClick={() => setShowLogoutDialog(true)}
-									className="cursor-pointer text-red-600"
-								>
-									<LogOut className="w-4 h-4 mr-2" />
-									Гарах
-								</DropdownMenuItem>
 							</DropdownMenuContent>
 						</DropdownMenu>
 					</div>

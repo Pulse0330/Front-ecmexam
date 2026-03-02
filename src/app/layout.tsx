@@ -1,21 +1,34 @@
+import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
 import type { Metadata } from "next";
 import Script from "next/script";
 import Providers from "@/app/Providers";
+import IdleTimerProvider from "@/components/timeLogOut"; // ✅ замаа өөрчил
+
+const inter = Inter({
+	variable: "--font-inter",
+	subsets: ["latin", "cyrillic"],
+});
 
 interface RootLayoutProps {
 	children: ReactNode;
 }
 
 export const metadata: Metadata = {
-	// Your metadata here
+	title: "Skuul",
+	icons: {
+		icon: "/image/logoLogin.png",
+		apple: "/image/logoLogin.png",
+	},
+	description:
+		"Онлайн сургалтын платформ | Онлайн сургалт | Сургалтын платформ | Сургалтын систем | Сургалтын портал | Сургалтын үйлчилгээ | Сургалтын шийдэл | Сургалтын програм | Сургалтын апп | Сургалтын платформ Монголд",
 };
 
 export default function RootLayout({ children }: RootLayoutProps) {
 	return (
 		<html lang="mn" suppressHydrationWarning>
-			<body suppressHydrationWarning>
+			<body className={`${inter.variable} `}>
 				<Script
 					id="mathjax-config"
 					strategy="beforeInteractive"
@@ -63,7 +76,13 @@ export default function RootLayout({ children }: RootLayoutProps) {
 					strategy="beforeInteractive"
 					id="mathjax-script"
 				/>
-				<Providers>{children}</Providers>
+				<Providers>
+					<IdleTimerProvider>
+						{" "}
+						{/* ✅ Providers-ийн доор wrap хий */}
+						{children}
+					</IdleTimerProvider>
+				</Providers>
 			</body>
 		</html>
 	);
