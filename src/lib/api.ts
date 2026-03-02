@@ -43,7 +43,6 @@ import type {} from "@/types/login/sign/registerChoose/aimag";
 import type {} from "@/types/login/sign/registerChoose/duureg";
 import type {} from "@/types/login/sign/registerChoose/sum";
 import type {} from "@/types/login/sign/registerChoose/surguuli";
-import type { StudentExamResponse } from "@/types/mnExam/StudentExamResponse";
 import type { getplaninfoCourseData } from "@/types/paymentCourse/getplaninfo";
 import type { QPayInvoiceResponse } from "@/types/Qpay/qpayinvoice";
 import type { ApiSorillistsResponse } from "@/types/soril/sorilLists";
@@ -550,16 +549,5 @@ export const getQPayInvoice = async (
 		},
 	);
 
-	return data;
-};
-//------------------------------- Монгол хэл бичгийн шалгалт---------------------------------//
-export const getStudentExam = async (
-	dbname: string,
-	regnumber: string,
-): Promise<StudentExamResponse> => {
-	const { data } = await api.post<StudentExamResponse>("/getstudentexam", {
-		dbname: dbname,
-		regnumber: regnumber,
-	});
 	return data;
 };
