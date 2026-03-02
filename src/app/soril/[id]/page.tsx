@@ -16,10 +16,10 @@ import {
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ExamHeader } from "@/app/exam/component/examInfo";
+import { ExamHeader } from "@/app/exam/component/examUtils/examInfo";
+import MathContent from "@/app/exam/component/examUtils/MathContent";
 import ExamMinimap from "@/app/exam/component/minimap";
 import FillInTheBlankQuestion from "@/app/exam/component/question/fillblank";
-import MathContent from "@/app/exam/component/question/MathContent";
 import MatchingByLine from "@/app/exam/component/question/matching";
 import MultiSelectQuestion from "@/app/exam/component/question/multiselect";
 import NumberInputQuestion from "@/app/exam/component/question/numberinput";

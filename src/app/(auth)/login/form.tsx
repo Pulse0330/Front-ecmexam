@@ -255,29 +255,31 @@ export function LoginForm() {
 						type="button"
 						onClick={() => setOpen(true)}
 						className="w-full flex flex-col items-center justify-center gap-1 px-6 py-4
-              bg-gradient-to-r from-emerald-500 to-teal-600
+              bg-linear-to-r from-emerald-500 to-teal-600
               dark:from-emerald-600 dark:to-teal-700
               text-white rounded-xl hover:opacity-90 hover:-translate-y-0.5
               transition-all duration-300 shadow-lg cursor-pointer"
 					>
-						<span className="text-xs opacity-80">Шалгалтанд бүртгүүлэх</span>
-						<span className="font-bold text-base">
+						<span className="text-xs opacity-80">
 							Монгол хэл бичгийн шалгалт
 						</span>
+						<span className="font-bold text-base">Шалгалтанд бүртгүүлэх</span>
 					</button>
 				</CardFooter>
 			</Card>
 			<Dialog open={open} onOpenChange={setOpen}>
-				<DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
-					<DialogHeader>
-						<DialogTitle className="text-xl font-bold flex items-center gap-2">
+				<DialogContent className="sm:max-w-md flex flex-col bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 max-h-screen sm:max-h-[85vh] p-0 overflow-hidden">
+					<DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
+						<DialogTitle className="text-xl font-bold">
 							Монгол хэл бичгийн шалгалт
 						</DialogTitle>
 						<DialogDescription>
 							Шалгалтанд бүртгүүлэхийн тулд мэдээллээ оруулна уу
 						</DialogDescription>
 					</DialogHeader>
-					<UserCheckForm />
+					<div className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-4">
+						<UserCheckForm onClose={() => setOpen(false)} />
+					</div>
 				</DialogContent>
 			</Dialog>
 		</>

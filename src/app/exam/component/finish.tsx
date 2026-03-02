@@ -120,7 +120,7 @@ const FinishExamResultDialog = forwardRef<
 					if (isDadlaga) {
 						toast.success("✅ Шалгалт амжилттай дууслаа!");
 						setTimeout(() => {
-							router.push("/Lists/examResult");
+							router.replace("/Lists/examResult");
 						}, 1500);
 						setIsAutoSubmitting(false);
 						return;
@@ -138,7 +138,7 @@ const FinishExamResultDialog = forwardRef<
 						// ✅ Цаг дуусахад 5 секундийн дараа автоматаар examList руу шилжих
 						if (isAutoSubmitting) {
 							autoRedirectTimerRef.current = setTimeout(() => {
-								router.push("/Lists/examResult");
+								router.replace("/Lists/examResult");
 							}, 500);
 						}
 					}
@@ -161,7 +161,7 @@ const FinishExamResultDialog = forwardRef<
 						: "Шалгалт дуусгах үед алдаа гарлаа",
 				);
 				setOpen(false);
-				router.push("/Lists/examResult");
+				router.replace("/Lists/examResult");
 			},
 		});
 

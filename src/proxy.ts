@@ -5,16 +5,19 @@ export async function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 	const token = request.cookies.get("auth-token")?.value;
 
-	const publicRoutes = [
-		"/login",
-		"/sign",
-		"/forgot",
-		"/not-found",
-		"/mnUserCreate",
-	];
-	const isPublicRoute = publicRoutes.some((route) =>
-		pathname.startsWith(route),
-	);
+	const publicRoutes = ["/login", "/sign", "/forgot", "/not-found"];
+
+	// Token байгаа ч байхгүй ч үргэлж нэвтрэх боломжтой routes
+	// (шинэ хэрэглэгч бүртгүүлэх, шалгалтанд бүртгүүлэх)
+	const alwaysAllowRoutes = ["/mnUserCreate"];
+
+	const isPublicRoute = publicRoutes.some((r) => pathname.startsWith(r));
+	const isAlwaysAllow = alwaysAllowRoutes.some((r) => pathname.startsWith(r));
+
+	// Үргэлж зөвшөөрөх — token шаардахгүй
+	if (isAlwaysAllow) {
+		return NextResponse.next();
+	}
 
 	// Token байхгүй бол login руу
 	if (!token) {
@@ -26,7 +29,7 @@ export async function proxy(request: NextRequest) {
 		return NextResponse.redirect(loginUrl);
 	}
 
-	// Token байгаа public route руу орохыг хориглох
+	// Token байгаа үед public route руу орохыг хориглох
 	if (isPublicRoute) {
 		return NextResponse.redirect(new URL("/home", request.url));
 	}

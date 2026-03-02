@@ -190,7 +190,7 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 							</TooltipContent>
 						</Tooltip>
 
-						{finished && exam.test_time && (
+						{finished && (
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<div className="flex items-center gap-0.5 sm:gap-1 text-muted-foreground min-w-0">
