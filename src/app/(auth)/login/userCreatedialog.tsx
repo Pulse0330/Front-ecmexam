@@ -1,20 +1,50 @@
 "use client";
 
+import {
+	AlertCircle,
+	ArrowRight,
+	CheckCircle2,
+	Loader2,
+	RotateCcw,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-// ─── Env variable — hardcoded URL-г тусгаарлав ───────────────────────────────
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+} from "@/components/ui/select";
+
+// ─── Env ──────────────────────────────────────────────────────────────────────
 const EXAM_API_BASE =
 	process.env.NEXT_PUBLIC_EXAM_API_URL ?? "https://ottapp.ecm.mn";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type CheckState = "idle" | "loading" | "found" | "not_found" | "error";
 
-interface UserInfo {
-	firstname: string;
-	lastname: string;
+interface StudentData {
+	register_number: string;
+	last_name: string;
+	first_name: string;
+	gender: "M" | "F";
+	age: number;
+	address: string;
+	mail: string;
+	nationality: string;
+	examinee_number: string;
+	password: string;
+	profile: string | null;
+	school_esis_id: number;
+	student_group_id: number;
+	academic_level: number;
 }
+
 interface AimagItem {
 	mAcode: string;
 	mName: string;
@@ -42,6 +72,7 @@ interface StudentExamData {
 	lastname: string;
 	reg_number: string;
 	gender: number;
+	gender_code: "M" | "F";
 	phone: string | null;
 	email: string;
 	aimag_id: string;
@@ -59,6 +90,42 @@ interface StudentExamData {
 	studentgroupname: string;
 	aimag_name: string;
 	sym_name: string;
+	institutionid: string;
+	academic_level: number;
+	nationality: string;
+}
+
+// ─── Mapper: StudentExamData → StudentData ────────────────────────────────────
+function _mapToStudentData(s: StudentExamData): StudentData {
+	const birthYear = new Date(s.dateofbirth).getFullYear();
+	const age = new Date().getFullYear() - birthYear;
+	return {
+		register_number: s.reg_number,
+		last_name: s.lastname,
+		first_name: s.firstname,
+		gender: s.gender_code ?? (s.gender === 0 ? "F" : "M"),
+		age,
+		address: [s.aimag_name, s.sym_name].filter(Boolean).join(", "),
+		mail: s.email,
+		nationality: s.nationality || "Mongolian",
+		examinee_number: s.personId,
+		password: "",
+		profile: s.img_url,
+		school_esis_id: Number(s.institutionid),
+		student_group_id: Number(s.studentgroupid),
+		academic_level: s.academic_level,
+	};
+}
+
+// ─── API Response wrapper ─────────────────────────────────────────────────────
+interface ApiResponse<T> {
+	RetResponse: {
+		ResponseMessage: string;
+		StatusCode: string;
+		ResponseCode: string;
+		ResponseType: boolean;
+	};
+	RetData: T[];
 }
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
@@ -102,156 +169,74 @@ async function apiGetStudentExam(
 		body: JSON.stringify({ dbname, regnumber }),
 	});
 	if (!r.ok) throw new Error("Серверт холбогдоход алдаа гарлаа");
-	const d = await r.json();
-	return (d?.RetData?.[0] as StudentExamData) ?? null;
+	const d: ApiResponse<StudentExamData> = await r.json();
+	if (!d.RetResponse.ResponseType)
+		throw new Error("Энэ регистрийн дугаартай сурагч олдсонгүй");
+	return d.RetData[0] ?? null;
 }
 
-// ─── Spinner SVG — тусдаа component болгон, давтагдахаас сэргийлнэ ──────────
-function Spinner({ className = "w-5 h-5" }: { className?: string }) {
-	return (
-		<svg
-			className={`animate-spin ${className}`}
-			fill="none"
-			viewBox="0 0 24 24"
-		>
-			<title>Уншиж байна</title>
-			<circle
-				className="opacity-25"
-				cx="12"
-				cy="12"
-				r="10"
-				stroke="currentColor"
-				strokeWidth="4"
-			/>
-			<path
-				className="opacity-75"
-				fill="currentColor"
-				d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-			/>
-		</svg>
-	);
-}
+// ─── Regex: зөвшөөрөгдөх тэмдэгтүүд ─────────────────────────────────────────
+const REG_ALLOWED = /[^A-ZА-ЯӨҮa-zа-яөү0-9]/g;
 
-// ─── Select component ─────────────────────────────────────────────────────────
-interface SelProps {
+// ─── SelectField component ────────────────────────────────────────────────────
+interface SelectFieldProps {
 	label: string;
 	placeholder: string;
 	options: { value: string; label: string }[];
 	value: string;
-	onChange: (v: string) => void;
+	onValueChange: (v: string) => void;
 	disabled?: boolean;
 	loading?: boolean;
 }
 
-function Sel({
+function SelectField({
 	label,
 	placeholder,
 	options,
 	value,
-	onChange,
+	onValueChange,
 	disabled,
 	loading,
-}: SelProps) {
+}: SelectFieldProps) {
 	return (
 		<div className="space-y-1.5">
-			<Label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+			<Label className="text-sm font-medium flex items-center gap-2">
 				{label}
-				{loading && <Spinner className="w-3.5 h-3.5 text-emerald-500" />}
+				{loading && (
+					<Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500" />
+				)}
 			</Label>
-			<div className="relative">
-				<select
-					value={value}
-					onChange={(e) => onChange(e.target.value)}
-					disabled={disabled || loading}
-					className="w-full px-4 py-3 pr-10 rounded-xl border-2 appearance-none cursor-pointer bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-200 dark:border-gray-700 focus:border-emerald-400 dark:focus:border-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 outline-none"
-				>
-					<option value="">{placeholder}</option>
-					{/* index key хэрэглэхгүй — value нь unique байна */}
+			<Select
+				value={value}
+				onValueChange={onValueChange}
+				disabled={disabled || loading}
+			>
+				<SelectTrigger className="h-11 w-full overflow-hidden">
+					<span className="truncate block text-left text-sm">
+						{value
+							? options.find((o) => o.value === value)?.label
+							: placeholder}
+					</span>
+				</SelectTrigger>
+				<SelectContent className="max-w-(--radix-select-trigger-width)">
 					{options.map((o) => (
-						<option key={o.value} value={o.value}>
+						<SelectItem
+							key={o.value}
+							value={o.value}
+							className="whitespace-normal word-break-words"
+						>
 							{o.label}
-						</option>
+						</SelectItem>
 					))}
-				</select>
-				<div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-					<svg
-						className="w-4 h-4"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-					>
-						<title>Dropdown</title>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							strokeWidth={2}
-							d="M19 9l-7 7-7-7"
-						/>
-					</svg>
-				</div>
-			</div>
+				</SelectContent>
+			</Select>
 		</div>
 	);
 }
 
-// ─── Alert component — давтагдах alert JSX-г нэгтгэв ─────────────────────────
-type AlertVariant = "error" | "success";
-
-function Alert({
-	variant,
-	children,
-}: {
-	variant: AlertVariant;
-	children: React.ReactNode;
-}) {
-	const isError = variant === "error";
-	const base =
-		"flex items-center gap-2.5 text-sm rounded-xl px-3.5 py-2.5 border";
-	const styles = isError
-		? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
-		: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800";
-
-	return (
-		<div className={`${base} ${styles}`}>
-			{isError ? (
-				<svg
-					className="w-4 h-4 shrink-0"
-					fill="currentColor"
-					viewBox="0 0 20 20"
-				>
-					<title>Алдаа</title>
-					<path
-						fillRule="evenodd"
-						d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-						clipRule="evenodd"
-					/>
-				</svg>
-			) : (
-				<svg
-					className="w-4 h-4 shrink-0 text-emerald-500"
-					fill="currentColor"
-					viewBox="0 0 20 20"
-				>
-					<title>Амжилттай</title>
-					<path
-						fillRule="evenodd"
-						d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-						clipRule="evenodd"
-					/>
-				</svg>
-			)}
-			<span>{children}</span>
-		</div>
-	);
-}
-
-// ─── Монгол регистрийн дугаарын regex ─────────────────────────────────────────
-// Монгол кирилл: А-Я + Өөрийн үсгүүд (Ө, Ү) + Latin A-Z
-const REG_ALLOWED = /[^A-ZА-ЯӨҮa-zа-яөү0-9]/g;
-
-// ─── Main component ───────────────────────────────────────────────────────────
-export function UserCheckForm() {
-	const router = useRouter();
+// ─── Main Component ───────────────────────────────────────────────────────────
+export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
+	const _router = useRouter();
 
 	const [aimagList, setAimagList] = useState<AimagItem[]>([]);
 	const [districtList, setDistrictList] = useState<DistrictItem[]>([]);
@@ -267,11 +252,10 @@ export function UserCheckForm() {
 
 	const [reg, setReg] = useState("");
 	const [checkState, setCheckState] = useState<CheckState>("idle");
-	const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+	const [studentExam, setStudentExam] = useState<StudentExamData | null>(null);
 	const [checkError, setCheckError] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [submitError, setSubmitError] = useState("");
-	const [studentData, setStudentData] = useState<StudentExamData | null>(null);
 
 	const aimagData = aimagList.find((a) => a.mAcode === aimag);
 	const schoolData = schoolList.find((s) => s.sName === school);
@@ -283,12 +267,10 @@ export function UserCheckForm() {
 			.finally(() => setAimagLoading(false));
 	}, []);
 
-	// useCallback — функцуудыг memoize хийж, шаардлагагүй re-render багасгана
 	const clearReg = useCallback(() => {
 		setReg("");
 		setCheckState("idle");
-		setUserInfo(null);
-		setStudentData(null);
+		setStudentExam(null);
 		setCheckError("");
 		setSubmitError("");
 	}, []);
@@ -364,11 +346,7 @@ export function UserCheckForm() {
 		try {
 			const student = await apiGetStudentExam(schoolData.dbname, reg);
 			if (student) {
-				setStudentData(student);
-				setUserInfo({
-					firstname: student.firstname,
-					lastname: student.lastname,
-				});
+				setStudentExam(student);
 				setCheckState("found");
 			} else {
 				setCheckState("not_found");
@@ -380,30 +358,31 @@ export function UserCheckForm() {
 	}, [reg, schoolData]);
 
 	const handleSubmit = useCallback(async () => {
-		if (!studentData) return;
+		if (!studentExam) return;
 		setSubmitting(true);
 		setSubmitError("");
 		try {
-			sessionStorage.setItem("studentExam", JSON.stringify(studentData));
-			router.push("/mnUserCreate");
+			sessionStorage.setItem("studentExam", JSON.stringify(studentExam));
+			onClose?.();
+			window.location.href = "/mnUserCreate"; // ← router.push-г солисон
 		} catch (err) {
 			setSubmitError(err instanceof Error ? err.message : "Алдаа гарлаа.");
 			setSubmitting(false);
 		}
-	}, [studentData, router]);
+	}, [studentExam, onClose]);
 
 	return (
 		<div className="space-y-5">
-			<Sel
+			<SelectField
 				label="Аймаг / Нийслэл"
 				placeholder={aimagLoading ? "Уншиж байна..." : "— Аймаг сонгох —"}
 				options={aimagList.map((a) => ({ value: a.mAcode, label: a.mName }))}
 				value={aimag}
-				onChange={onAimag}
+				onValueChange={onAimag}
 				loading={aimagLoading}
 			/>
 
-			<Sel
+			<SelectField
 				label="Дүүрэг / Сум"
 				placeholder={
 					districtLoading
@@ -417,12 +396,12 @@ export function UserCheckForm() {
 					label: d.name,
 				}))}
 				value={district}
-				onChange={onDistrict}
+				onValueChange={onDistrict}
 				disabled={!aimag}
 				loading={districtLoading}
 			/>
 
-			<Sel
+			<SelectField
 				label="Сургууль"
 				placeholder={
 					schoolLoading
@@ -433,80 +412,86 @@ export function UserCheckForm() {
 				}
 				options={schoolList.map((s) => ({ value: s.sName, label: s.sName }))}
 				value={school}
-				onChange={onSchool}
+				onValueChange={onSchool}
 				disabled={!district}
 				loading={schoolLoading}
 			/>
 
 			{school !== "" && (
-				<div className="space-y-2 border-t border-gray-100 dark:border-gray-800 pt-5">
-					<Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-						Регистрийн дугаар
-					</Label>
+				<div className="space-y-3 border-t pt-5">
+					<Label className="text-sm font-medium">Регистрийн дугаар</Label>
 					<div className="flex gap-2">
-						<input
-							type="text"
+						<Input
 							value={reg}
 							onChange={onRegInput}
 							onKeyDown={(e) => e.key === "Enter" && checkUser()}
 							placeholder="УБ12345678"
 							maxLength={10}
 							disabled={checkState === "found"}
-							className={`flex-1 px-4 py-3 rounded-xl border-2 font-mono text-base tracking-widest text-center
-                bg-white dark:bg-gray-800 text-gray-900 dark:text-white
-                placeholder:text-gray-300 dark:placeholder:text-gray-600 placeholder:tracking-normal
-                transition-all duration-200 outline-none disabled:opacity-60 disabled:cursor-not-allowed
-                ${
-									checkState === "not_found" || checkState === "error"
-										? "border-red-400 dark:border-red-500"
-										: checkState === "found"
-											? "border-emerald-400 dark:border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/10"
-											: "border-gray-200 dark:border-gray-700 focus:border-emerald-400 dark:focus:border-emerald-500"
-								}`}
+							className={`flex-1 font-mono text-base tracking-widest text-center h-11
+								${checkState === "not_found" || checkState === "error" ? "border-destructive focus-visible:ring-destructive" : ""}
+								${checkState === "found" ? "border-emerald-500 bg-emerald-50/30 dark:bg-emerald-900/10" : ""}
+							`}
 						/>
-						<button
+						<Button
 							type="button"
+							variant={checkState === "found" ? "outline" : "default"}
 							onClick={checkState === "found" ? clearReg : checkUser}
 							disabled={
 								checkState === "loading" ||
 								(checkState !== "found" && reg.length < 8)
 							}
-							className={`px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-200 shrink-0 min-w-[84px] flex items-center justify-center
-                ${
-									checkState === "found"
-										? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border-2 border-gray-200 dark:border-gray-700"
-										: "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed"
-								}`}
+							className={`shrink-0 min-w-[90px] h-11 ${checkState !== "found" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}`}
 						>
 							{checkState === "loading" ? (
-								<Spinner />
+								<Loader2 className="w-4 h-4 animate-spin" />
 							) : checkState === "found" ? (
-								"Өөрчлөх"
+								<>
+									<RotateCcw className="w-4 h-4 mr-1.5" />
+									Өөрчлөх
+								</>
 							) : (
 								"Шалгах"
 							)}
-						</button>
+						</Button>
 					</div>
 
 					{checkState === "not_found" && (
-						<Alert variant="error">
-							<span className="font-mono font-bold">{reg}</span> регистртэй
-							хэрэглэгч олдсонгүй.
+						<Alert variant="destructive">
+							<AlertCircle className="h-4 w-4" />
+							<AlertDescription>
+								<span className="font-mono font-bold">{reg}</span> регистртэй
+								хэрэглэгч олдсонгүй.
+							</AlertDescription>
 						</Alert>
 					)}
 
 					{checkState === "error" && (
-						<Alert variant="error">
-							{checkError || "Сервертэй холбогдоход алдаа гарлаа."}
+						<Alert variant="destructive">
+							<AlertCircle className="h-4 w-4" />
+							<AlertDescription>
+								{checkError || "Сервертэй холбогдоход алдаа гарлаа."}
+							</AlertDescription>
 						</Alert>
 					)}
 
-					{checkState === "found" && userInfo && (
-						<Alert variant="success">
-							Сайн байна уу,{" "}
-							<span className="font-semibold">
-								{userInfo.lastname} {userInfo.firstname}
-							</span>
+					{checkState === "found" && studentExam && (
+						<Alert className="border-emerald-200 bg-emerald-50/50 dark:bg-emerald-900/10 dark:border-emerald-800">
+							<CheckCircle2 className="h-4 w-4 text-emerald-500" />
+							<AlertDescription className="text-emerald-700 dark:text-emerald-400">
+								<div className="flex flex-col gap-2">
+									<span>
+										Сайн байна уу,{" "}
+										<span className="font-semibold">
+											{studentExam.lastname} {studentExam.firstname}
+										</span>
+									</span>
+
+									<p className="text-xs text-emerald-600 dark:text-emerald-500 wrap-break-words">
+										{studentExam.schoolname}
+									</p>
+								</div>
+							</AlertDescription>
 						</Alert>
 					)}
 				</div>
@@ -514,44 +499,30 @@ export function UserCheckForm() {
 
 			{checkState === "found" && school && (
 				<>
-					{submitError && <Alert variant="error">{submitError}</Alert>}
-
-					<button
+					{submitError && (
+						<Alert variant="destructive">
+							<AlertCircle className="h-4 w-4" />
+							<AlertDescription>{submitError}</AlertDescription>
+						</Alert>
+					)}
+					<Button
 						type="button"
 						onClick={handleSubmit}
 						disabled={submitting}
-						className="w-full py-3.5 px-6 rounded-xl font-semibold text-white
-              bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700
-              disabled:opacity-40 disabled:cursor-not-allowed
-              shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30
-              hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300
-              flex items-center justify-center gap-2"
+						className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-all"
 					>
 						{submitting ? (
 							<>
-								<Spinner />
+								<Loader2 className="w-4 h-4 animate-spin mr-2" />
 								Уншиж байна...
 							</>
 						) : (
 							<>
 								Үргэлжлүүлэх
-								<svg
-									className="w-4 h-4"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<title>Дараах</title>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										strokeWidth={2}
-										d="M13 7l-5 5m0 0l5 5m-5-5H6"
-									/>
-								</svg>
+								<ArrowRight className="w-4 h-4 ml-2" />
 							</>
 						)}
-					</button>
+					</Button>
 				</>
 			)}
 		</div>
