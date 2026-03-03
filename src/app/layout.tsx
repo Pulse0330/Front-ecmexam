@@ -1,4 +1,4 @@
-import { Inter } from "next/font/google";
+import { Inter, Roboto } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
 import type { Metadata } from "next";
@@ -10,7 +10,12 @@ const inter = Inter({
 	variable: "--font-inter",
 	subsets: ["latin", "cyrillic"],
 });
-
+const lobster = Roboto({
+	weight: "400",
+	subsets: ["latin"],
+	variable: "--font-roboto",
+	display: "swap",
+});
 interface RootLayoutProps {
 	children: ReactNode;
 }
@@ -28,7 +33,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: RootLayoutProps) {
 	return (
 		<html lang="mn" suppressHydrationWarning>
-			<body className={`${inter.variable} `}>
+			<body
+				className={`${inter.variable} ${lobster.variable}  antialiased font-inter`}
+			>
 				<Script
 					id="mathjax-config"
 					strategy="beforeInteractive"

@@ -122,3 +122,24 @@ export interface getExamTimeResponseType {
 	};
 	RetData: ExamRoom[];
 }
+export interface ExamInfoItem {
+	id: number;
+	exam_id: number;
+	exam_number: string;
+	name: string;
+	duration: number; // минут
+	register_start_date: string; // ISO date string
+	register_end_date: string; // ISO date string
+	open_date: string; // ISO date string
+	regdate: string; // ISO date string
+}
+
+export interface getExamInfoResponseType {
+	RetResponse: {
+		ResponseMessage: string;
+		StatusCode: number;
+		ResponseCode: number;
+		ResponseType: boolean;
+	};
+	RetData: ExamInfoItem[];
+}

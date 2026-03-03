@@ -33,7 +33,7 @@ export default function ExamMaterialsPage() {
 							<div className="bg-primary/10 p-2 rounded-lg text-primary">
 								<BookOpen className="text-primary" />
 							</div>
-							Шалгалтын хувиар татах
+							Шалгалтын хувиар
 						</h1>
 						<p className="text-sm text-muted-foreground mt-1">
 							Та хувиар татах дээр дарж шалгалтыг шинэчлэх боломжтой. | Нийт{" "}

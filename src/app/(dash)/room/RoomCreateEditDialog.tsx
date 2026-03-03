@@ -1,6 +1,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlignLeft, Building, DoorOpen, Loader2, MapPin } from "lucide-react";
+import {
+	AlignLeft,
+	Building,
+	DoorOpen,
+	Loader2,
+	MapPin,
+	Monitor,
+} from "lucide-react";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import z from "zod";
@@ -31,6 +38,8 @@ const roomSchema = z.object({
 	branchname: z.string().optional(),
 	room_number: z.string().min(1, "Өрөөний дугаар заавал хэрэгтэй"),
 	descr: z.string().optional(),
+	pccount: z.string().min(1, "Компьютерын тоо заавал хэрэгтэй"),
+	school_esis_id: z.string().optional(),
 });
 
 type RoomFormValues = z.infer<typeof roomSchema>;
@@ -56,6 +65,8 @@ export function RoomCreateEditDialog({
 			branchname: "",
 			room_number: "",
 			descr: "",
+			pccount: "",
+			school_esis_id: "",
 		},
 	});
 
@@ -65,10 +76,11 @@ export function RoomCreateEditDialog({
 				...values,
 				id: roomID ?? 0,
 				optype: roomID ? 1 : 0,
-				procname: "api_examination_room_iud",
 				userid: Number(userId),
 				branchname: values.branchname ?? "",
 				descr: values.descr ?? "",
+				num_of_pc: Number(values.pccount),
+				school_esis_id: values.school_esis_id ?? "",
 			};
 			return roomCreateEdit(payload);
 		},
@@ -95,6 +107,8 @@ export function RoomCreateEditDialog({
 				branchname: roomDetail.branchname,
 				room_number: roomDetail.room_number,
 				descr: roomDetail.description,
+				pccount: String(roomDetail.num_of_pc),
+				school_esis_id: roomDetail.school_esis_id,
 			});
 		}
 	}, [roomDetail, isEdit, form.reset]);
@@ -128,7 +142,7 @@ export function RoomCreateEditDialog({
 											{...field}
 											className="pl-9"
 											aria-invalid={fieldState.invalid}
-											placeholder="98-р сургууль"
+											placeholder="#-р сургууль"
 										/>
 									</div>
 									{fieldState.invalid && (
@@ -170,7 +184,29 @@ export function RoomCreateEditDialog({
 									<FieldLabel>Салбар</FieldLabel>
 									<div className="relative ">
 										<MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-										<Input {...field} className="pl-9" placeholder="3-р байр" />
+										<Input {...field} className="pl-9" placeholder="#-р байр" />
+									</div>
+									{fieldState.invalid && (
+										<FieldError>{fieldState.error?.message}</FieldError>
+									)}
+								</Field>
+							)}
+						/>
+						<Controller
+							name="pccount"
+							control={form.control}
+							render={({ field, fieldState }) => (
+								<Field data-invalid={fieldState.invalid}>
+									<FieldLabel>Компьютерын тоо</FieldLabel>
+									<div className="relative ">
+										<Monitor className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+										<Input
+											{...field}
+											className="pl-9"
+											type="number"
+											aria-invalid={fieldState.invalid}
+											placeholder="Компьютерын тоо"
+										/>
 									</div>
 									{fieldState.invalid && (
 										<FieldError>{fieldState.error?.message}</FieldError>

@@ -20,6 +20,8 @@ export interface Room {
 	roomsize: number;
 	pccnt: number | null;
 	esisroomid: number;
+	num_of_pc: number;
+	school_esis_id: string;
 }
 
 export interface getRoomsResponseType {

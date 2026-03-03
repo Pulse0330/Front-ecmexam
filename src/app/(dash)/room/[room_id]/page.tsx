@@ -1,22 +1,14 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { LampDesk, Minus, Plus, Save } from "lucide-react";
+import { Minus, Plus, Save } from "lucide-react";
 import { use, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Desk } from "@/app/(dash)/room/[room_id]/desk";
 import { LayoutPicker } from "@/app/(dash)/room/[room_id]/mini-room";
 import { IBackButton } from "@/components/iBackButton";
-import {
-	AlertDialog,
-	AlertDialogContent,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useRoomManager } from "@/hooks/use-room-manager";
 import {
@@ -62,8 +54,6 @@ export default function RoomPage({ params }: RoomPageProps) {
 
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [currentLayout, setCurrentLayout] = useState<LayoutType>("rows_3");
-	const [showStartDialog, setShowStartDialog] = useState(true);
-	const [tempCount, setTempCount] = useState(tableCount); // Dialog дотор түр хадгалах тоо
 
 	const { data: remoteData, isLoading: isDataLoading } = useQuery({
 		queryKey: ["room-positions", roomId],
@@ -83,24 +73,50 @@ export default function RoomPage({ params }: RoomPageProps) {
 		}
 	}, [roomDetail, setSizeMultiplier]);
 
+	// Өмнөх олон useEffect-үүдээ устгаад зөвхөн үүнийг үлдээ:
 	useEffect(() => {
+		// 1. Дата ачаалагдаж дуусаагүй бол юу ч хийхгүй
+		if (isDataLoading || isRoomDetailLoading || !roomDetail) return;
+
+		// 2. Өрөөний хэмжээг нэг удаа тохируулах
+		if (roomDetail.roomsize) {
+			setSizeMultiplier(roomDetail.roomsize);
+		}
+
+		// 3. Ширээнүүдийг байрлуулах үндсэн логик
 		if (remoteData?.RetData && remoteData.RetData.length > 0) {
-			// Хэрэв дата ирсэн бол Dialog-ийг хааж, ширээнүүдийг байрлуулна
+			// Хэрэв датабазад хадгалсан БАЙРШИЛ БАЙГАА бол
 			const mappedTables: Table[] = remoteData.RetData.map((pc) => ({
 				id: pc.seatid,
-				xPos: pc.colnum, // Таны API colnum-д xPos хадгалсан гэж үзвэл
-				yPos: pc.rownum, // rownum-д yPos
+				xPos: pc.colnum,
+				yPos: pc.rownum,
 				name: pc.seat_number,
 			}));
 
 			setTables(mappedTables);
 			setTableCount(mappedTables.length);
-			setShowStartDialog(false);
-		} else if (remoteData?.RetData && remoteData.RetData.length === 0) {
-			// Хэрэв дата хоосон ирвэл Dialog-ийг харуулна
-			setShowStartDialog(true);
+		} else {
+			// Хэрэв ШИНЭ ӨРӨӨ (хадгалсан дата байхгүй) бол
+			const pcCount = roomDetail.num_of_pc || 0;
+			setTableCount(pcCount);
+
+			// Зөвхөн tables хоосон үед л анхны layout-ыг онооно
+			// Ингэснээр infinite loop-ээс сэргийлнэ
+			if (tables.length === 0 && pcCount > 0) {
+				applyLayout(currentLayout, pcCount);
+			}
 		}
-	}, [remoteData, setTables, setTableCount]);
+
+		// ХАМААРАЛ: Энд 'tables'-ыг хасчихсан байгааг анзаараарай!
+		// Энэ нь дата анх ирэхэд л нэг удаа ажиллана гэсэн үг.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [
+		isDataLoading,
+		isRoomDetailLoading,
+		remoteData?.RetData,
+		roomDetail?.roomsize,
+		roomDetail?.num_of_pc,
+	]);
 
 	// Mouse handlers (MouseDown, MouseMove, MouseUp хэвээрээ...)
 	const handleMouseDown = (e: React.MouseEvent, table: Table) => {
@@ -157,17 +173,6 @@ export default function RoomPage({ params }: RoomPageProps) {
 		applyLayout(type); // Таны hook-ээс ирж байгаа функц
 	};
 
-	const handleStart = () => {
-		if (tempCount > 0 && tempCount <= 100) {
-			setTableCount(tempCount); // State шинэчилнэ
-			applyLayout(currentLayout, tempCount); // Шинэ тоогоор шууд layout үүсгэнэ
-			setShowStartDialog(false);
-		}
-	};
-	const handleKeyDown = (e: React.KeyboardEvent) => {
-		if (e.key === "Enter") handleStart();
-	};
-
 	const { mutate: saveLayout, isPending } = useMutation({
 		mutationFn: saveRoomLayout,
 		onSuccess: () => {
@@ -178,11 +183,45 @@ export default function RoomPage({ params }: RoomPageProps) {
 	const handleSave = () => {
 		saveLayout({
 			roomId: Number(roomId),
-			userId: 0, // Таны жишээн дээр 0 байсан тул
+			userId: userId || 0, // Таны жишээн дээр 0 байсан тул
 			tables: tables, // useRoomManager-аас ирж буй tables state
 			sizes: sizeMultiplier,
 		});
 	};
+
+	useEffect(() => {
+		if (roomDetail) {
+			if (roomDetail.roomsize) setSizeMultiplier(roomDetail.roomsize);
+
+			// Хэрэв өмнө нь хадгалсан байршил байхгүй бол (RetData хоосон)
+			// Шууд num_of_pc-ээр нь layout үүсгэнэ
+			if (remoteData?.RetData && remoteData.RetData.length === 0) {
+				setTableCount(roomDetail.num_of_pc);
+				applyLayout(currentLayout, roomDetail.num_of_pc);
+			}
+		}
+	}, [
+		roomDetail,
+		remoteData,
+		setSizeMultiplier,
+		applyLayout,
+		currentLayout,
+		setTableCount,
+	]);
+
+	useEffect(() => {
+		if (remoteData?.RetData && remoteData.RetData.length > 0) {
+			const mappedTables: Table[] = remoteData.RetData.map((pc) => ({
+				id: pc.seatid,
+				xPos: pc.colnum,
+				yPos: pc.rownum,
+				name: pc.seat_number,
+			}));
+
+			setTables(mappedTables);
+			setTableCount(mappedTables.length);
+		}
+	}, [remoteData, setTables, setTableCount]);
 
 	if (isDataLoading || isRoomDetailLoading) {
 		return (
@@ -211,11 +250,7 @@ export default function RoomPage({ params }: RoomPageProps) {
 						</p>
 					</div>
 				</div>
-				<Button
-					onClick={handleSave}
-					disabled={isPending || showStartDialog}
-					className="w-full md:w-auto"
-				>
+				<Button onClick={handleSave} className="w-full md:w-auto">
 					{isPending ? (
 						<div className="flex items-center gap-2">
 							<Spinner />
@@ -338,44 +373,6 @@ export default function RoomPage({ params }: RoomPageProps) {
 					</div>
 				</aside>
 			</div>
-
-			<AlertDialog open={showStartDialog} onOpenChange={() => {}}>
-				<AlertDialogContent className="sm:max-w-[400px] rounded-4xl border-none shadow-2xl bg-card/95 backdrop-blur-xl">
-					<AlertDialogHeader className="flex flex-col items-center gap-4 pt-4">
-						<div className="p-4 bg-primary/10 rounded-2xl text-primary">
-							<LampDesk size={32} />
-						</div>
-						<AlertDialogTitle className="text-xl font-black uppercase tracking-tighter text-center">
-							Ангийн дүүргэлт
-						</AlertDialogTitle>
-						<p className="text-sm text-muted-foreground text-center px-6">
-							Зохион байгуулалт хийх ширээний тоог оруулна уу (1-100).
-						</p>
-					</AlertDialogHeader>
-
-					<div className="py-6 flex justify-center">
-						<div className="relative">
-							<Input
-								type="number"
-								value={tempCount}
-								onChange={(e) => setTempCount(Number(e.target.value))}
-								onKeyDown={handleKeyDown}
-								className="w-32 h-16 text-3xl font-black text-center bg-muted/50  rounded-2xl focus-visible:ring-2 ring-primary"
-								autoFocus
-							/>
-						</div>
-					</div>
-
-					<AlertDialogFooter className="pb-4">
-						<Button
-							onClick={handleStart}
-							className="w-full h-12 rounded-xl font-bold uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.01] transition-transform active:scale-95"
-						>
-							Үргэлжлүүлэх
-						</Button>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
 		</div>
 	);
 }
