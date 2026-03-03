@@ -48,7 +48,7 @@ interface StudentData {
 interface AimagItem {
 	mAcode: string;
 	mName: string;
-	mid: number;
+	mID: number;
 	sort: number;
 	miid: string;
 	mid1: number;
@@ -257,12 +257,15 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 	const [submitting, setSubmitting] = useState(false);
 	const [submitError, setSubmitError] = useState("");
 
-	const aimagData = aimagList.find((a) => a.mAcode === aimag);
+	const _aimagData = aimagList.find((a) => a.mAcode === aimag);
 	const schoolData = schoolList.find((s) => s.sName === school);
 
 	useEffect(() => {
 		apiAimag()
-			.then((d) => setAimagList(d.RetData ?? []))
+			.then((d) => {
+				console.log("Aimag sample:", d.RetData?.[0]); // ← жинхэнэ field нэрүүд
+				setAimagList(d.RetData ?? []);
+			})
 			.catch(() => setAimagList([]))
 			.finally(() => setAimagLoading(false));
 	}, []);
@@ -288,7 +291,7 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 			if (!a) return;
 			setDistrictLoading(true);
 			try {
-				const d = await apiDistrict(a.mid);
+				const d = await apiDistrict(a.mID); // mid → mID
 				setDistrictList(d.RetData ?? []);
 			} catch {
 				setDistrictList([]);
@@ -305,10 +308,15 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 			setSchool("");
 			setSchoolList([]);
 			clearReg();
-			if (!val || !aimagData) return;
+			if (!val) return;
+
+			// aimagData-г dependency болгохын оронд шууд олох
+			const currentAimag = aimagList.find((x) => x.mAcode === aimag);
+			if (!currentAimag) return;
+
 			setSchoolLoading(true);
 			try {
-				const d = await apiSchool(aimagData.mid, Number(val));
+				const d = await apiSchool(currentAimag.mID, Number(val));
 				setSchoolList(d.RetData ?? []);
 			} catch {
 				setSchoolList([]);
@@ -316,7 +324,7 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 				setSchoolLoading(false);
 			}
 		},
-		[aimagData, clearReg],
+		[aimag, aimagList, clearReg], // aimagData → aimag + aimagList болгов
 	);
 
 	const onSchool = useCallback(
