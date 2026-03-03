@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: RootLayoutProps) {
 	return (
 		<html lang="mn" suppressHydrationWarning>
-			<body className={`${inter.variable} `}>
+			<body className={`${inter.variable} `} suppressHydrationWarning>
 				<Script
 					id="mathjax-config"
 					strategy="beforeInteractive"
