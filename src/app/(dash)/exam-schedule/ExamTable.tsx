@@ -235,7 +235,9 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 																			key={date.id}
 																			className="h-10 hover:bg-primary/5 border-b border-border/30 last:border-0"
 																			onClick={() => {
-																				route.push(`/exam-schedule/${date.id}`);
+																				route.push(
+																					`/exam-schedule/${date.exam_date_id}`,
+																				);
 																			}}
 																		>
 																			<TableCell className="py-1 pl-4">
@@ -277,7 +279,7 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 																					variant={"outline"}
 																				>
 																					<Link
-																						href={`/exam-schedule/${date.id}`}
+																						href={`/exam-schedule/${date.exam_date_id}`}
 																					>
 																						Дэлгэрэнгүй
 																					</Link>

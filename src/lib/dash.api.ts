@@ -1,6 +1,7 @@
 import api1 from "@/lib/axios1";
 import type {
 	batchRegisterExamResponseType,
+	getExamInfoResponseType,
 	getExamResponseType,
 	getExamSaveResponseType,
 	getExamTimeResponseType,
@@ -14,7 +15,6 @@ import type {
 } from "@/types/dashboard/room.types";
 
 export const roomCreateEdit = async ({
-	procname,
 	id,
 	name,
 	branchname,
@@ -22,8 +22,9 @@ export const roomCreateEdit = async ({
 	descr,
 	userid,
 	optype,
+	num_of_pc,
+	school_esis_id,
 }: {
-	procname: string;
 	id: number;
 	name: string;
 	branchname: string;
@@ -31,9 +32,10 @@ export const roomCreateEdit = async ({
 	descr: string;
 	userid: number;
 	optype: number;
+	num_of_pc: number;
+	school_esis_id: string;
 }): Promise<CreateEditRoomResponseType> => {
-	const { data } = await api1.post<CreateEditRoomResponseType>("/crud", {
-		procname,
+	const { data } = await api1.post<CreateEditRoomResponseType>("/roomsend", {
 		id,
 		name,
 		branchname,
@@ -41,6 +43,8 @@ export const roomCreateEdit = async ({
 		descr,
 		userid,
 		optype,
+		num_of_pc,
+		school_esis_id,
 		conn: "skuul",
 	});
 	return data;
@@ -53,7 +57,7 @@ export const getRooms = async ({
 	procname: string;
 }): Promise<getRoomsResponseType> => {
 	const { data } = await api1.post<getRoomsResponseType>("/list", {
-		user_id: userId,
+		userid: userId,
 		procname,
 		conn: "skuul",
 	});
@@ -77,8 +81,7 @@ export const saveRoomLayout = async (payload: {
 		colnum: table.xPos, // xPos-ийг багана (column) гэж үзвэл
 	}));
 
-	const { data } = await api1.post("/crud", {
-		procname: "api_exam_room_pc_insert",
+	const { data } = await api1.post("/roompcinsert", {
 		roomid: payload.roomId,
 		userid: payload.userId,
 		subjson: subjson,
@@ -146,7 +149,7 @@ export const getStudents = async ({
 	userId: number;
 }): Promise<getStudentsResponseType> => {
 	const { data } = await api1.post<getStudentsResponseType>("/list", {
-		user_id: userId,
+		userid: userId,
 		procname: "api_get_examinees",
 		conn: "skuul",
 	});
@@ -215,5 +218,45 @@ export const getSelectedStudents = async ({
 			conn: "skuul",
 		},
 	);
+	return data;
+};
+
+export const getExamRegistrationSend = async ({
+	userId,
+	examDateId,
+	examId,
+	examRoomId,
+}: {
+	userId: number;
+	examDateId: number;
+	examId: number;
+	examRoomId: number;
+}): Promise<getExamTimeResponseType> => {
+	const { data } = await api1.post<getExamTimeResponseType>(
+		"/examregistrationsend",
+		{
+			userid: userId,
+			exam_date_id: examDateId,
+			exam_id: examId,
+			exam_room_id: examRoomId,
+			conn: "skuul",
+		},
+	);
+	return data;
+};
+
+export const getExamInfo = async ({
+	userId,
+	examDateId,
+}: {
+	userId: number;
+	examDateId: number;
+}): Promise<getExamInfoResponseType> => {
+	const { data } = await api1.post<getExamInfoResponseType>("/list", {
+		procname: "api_exam_info_by_examdateid",
+		userid: userId,
+		exam_date_id: examDateId,
+		conn: "skuul",
+	});
 	return data;
 };

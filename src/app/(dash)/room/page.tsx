@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { number } from "zod";
 import { RoomCreateEditDialog } from "@/app/(dash)/room/RoomCreateEditDialog";
 import {
 	AlertDialog,
@@ -62,15 +63,14 @@ export default function RoomPage() {
 			const payload = {
 				id: id ?? 0,
 				optype: 2,
-				procname: "api_examination_room_iud",
 				userid: Number(userId),
 				branchname: "",
 				descr: "",
 				name: "",
 				room_number: "",
+				num_of_pc: 0,
+				school_esis_id: "",
 			};
-			console.log("payload", payload);
-
 			return roomCreateEdit(payload);
 		},
 		onSuccess: () => {

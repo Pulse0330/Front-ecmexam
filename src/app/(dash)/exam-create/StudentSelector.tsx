@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Search } from "lucide-react";
+import { CheckCircle2, Lock, Search } from "lucide-react"; // Lock icon нэмэв
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,7 +19,6 @@ import { getStudents } from "@/lib/dash.api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { StudentItem } from "@/types/dashboard/exam.types";
 
-// Сонгогдсон оюутны бүтцийг тодорхойлно
 export interface SelectedStudent {
 	id: number;
 	examinee_number: string;
@@ -27,13 +26,14 @@ export interface SelectedStudent {
 
 interface StudentSelectorProps {
 	roomPCCount: number;
-
-	selectedStudents: SelectedStudent[]; // Зөвхөн id биш объект массив
+	initialSelectedStudents: SelectedStudent[]; // Анх орж ирсэн (түгжих) оюутнууд
+	selectedStudents: SelectedStudent[];
 	onSelectChange: (students: SelectedStudent[]) => void;
 }
 
 export function StudentSelector({
 	roomPCCount,
+	initialSelectedStudents, // Props-оор анхны өгөгдлийг авна
 	selectedStudents,
 	onSelectChange,
 }: StudentSelectorProps) {
@@ -41,15 +41,19 @@ export function StudentSelector({
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
 
-	// 1. Оюутнуудын жагсаалт авах
 	const { data: students = [], isLoading } = useQuery({
 		queryKey: ["api_get_students", userId],
 		queryFn: () => getStudents({ userId: Number(userId) }),
 		enabled: !!userId,
-		select: (res) => res.RetData,
+		select: (res) => res.RetData ?? [],
 	});
 
-	// 2. Өмнө нь тухайн өрөө/цаг дээр сонгогдсон байсан оюутнуудыг авах
+	// Тулгалт хийх туслах функцүүд
+	const isLocked = (examineeNumber: string) =>
+		initialSelectedStudents.some((s) => s.examinee_number === examineeNumber);
+
+	const isStudentSelected = (examineeNumber: string) =>
+		selectedStudents.some((s) => s.examinee_number === examineeNumber);
 
 	// 1. ШҮҮЛТҮҮР БОЛОН БҮЛЭГЛЭЛТ
 	const groupedData = useMemo(() => {
@@ -59,18 +63,16 @@ export function StudentSelector({
 				.includes(searchQuery.toLowerCase()),
 		);
 
-		const currentSelectedGroupId = String(selectedGroupId); // Баталгаажуулалт
-
-		if (currentSelectedGroupId !== "all") {
+		if (selectedGroupId !== "all") {
 			filtered = filtered.filter(
-				(s) => String(s.student_group_id) === currentSelectedGroupId,
+				(s) => String(s.student_group_id) === selectedGroupId,
 			);
 		}
 
 		const groups: Record<string, { name: string; students: StudentItem[] }> =
 			{};
 		filtered.forEach((s) => {
-			const gId = String(s.student_group_id); // ID-г string болгох
+			const gId = String(s.student_group_id);
 			if (!groups[gId]) {
 				groups[gId] = {
 					name: s.studentgroupname || "Тодорхойгүй",
@@ -84,28 +86,25 @@ export function StudentSelector({
 	}, [students, searchQuery, selectedGroupId]);
 
 	const groupsList = useMemo(() => {
-		const uniqueGroups = Array.from(
-			new Set(
-				students
-					.filter((s) => s.student_group_id) // Зөвхөн ID-тайг нь шүүх
-					.map((s) =>
-						JSON.stringify({
-							id: String(s.student_group_id), // String болгох
-							name: s.studentgroupname,
-						}),
-					),
-			),
-		);
-		return uniqueGroups.map((g) => JSON.parse(g));
+		const unique = new Map();
+		students.forEach((s) => {
+			if (s.student_group_id) {
+				unique.set(String(s.student_group_id), s.studentgroupname);
+			}
+		});
+		return Array.from(unique.entries()).map(([id, name]) => ({ id, name }));
 	}, [students]);
 
-	// 2. СОНГОЛТЫН ТУСЛАХ ФУНКЦҮҮД
-	const isStudentSelected = (id: number) =>
-		selectedStudents.some((s) => s.id === id);
-
+	// 2. СОНГОЛТЫН ЛОГИК
 	const toggleStudent = (student: StudentItem) => {
-		if (isStudentSelected(student.id)) {
-			onSelectChange(selectedStudents.filter((s) => s.id !== student.id));
+		if (isLocked(student.examinee_number)) return; // Түгжигдсэн бол юу ч хийхгүй
+
+		if (isStudentSelected(student.examinee_number)) {
+			onSelectChange(
+				selectedStudents.filter(
+					(s) => s.examinee_number !== student.examinee_number,
+				),
+			);
 		} else {
 			onSelectChange([
 				...selectedStudents,
@@ -116,49 +115,30 @@ export function StudentSelector({
 
 	const handleSelectAll = (checked: boolean) => {
 		if (checked) {
-			// Одоо харагдаж байгаа бүх оюутнуудыг бэлдэх
-			const currentFilteredStudents: SelectedStudent[] = Object.values(
-				groupedData,
-			).flatMap((g) =>
-				g.students.map((s) => ({
-					id: s.id,
-					examinee_number: s.examinee_number,
-				})),
-			);
+			const currentFiltered: SelectedStudent[] = Object.values(groupedData)
+				.flatMap((g) => g.students)
+				.map((s) => ({ id: s.id, examinee_number: s.examinee_number }));
 
-			// Өмнө нь сонгогдсон байсан дээр шинээр харагдаж байгааг нэмээд давхардлыг арилгах
 			const combined = [...selectedStudents];
-			currentFilteredStudents.forEach((cs) => {
-				if (!combined.some((s) => s.id === cs.id)) combined.push(cs);
+			currentFiltered.forEach((cs) => {
+				if (!combined.some((s) => s.examinee_number === cs.examinee_number)) {
+					combined.push(cs);
+				}
 			});
 			onSelectChange(combined);
 		} else {
-			const currentFilteredIds = Object.values(groupedData).flatMap((g) =>
-				g.students.map((s) => s.id),
-			);
+			// Зөвхөн түгжигдээгүй, одоо харагдаж байгаа оюутнуудыг хасна
+			const visibleExamineeNumbers = Object.values(groupedData)
+				.flatMap((g) => g.students)
+				.map((s) => s.examinee_number);
+
 			onSelectChange(
-				selectedStudents.filter((s) => !currentFilteredIds.includes(s.id)),
+				selectedStudents.filter(
+					(s) =>
+						isLocked(s.examinee_number) ||
+						!visibleExamineeNumbers.includes(s.examinee_number),
+				),
 			);
-		}
-	};
-
-	const handleGroupSelect = (groupId: string, checked: boolean) => {
-		const groupStudents: SelectedStudent[] = groupedData[groupId].students.map(
-			(s) => ({
-				id: s.id,
-				examinee_number: s.examinee_number,
-			}),
-		);
-
-		if (checked) {
-			const combined = [...selectedStudents];
-			groupStudents.forEach((gs) => {
-				if (!combined.some((s) => s.id === gs.id)) combined.push(gs);
-			});
-			onSelectChange(combined);
-		} else {
-			const groupIds = groupStudents.map((gs) => gs.id);
-			onSelectChange(selectedStudents.filter((s) => !groupIds.includes(s.id)));
 		}
 	};
 
@@ -166,6 +146,7 @@ export function StudentSelector({
 
 	return (
 		<div className="flex flex-col h-full bg-background">
+			{/* Header хэсэг хэвээрээ... */}
 			<div className="px-4 py-3 border-b space-y-3 bg-muted/10">
 				<div className="flex gap-2">
 					<div className="relative flex-1">
@@ -177,29 +158,17 @@ export function StudentSelector({
 							onChange={(e) => setSearchQuery(e.target.value)}
 						/>
 					</div>
-					<Select
-						value={selectedGroupId ? String(selectedGroupId) : "all"}
-						onValueChange={setSelectedGroupId}
-					>
+					<Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
 						<SelectTrigger className="w-[110px] h-9 text-xs">
 							<SelectValue placeholder="Анги" />
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem value="all">Бүх анги</SelectItem>
-							{groupsList?.map((g) => {
-								// g.id байхгүй эсвэл хоосон бол Item үүсгэхгүй (Алдаанаас сэргийлнэ)
-								if (!g.id || String(g.id).trim() === "") return null;
-
-								return (
-									<SelectItem
-										key={g.id}
-										value={String(g.id)}
-										className="text-xs"
-									>
-										{g.name}
-									</SelectItem>
-								);
-							})}
+							{groupsList.map((g) => (
+								<SelectItem key={g.id} value={g.id} className="text-xs">
+									{g.name}
+								</SelectItem>
+							))}
 						</SelectContent>
 					</Select>
 				</div>
@@ -213,112 +182,86 @@ export function StudentSelector({
 									0 &&
 								Object.values(groupedData)
 									.flatMap((g) => g.students)
-									.every((s) => isStudentSelected(s.id))
+									.every((s) => isStudentSelected(s.examinee_number))
 							}
 							onCheckedChange={handleSelectAll}
 						/>
 						<label
 							htmlFor="all"
-							className="text-[10px] font-black uppercase tracking-wider cursor-pointer"
+							className="text-[10px] font-black uppercase cursor-pointer"
 						>
-							Жагсаалтаар сонгох
+							Бүгдийг сонгох
 						</label>
 					</div>
 					<Badge
 						variant="secondary"
-						className={`text-[10px] h-5 font-bold border-none transition-colors ${
-							isOverCapacity
-								? "bg-destructive/10 text-destructive" // Суудал хэтэрсэн үед улаан
-								: "bg-primary/10 text-primary" // Хэвийн үед цэнхэр/ногоон (primary)
-						}`}
+						className={`text-[10px] h-5 font-bold ${isOverCapacity ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}
 					>
 						Сонгосон: {selectedStudents.length} / {roomPCCount}
 					</Badge>
 				</div>
 			</div>
 
-			<div className="flex-1 overflow-y-auto overflow-x-hidden">
-				<div className="p-4 space-y-6">
-					{isLoading ? (
-						<div className="space-y-3">
-							<Skeleton className="h-10 w-full rounded-lg" />
-							<Skeleton className="h-24 w-full rounded-lg" />
-						</div>
-					) : (
-						Object.entries(groupedData).map(([groupId, group]) => {
-							const isGroupAllSelected = group.students.every((s) =>
-								isStudentSelected(s.id),
-							);
+			{/* Жагсаалт хэсэг */}
+			<div className="flex-1 overflow-y-auto p-4 space-y-6">
+				{isLoading ? (
+					<Skeleton className="h-24 w-full" />
+				) : (
+					Object.entries(groupedData).map(([groupId, group]) => (
+						<div key={groupId} className="space-y-2">
+							<div className="flex items-center gap-2 bg-muted/50 p-2 rounded-lg sticky top-0 z-10">
+								<span className="text-[11px] font-black text-primary uppercase">
+									{group.name}
+								</span>
+							</div>
 
-							return (
-								<div key={groupId} className="space-y-2">
-									<div className="flex items-center gap-2 bg-muted/50 p-2 rounded-lg sticky top-0 z-10 backdrop-blur-sm">
-										<Checkbox
-											checked={isGroupAllSelected}
-											onCheckedChange={(val) =>
-												handleGroupSelect(groupId, !!val)
-											}
-										/>
-										<span className="text-[11px] font-black text-primary uppercase">
-											{group.name}
-										</span>
-										<span className="text-[10px] font-bold text-muted-foreground ml-auto">
-											{group.students.length} сурагч
-										</span>
-									</div>
+							<div className="grid gap-1">
+								{group.students.map((student) => {
+									const isSelected = isStudentSelected(student.examinee_number);
+									const locked = isLocked(student.examinee_number);
 
-									<div className="grid gap-1 pl-1">
-										{group.students.map((student) => {
-											const isSelected = isStudentSelected(student.id);
-											return (
-												<Item
-													key={student.id}
-													onClick={() => toggleStudent(student)}
-													className={`flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-pointer ${
-														isSelected
-															? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/10"
-															: "border-transparent hover:bg-muted/50"
-													}`}
+									return (
+										<Item
+											key={student.examinee_number}
+											onClick={() => !locked && toggleStudent(student)}
+											className={`flex items-center gap-3 p-2.5 rounded-xl border transition-all ${
+												locked
+													? "opacity-75 cursor-not-allowed bg-muted/30"
+													: "cursor-pointer"
+											} ${isSelected ? "border-primary bg-primary/5" : "border-transparent hover:bg-muted/50"}`}
+										>
+											<Checkbox
+												checked={isSelected}
+												disabled={locked}
+												onCheckedChange={() =>
+													!locked && toggleStudent(student)
+												}
+											/>
+											<div className="flex-1 min-w-0">
+												<p
+													className={`text-[13px] font-bold truncate ${isSelected ? "text-primary" : "text-foreground"}`}
 												>
-													<Checkbox
-														checked={isSelected}
-														onCheckedChange={() => toggleStudent(student)}
-														className="pointer-events-none"
-													/>
-													<div className="flex-1 min-w-0">
-														<p
-															className={`text-[13px] font-bold truncate leading-tight ${isSelected ? "text-primary" : "text-foreground"}`}
-														>
-															{student.last_name.charAt(0)}.{" "}
-															{student.first_name}
-														</p>
-														<div className="flex items-center gap-2 mt-0.5">
-															<span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-tighter">
-																{student.register_number}
-															</span>
-															<span className="text-[10px] text-muted-foreground/40">
-																•
-															</span>
-															<span className="text-[10px] font-medium text-muted-foreground">
-																{student.examinee_number}
-															</span>
-														</div>
-													</div>
-													{isSelected && (
-														<CheckCircle2
-															size={14}
-															className="text-primary shrink-0 animate-in zoom-in"
-														/>
-													)}
-												</Item>
-											);
-										})}
-									</div>
-								</div>
-							);
-						})
-					)}
-				</div>
+													{student.last_name.charAt(0)}. {student.first_name}
+												</p>
+												<p className="text-[10px] font-mono text-muted-foreground uppercase">
+													{student.examinee_number} | {student.register_number}
+												</p>
+											</div>
+											{locked ? (
+												<Lock size={14} className="text-muted-foreground/50" />
+											) : isSelected ? (
+												<CheckCircle2
+													size={14}
+													className="text-primary animate-in zoom-in"
+												/>
+											) : null}
+										</Item>
+									);
+								})}
+							</div>
+						</div>
+					))
+				)}
 			</div>
 		</div>
 	);

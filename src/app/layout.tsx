@@ -1,4 +1,4 @@
-import { Inter } from "next/font/google";
+import { Inter, Roboto } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
 import type { Metadata } from "next";
@@ -10,7 +10,12 @@ const inter = Inter({
 	variable: "--font-inter",
 	subsets: ["latin", "cyrillic"],
 });
-
+const lobster = Roboto({
+	weight: "400",
+	subsets: ["latin"],
+	variable: "--font-roboto",
+	display: "swap",
+});
 interface RootLayoutProps {
 	children: ReactNode;
 }

@@ -54,20 +54,22 @@ export default function ExamCreatePage() {
 		setSelectedRoomID(room.id);
 		setSelectedEsisRoomID(room.esisroomid);
 		setRoomPCCount(room.pccnt);
+		console.log("room", room);
 	};
 
 	const handleExamSelect = (exam: SelectedExam) => {
 		setSelectedExam(exam);
+		setSelectedStudents([]);
 	};
 
 	const { data: dbSelectedStudents = [] } = useQuery({
-		queryKey: ["api_get_selected_students", selectedExam, selectedRoomID],
+		queryKey: ["api_get_selected_students", selectedExam, selectedEsisRoomID],
 		queryFn: () =>
 			getSelectedStudents({
 				dateId: selectedExam?.examDateId || 0,
-				roomId: selectedRoomID ? Number(selectedRoomID) : 0,
+				roomId: selectedEsisRoomID ? Number(selectedEsisRoomID) : 0,
 			}),
-		enabled: !!userId && !!selectedExam && !!selectedRoomID,
+		enabled: !!userId && !!selectedExam && !!selectedEsisRoomID,
 		select: (res) => res.RetData,
 	});
 
@@ -144,7 +146,7 @@ export default function ExamCreatePage() {
 						isPending ||
 						isOverCapacity
 					}
-					className="gap-2 min-w-[180px]"
+					className="gap-2"
 					onClick={submit}
 				>
 					{isPending ? (
@@ -154,13 +156,13 @@ export default function ExamCreatePage() {
 					)}
 					{isOverCapacity
 						? `Суудал хэтэрсэн (${selectedStudents.length}/${roomPCCount})`
-						: `Бүртгэл баталгаажуулах (${selectedStudents.length}/${roomPCCount})`}
+						: `Бүртгэх (${selectedStudents.length}/${roomPCCount})`}
 				</Button>
 			</header>
 
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 h-auto lg:h-[calc(100vh-250px)]">
 				{/* 1. БАГАНА: ӨРӨӨНҮҮД */}
-				<Card className="lg:col-span-4 flex flex-col border-border bg-card overflow-hidden gap-0 pb-0 h-[500px] lg:h-full">
+				<Card className="lg:col-span-4 flex flex-col border-border bg-card overflow-hidden gap-0 pb-0 h-125 lg:h-full">
 					<CardHeader className=" pb-0 shrink-0">
 						<CardTitle className="text-sm font-semibold flex items-center gap-2 justify-between">
 							<span className="flex items-center gap-2">
@@ -189,7 +191,7 @@ export default function ExamCreatePage() {
 					</CardContent>
 				</Card>
 				{/* 2. БАГАНА: ШАЛГАЛТУУД */}
-				<Card className="lg:col-span-4 flex flex-col border-border bg-card overflow-hidden gap-0 pb-0 h-[500px] lg:h-full">
+				<Card className="lg:col-span-4 flex flex-col border-border bg-card overflow-hidden gap-0 pb-0 h-125 lg:h-full">
 					<CardHeader className=" pb-0 shrink-0">
 						<CardTitle className="text-sm font-semibold flex items-center gap-2 justify-between">
 							<span className="flex items-center gap-2">
@@ -218,7 +220,7 @@ export default function ExamCreatePage() {
 					</CardContent>
 				</Card>
 				{/* 3. БАГАНА: СУРАГЧИД */}
-				<Card className="md:col-span-2 lg:col-span-4 flex flex-col border-border bg-card overflow-hidden gap-0 pb-0 h-[500px] lg:h-full">
+				<Card className="md:col-span-2 lg:col-span-4 flex flex-col border-border bg-card overflow-hidden gap-0 pb-0 h-125 lg:h-full">
 					<CardHeader className=" pb-0 shrink-0">
 						<CardTitle className="text-sm font-semibold flex items-center gap-2">
 							<Users size={16} /> 3. Сурагчид сонгох
@@ -230,6 +232,7 @@ export default function ExamCreatePage() {
 								roomPCCount={roomPCCount}
 								onSelectChange={handleStudentChange}
 								selectedStudents={selectedStudents}
+								initialSelectedStudents={dbSelectedStudents}
 							/>
 						</div>
 					</CardContent>
