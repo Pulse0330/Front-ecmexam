@@ -439,7 +439,11 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 			toast.error("Нууц үг таарахгүй байна!");
 			return;
 		}
-
+		console.log("🔍 d values:", {
+			institutionid: d.institutionid,
+			studentgroupid: d.studentgroupid,
+			schooldb: d.schooldb,
+		});
 		setIsSaving(true);
 		try {
 			const payload: SavePayload = {
@@ -477,7 +481,6 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				throw new Error(
 					result?.RetResponse?.ResponseMessage || "Хадгалах амжилтгүй",
 				);
-
 			const verifyData = {
 				firstname: d.firstname,
 				lastname: d.lastname,
@@ -496,6 +499,10 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				nationality: d.nationality,
 				login_name: d.login_name,
 				personId: d.personId,
+				school_esis_id: d.institutionid, // ← нэмэх
+				student_group_id: d.studentgroupid, // ← нэмэх
+				schooldb: d.schooldb, // ← нэмэх
+				password, // ← нэмэх
 			};
 			sessionStorage.removeItem("studentExam");
 			sessionStorage.setItem("verifyData", JSON.stringify(verifyData));

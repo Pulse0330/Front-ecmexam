@@ -7,34 +7,27 @@ import {
 	GraduationCap,
 	Loader2,
 } from "lucide-react";
-import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BackButton } from "./backButton";
-import { ExamCard } from "./examCard";
+import ExamCard from "./examCard";
 import type { ExamItem, ExamineeItem, ExamRoom } from "./types";
 import { CARD_CLS } from "./utils";
 
 interface StepSelectExamProps {
 	examinee: ExamineeItem | null;
-
 	examList: ExamItem[];
 	examLoading: boolean;
-
 	isLoading: boolean;
-
 	selectedExam: ExamItem | null;
 	selectedExamDateId: number | null;
-
-	// 🆕 ROOM properties нэмсэн
+	selectedRoomId: number | null; // ← verifyForm-аас props-оор ирнэ
 	rooms: ExamRoom[];
 	roomsLoading: boolean;
-	selectedRoomId: number | null;
-	onSelectRoom: (roomId: number) => void;
-
 	onSelectExam: (exam: ExamItem) => void;
 	onSelectDate: (dateId: number) => void;
+	onSelectRoom: (roomId: number) => void; // ← verifyForm-ын setSelectedRoomId
 	onRegister: () => void;
 	onBack: () => void;
 }
@@ -44,20 +37,21 @@ export function StepSelectExam({
 	examList,
 	examLoading,
 	isLoading,
-
 	selectedExam,
 	selectedExamDateId,
-
+	selectedRoomId, // ← дотоод state БАЙХГҮЙ, prop ашиглана
 	rooms,
 	roomsLoading,
-
 	onSelectExam,
 	onSelectDate,
+	onSelectRoom, // ← verifyForm-ын setSelectedRoomId шууд
 	onRegister,
 	onBack,
 }: StepSelectExamProps) {
-	// 🆕 ROOM state
-	const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
+	const needsDate = !!selectedExam && selectedExam.exam_dates.length > 0;
+	const canRegister =
+		!!selectedExam &&
+		(!needsDate || (!!selectedExamDateId && !!selectedRoomId));
 
 	return (
 		<div className="space-y-4">
@@ -137,39 +131,40 @@ export function StepSelectExam({
 								}
 								rooms={rooms}
 								roomsLoading={roomsLoading}
-								selectedRoomId={selectedRoomId}
-								onSelectRoom={setSelectedRoomId}
+								selectedRoomId={
+									selectedExam?.id === exam.id ? selectedRoomId : null
+								}
+								isLoading={isLoading}
 								onSelect={() => onSelectExam(exam)}
 								onSelectDate={onSelectDate}
+								onSelectRoom={onSelectRoom} // ← verifyForm setSelectedRoomId
+								onRegister={onRegister} // ← verifyForm handleRegister
 							/>
 						))}
 					</div>
 				)}
 			</div>
 
-			{/* ── ACTIONS ── */}
+			{/* ── Actions ── */}
 			<div className="space-y-2 pt-1">
-				{selectedExam &&
-					selectedExam.exam_dates.length > 0 &&
-					(!selectedExamDateId || !selectedRoomId) && (
-						<p className="text-[11px] text-center text-amber-600 dark:text-amber-400 font-medium">
-							⚠ Цаг болон өрөө сонгоно уу
-						</p>
-					)}
+				{needsDate && (!selectedExamDateId || !selectedRoomId) && (
+					<p className="text-[11px] text-center text-amber-600 dark:text-amber-400 font-medium">
+						⚠{" "}
+						{!selectedExamDateId
+							? "Шалгалт өгөх цагаа сонгоно уу"
+							: "Шалгалтын өрөөгөө сонгоно уу"}
+					</p>
+				)}
 
 				<Button
 					onClick={onRegister}
-					disabled={
-						isLoading ||
-						!selectedExam ||
-						(selectedExam.exam_dates.length > 0 &&
-							(!selectedExamDateId || !selectedRoomId))
-					}
+					disabled={!canRegister || isLoading}
 					className="w-full h-12 font-bold shadow-lg gap-2"
 				>
 					{isLoading ? (
 						<>
-							<Loader2 size={16} className="animate-spin" /> Бүртгэж байна...
+							<Loader2 size={16} className="animate-spin" />
+							Бүртгэж байна...
 						</>
 					) : (
 						<>
