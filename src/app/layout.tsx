@@ -10,7 +10,7 @@ const inter = Inter({
 	variable: "--font-inter",
 	subsets: ["latin", "cyrillic"],
 });
-const lobster = Roboto({
+const _lobster = Roboto({
 	weight: "400",
 	subsets: ["latin"],
 	variable: "--font-roboto",

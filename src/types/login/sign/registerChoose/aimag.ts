@@ -6,7 +6,7 @@
 export interface Province {
 	mAcode: string;
 	mName: string;
-	mid: number;
+	mID: number;
 	sort: number;
 	miid: string;
 	mid1: number;
