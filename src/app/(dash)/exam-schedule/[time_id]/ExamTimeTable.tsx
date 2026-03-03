@@ -46,7 +46,7 @@ interface ExamRoomTableProps {
 	data: ExamRoom[];
 	isLoading?: boolean;
 	onAssignSeats?: (roomId: number) => void; // Нэмэгдсэн хэсэг
-	examInfo: ExamInfoItem;
+	examInfo: ExamInfoItem | undefined;
 	timeId: number;
 }
 

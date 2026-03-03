@@ -173,7 +173,7 @@ export default function ExamPrintService({
 										</div>
 									</div>
 									<div className="mt-6 border-2 border-black p-6 flex-1 bg-white">
-										<div className="grid grid-cols-2 gap-x-12 gap-y-3">
+										{/* <div className="grid grid-cols-2 gap-x-12 gap-y-3">
 											{Array.from({ length: 28 }).map((_, i) => (
 												<div
 													key={i}
@@ -194,7 +194,7 @@ export default function ExamPrintService({
 													</div>
 												</div>
 											))}
-										</div>
+										</div> */}
 									</div>
 									<div className="mt-4 text-[10px] text-gray-400 border-t border-dashed pt-2 flex justify-between uppercase font-bold tracking-tighter">
 										<span>Exam System: BOTGO</span>
