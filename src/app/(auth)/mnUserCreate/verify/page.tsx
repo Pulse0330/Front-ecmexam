@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import VerifyForm, { type VerifyData } from "../verifyForm";
+import VerifyForm, { type VerifyData } from "./verifyForm";
 
 export default function VerifyPage() {
 	const [data, setData] = useState<VerifyData | null>(null);
