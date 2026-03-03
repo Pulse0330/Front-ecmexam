@@ -70,10 +70,13 @@ export interface ExamItem {
 }
 export interface ExamRoom {
 	id: number;
-	name: string; // school name
-	branchname: string; // байр
+	esisroomid: number; // ← энийг нэмнэ
+	name: string;
+	branchname: string;
 	room_number: string;
 	description: string;
+	schoolesisid: string;
+	num_of_pc: number;
 	pccnt: number;
 	seatcnt: number;
 }

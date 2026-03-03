@@ -27,7 +27,7 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
 	const [qpayError, setQpayError] = useState("");
-	const [isPaid, setIsPaid] = useState(false);
+	const [isPaid, setIsPaid] = useState(true);
 	const [examineeNumber, setExamineeNumber] = useState<string | null>(null);
 	const [rooms, setRooms] = useState<ExamRoom[]>([]);
 	const [roomsLoading, setRoomsLoading] = useState(false);
@@ -145,41 +145,28 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 		},
 		[examList.length],
 	);
-	const fetchRooms = useCallback(async () => {
-		// 🛑 examinee байхгүй бол шууд зогсооно
-		if (!examinee?.userid) return;
 
+	// ── /api/list → api_get_exam_rooms ────────────────────────────────────────
+	const fetchRooms = useCallback(async () => {
+		if (!examinee?.userid) return;
 		setRoomsLoading(true);
 		setError("");
-
 		try {
 			const res = await fetch("https://backend.skuul.mn/api/list", {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
+				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					procname: "api_get_exam_rooms",
-					userid: examinee.userid, // ✅ ЭНД user id-г авна
-
+					userid: examinee.userid,
 					conn: "skuul",
 				}),
 			});
-
-			if (!res.ok) {
-				throw new Error("Өрөөний мэдээлэл авахад алдаа гарлаа");
-			}
-
+			if (!res.ok) throw new Error("Өрөөний мэдээлэл авахад алдаа гарлаа");
 			const json = await res.json();
-
-			if (!json?.RetResponse?.ResponseType) {
+			if (!json?.RetResponse?.ResponseType)
 				throw new Error(json?.RetResponse?.ResponseMessage || "Алдаа гарлаа");
-			}
-
-			if (!Array.isArray(json.RetData)) {
+			if (!Array.isArray(json.RetData))
 				throw new Error("Өрөөний мэдээлэл олдсонгүй");
-			}
-
 			setRooms(json.RetData);
 		} catch (err) {
 			setError(
@@ -191,7 +178,7 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 		} finally {
 			setRoomsLoading(false);
 		}
-	}, [examinee?.userid]); // ✅ dependency ЗААВАЛ
+	}, [examinee?.userid]);
 
 	// ── QPay invoice ──────────────────────────────────────────────────────────
 	const invokeQPay = useCallback(async (targetExaminee: ExamineeItem) => {
@@ -249,7 +236,6 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 		toast.success("Амжилттай илгээгдлээ");
 		const item = examinee ?? (await fetchExaminee());
 		if (item) await fetchExamList(item.userid);
-
 		setStep("select_exam");
 	}, [sendExaminee, examinee, fetchExaminee, fetchExamList]);
 
@@ -258,39 +244,61 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 		if (!open) setQpayData(null);
 	}, []);
 
+	// ── /api/examregistrationsingle ───────────────────────────────────────────
 	const handleRegister = useCallback(async () => {
 		if (!selectedExam) return;
+
 		const needsDate = selectedExam.exam_dates.length > 0;
-		if (needsDate && !selectedExamDateId) return;
+
+		if (needsDate && !selectedExamDateId) {
+			setError("Шалгалт өгөх цагаа сонгоно уу");
+			return;
+		}
+
+		if (needsDate && !selectedRoomId) {
+			setError("Шалгалтын өрөөгөө сонгоно уу");
+			return;
+		}
 
 		const selectedDate = selectedExam.exam_dates.find(
 			(ed) => ed.id === selectedExamDateId,
 		);
 
+		const examDateId = selectedDate?.exam_date_id ?? selectedDate?.id ?? 0;
+		const selectedRoom = rooms.find((r) => r.id === selectedRoomId);
+
 		setIsLoading(true);
 		setError("");
+
 		try {
 			const payload = {
 				examinee_number: examineeNumber ? Number(examineeNumber) : 0,
-				stu_id: examinee?.id ?? 0,
+
 				exam_id: selectedExam.exam_id,
-				exam_date_id: selectedDate?.exam_date_id ?? selectedDate?.id ?? 0,
-				exam_room_id: selectedRoomId,
+				exam_date_id: examDateId,
+				exam_room_id: selectedRoom?.esisroomid ?? 0,
 				userid: examinee?.userid ?? 0,
 				conn: "skuul",
 			};
+
+			console.log("📤 examregistrationsingle payload:", payload);
 
 			const res = await fetch(`${API_BASE}/api/examregistrationsingle`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(payload),
 			});
+
 			if (!res.ok) throw new Error("Бүртгэлийн хүсэлт амжилтгүй боллоо");
+
 			const json = await res.json();
+			console.log("📥 examregistrationsingle response:", json);
+
 			if (!json?.RetResponse?.ResponseType)
 				throw new Error(
 					json?.RetResponse?.ResponseMessage || "Бүртгэл амжилтгүй болсон",
 				);
+
 			toast.success("Шалгалтад амжилттай бүртгүүллээ");
 			setStep("paid");
 		} catch (err) {
@@ -301,15 +309,18 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 	}, [
 		selectedExam,
 		selectedExamDateId,
+		selectedRoomId,
+		rooms,
 		examineeNumber,
 		examinee,
-		selectedRoomId,
 	]);
+
 	useEffect(() => {
 		if (step === "select_exam") {
 			fetchRooms();
 		}
 	}, [step, fetchRooms]);
+
 	const STEPS = ["preview", "select_exam", "paid"] as const;
 	const stepIdx = STEPS.indexOf(step);
 
@@ -426,6 +437,9 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 						<StepPaid
 							d={d}
 							selectedExam={selectedExam}
+							selectedExamDateId={selectedExamDateId}
+							selectedRoomId={selectedRoomId}
+							rooms={rooms}
 							examineeNumber={examineeNumber}
 							onFinish={() => router.back()}
 							onBack={() => setStep("select_exam")}
