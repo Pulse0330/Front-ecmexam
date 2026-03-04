@@ -6,12 +6,14 @@ import { domToCanvas } from "modern-screenshot";
 import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import type { ExamRoom } from "@/types/dashboard/exam.types";
+import type { ExamInfoItem, ExamRoom } from "@/types/dashboard/exam.types";
 
 export default function ExamPrintService({
 	exam_rooms,
+	examInfo,
 }: {
 	exam_rooms: ExamRoom[];
+	examInfo: ExamInfoItem | undefined;
 }) {
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [isPreview, setIsPreview] = useState(false); // Preview mode

@@ -145,7 +145,7 @@ export function IDashboardHeader() {
 										size="sm"
 										showOnlineStatus
 									/>
-									<span className="hidden md:block text-sm font-medium max-w-[100px] truncate">
+									<span className="hidden md:block text-sm font-medium max-w-25 truncate">
 										{userInfo.userName}
 									</span>
 								</Button>
@@ -170,7 +170,9 @@ export function IDashboardHeader() {
 								</DropdownMenuLabel>
 								<DropdownMenuSeparator />
 								<div className="px-2 py-1.5">
-									<AnimatedThemeToggler />
+									<span className="size-4">
+										<AnimatedThemeToggler />
+									</span>
 								</div>
 								<DropdownMenuItem onClick={() => router.push("/userProfile")}>
 									<UserCircle className="w-4 h-4 mr-2" /> Профайл

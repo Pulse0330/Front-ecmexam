@@ -203,7 +203,7 @@ export default function ExamCreatePage() {
 								className="h-7 text-[10px] gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
 								asChild
 							>
-								<Link href={"/exam-materials"}>
+								<Link href={"/exam-schedule"}>
 									<Download size={10} />
 									Хуваарь татах
 								</Link>

@@ -67,6 +67,16 @@ export const loginTokenRequest = async (
 
 	return data;
 };
+
+export const loginToken = async (
+	token: string,
+): Promise<LoginTokenResponse<User>> => {
+	const { data } = await api.post<LoginTokenResponse<User>>("/ikhlogintoken", {
+		LoginToken: token,
+	});
+
+	return data;
+};
 // ===== CreateSession request =====
 export const createSessionRequest = async (
 	userId: number,
