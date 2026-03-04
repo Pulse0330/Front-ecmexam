@@ -14,6 +14,7 @@ import {
 	User,
 	X,
 } from "lucide-react";
+import md5 from "md5";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -24,7 +25,6 @@ import {
 	useState,
 } from "react";
 import { toast } from "sonner";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -66,6 +66,39 @@ export interface StudentExamData {
 	institutionid: string;
 	academic_level: number;
 	nationality: string;
+}
+
+interface ExamineeListData {
+	login_name: string;
+	first_name: string;
+	last_name: string;
+	register_number: string;
+	gender: number;
+	phone: string;
+	mail: string;
+	aimag_id: string | null;
+	sym_id: string | null;
+	class_id: number;
+	group_id: number;
+	profile: string | null;
+	descr: string;
+	regdate: string;
+	dateofbirth: string;
+	personid: string;
+	schooldb: string;
+	schoolname: string;
+	student_group_id: string;
+	studentgroupname: string;
+	aimag_name: string;
+	sym_name: string;
+	school_esis_id: string;
+	academic_level: number;
+	nationality: string;
+	gender_code: "M" | "F";
+	userid: number;
+	password: string;
+	passwordauto: string;
+	ispay: number;
 }
 
 // ── API ───────────────────────────────────────────────────────────────────────
@@ -110,6 +143,18 @@ async function saveStudent(payload: SavePayload) {
 	});
 	if (!res.ok) throw new Error(`Серверт алдаа гарлаа (${res.status})`);
 	return res.json();
+}
+
+async function fetchExamineeList(personId: string): Promise<ExamineeListData> {
+	const res = await fetch(`${API_BASE}/api/examinee_list_1`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ personid: personId, conn: "skuul" }),
+	});
+	if (!res.ok) throw new Error(`examinee_list алдаа (${res.status})`);
+	const data = await res.json();
+	if (!data?.RetResponse?.ResponseType) throw new Error("Мэдээлэл олдсонгүй");
+	return data.RetData[0];
 }
 
 // ── Image helpers ─────────────────────────────────────────────────────────────
@@ -348,13 +393,58 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 	const router = useRouter();
 	const [isSaving, setIsSaving] = useState(false);
 	const [noticeOpen, setNoticeOpen] = useState(true);
-	const [password, _setPassword] = useState<string>(() => generatePassword());
-	const [profileImg, setProfileImg] = useState<string | null>(d.img_url);
-	const [uploadedImgUrl, setUploadedImgUrl] = useState<string>(d.img_url ?? "");
+	const [examData, setExamData] = useState<ExamineeListData | null>(null);
+	const [examDataLoading, setExamDataLoading] = useState(true);
+
+	// password → илгээх утга (plaintext эсвэл generated)
+	// displayPassword → UI-д харуулах утга (passwordauto эсвэл generated)
+	const [password, setPassword] = useState<string>(() => generatePassword());
+	const [displayPassword, setDisplayPassword] = useState<string>("");
+
+	const [profileImg, setProfileImg] = useState<string | null>(null);
+	const [uploadedImgUrl, setUploadedImgUrl] = useState<string>("");
 	const [isUploadingImage, setIsUploadingImage] = useState(false);
 	const [isDragging, setIsDragging] = useState(false);
 	const fileRef = useRef<HTMLInputElement>(null);
 	const age = calcAge(d.dateofbirth);
+
+	// ── examinee_list_1 fetch ─────────────────────────────────────────────────
+	useEffect(() => {
+		if (!d.personId) {
+			setExamDataLoading(false);
+			return;
+		}
+		setExamDataLoading(true);
+		fetchExamineeList(d.personId)
+			.then((data) => {
+				setExamData(data);
+
+				// Profile зураг
+				if (data?.profile) {
+					setProfileImg(data.profile);
+					setUploadedImgUrl(data.profile);
+				}
+
+				// Нууц үг логик:
+				// passwordauto байвал → тэрийг харуулж илгээнэ (өөрчлөхгүй)
+				// байхгүй бол → generate хийсэн утгыг хэвээр үлдээнэ
+				if (data?.passwordauto) {
+					setDisplayPassword(data.passwordauto);
+					setPassword(data.passwordauto);
+				} else {
+					const gen = generatePassword();
+					setDisplayPassword(gen);
+					setPassword(gen);
+				}
+			})
+			.catch(() => {
+				setExamData(null);
+				const gen = generatePassword();
+				setDisplayPassword(gen);
+				setPassword(gen);
+			})
+			.finally(() => setExamDataLoading(false));
+	}, [d.personId]);
 
 	const processFile = useCallback(
 		async (file: File) => {
@@ -382,13 +472,14 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 					err instanceof Error ? err.message : "Зураг upload амжилтгүй",
 				);
 				URL.revokeObjectURL(blobUrl);
-				setProfileImg(d.img_url);
-				setUploadedImgUrl(d.img_url ?? "");
+				const fallback = examData?.profile ?? null;
+				setProfileImg(fallback);
+				setUploadedImgUrl(fallback ?? "");
 			} finally {
 				setIsUploadingImage(false);
 			}
 		},
-		[d.img_url],
+		[examData],
 	);
 
 	const clearImage = useCallback(() => {
@@ -421,17 +512,19 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 			toast.warning("Зурагны upload дуусаагүй байна, дахин оролдоно уу.");
 			return;
 		}
-		if (!password || password.length !== 6) {
+		if (!password) {
 			toast.warning("Нууц үг үүсгэгдээгүй байна!");
 			return;
 		}
-		console.log("🔍 d values:", {
-			institutionid: d.institutionid,
-			studentgroupid: d.studentgroupid,
-			schooldb: d.schooldb,
-		});
 		setIsSaving(true);
 		try {
+			// passwordauto байвал → password хэвээр (өөрчлөхгүй), passwordencrypt хуучин hash
+			// байхгүй бол → шинэ md5 hash үүсгэнэ
+			const isExistingPassword = !!examData?.passwordauto;
+			const passwordEncrypt = isExistingPassword
+				? (examData?.password ?? md5(password)) // хуучин md5 hash-г илгээнэ
+				: md5(password);
+
 			const payload: SavePayload = {
 				loginname: d.login_name,
 				firstname: d.firstname,
@@ -454,7 +547,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				studentgroupname: d.studentgroupname,
 				aimag_name: d.aimag_name,
 				sym_name: d.sym_name,
-				passwordencrypt: "",
+				passwordencrypt: passwordEncrypt,
 				password,
 				institutionid: d.institutionid,
 				academic_level: String(d.academic_level),
@@ -462,34 +555,41 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				gender_code: d.gender_code,
 				conn: "skuul",
 			};
+
 			const result = await saveStudent(payload);
 			if (result?.RetResponse?.ResponseType === false)
 				throw new Error(
 					result?.RetResponse?.ResponseMessage || "Хадгалах амжилтгүй",
 				);
+
+			// ── examinee_list_1-ээс шинэчилсэн мэдээллээр verifyData бүрдүүлнэ ──
+			const fresh = await fetchExamineeList(d.personId);
+
 			const verifyData = {
-				firstname: d.firstname,
-				lastname: d.lastname,
-				reg_number: d.reg_number,
-				gender_code: d.gender_code,
-				dateofbirth: d.dateofbirth,
-				phone: d.phone,
-				email: d.email,
-				aimag_name: d.aimag_name,
-				sym_name: d.sym_name,
-				schoolname: d.schoolname,
-				studentgroupname: d.studentgroupname,
-				class_id: d.class_id,
-				academic_level: d.academic_level,
+				firstname: fresh.first_name,
+				lastname: fresh.last_name,
+				reg_number: fresh.register_number,
+				gender_code: fresh.gender_code,
+				dateofbirth: fresh.dateofbirth,
+				phone: fresh.phone,
+				email: fresh.mail,
+				aimag_name: fresh.aimag_name,
+				sym_name: fresh.sym_name,
+				schoolname: fresh.schoolname,
+				studentgroupname: fresh.studentgroupname,
+				class_id: fresh.academic_level,
+				academic_level: fresh.academic_level,
 				img_url: uploadedImgUrl,
-				nationality: d.nationality,
-				login_name: d.login_name,
-				personId: d.personId,
-				school_esis_id: d.institutionid,
-				student_group_id: d.studentgroupid,
-				schooldb: d.schooldb,
-				password,
+				nationality: fresh.nationality,
+				login_name: fresh.login_name,
+				personId: fresh.personid,
+				school_esis_id: fresh.school_esis_id,
+				student_group_id: fresh.student_group_id,
+				schooldb: fresh.schooldb,
+				userid: fresh.userid,
+				password: fresh.passwordauto || password,
 			};
+
 			sessionStorage.removeItem("studentExam");
 			sessionStorage.setItem("verifyData", JSON.stringify(verifyData));
 			toast.success("Амжилттай хадгалагдлаа!");
@@ -499,11 +599,29 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 		} finally {
 			setIsSaving(false);
 		}
-	}, [d, router, profileImg, uploadedImgUrl, password, isUploadingImage]);
+	}, [
+		d,
+		router,
+		profileImg,
+		uploadedImgUrl,
+		password,
+		isUploadingImage,
+		examData,
+	]);
+
+	// ── Display утгууд ────────────────────────────────────────────────────────
+	const displayFirstname = examData?.first_name ?? d.firstname;
+	const displayLastname = examData?.last_name ?? d.lastname;
+	const displayEmail = examData?.mail ?? d.email;
+	const displaySchoolname = examData?.schoolname ?? d.schoolname;
+	const displayGroupname = examData?.studentgroupname ?? d.studentgroupname;
+	const displayAimag = examData?.aimag_name ?? d.aimag_name;
+	const displaySym = examData?.sym_name ?? d.sym_name;
+	const displayNationality = examData?.nationality || d.nationality || "Монгол";
+	const displayAcademicLevel = examData?.academic_level ?? d.academic_level;
 
 	return (
 		<div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-500 overflow-hidden">
-			{/* ── NOTICE MODAL ── */}
 			<NoticeModal open={noticeOpen} onClose={() => setNoticeOpen(false)} />
 
 			{/* ── ACTION BAR ── */}
@@ -531,7 +649,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 					<Button
 						size="sm"
 						onClick={handleContinue}
-						disabled={isSaving || isUploadingImage}
+						disabled={isSaving || isUploadingImage || examDataLoading}
 						className="gap-1.5 h-8 text-xs"
 					>
 						{isSaving ? (
@@ -573,7 +691,6 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 					<Card className={CARD_CLS}>
 						<CardContent className="p-4">
 							<div className="flex flex-col md:flex-row items-center gap-4">
-								{/* Avatar */}
 								<div className="flex flex-col items-center gap-1.5 shrink-0">
 									<input
 										ref={fileRef}
@@ -613,7 +730,30 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 											isUploadingImage ? "cursor-wait opacity-70" : "",
 										].join(" ")}
 									>
-										{isUploadingImage ? (
+										{examDataLoading ? (
+											<div className="flex flex-col items-center gap-1">
+												<svg
+													className="animate-spin w-6 h-6 text-muted-foreground"
+													viewBox="0 0 24 24"
+													fill="none"
+												>
+													<title>loading</title>
+													<circle
+														className="opacity-25"
+														cx="12"
+														cy="12"
+														r="10"
+														stroke="currentColor"
+														strokeWidth="4"
+													/>
+													<path
+														className="opacity-75"
+														fill="currentColor"
+														d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+													/>
+												</svg>
+											</div>
+										) : isUploadingImage ? (
 											<div className="flex flex-col items-center gap-1">
 												<svg
 													className="animate-spin w-6 h-6 text-primary"
@@ -632,7 +772,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 													<path
 														className="opacity-75"
 														fill="currentColor"
-														d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+														d="M4 12a8 8 0f018-8v4a4 4 0 00-4 4H4z"
 													/>
 												</svg>
 												<span className="text-[9px] text-muted-foreground font-semibold text-center px-1">
@@ -672,7 +812,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 											</>
 										)}
 									</button>
-									{!profileImg && !isUploadingImage && (
+									{!profileImg && !isUploadingImage && !examDataLoading && (
 										<span className="text-[9px] text-destructive font-semibold">
 											* Заавал оруулна уу
 										</span>
@@ -690,11 +830,10 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 									)}
 								</div>
 
-								{/* Name block */}
 								<div className="text-center md:text-left flex-1">
 									<h1 className="text-2xl font-bold text-foreground tracking-tight">
-										{d.lastname}{" "}
-										<span className="text-primary">{d.firstname}</span>
+										{displayLastname}{" "}
+										<span className="text-primary">{displayFirstname}</span>
 									</h1>
 								</div>
 							</div>
@@ -702,10 +841,9 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 					</Card>
 
 					{/* ── GRID ── */}
-					<div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
+					<div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
 						{/* LEFT */}
 						<div className="lg:col-span-5 space-y-2">
-							{/* Хувийн мэдээлэл */}
 							<Card className={CARD_CLS}>
 								<CardHeader className="pb-0 pt-3 px-4">
 									<CardTitle className="text-[11px] text-muted-foreground">
@@ -715,16 +853,24 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 								<CardContent className="p-4 pt-3 space-y-2">
 									<div className="grid grid-cols-2 gap-3">
 										<Field label="Овог">
-											<ReadOnlyInput value={d.lastname} />
+											<ReadOnlyInput value={displayLastname} />
 										</Field>
 										<Field label="Нэр">
-											<ReadOnlyInput value={d.firstname} />
+											<ReadOnlyInput value={displayFirstname} />
 										</Field>
 									</div>
 									<div className="grid grid-cols-3 gap-3">
 										<Field label="Хүйс">
 											<ReadOnlyInput
-												value={d.gender_code === "M" ? "Эрэгтэй" : "Эмэгтэй"}
+												value={
+													(
+														examData
+															? examData.gender === 1
+															: d.gender_code === "M"
+													)
+														? "Эрэгтэй"
+														: "Эмэгтэй"
+												}
 											/>
 										</Field>
 										<Field label="Нас">
@@ -736,27 +882,27 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 									</div>
 									<Field label="Үндэс угсаа">
 										<ReadOnlyInput
-											value={d.nationality || "Монгол"}
+											value={displayNationality}
 											icon={<Globe size={13} />}
 										/>
 									</Field>
 									<div className="grid grid-cols-2 gap-3">
 										<Field label="И-мэйл">
 											<ReadOnlyInput
-												value={d.email}
+												value={displayEmail}
 												icon={<Mail size={13} />}
 											/>
 										</Field>
 										<Field label="Утас">
 											<ReadOnlyInput
-												value={d.phone ?? ""}
+												value={examData?.phone ?? d.phone ?? ""}
 												icon={<Phone size={13} />}
 											/>
 										</Field>
 									</div>
 									<Field label="Нэвтрэх нэр">
 										<ReadOnlyInput
-											value={d.login_name}
+											value={examData?.login_name ?? d.login_name}
 											icon={<User size={13} />}
 										/>
 									</Field>
@@ -765,7 +911,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 
 							{/* ── НУУЦ ҮГ ── */}
 							<Card className={CARD_CLS}>
-								<CardHeader className="pb-0 pt-0 px-4">
+								<CardHeader className=" ">
 									<CardTitle className="text-[11px] text-muted-foreground flex items-center gap-1.5">
 										<Lock size={12} /> Нууц үг
 									</CardTitle>
@@ -776,15 +922,16 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 											<Input
 												id="password"
 												type="text"
-												value={password}
+												value={displayPassword}
 												readOnly
 												className="h-8 text-xs pr-3 font-mono tracking-widest bg-muted/50 cursor-not-allowed select-all border-green-500/40 focus-visible:ring-green-500/20"
 											/>
 										</div>
 										<p className="text-[10px] text-green-600 dark:text-green-500 mt-1 flex items-center gap-1">
 											<Lock size={9} />
-											Системээс автоматаар үүсгэгдсэн 6 оронтой нууц үг. Нэвтрэх
-											нууц үгээ цээжлээрэй.
+											{examData?.passwordauto
+												? "Таны нууц үг. Нэвтрэх нууц үгээ цээжлээрэй."
+												: "Системээс автоматаар үүсгэгдсэн 6 оронтой нууц үг. Нэвтрэх нууц үгээ цээжлээрэй."}
 										</p>
 									</Field>
 								</CardContent>
@@ -792,8 +939,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 						</div>
 
 						{/* RIGHT */}
-						<div className="lg:col-span-5 space-y-3">
-							{/* Сургууль */}
+						<div className="lg:col-span-7 space-y-3">
 							<Card className={CARD_CLS}>
 								<CardHeader className="pb-0 pt-3 px-4">
 									<CardTitle className="text-[11px] text-muted-foreground">
@@ -801,12 +947,17 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 									</CardTitle>
 								</CardHeader>
 								<CardContent className="p-0 pt-1.5">
-									<InfoRow label="Сургуулийн нэр" value={d.schoolname} />
-									<InfoRow label="Анги" value={`${d.class_id}-р анги`} />
+									<InfoRow label="Сургуулийн нэр" value={displaySchoolname} />
+									<InfoRow
+										label="Анги"
+										value={`${displayAcademicLevel}-р анги`}
+									/>
+									<InfoRow label="Бүлэг" value={displayGroupname} />
+									<InfoRow label="Аймаг / Нийслэл" value={displayAimag} />
+									<InfoRow label="Дүүрэг / Сум" value={displaySym} />
 								</CardContent>
 							</Card>
 
-							{/* Системийн мэдээлэл */}
 							<Card className={CARD_CLS}>
 								<CardHeader className="pb-0 pt-3 px-4">
 									<CardTitle className="text-[11px] text-muted-foreground">
@@ -816,16 +967,18 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 								<CardContent className="p-0 pt-1.5">
 									<InfoRow
 										label="Регистрийн дугаар"
-										value={d.reg_number}
+										value={examData?.register_number ?? d.reg_number}
 										mono
 									/>
-
 									<InfoRow
 										label="Хүйсийн код"
-										value={`${d.gender_code} (${d.gender})`}
+										value={
+											examData
+												? `${examData.gender_code} (${examData.gender})`
+												: `${d.gender_code} (${d.gender})`
+										}
 										mono
 									/>
-									<InfoRow label="Тайлбар" value={d.descr} />
 									<InfoRow label="Нас" value={`${age} нас`} />
 									<InfoRow
 										label="Төрсөн огноо"
@@ -841,7 +994,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 												Засах боломжгүй мэдээлэл
 											</p>
 											<p className="text-[10px] text-muted-foreground/70 leading-relaxed">
-												Эдгээр мэдээлэл нь системд хадгалагдсан бөгөөд та
+												Эдгээр мэдээлэл нь системээс автоматаар бөглөгдсөн тул
 												өөрчлөх боломжгүй.
 											</p>
 										</div>
