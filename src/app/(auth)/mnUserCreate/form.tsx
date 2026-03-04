@@ -4,8 +4,6 @@ import {
 	AlertTriangle,
 	ArrowRight,
 	ChevronLeft,
-	Eye,
-	EyeOff,
 	Globe,
 	ImagePlus,
 	Info,
@@ -350,7 +348,6 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 	const router = useRouter();
 	const [isSaving, setIsSaving] = useState(false);
 	const [noticeOpen, setNoticeOpen] = useState(true);
-	const [showPw, setShowPw] = useState(false);
 	const [password, _setPassword] = useState<string>(() => generatePassword());
 	const [profileImg, setProfileImg] = useState<string | null>(d.img_url);
 	const [uploadedImgUrl, setUploadedImgUrl] = useState<string>(d.img_url ?? "");
@@ -424,7 +421,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 			toast.warning("Зурагны upload дуусаагүй байна, дахин оролдоно уу.");
 			return;
 		}
-		if (!password || password.length < 6) {
+		if (!password || password.length !== 6) {
 			toast.warning("Нууц үг үүсгэгдээгүй байна!");
 			return;
 		}
@@ -768,30 +765,21 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 
 							{/* ── НУУЦ ҮГ ── */}
 							<Card className={CARD_CLS}>
-								<CardHeader className="pb-0 pt-3 px-4">
+								<CardHeader className="pb-0 pt-0 px-4">
 									<CardTitle className="text-[11px] text-muted-foreground flex items-center gap-1.5">
 										<Lock size={12} /> Нууц үг
 									</CardTitle>
 								</CardHeader>
-								<CardContent className="p-4 pt-0">
+								<CardContent className="p-4 pt-3">
 									<Field label="Нууц үг" htmlFor="password" required>
 										<div className="relative">
 											<Input
 												id="password"
-												type={showPw ? "text" : "password"}
+												type="text"
 												value={password}
 												readOnly
-												className="h-8 text-xs pr-9 font-mono tracking-widest bg-muted/50 cursor-not-allowed select-all border-green-500/40 focus-visible:ring-green-500/20"
+												className="h-8 text-xs pr-3 font-mono tracking-widest bg-muted/50 cursor-not-allowed select-all border-green-500/40 focus-visible:ring-green-500/20"
 											/>
-											<Button
-												type="button"
-												variant="ghost"
-												size="sm"
-												onClick={() => setShowPw((p) => !p)}
-												className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-muted-foreground"
-											>
-												{showPw ? <EyeOff size={13} /> : <Eye size={13} />}
-											</Button>
 										</div>
 										<p className="text-[10px] text-green-600 dark:text-green-500 mt-1 flex items-center gap-1">
 											<Lock size={9} />
@@ -832,6 +820,11 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 										mono
 									/>
 
+									<InfoRow
+										label="Хүйсийн код"
+										value={`${d.gender_code} (${d.gender})`}
+										mono
+									/>
 									<InfoRow label="Тайлбар" value={d.descr} />
 									<InfoRow label="Нас" value={`${age} нас`} />
 									<InfoRow
