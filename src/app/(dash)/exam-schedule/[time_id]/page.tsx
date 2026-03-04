@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { format, isValid, parseISO } from "date-fns";
+import { format, isValid } from "date-fns";
 import { CalendarRange, Clock, Info } from "lucide-react";
 import { use, useMemo } from "react";
 import ExamPrintService from "@/app/(dash)/exam-schedule/[time_id]/ExamPrintService";
@@ -62,8 +62,8 @@ export default function ExamTimePage({ params }: ExamTimePageProps) {
 				<div className="flex items-start gap-4">
 					<IBackButton className="mt-1" />
 					<div>
-						<div className="flex items-center gap-3">
-							<div className="bg-primary/10 p-2.5 rounded-xl text-primary shrink-0">
+						<div className="text-2xl font-bold tracking-tight flex items-center gap-3">
+							<div className="bg-primary/10 p-2 rounded-lg text-primary">
 								<CalendarRange size={26} />
 							</div>
 							{isInfoLoading ? (
@@ -98,7 +98,7 @@ export default function ExamTimePage({ params }: ExamTimePageProps) {
 				</div>
 
 				<div className="flex items-center gap-3 w-full lg:w-auto">
-					<ExamPrintService exam_rooms={examRooms} />
+					<ExamPrintService exam_rooms={examRooms} examInfo={examInfo} />
 				</div>
 			</header>
 

@@ -1,5 +1,5 @@
 "use client";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Download } from "lucide-react";
 import { toast } from "sonner";
 import { ExamTable } from "@/app/(dash)/exam-schedule/ExamTable";
@@ -9,6 +9,7 @@ import { getExam, getExamSave } from "@/lib/dash.api";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 export default function ExamMaterialsPage() {
+	const queryClient = useQueryClient();
 	const { userId } = useAuthStore();
 
 	const { data, isLoading } = useQuery({
@@ -20,6 +21,7 @@ export default function ExamMaterialsPage() {
 	const { mutate: examSave, isPending } = useMutation({
 		mutationFn: getExamSave,
 		onSuccess: (res) => {
+			queryClient.invalidateQueries({ queryKey: ["get_exam"] });
 			toast.success(res.RetResponse.ResponseMessage || "Амжилттай");
 		},
 	});
@@ -33,10 +35,10 @@ export default function ExamMaterialsPage() {
 							<div className="bg-primary/10 p-2 rounded-lg text-primary">
 								<BookOpen className="text-primary" />
 							</div>
-							Шалгалтын Хуваарь
+							Шалгалтын хуваарь
 						</h1>
 						<p className="text-sm text-muted-foreground mt-1">
-							Та Хуваарь татах дээр дарж шалгалтыг шинэчлэх боломжтой. | Нийт{" "}
+							Та хуваарь татах дээр дарж шалгалтыг шинэчлэх боломжтой. | Нийт{" "}
 							{data?.RetData?.length || 0} шалгалт байна.
 						</p>
 					</div>

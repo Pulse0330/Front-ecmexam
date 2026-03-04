@@ -34,7 +34,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { createSessionRequest, loginTokenRequest } from "@/lib/api";
+import { createSessionRequest, loginToken, loginTokenRequest } from "@/lib/api";
 import { setCookie } from "@/lib/cookie";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { UserCheckForm } from "./userCreatedialog";
@@ -157,10 +157,72 @@ export function LoginForm() {
 		},
 	});
 
-	// useEffect(() => {
-	// 	if (tokenLogin) {
-	// 	}
-	// }, [tokenLogin]);
+	const { mutate: tokenLoginMutate, isPending: tokenIsLoading } = useMutation({
+		mutationFn: async (token1: string) => {
+			const loginRes = await loginToken(token1);
+
+			if (!loginRes?.RetResponse?.ResponseType) {
+				throw new Error("Нэвтрэх нэр эсвэл нууц үг буруу байна");
+			}
+			if (!loginRes?.Data?.[0] || !loginRes.Token) {
+				throw new Error("Серверээс буруу хариу ирлээ");
+			}
+
+			const userData = loginRes.Data[0];
+			const token = loginRes.Token;
+
+			const sessionRes = await createSessionRequest(userData.id, token, "", "");
+			if (!sessionRes?.RetResponse?.ResponseType) {
+				throw new Error("Session үүсгэх амжилтгүй");
+			}
+
+			return { userData, token };
+		},
+		onSuccess: ({ userData, token }) => {
+			setUser(userData);
+			setToken(token);
+
+			// Cookie-г нэг дор тохируулна
+			const cookies: [string, string][] = [
+				["auth-token", token],
+				["user-id", String(userData.id)],
+				["firstname", userData.firstname ?? ""],
+				["img-url", userData.img_url ?? ""],
+			];
+			for (const [key, val] of cookies) {
+				setCookie(key, val, 7);
+			}
+
+			if (userData.ugroup === 4 || userData.ugroup === 3) {
+				router.push("/room");
+			} else {
+				if (userData.is_enabled === 0) {
+					toast.info("Профайл мэдээллээ бөглөнө үү", {
+						description:
+							"Та профайл мэдээллээ бүрэн бөглөсний дараа системд нэвтрэх боломжтой болно.",
+						duration: 5000,
+					});
+					router.push("/userProfile");
+				} else {
+					router.push(redirectUrl);
+				}
+			}
+		},
+		onError: (error: Error) => {
+			form.setError("root", {
+				type: "manual",
+				message: error.message || "Нэвтрэх нэр эсвэл нууц үг буруу байна",
+			});
+			form.setValue("password", "");
+			form.setFocus("password");
+		},
+	});
+
+	useEffect(() => {
+		if (tokenLogin) {
+			tokenLoginMutate(tokenLogin);
+		}
+	}, [tokenLogin, tokenLoginMutate]);
 
 	const onSubmit = (values: FormValues) => mutate(values);
 
@@ -200,7 +262,7 @@ export function LoginForm() {
 												placeholder="Нэвтрэх нэр"
 												type="text"
 												autoComplete="username"
-												disabled={isPending}
+												disabled={isPending || tokenIsLoading}
 												className={hasRootError ? "border-destructive/50 " : ""}
 												{...field}
 											/>
@@ -221,7 +283,7 @@ export function LoginForm() {
 												placeholder="••••••••"
 												type="password"
 												autoComplete="current-password"
-												disabled={isPending}
+												disabled={isPending || tokenIsLoading}
 												className={
 													hasRootError
 														? "border-destructive/50 animate-shake"
@@ -235,9 +297,15 @@ export function LoginForm() {
 								)}
 							/>
 
-							<Button type="submit" className="w-full" disabled={isPending}>
-								{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-								{isPending ? "Нэвтэрч байна..." : "Нэвтрэх"}
+							<Button
+								type="submit"
+								className="w-full"
+								disabled={isPending || tokenIsLoading}
+							>
+								{(isPending || tokenIsLoading) && (
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								)}
+								{isPending || tokenIsLoading ? "Нэвтэрч байна..." : "Нэвтрэх"}
 							</Button>
 
 							<Button

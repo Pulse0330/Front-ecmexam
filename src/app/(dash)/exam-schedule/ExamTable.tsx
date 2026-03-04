@@ -142,7 +142,7 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 											<TableCell className="text-center py-3">
 												<Badge
 													variant="outline"
-													className="font-bold bg-background text-[10px] py-0 h-5 border-border/60"
+													className="font-bold bg-background text-[10px] py-0 h-5 border-border/60 border"
 												>
 													<Clock size={10} className="mr-1 text-primary" />
 													{exam.duration}м
@@ -223,7 +223,7 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 																		<TableHead className="text-[9px] font-bold uppercase  h-8 px-4">
 																			Дуусах цаг
 																		</TableHead>
-																		<TableHead className="text-[9px] font-bold uppercase  h-8">
+																		<TableHead className="text-[9px] font-bold uppercase  h-8 text-right">
 																			Үйлдэл
 																		</TableHead>
 																	</TableRow>
@@ -256,7 +256,7 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 																				</div>
 																			</TableCell>
 																			<TableCell className="py-1 ">
-																				<div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-lg bg-muted/20">
+																				<div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-lg  bg-background border border-border/60">
 																					<span className="text-[11px] font-medium">
 																						{format(
 																							new Date(date.end_date),
@@ -271,7 +271,7 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 																					</span>
 																				</div>
 																			</TableCell>
-																			<TableCell className="py-1   items-center">
+																			<TableCell className="py-1   items-center flex justify-end w-full">
 																				<Button
 																					asChild
 																					size={"xs"}
