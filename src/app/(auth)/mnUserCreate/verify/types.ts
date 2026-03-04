@@ -20,6 +20,7 @@ export interface VerifyData {
 	student_group_id: string;
 	schooldb: string;
 	password: string;
+	userid: number;
 }
 
 export interface ExamineeItem {

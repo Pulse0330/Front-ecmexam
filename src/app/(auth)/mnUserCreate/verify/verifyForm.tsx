@@ -18,7 +18,6 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 	const router = useRouter();
 	const [step, setStep] = useState<Step>("preview");
 	const [isLoading, setIsLoading] = useState(false);
-	setStep;
 	const [error, setError] = useState("");
 	const [qpayError, setQpayError] = useState("");
 	const [isPaid, setIsPaid] = useState(false);
@@ -156,9 +155,25 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 	const handleSendAndProceed = useCallback(async () => {
 		const sent = await sendExaminee();
 		if (!sent) return;
+
+		// ── SMS илгээх ──
+		try {
+			await fetch("https://ottapp.ecm.mn/api/sms_loop", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					phone: d.phone,
+					msgtext: `Нэвтрэх нэр: ${d.login_name} Нууц үг: ${d.password}`,
+					conn: "skuul",
+				}),
+			});
+		} catch {
+			// SMS алдаа гарсан ч үргэлжлүүлнэ
+		}
+
 		toast.success("Амжилттай илгээгдлээ");
 		setStep("paid");
-	}, [sendExaminee]);
+	}, [sendExaminee, d]);
 
 	const handleQpayOpenChange = useCallback((open: boolean) => {
 		setQpayOpen(open);
@@ -166,6 +181,7 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 	}, []);
 
 	const STEPS = ["preview", "paid"] as const;
+
 	const stepIdx = STEPS.indexOf(step as "preview" | "paid");
 
 	return (
@@ -224,7 +240,7 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 							</div>
 						</div>
 						<span className="text-xs text-muted-foreground font-medium">
-							{step === "preview" && "Мэдээлэл шалгах"}
+							{step === "preview" && "Төлбөр төлөх"}
 							{step === "paid" && "Бүртгэл амжилттай"}
 						</span>
 					</div>
