@@ -59,7 +59,7 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 					<Table>
 						<TableHeader className="bg-muted/80 sticky top-0 z-20 backdrop-blur-md shadow-sm">
 							<TableRow className="hover:bg-transparent border-b border-border">
-								<TableHead className="w-[50px]"></TableHead>
+								<TableHead className="w-12.5"></TableHead>
 								<TableHead className="font-semibold text-foreground text-sm  tracking-wider h-11">
 									Шалгалтын нэр
 								</TableHead>
@@ -82,7 +82,7 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 						<TableBody className="border-0">
 							{isLoading ? (
 								<TableRow>
-									<TableCell colSpan={5} className="h-60 text-center">
+									<TableCell colSpan={6} className="h-60 text-center">
 										<div className="flex flex-col items-center justify-center gap-3">
 											<Loader2 className="h-7 w-7 animate-spin text-primary" />
 											<p className="text-xs font-medium text-muted-foreground">
@@ -93,22 +93,21 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 								</TableRow>
 							) : data.length === 0 ? (
 								<TableRow>
-									<TableCell colSpan={5} className="h-60 text-center">
+									<TableCell colSpan={6} className="h-60 text-center">
 										<div className="flex flex-col items-center justify-center gap-4 py-10">
-											<div className="rounded-2xl bg-muted p-4">
+											<div className="rounded-full bg-primary/5 p-6 mb-4 ring-8 ring-primary/2">
 												<Download className="h-8 w-8 text-muted-foreground/40" />
 											</div>
 											<div className="space-y-1">
-												<p className="text-sm font-bold">
+												<h3 className="text-xl font-bold tracking-tight">
 													Жагсаалт хоосон байна
-												</p>
+												</h3>
 												<Button
 													onClick={onFetchData}
 													variant="outline"
-													size="sm"
-													className="mt-2 h-8 text-xs gap-2"
+													className="mt-6 gap-2 rounded-full px-6 shadow-sm"
 												>
-													<Download size={14} /> Материал татах
+													<Download size={14} /> Хувиар татах
 												</Button>
 											</div>
 										</div>
