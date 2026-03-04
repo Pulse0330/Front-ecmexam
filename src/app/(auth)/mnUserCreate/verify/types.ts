@@ -55,6 +55,8 @@ export interface ExamDate {
 	end_date: string;
 	exam_skuul_id: number;
 	exam_date_id: number | null;
+	date?: string; // ← нэмэх
+	exam_date?: string;
 }
 
 export interface ExamItem {

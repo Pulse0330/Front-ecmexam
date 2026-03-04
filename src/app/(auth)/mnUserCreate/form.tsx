@@ -420,23 +420,23 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 
 	const handleContinue = useCallback(async () => {
 		if (!profileImg) {
-			toast.error("Зураг оруулна уу!");
+			toast.warning("Зураг оруулаагүй байна");
 			return;
 		}
 		if (isUploadingImage) {
-			toast.error("Зураг upload хийж байна, түр хүлээнэ үү...");
+			toast.warning("Зураг upload хийж байна, түр хүлээнэ үү...");
 			return;
 		}
 		if (!uploadedImgUrl) {
-			toast.error("Зурагны upload дуусаагүй байна, дахин оролдоно уу.");
+			toast.warning("Зурагны upload дуусаагүй байна, дахин оролдоно уу.");
 			return;
 		}
-		if (!password || password.length < 4) {
-			toast.error("Нууц үгээ оруулна уу! (доод тал нь 4 тэмдэгт)");
+		if (!password || password.length < 6) {
+			toast.warning("Нууц үгээ оруулна уу! (доод тал нь 6 тэмдэгт)");
 			return;
 		}
 		if (password !== confirmPassword) {
-			toast.error("Нууц үг таарахгүй байна!");
+			toast.warning("Нууц үг таарахгүй байна!");
 			return;
 		}
 		console.log("🔍 d values:", {
@@ -597,7 +597,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 						<CardContent className="p-4">
 							<div className="flex flex-col md:flex-row items-center gap-4">
 								{/* Avatar */}
-								<div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+								<div className="flex flex-col items-center gap-1.5 shrink-0">
 									<input
 										ref={fileRef}
 										type="file"
@@ -783,81 +783,93 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 											icon={<User size={13} />}
 										/>
 									</Field>
+								</CardContent>
+							</Card>
+							{/* ── НУУЦ ҮГ ── */}
+							<Card className={CARD_CLS}>
+								<CardHeader className="pb-0 pt-3 px-4">
+									<CardTitle className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+										<Lock size={12} /> Нууц үг оруулах
+									</CardTitle>
+								</CardHeader>
+								<CardContent className="p-4 pt-3">
+									<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+										{/* Нууц үг */}
+										<Field label="Нууц үг" htmlFor="password" required>
+											<div className="relative">
+												<Input
+													id="password"
+													type={showPw ? "text" : "password"}
+													value={password}
+													onChange={(e) => setPassword(e.target.value)}
+													placeholder="Шинэ нууц үг оруулах"
+													className={`h-8 text-xs pr-9 font-mono tracking-wider ${!password ? "border-destructive/60 focus-visible:ring-destructive/30" : ""}`}
+												/>
+												<Button
+													type="button"
+													variant="ghost"
+													size="sm"
+													onClick={() => setShowPw((p) => !p)}
+													className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-muted-foreground"
+												>
+													{showPw ? <EyeOff size={13} /> : <Eye size={13} />}
+												</Button>
+											</div>
+											{!password && (
+												<p className="text-[10px] text-destructive mt-0.5">
+													Өөрийн мартахгүй 6 оронтой тоогоор нууц үгээ үүсгээрэй
+												</p>
+											)}
+										</Field>
 
-									{/* Нууц үг */}
-									<Field label="Нууц үг" htmlFor="password" required>
-										<div className="relative">
-											<Input
-												id="password"
-												type={showPw ? "text" : "password"}
-												value={password}
-												onChange={(e) => setPassword(e.target.value)}
-												placeholder="Шинэ нууц үг оруулах"
-												className={`h-8 text-xs pr-9 font-mono tracking-wider ${!password ? "border-destructive/60 focus-visible:ring-destructive/30" : ""}`}
-											/>
-											<Button
-												type="button"
-												variant="ghost"
-												size="sm"
-												onClick={() => setShowPw((p) => !p)}
-												className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-muted-foreground"
-											>
-												{showPw ? <EyeOff size={13} /> : <Eye size={13} />}
-											</Button>
-										</div>
-										{!password && (
-											<p className="text-[10px] text-destructive mt-0.5">
-												Нууц үгээ заавал оруулна уу
-											</p>
-										)}
-									</Field>
-
-									{/* Нууц үг баталгаажуулах */}
-									<Field
-										label="Нууц үг баталгаажуулах"
-										htmlFor="confirmPassword"
-										required
-									>
-										<div className="relative">
-											<Input
-												id="confirmPassword"
-												type={showConfirmPw ? "text" : "password"}
-												value={confirmPassword}
-												onChange={(e) => setConfirmPassword(e.target.value)}
-												placeholder="Нууц үгийг давтан оруулах"
-												className={`h-8 text-xs pr-9 font-mono tracking-wider ${
-													confirmPassword && password !== confirmPassword
-														? "border-destructive/60 focus-visible:ring-destructive/30"
-														: confirmPassword && password === confirmPassword
-															? "border-green-500/60 focus-visible:ring-green-500/20"
-															: ""
-												}`}
-											/>
-											<Button
-												type="button"
-												variant="ghost"
-												size="sm"
-												onClick={() => setShowConfirmPw((p) => !p)}
-												className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-muted-foreground"
-											>
-												{showConfirmPw ? (
-													<EyeOff size={13} />
-												) : (
-													<Eye size={13} />
-												)}
-											</Button>
-										</div>
-										{confirmPassword && password !== confirmPassword && (
-											<p className="text-[10px] text-destructive mt-0.5">
-												✕ Нууц үг таарахгүй байна
-											</p>
-										)}
-										{confirmPassword && password === confirmPassword && (
-											<p className="text-[10px] text-green-500 mt-0.5">
-												✔ Нууц үг таарч байна
-											</p>
-										)}
-									</Field>
+										{/* Нууц үг баталгаажуулах */}
+										<Field
+											label="Нууц үг баталгаажуулах"
+											htmlFor="confirmPassword"
+											required
+										>
+											<div className="relative">
+												<Input
+													id="confirmPassword"
+													type={showConfirmPw ? "text" : "password"}
+													value={confirmPassword}
+													onChange={(e) => setConfirmPassword(e.target.value)}
+													placeholder="Нууц үгийг давтан оруулах"
+													className={`h-8 text-xs pr-9 font-mono tracking-wider ${
+														confirmPassword && password !== confirmPassword
+															? "border-destructive/60 focus-visible:ring-destructive/30"
+															: confirmPassword && password === confirmPassword
+																? "border-green-500/60 focus-visible:ring-green-500/20"
+																: ""
+													}`}
+												/>
+												<Button
+													type="button"
+													variant="ghost"
+													size="sm"
+													onClick={() => setShowConfirmPw((p) => !p)}
+													className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-muted-foreground"
+												>
+													{showConfirmPw ? (
+														<EyeOff size={13} />
+													) : (
+														<Eye size={13} />
+													)}
+												</Button>
+											</div>
+											{confirmPassword && password !== confirmPassword && (
+												<p className="text-[10px] text-destructive mt-0.5">
+													✕ Нууц үг таарахгүй байна , арын нүдэн дээр дараад
+													харж болно шүү 🫡
+												</p>
+											)}
+											{confirmPassword && password === confirmPassword && (
+												<p className="text-[10px] text-green-500 mt-0.5">
+													✔ Нууц үг таарч байна 🫶
+												</p>
+											)}
+										</Field>
+									</div>
 								</CardContent>
 							</Card>
 						</div>
@@ -915,11 +927,11 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 										</div>
 										<div>
 											<p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider mb-0.5">
-												Хязгаарлагдмал талбар
+												Засах боломжгүй мэдээлэл
 											</p>
 											<p className="text-[10px] text-muted-foreground/70 leading-relaxed">
-												Энэхүү мэдээллүүд нь ESIS-аас автоматаар татагдсан тул
-												гар аргаар засах боломжгүй.
+												Эдгээр мэдээлэл нь системд хадгалагдсан бөгөөд та
+												өөрчлөх боломжгүй.
 											</p>
 										</div>
 									</div>

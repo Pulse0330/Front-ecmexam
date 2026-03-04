@@ -250,20 +250,38 @@ export function LoginForm() {
 							<span className="bg-card px-2 text-muted-foreground">Эсвэл</span>
 						</div>
 					</div>
-
 					<button
 						type="button"
 						onClick={() => setOpen(true)}
-						className="w-full flex flex-col items-center justify-center gap-1 px-6 py-4
-              bg-linear-to-r from-emerald-500 to-teal-600
-              dark:from-emerald-600 dark:to-teal-700
-              text-white rounded-xl hover:opacity-90 hover:-translate-y-0.5
-              transition-all duration-300 shadow-lg cursor-pointer"
+						className="w-full flex items-center justify-between px-7 py-5
+     bg-white border-2 border-emerald-500 rounded-2xl
+     shadow-xl shadow-emerald-500/10 
+     transition-all duration-300 cursor-pointer group"
 					>
-						<span className="text-xs opacity-80">
-							Монгол хэл бичгийн шалгалт
-						</span>
-						<span className="font-bold text-base">Шалгалтанд бүртгүүлэх</span>
+						<div className="flex flex-col items-start gap-0.5">
+							<span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+								Монгол хэл, бичгийн шалгалт
+							</span>
+							<span className="text-base font-bold text-emerald-600 transition-colors">
+								Бүртгүүлэх
+							</span>
+						</div>
+						<div className="bg-emerald-500 p-2 rounded-full transition-colors">
+							<svg
+								className="w-5 h-5 text-white"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<title>Arrow Right</title>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth="2.5"
+									d="M9 5l7 7-7 7"
+								/>
+							</svg>
+						</div>
 					</button>
 				</CardFooter>
 			</Card>
@@ -274,7 +292,7 @@ export function LoginForm() {
 							Монгол хэл бичгийн шалгалт
 						</DialogTitle>
 						<DialogDescription>
-							Шалгалтанд бүртгүүлэхийн тулд мэдээллээ оруулна уу
+							😇Та шалгалтанд бүртгүүлэхийн тулд доорх мэдээллээ бөглөөрэй.
 						</DialogDescription>
 					</DialogHeader>
 					<div className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-4">
