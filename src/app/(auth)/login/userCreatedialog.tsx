@@ -333,7 +333,7 @@ async function apiCheckStudentSkuulGet(
  * 2-р шат: POST /api/examineeskuul
  * GET-н examinee_number-ийг дамжуулна
  */
-async function apiGetStudentSkuulPost(
+async function _apiGetStudentSkuulPost(
 	registerNumber: string,
 	examineeNumber: string,
 ): Promise<StudentExamData | null> {
@@ -385,36 +385,35 @@ async function apiGetStudentExam(
 /**
  * Хосолсон шалгалт:
  * 1. GET  /api/examinee?register_number=РД
- *    → Олдвол: POST /api/examineeskuul → мэдээлэл харуулна, цааш үргэлжлэхгүй (fromSkuul=true)
+ *    → Олдвол: examinee_number-г буцаана (fromSkuul=true), POST дуудахгүй
  *    → Олдохгүй: Exam API → үргэлжлүүлэх боломжтой (fromSkuul=false)
  */
 async function checkStudentCombined(
 	registerNumber: string,
 	dbname: string,
 	_schoolName: string,
-): Promise<{ student: StudentExamData | null; fromSkuul: boolean }> {
+): Promise<{
+	student: StudentExamData | null;
+	fromSkuul: boolean;
+	examineeNumber: string | null;
+}> {
 	// 1-р шат: GET
 	const examineeNumber = await apiCheckStudentSkuulGet(registerNumber);
 
 	if (examineeNumber !== null) {
 		console.log(
-			"✅ [1] GET олдлоо → POST явуулж байна, examinee_number:",
+			"✅ [1] GET олдлоо → Бүртгэлтэй байна, examinee_number:",
 			examineeNumber,
 		);
-		// 2-р шат: POST — бүрэн мэдээлэл авна, цааш үргэлжлэхгүй
-		const postResult = await apiGetStudentSkuulPost(
-			registerNumber,
-			examineeNumber,
-		);
-		console.log("✅ [2] POST хариу:", postResult);
-		return { student: postResult, fromSkuul: true };
+		// Бүртгэлтэй байгаа тул POST дуудахгүй, зөвхөн examineeNumber буцаана
+		return { student: null, fromSkuul: true, examineeNumber };
 	}
 
 	console.log("⚠️ GET олдсонгүй → Exam API шалгаж байна...");
 	// Зөвхөн GET олдохгүй үед Exam API дуудна
 	const examResult = await apiGetStudentExam(dbname, registerNumber);
 	if (examResult) console.log("✅ Exam API олдлоо:", examResult);
-	return { student: examResult, fromSkuul: false };
+	return { student: examResult, fromSkuul: false, examineeNumber: null };
 }
 
 // ─── Regex: зөвшөөрөгдөх тэмдэгтүүд ─────────────────────────────────────────
@@ -495,7 +494,10 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 	const [reg, setReg] = useState("");
 	const [checkState, setCheckState] = useState<CheckState>("idle");
 	const [studentExam, setStudentExam] = useState<StudentExamData | null>(null);
-	const [isSkuulFound, setIsSkuulFound] = useState(false); // Skuul-аас олдсон → үргэлжлүүлэх блоклоно
+	const [isSkuulFound, setIsSkuulFound] = useState(false);
+	const [skuulExamineeNumber, setSkuulExamineeNumber] = useState<string | null>(
+		null,
+	);
 	const [checkError, setCheckError] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [submitError, setSubmitError] = useState("");
@@ -518,6 +520,7 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 		setCheckState("idle");
 		setStudentExam(null);
 		setIsSkuulFound(false);
+		setSkuulExamineeNumber(null);
 		setCheckError("");
 		setSubmitError("");
 	}, []);
@@ -596,15 +599,22 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 		setCheckState("loading");
 		setCheckError("");
 		setIsSkuulFound(false);
+		setSkuulExamineeNumber(null);
 		try {
-			const { student, fromSkuul } = await checkStudentCombined(
+			const { student, fromSkuul, examineeNumber } = await checkStudentCombined(
 				reg,
 				schoolData.dbname,
 				schoolData.sName,
 			);
-			if (student) {
+			if (fromSkuul) {
+				// Бүртгэлтэй байна — зөвхөн examineeNumber харуулна
+				setIsSkuulFound(true);
+				setSkuulExamineeNumber(examineeNumber);
+				setStudentExam(null);
+				setCheckState("found");
+			} else if (student) {
 				setStudentExam(student);
-				setIsSkuulFound(fromSkuul);
+				setIsSkuulFound(false);
 				setCheckState("found");
 			} else {
 				setCheckState("not_found");
@@ -733,7 +743,26 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 						</Alert>
 					)}
 
-					{checkState === "found" && studentExam && (
+					{/* ── Бүртгэлтэй байна (Skuul GET олдлоо) ── */}
+					{checkState === "found" && isSkuulFound && (
+						<Alert className="border-blue-200 bg-blue-50/50 dark:bg-blue-900/10 dark:border-blue-800">
+							<CheckCircle2 className="h-4 w-4 text-blue-500" />
+							<AlertDescription className="text-blue-700 dark:text-blue-400">
+								<div className="flex flex-col gap-1.5">
+									<p className="font-semibold text-base">Та бүртгэлтэй байна</p>
+									<p className="text-sm">
+										Таны бүртгэлийн дугаар:{" "}
+										<span className="font-mono font-bold text-blue-800 dark:text-blue-300 text-base">
+											{skuulExamineeNumber}
+										</span>
+									</p>
+								</div>
+							</AlertDescription>
+						</Alert>
+					)}
+
+					{/* ── Exam API-аас олдлоо → дэлгэрэнгүй мэдээлэл ── */}
+					{checkState === "found" && studentExam && !isSkuulFound && (
 						<Alert className="border-emerald-200 bg-emerald-50/50 dark:bg-emerald-900/10 dark:border-emerald-800">
 							<CheckCircle2 className="h-4 w-4 text-emerald-500" />
 							<AlertDescription className="text-emerald-700 dark:text-emerald-400">

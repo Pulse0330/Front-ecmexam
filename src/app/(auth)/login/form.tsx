@@ -289,10 +289,10 @@ export function LoginForm() {
 				<DialogContent className="sm:max-w-md flex flex-col bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 max-h-screen sm:max-h-[85vh] p-0 overflow-hidden">
 					<DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
 						<DialogTitle className="text-xl font-bold">
-							Монгол хэл бичгийн шалгалт
+							Монгол хэл , бичгийн шалгалт
 						</DialogTitle>
 						<DialogDescription>
-							😇Та шалгалтанд бүртгүүлэхийн тулд доорх мэдээллээ бөглөөрэй.
+							😇 Шалгалтад бүртгүүлэхийн тулд доорх мэдээллээ бөглөөрэй.
 						</DialogDescription>
 					</DialogHeader>
 					<div className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-4">
