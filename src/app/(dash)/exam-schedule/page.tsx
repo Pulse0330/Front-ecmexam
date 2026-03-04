@@ -33,10 +33,10 @@ export default function ExamMaterialsPage() {
 							<div className="bg-primary/10 p-2 rounded-lg text-primary">
 								<BookOpen className="text-primary" />
 							</div>
-							Шалгалтын хувиар
+							Шалгалтын Хуваарь
 						</h1>
 						<p className="text-sm text-muted-foreground mt-1">
-							Та хувиар татах дээр дарж шалгалтыг шинэчлэх боломжтой. | Нийт{" "}
+							Та Хуваарь татах дээр дарж шалгалтыг шинэчлэх боломжтой. | Нийт{" "}
 							{data?.RetData?.length || 0} шалгалт байна.
 						</p>
 					</div>
@@ -54,7 +54,7 @@ export default function ExamMaterialsPage() {
 					) : (
 						<div className="flex items-center gap-2">
 							<Download size={14} />
-							Хувиар татах
+							Хуваарь татах
 						</div>
 					)}
 				</Button>

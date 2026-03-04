@@ -122,7 +122,7 @@ export default function RoomPage() {
 				// Ачаалж байх үед Skeleton харуулна
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 					{[1, 2, 3, 4].map((i) => (
-						<Card key={i} className="flex flex-col h-[280px]">
+						<Card key={i} className="flex flex-col h-70">
 							<CardHeader className="space-y-2">
 								<Skeleton className="h-4 w-20" />
 								<Skeleton className="h-10 w-24" />
@@ -213,13 +213,30 @@ export default function RoomPage() {
 											</p>
 										</div>
 									</div>
+									<div className="flex items-start gap-2.5">
+										<Monitor className="text-primary mt-0.5" size={15} />
+										<div className="min-w-0">
+											<p className="text-[9px] leading-none text-muted-foreground uppercase font-bold tracking-tighter">
+												Компьютер
+											</p>
+											<p className="text-sm font-medium mt-0.5 truncate text-foreground/80">
+												{room.pccnt ? (
+													room.pccnt
+												) : (
+													<span className="text-xs italic">
+														зохион байгуулагүй байна.
+													</span>
+												)}
+											</p>
+										</div>
+									</div>
 								</div>
 
 								<div className="bg-muted/30 p-2 rounded-lg border border-border/50">
-									<p className="text-[9px] leading-none text-muted-foreground uppercase font-bold mb-1.5">
+									<p className="text-[9px] leading-none text-muted-foreground uppercase font-bold ">
 										Тайлбар
 									</p>
-									<p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2 italic">
+									<p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-1 italic">
 										{room.description || "Нэмэлт тайлбар бүртгэгдээгүй байна."}
 									</p>
 								</div>

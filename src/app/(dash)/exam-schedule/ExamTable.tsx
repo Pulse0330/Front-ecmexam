@@ -107,7 +107,7 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 													variant="outline"
 													className="mt-6 gap-2 rounded-full px-6 shadow-sm"
 												>
-													<Download size={14} /> Хувиар татах
+													<Download size={14} /> Хуваарь татах
 												</Button>
 											</div>
 										</div>
