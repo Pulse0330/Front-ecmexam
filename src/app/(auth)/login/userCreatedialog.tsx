@@ -3,15 +3,27 @@
 import {
 	AlertCircle,
 	ArrowRight,
+	Calendar,
 	CheckCircle2,
+	Clock,
+	DoorOpen,
 	Loader2,
+	MapPin,
 	RotateCcw,
+	School,
+	User,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -495,7 +507,8 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 	const [reg, setReg] = useState("");
 	const [checkState, setCheckState] = useState<CheckState>("idle");
 	const [studentExam, setStudentExam] = useState<StudentExamData | null>(null);
-	const [isSkuulFound, setIsSkuulFound] = useState(false); // Skuul-аас олдсон → үргэлжлүүлэх блоклоно
+	const [isSkuulFound, setIsSkuulFound] = useState(false);
+	const [skuulDialog, setSkuulDialog] = useState(false); // Skuul мэдээлэл dialog
 	const [checkError, setCheckError] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [submitError, setSubmitError] = useState("");
@@ -518,6 +531,7 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 		setCheckState("idle");
 		setStudentExam(null);
 		setIsSkuulFound(false);
+		setSkuulDialog(false);
 		setCheckError("");
 		setSubmitError("");
 	}, []);
@@ -606,6 +620,7 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 				setStudentExam(student);
 				setIsSkuulFound(fromSkuul);
 				setCheckState("found");
+				if (fromSkuul) setSkuulDialog(true); // Dialog нээнэ
 			} else {
 				setCheckState("not_found");
 			}
@@ -836,6 +851,147 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 						</Alert>
 					)}
 				</div>
+			)}
+
+			{/* ─── Skuul Dialog ─────────────────────────────────────── */}
+			{studentExam && (
+				<Dialog open={skuulDialog} onOpenChange={setSkuulDialog}>
+					<DialogContent className="max-w-md">
+						<DialogHeader>
+							<DialogTitle className="flex items-center gap-2 text-emerald-700">
+								<CheckCircle2 className="w-5 h-5" />
+								Таны мэдээлэл
+							</DialogTitle>
+						</DialogHeader>
+
+						<div className="space-y-4">
+							{/* Профайл + нэр */}
+							<div className="flex items-center gap-4">
+								{studentExam.img_url ? (
+									<img
+										src={studentExam.img_url}
+										alt="profile"
+										className="w-16 h-16 rounded-full object-cover border-2 border-emerald-300 shrink-0"
+									/>
+								) : (
+									<div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+										<User className="w-8 h-8 text-emerald-500" />
+									</div>
+								)}
+								<div>
+									<p className="text-lg font-bold">
+										{studentExam.lastname} {studentExam.firstname}
+									</p>
+									<p className="text-sm text-muted-foreground font-mono">
+										{studentExam.reg_number}
+									</p>
+									<div className="flex gap-2 mt-1">
+										<Badge variant="secondary">
+											{studentExam.gender_code === "F" ? "Эмэгтэй" : "Эрэгтэй"}
+										</Badge>
+										{studentExam.age && (
+											<Badge variant="outline">{studentExam.age} нас</Badge>
+										)}
+									</div>
+								</div>
+							</div>
+
+							<div className="divide-y rounded-lg border text-sm">
+								{/* Сургууль */}
+								<div className="flex gap-3 items-start p-3">
+									<School className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+									<div>
+										<p className="font-medium">{studentExam.schoolname}</p>
+										{studentExam.studentgroupname && (
+											<p className="text-muted-foreground">
+												{studentExam.studentgroupname} анги
+											</p>
+										)}
+									</div>
+								</div>
+
+								{/* Хаяг */}
+								{(studentExam.aimag_name || studentExam.sym_name) && (
+									<div className="flex gap-3 items-center p-3">
+										<MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
+										<p>
+											{[studentExam.aimag_name, studentExam.sym_name]
+												.filter(Boolean)
+												.join(", ")}
+										</p>
+									</div>
+								)}
+
+								{/* Шалгалт */}
+								{studentExam.exam_name && (
+									<>
+										<div className="flex gap-3 items-start p-3">
+											<Calendar className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+											<div>
+												<p className="font-medium">{studentExam.exam_name}</p>
+												{studentExam.start_date && (
+													<p className="text-muted-foreground">
+														{new Date(studentExam.start_date).toLocaleString(
+															"mn-MN",
+															{
+																year: "numeric",
+																month: "2-digit",
+																day: "2-digit",
+																hour: "2-digit",
+																minute: "2-digit",
+															},
+														)}
+													</p>
+												)}
+											</div>
+										</div>
+										{studentExam.duration && (
+											<div className="flex gap-3 items-center p-3">
+												<Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+												<p>{studentExam.duration} минут</p>
+											</div>
+										)}
+										{studentExam.room_number && (
+											<div className="flex gap-3 items-center p-3">
+												<DoorOpen className="w-4 h-4 text-muted-foreground shrink-0" />
+												<p>
+													Өрөө:{" "}
+													<span className="font-medium">
+														{studentExam.room_number}
+													</span>
+													{studentExam.roomname
+														? ` — ${studentExam.roomname}`
+														: ""}
+												</p>
+											</div>
+										)}
+									</>
+								)}
+
+								{/* Төлөв */}
+								{studentExam.status_text && (
+									<div className="p-3">
+										<Badge
+											variant="outline"
+											className="text-amber-600 border-amber-300 bg-amber-50"
+										>
+											{studentExam.status_text}
+										</Badge>
+									</div>
+								)}
+							</div>
+
+							<Button
+								type="button"
+								variant="outline"
+								className="w-full"
+								onClick={() => setSkuulDialog(false)}
+							>
+								Хаах
+							</Button>
+						</div>
+					</DialogContent>
+				</Dialog>
 			)}
 
 			{checkState === "found" && school && !isSkuulFound && (

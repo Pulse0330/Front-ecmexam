@@ -174,6 +174,10 @@ async function uploadProfileImage(file: File): Promise<string> {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+function generatePassword(): string {
+	return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
 function fmtDate(iso: string): string {
 	if (!iso) return "—";
 	return new Date(iso).toLocaleDateString("mn-MN", {
@@ -181,11 +185,6 @@ function fmtDate(iso: string): string {
 		month: "2-digit",
 		day: "2-digit",
 	});
-}
-
-function _fmtDT(iso: string): string {
-	if (!iso) return "—";
-	return new Date(iso).toLocaleString("mn-MN");
 }
 
 function calcAge(dob: string): number | string {
@@ -210,7 +209,7 @@ const NOTICE_ITEMS = [
 	{
 		id: "lock",
 		icon: <Lock size={13} className="text-red-500 shrink-0 mt-0.5" />,
-		text: "Нууц үгээ заавал оруулна уу (доод тал нь 4 тэмдэгт).",
+		text: "Нууц үг нь системээс автоматаар үүсгэгдсэн бөгөөд та өөрчилж болохгүй.",
 	},
 	{
 		id: "photo",
@@ -301,7 +300,6 @@ function NoticeModal({
 	return (
 		<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
 			<DialogContent className="sm:max-w-sm rounded-2xl p-0 overflow-hidden gap-0">
-				{/* Header */}
 				<DialogHeader className="px-5 pt-5 pb-3">
 					<div className="flex items-center gap-2.5">
 						<div className="w-8 h-8 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
@@ -315,14 +313,12 @@ function NoticeModal({
 
 				<Separator className="opacity-40" />
 
-				{/* Alert chips */}
 				<div className="px-5 py-4 flex flex-col gap-2.5">
 					{NOTICE_ITEMS.map((item, idx) => (
 						<div
 							key={item.id}
 							className="flex items-start gap-3 px-3.5 py-2.5 rounded-xl border bg-muted/30 hover:bg-muted/50 transition-colors"
 						>
-							{/* Step badge */}
 							<span className="w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
 								{idx + 1}
 							</span>
@@ -336,7 +332,6 @@ function NoticeModal({
 					))}
 				</div>
 
-				{/* Footer */}
 				<div className="px-5 pb-5">
 					<Button
 						onClick={onClose}
@@ -354,11 +349,9 @@ function NoticeModal({
 export default function StudentForm({ data: d }: { data: StudentExamData }) {
 	const router = useRouter();
 	const [isSaving, setIsSaving] = useState(false);
-	const [noticeOpen, setNoticeOpen] = useState(true); // auto-opens on mount
+	const [noticeOpen, setNoticeOpen] = useState(true);
 	const [showPw, setShowPw] = useState(false);
-	const [showConfirmPw, setShowConfirmPw] = useState(false);
-	const [confirmPassword, setConfirmPassword] = useState("");
-	const [password, setPassword] = useState("");
+	const [password, _setPassword] = useState<string>(() => generatePassword());
 	const [profileImg, setProfileImg] = useState<string | null>(d.img_url);
 	const [uploadedImgUrl, setUploadedImgUrl] = useState<string>(d.img_url ?? "");
 	const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -432,11 +425,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 			return;
 		}
 		if (!password || password.length < 6) {
-			toast.warning("Нууц үгээ оруулна уу! (доод тал нь 6 тэмдэгт)");
-			return;
-		}
-		if (password !== confirmPassword) {
-			toast.warning("Нууц үг таарахгүй байна!");
+			toast.warning("Нууц үг үүсгэгдээгүй байна!");
 			return;
 		}
 		console.log("🔍 d values:", {
@@ -499,10 +488,10 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				nationality: d.nationality,
 				login_name: d.login_name,
 				personId: d.personId,
-				school_esis_id: d.institutionid, // ← нэмэх
-				student_group_id: d.studentgroupid, // ← нэмэх
-				schooldb: d.schooldb, // ← нэмэх
-				password, // ← нэмэх
+				school_esis_id: d.institutionid,
+				student_group_id: d.studentgroupid,
+				schooldb: d.schooldb,
+				password,
 			};
 			sessionStorage.removeItem("studentExam");
 			sessionStorage.setItem("verifyData", JSON.stringify(verifyData));
@@ -513,15 +502,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 		} finally {
 			setIsSaving(false);
 		}
-	}, [
-		d,
-		router,
-		profileImg,
-		uploadedImgUrl,
-		password,
-		confirmPassword,
-		isUploadingImage,
-	]);
+	}, [d, router, profileImg, uploadedImgUrl, password, isUploadingImage]);
 
 	return (
 		<div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-500 overflow-hidden">
@@ -540,7 +521,6 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 						<ChevronLeft size={14} /> Буцах
 					</Button>
 
-					{/* Notice trigger button */}
 					<Button
 						variant="outline"
 						size="sm"
@@ -785,91 +765,40 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 									</Field>
 								</CardContent>
 							</Card>
+
 							{/* ── НУУЦ ҮГ ── */}
 							<Card className={CARD_CLS}>
 								<CardHeader className="pb-0 pt-3 px-4">
 									<CardTitle className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-										<Lock size={12} /> Нууц үг оруулах
+										<Lock size={12} /> Нууц үг
 									</CardTitle>
 								</CardHeader>
-								<CardContent className="p-4 pt-3">
-									<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-										{/* Нууц үг */}
-										<Field label="Нууц үг" htmlFor="password" required>
-											<div className="relative">
-												<Input
-													id="password"
-													type={showPw ? "text" : "password"}
-													value={password}
-													onChange={(e) => setPassword(e.target.value)}
-													placeholder="Шинэ нууц үг оруулах"
-													className={`h-8 text-xs pr-9 font-mono tracking-wider ${!password ? "border-destructive/60 focus-visible:ring-destructive/30" : ""}`}
-												/>
-												<Button
-													type="button"
-													variant="ghost"
-													size="sm"
-													onClick={() => setShowPw((p) => !p)}
-													className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-muted-foreground"
-												>
-													{showPw ? <EyeOff size={13} /> : <Eye size={13} />}
-												</Button>
-											</div>
-											{!password && (
-												<p className="text-[10px] text-destructive mt-0.5">
-													Өөрийн мартахгүй 6 оронтой тоогоор нууц үгээ үүсгээрэй
-												</p>
-											)}
-										</Field>
-
-										{/* Нууц үг баталгаажуулах */}
-										<Field
-											label="Нууц үг баталгаажуулах"
-											htmlFor="confirmPassword"
-											required
-										>
-											<div className="relative">
-												<Input
-													id="confirmPassword"
-													type={showConfirmPw ? "text" : "password"}
-													value={confirmPassword}
-													onChange={(e) => setConfirmPassword(e.target.value)}
-													placeholder="Нууц үгийг давтан оруулах"
-													className={`h-8 text-xs pr-9 font-mono tracking-wider ${
-														confirmPassword && password !== confirmPassword
-															? "border-destructive/60 focus-visible:ring-destructive/30"
-															: confirmPassword && password === confirmPassword
-																? "border-green-500/60 focus-visible:ring-green-500/20"
-																: ""
-													}`}
-												/>
-												<Button
-													type="button"
-													variant="ghost"
-													size="sm"
-													onClick={() => setShowConfirmPw((p) => !p)}
-													className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-muted-foreground"
-												>
-													{showConfirmPw ? (
-														<EyeOff size={13} />
-													) : (
-														<Eye size={13} />
-													)}
-												</Button>
-											</div>
-											{confirmPassword && password !== confirmPassword && (
-												<p className="text-[10px] text-destructive mt-0.5">
-													✕ Нууц үг таарахгүй байна , арын нүдэн дээр дараад
-													харж болно шүү 🫡
-												</p>
-											)}
-											{confirmPassword && password === confirmPassword && (
-												<p className="text-[10px] text-green-500 mt-0.5">
-													✔ Нууц үг таарч байна 🫶
-												</p>
-											)}
-										</Field>
-									</div>
+								<CardContent className="p-4 pt-0">
+									<Field label="Нууц үг" htmlFor="password" required>
+										<div className="relative">
+											<Input
+												id="password"
+												type={showPw ? "text" : "password"}
+												value={password}
+												readOnly
+												className="h-8 text-xs pr-9 font-mono tracking-widest bg-muted/50 cursor-not-allowed select-all border-green-500/40 focus-visible:ring-green-500/20"
+											/>
+											<Button
+												type="button"
+												variant="ghost"
+												size="sm"
+												onClick={() => setShowPw((p) => !p)}
+												className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-muted-foreground"
+											>
+												{showPw ? <EyeOff size={13} /> : <Eye size={13} />}
+											</Button>
+										</div>
+										<p className="text-[10px] text-green-600 dark:text-green-500 mt-1 flex items-center gap-1">
+											<Lock size={9} />
+											Системээс автоматаар үүсгэгдсэн 6 оронтой нууц үг. Нэвтрэх
+											нууц үгээ цээжлээрэй.
+										</p>
+									</Field>
 								</CardContent>
 							</Card>
 						</div>
@@ -886,11 +815,6 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 								<CardContent className="p-0 pt-1.5">
 									<InfoRow label="Сургуулийн нэр" value={d.schoolname} />
 									<InfoRow label="Анги" value={`${d.class_id}-р анги`} />
-									<InfoRow label="Бүлэг" value={d.studentgroupname} />
-									<InfoRow
-										label="Боловсролын түвшин"
-										value={`${d.academic_level}-р анги`}
-									/>
 								</CardContent>
 							</Card>
 
@@ -905,12 +829,6 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 									<InfoRow
 										label="Регистрийн дугаар"
 										value={d.reg_number}
-										mono
-									/>
-									<InfoRow label="personId" value={d.personId} mono />
-									<InfoRow
-										label="Хүйсийн код"
-										value={`${d.gender_code} (${d.gender})`}
 										mono
 									/>
 
