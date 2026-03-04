@@ -259,6 +259,33 @@ export function LoginForm() {
 						<div className="relative flex justify-center text-xs uppercase">
 							<span className="bg-card px-2 text-muted-foreground">Эсвэл</span>
 						</div>
+						<div
+							className="mt-6 w-full rounded-2xl backdrop-blur-md bg-white/60 dark:bg-white/5 border border-white/70 dark:border-white/10 shadow-lg px-6 py-5 text-left"
+							style={{ animation: "fadeInUp 1s ease-out 0.4s both" }}
+						>
+							<a
+								href="https://drive.google.com/file/d/11fuxxJGH8Y2E7maxcwy88WtiRL79iJHm/view?usp=sharing"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-red-600 dark:text-red-400 hover:text-red-800  transition-colors duration-200 group"
+							>
+								<svg
+									className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform duration-200"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth={2}
+									viewBox="0 0 24 24"
+								>
+									<title>External Link</title>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+									/>
+								</svg>
+								Монгол Хэл Бичгийн Шалгалтад бүртгүүлэх заавар үзэх →
+							</a>
+						</div>
 					</div>
 					<button
 						type="button"

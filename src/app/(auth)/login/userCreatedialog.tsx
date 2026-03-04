@@ -281,7 +281,6 @@ async function apiGetExamineeList(
 		const item = data.RetData?.[0];
 		if (!item) return null;
 
-		// examinee_list response → StudentExamData
 		const student: StudentExamData = {
 			login_name: item.register_number,
 			firstname: item.first_name,
@@ -352,7 +351,6 @@ async function checkStudentCombined(
 	if (skuulResult !== null) {
 		console.log("✅ [1] GET олдлоо → personId:", skuulResult.personId);
 
-		// personId байвал examinee_list дуудна
 		if (skuulResult.personId) {
 			const student = await apiGetExamineeList(skuulResult.personId);
 			if (student) {
@@ -365,7 +363,6 @@ async function checkStudentCombined(
 			}
 		}
 
-		// examinee_list олдохгүй бол зөвхөн examineeNumber харуулна
 		return {
 			student: null,
 			fromSkuul: true,
@@ -423,15 +420,17 @@ function SelectField({
 					</span>
 				</SelectTrigger>
 				<SelectContent className="max-w-(--radix-select-trigger-width)">
-					{options.map((o) => (
-						<SelectItem
-							key={o.value}
-							value={o.value}
-							className="whitespace-normal word-break-words"
-						>
-							{o.label}
-						</SelectItem>
-					))}
+					{options
+						.filter((o) => o.value !== "")
+						.map((o) => (
+							<SelectItem
+								key={o.value}
+								value={o.value}
+								className="whitespace-normal word-break-words"
+							>
+								{o.label}
+							</SelectItem>
+						))}
 				</SelectContent>
 			</Select>
 		</div>
@@ -567,7 +566,7 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 			if (fromSkuul) {
 				setIsSkuulFound(true);
 				setSkuulExamineeNumber(examineeNumber);
-				setStudentExam(student); // examinee_list-ээс ирсэн бол student байна
+				setStudentExam(student);
 				setCheckState("found");
 			} else if (student) {
 				setStudentExam(student);
@@ -601,7 +600,9 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 			<SelectField
 				label="Аймаг / Нийслэл"
 				placeholder={aimagLoading ? "Уншиж байна..." : "— Аймаг сонгох —"}
-				options={aimagList.map((a) => ({ value: a.mAcode, label: a.mName }))}
+				options={aimagList
+					.filter((a) => a.mAcode)
+					.map((a) => ({ value: a.mAcode, label: a.mName }))}
 				value={aimag}
 				onValueChange={onAimag}
 				loading={aimagLoading}
@@ -616,10 +617,12 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 							? "Эхлээд аймаг сонгоно уу"
 							: "— Дүүрэг сонгох —"
 				}
-				options={districtList.map((d) => ({
-					value: d.id.toString(),
-					label: d.name,
-				}))}
+				options={districtList
+					.filter((d) => d.id)
+					.map((d) => ({
+						value: d.id.toString(),
+						label: d.name,
+					}))}
 				value={district}
 				onValueChange={onDistrict}
 				disabled={!aimag}
@@ -635,7 +638,9 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 							? "Эхлээд дүүрэг сонгоно уу"
 							: "— Сургууль сонгох —"
 				}
-				options={schoolList.map((s) => ({ value: s.sName, label: s.sName }))}
+				options={schoolList
+					.filter((s) => s.sName)
+					.map((s) => ({ value: s.sName, label: s.sName }))}
 				value={school}
 				onValueChange={onSchool}
 				disabled={!district}
