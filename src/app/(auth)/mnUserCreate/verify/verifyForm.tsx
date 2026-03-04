@@ -2,21 +2,14 @@
 
 import { AlertCircle, CheckCircle2, ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { toast } from "sonner";
 import type { QPayInvoiceResponse } from "@/types/Qpay/qpayinvoice";
 import QPayDialog from "./qpayDialog";
-import { StepSelectExam } from "./StepSelectExam";
 import { StepPaid } from "./stepPaid";
 import { StepPreview } from "./stepPreview";
-import type {
-	ExamItem,
-	ExamineeItem,
-	ExamRoom,
-	Step,
-	VerifyData,
-} from "./types";
+import type { ExamineeItem, Step, VerifyData } from "./types";
 import { API_BASE } from "./utils";
 
 export type { VerifyData };
@@ -27,19 +20,10 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
 	const [qpayError, setQpayError] = useState("");
-	const [isPaid, setIsPaid] = useState(true);
+	const [isPaid, setIsPaid] = useState(false);
 	const [examineeNumber, setExamineeNumber] = useState<string | null>(null);
-	const [rooms, setRooms] = useState<ExamRoom[]>([]);
-	const [roomsLoading, setRoomsLoading] = useState(false);
-	const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
 	const [examinee, setExaminee] = useState<ExamineeItem | null>(null);
 	const [_examineeLoading, setExamineeLoading] = useState(false);
-	const [examList, setExamList] = useState<ExamItem[]>([]);
-	const [examLoading, setExamLoading] = useState(false);
-	const [selectedExam, setSelectedExam] = useState<ExamItem | null>(null);
-	const [selectedExamDateId, setSelectedExamDateId] = useState<number | null>(
-		null,
-	);
 
 	const [qpayOpen, setQpayOpen] = useState(false);
 	const [qpayData, setQpayData] = useState<QPayInvoiceResponse | null>(null);
@@ -118,68 +102,6 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 		}
 	}, [d.personId, examinee]);
 
-	// ── /api/getExamList ──────────────────────────────────────────────────────
-	const fetchExamList = useCallback(
-		async (userid: number) => {
-			if (examList.length > 0) return;
-			setExamLoading(true);
-			setError("");
-			try {
-				const res = await fetch(`${API_BASE}/api/getExamList`, {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ userid, conn: "skuul" }),
-				});
-				if (!res.ok) throw new Error("Шалгалтын мэдээлэл авахад алдаа гарлаа");
-				const json = await res.json();
-				if (!json?.RetResponse?.ResponseType)
-					throw new Error(
-						json?.RetResponse?.ResponseMessage || "Шалгалт олдсонгүй",
-					);
-				setExamList(json.RetData ?? []);
-			} catch (err) {
-				setError(err instanceof Error ? err.message : "Алдаа гарлаа");
-			} finally {
-				setExamLoading(false);
-			}
-		},
-		[examList.length],
-	);
-
-	// ── /api/list → api_get_exam_rooms ────────────────────────────────────────
-	const fetchRooms = useCallback(async () => {
-		if (!examinee?.userid) return;
-		setRoomsLoading(true);
-		setError("");
-		try {
-			const res = await fetch("https://backend.skuul.mn/api/list", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					procname: "api_get_exam_rooms",
-					userid: examinee.userid,
-					conn: "skuul",
-				}),
-			});
-			if (!res.ok) throw new Error("Өрөөний мэдээлэл авахад алдаа гарлаа");
-			const json = await res.json();
-			if (!json?.RetResponse?.ResponseType)
-				throw new Error(json?.RetResponse?.ResponseMessage || "Алдаа гарлаа");
-			if (!Array.isArray(json.RetData))
-				throw new Error("Өрөөний мэдээлэл олдсонгүй");
-			setRooms(json.RetData);
-		} catch (err) {
-			setError(
-				err instanceof Error
-					? err.message
-					: "Өрөөний мэдээлэл авахад алдаа гарлаа",
-			);
-			console.error("Room fetch error:", err);
-		} finally {
-			setRoomsLoading(false);
-		}
-	}, [examinee?.userid]);
-
 	// ── QPay invoice ──────────────────────────────────────────────────────────
 	const invokeQPay = useCallback(async (targetExaminee: ExamineeItem) => {
 		setIsLoading(true);
@@ -189,7 +111,7 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					amount: "100",
+					amount: "20000",
 					userid: String(targetExaminee.userid),
 					device_token: "",
 					orderid: "9",
@@ -234,95 +156,16 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 		const sent = await sendExaminee();
 		if (!sent) return;
 		toast.success("Амжилттай илгээгдлээ");
-		const item = examinee ?? (await fetchExaminee());
-		if (item) await fetchExamList(item.userid);
-		setStep("select_exam");
-	}, [sendExaminee, examinee, fetchExaminee, fetchExamList]);
+		setStep("paid");
+	}, [sendExaminee]);
 
 	const handleQpayOpenChange = useCallback((open: boolean) => {
 		setQpayOpen(open);
 		if (!open) setQpayData(null);
 	}, []);
 
-	// ── /api/examregistrationsingle ───────────────────────────────────────────
-	const handleRegister = useCallback(async () => {
-		if (!selectedExam) return;
-
-		const needsDate = selectedExam.exam_dates.length > 0;
-
-		if (needsDate && !selectedExamDateId) {
-			setError("Шалгалт өгөх цагаа сонгоно уу");
-			return;
-		}
-
-		if (needsDate && !selectedRoomId) {
-			setError("Шалгалтын өрөөгөө сонгоно уу");
-			return;
-		}
-
-		const selectedDate = selectedExam.exam_dates.find(
-			(ed) => ed.id === selectedExamDateId,
-		);
-
-		const examDateId = selectedDate?.exam_date_id ?? selectedDate?.id ?? 0;
-		const selectedRoom = rooms.find((r) => r.id === selectedRoomId);
-
-		setIsLoading(true);
-		setError("");
-
-		try {
-			const payload = {
-				examinee_number: examineeNumber ? Number(examineeNumber) : 0,
-
-				exam_id: selectedExam.exam_id,
-				exam_date_id: examDateId,
-				exam_room_id: selectedRoom?.esisroomid ?? 0,
-				userid: examinee?.userid ?? 0,
-				conn: "skuul",
-			};
-
-			console.log("📤 examregistrationsingle payload:", payload);
-
-			const res = await fetch(`${API_BASE}/api/examregistrationsingle`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(payload),
-			});
-
-			if (!res.ok) throw new Error("Бүртгэлийн хүсэлт амжилтгүй боллоо");
-
-			const json = await res.json();
-			console.log("📥 examregistrationsingle response:", json);
-
-			if (!json?.RetResponse?.ResponseType)
-				throw new Error(
-					json?.RetResponse?.ResponseMessage || "Бүртгэл амжилтгүй болсон",
-				);
-
-			toast.success("Шалгалтад амжилттай бүртгүүллээ");
-			setStep("paid");
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Алдаа гарлаа");
-		} finally {
-			setIsLoading(false);
-		}
-	}, [
-		selectedExam,
-		selectedExamDateId,
-		selectedRoomId,
-		rooms,
-		examineeNumber,
-		examinee,
-	]);
-
-	useEffect(() => {
-		if (step === "select_exam") {
-			fetchRooms();
-		}
-	}, [step, fetchRooms]);
-
-	const STEPS = ["preview", "select_exam", "paid"] as const;
-	const stepIdx = STEPS.indexOf(step);
+	const STEPS = ["preview", "paid"] as const;
+	const stepIdx = STEPS.indexOf(step as "preview" | "paid");
 
 	return (
 		<>
@@ -344,7 +187,6 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 									type="button"
 									onClick={() => {
 										if (step === "preview") router.back();
-										if (step === "select_exam") setStep("preview");
 									}}
 									className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
 								>
@@ -370,7 +212,7 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 											>
 												{done ? <CheckCircle2 size={12} /> : idx + 1}
 											</div>
-											{idx < 2 && (
+											{idx < 1 && (
 												<div
 													className={`w-5 h-0.5 mx-0.5 transition-all ${done ? "bg-primary" : "bg-muted"}`}
 												/>
@@ -382,7 +224,6 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 						</div>
 						<span className="text-xs text-muted-foreground font-medium">
 							{step === "preview" && "Мэдээлэл шалгах"}
-							{step === "select_exam" && "Шалгалт сонгох"}
 							{step === "paid" && "Бүртгэл амжилттай"}
 						</span>
 					</div>
@@ -407,42 +248,16 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 						/>
 					)}
 
-					{step === "select_exam" && (
-						<StepSelectExam
-							examinee={examinee}
-							examList={examList}
-							examLoading={examLoading}
-							isLoading={isLoading}
-							selectedExam={selectedExam}
-							selectedExamDateId={selectedExamDateId}
-							selectedRoomId={selectedRoomId}
-							rooms={rooms}
-							roomsLoading={roomsLoading}
-							onSelectExam={(exam) => {
-								setSelectedExam(exam);
-								setSelectedExamDateId(null);
-								setSelectedRoomId(null);
-							}}
-							onSelectDate={(dateId) => {
-								setSelectedExamDateId(dateId);
-								setSelectedRoomId(null);
-							}}
-							onSelectRoom={setSelectedRoomId}
-							onRegister={handleRegister}
-							onBack={() => setStep("preview")}
-						/>
-					)}
-
 					{step === "paid" && (
 						<StepPaid
 							d={d}
-							selectedExam={selectedExam}
-							selectedExamDateId={selectedExamDateId}
-							selectedRoomId={selectedRoomId}
-							rooms={rooms}
+							selectedExam={null}
+							selectedExamDateId={null}
+							selectedRoomId={null}
+							rooms={[]}
 							examineeNumber={examineeNumber}
 							onFinish={() => router.back()}
-							onBack={() => setStep("select_exam")}
+							onBack={() => setStep("preview")}
 						/>
 					)}
 				</div>
