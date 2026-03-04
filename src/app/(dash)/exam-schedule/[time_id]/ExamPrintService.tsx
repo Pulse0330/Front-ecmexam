@@ -113,7 +113,7 @@ export default function ExamPrintService({
                 ${
 									isPreview
 										? "relative w-full flex flex-col items-center gap-8 bg-gray-200 p-8 rounded-lg overflow-auto max-h-[80vh]"
-										: "absolute -left-[9999px] top-0 -z-10"
+										: "absolute -left-2499.75 top-0 -z-10"
 								}
             `}
 			>

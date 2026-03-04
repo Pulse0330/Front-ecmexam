@@ -241,42 +241,43 @@ export function LoginForm() {
 					</form>
 				</Form>
 
-				<CardFooter className="flex-col gap-4">
-					<div className="relative w-full">
-						<div className="absolute inset-0 flex items-center">
-							<span className="w-full border-t" />
-						</div>
-						<div className="relative flex justify-center text-xs uppercase">
-							<span className="bg-card px-2 text-muted-foreground">Эсвэл</span>
-						</div>
-						<div
-							className="mt-6 w-full rounded-2xl backdrop-blur-md bg-white/60 dark:bg-white/5 border border-white/70 dark:border-white/10 shadow-lg px-6 py-5 text-left"
-							style={{ animation: "fadeInUp 1s ease-out 0.4s both" }}
-						>
-							<a
-								href="https://drive.google.com/file/d/11fuxxJGH8Y2E7maxcwy88WtiRL79iJHm/view?usp=sharing"
-								target="_blank"
-								rel="noopener noreferrer"
-								className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-red-600 dark:text-red-400 hover:text-red-800  transition-colors duration-200 group"
+				<CardFooter className="flex-col gap-3 px-6 pb-6 pt-2">
+					{/* Заавар үзэх холбоос */}
+					<a
+						href="https://drive.google.com/file/d/11fuxxJGH8Y2E7maxcwy88WtiRL79iJHm/view?usp=sharing"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="w-full flex items-center gap-3 px-4 py-3 rounded-xl
+			bg-red-50 dark:bg-red-950/30
+			border border-red-100 dark:border-red-900/50
+			hover:bg-red-100 dark:hover:bg-red-900/40
+			hover:border-red-200 dark:hover:border-red-800
+			transition-all duration-200 group"
+					>
+						<div className="flex items-center justify-center w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/50 shrink-0 group-hover:scale-105 transition-transform duration-200">
+							<svg
+								className="w-4 h-4 text-red-600 dark:text-red-400"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth={2}
+								viewBox="0 0 24 24"
 							>
-								<svg
-									className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform duration-200"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth={2}
-									viewBox="0 0 24 24"
-								>
-									<title>External Link</title>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-									/>
-								</svg>
-								Монгол Хэл Бичгийн Шалгалтад бүртгүүлэх заавар үзэх →
-							</a>
+								<title>External Link</title>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+								/>
+							</svg>
 						</div>
-					</div>
+						<span className="text-sm font-medium text-red-700 dark:text-red-400 leading-tight">
+							Монгол хэл, бичгийн шалгалт
+							<br />
+							<span className="font-semibold">бүртгүүлэх заавар үзэх →</span>
+						</span>
+					</a>
+
+					{/* Бүртгүүлэх товч */}
 					<button
 						type="button"
 						onClick={() => setOpen(true)}
@@ -287,7 +288,7 @@ export function LoginForm() {
 					>
 						<div className="flex flex-col items-start gap-0.5">
 							<span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
-								Монгол хэл, бичгийн шалгалт
+								Монгол хэл , бичгийн шалгалт
 							</span>
 							<span className="text-base font-bold text-emerald-600 transition-colors">
 								Бүртгүүлэх

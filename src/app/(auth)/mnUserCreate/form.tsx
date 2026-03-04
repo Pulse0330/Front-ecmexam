@@ -1,12 +1,12 @@
 "use client";
 
+import { IconPhone } from "@tabler/icons-react";
 import {
 	AlertTriangle,
 	ArrowRight,
 	ChevronLeft,
 	Globe,
 	ImagePlus,
-	Info,
 	Lock,
 	Mail,
 	Phone,
@@ -25,6 +25,7 @@ import {
 	useState,
 } from "react";
 import { toast } from "sonner";
+import { ImageCropModal } from "@/components/imageCropModal"; // ← шинэ crop modal
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -33,7 +34,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { uploadImage } from "@/utils/upload";
@@ -158,44 +158,12 @@ async function fetchExamineeList(personId: string): Promise<ExamineeListData> {
 }
 
 // ── Image helpers ─────────────────────────────────────────────────────────────
-async function convertToWebP(
-	file: File,
-	quality = 0.85,
-	maxWidth = 1920,
-	maxHeight = 1080,
-): Promise<Blob> {
-	return new Promise((resolve, reject) => {
-		const img = new window.Image();
-		const canvas = document.createElement("canvas");
-		const ctx = canvas.getContext("2d");
-		img.onload = () => {
-			let { width, height } = img;
-			if (width > maxWidth || height > maxHeight) {
-				const ratio = Math.min(maxWidth / width, maxHeight / height);
-				width = width * ratio;
-				height = height * ratio;
-			}
-			canvas.width = width;
-			canvas.height = height;
-			ctx?.drawImage(img, 0, 0, width, height);
-			canvas.toBlob(
-				(blob) => {
-					if (blob) resolve(blob);
-					else reject(new Error("WebP хөрвүүлэлт амжилтгүй"));
-				},
-				"image/webp",
-				quality,
-			);
-		};
-		img.onerror = () => reject(new Error("Зураг уншихад алдаа гарлаа"));
-		img.src = URL.createObjectURL(file);
-	});
-}
-
-async function uploadProfileImage(file: File): Promise<string> {
-	const webpBlob = await convertToWebP(file);
+async function uploadProfileImage(
+	blob: Blob,
+	originalName: string,
+): Promise<string> {
 	const formData = new FormData();
-	formData.append("file", webpBlob, file.name.replace(/\.[^/.]+$/, ".webp"));
+	formData.append("file", blob, originalName.replace(/\.[^/.]+$/, ".webp"));
 	const result = await uploadImage(formData);
 	const extractUrl = (item: unknown): string => {
 		if (!item) return "";
@@ -245,11 +213,6 @@ const CARD_CLS =
 
 const NOTICE_ITEMS = [
 	{
-		id: "check",
-		icon: <Info size={13} className="text-amber-500 shrink-0 mt-0.5" />,
-		text: "Та зөвхөн улаан харагдаж байгаа хэсэг дээр гараас утга оруулах боломжтой.",
-	},
-	{
 		id: "lock",
 		icon: <Lock size={13} className="text-red-500 shrink-0 mt-0.5" />,
 		text: "Нууц үг нь системээс автоматаар үүсгэгдсэн бөгөөд та өөрчилж болохгүй.",
@@ -257,7 +220,12 @@ const NOTICE_ITEMS = [
 	{
 		id: "photo",
 		icon: <ImagePlus size={13} className="text-blue-500 shrink-0 mt-0.5" />,
-		text: "Цээж зургаа тод, гэрэлтэй, нүүр нь бүтэн харагдахаар оруулна уу.",
+		text: "Хавсаргах цээж зураг нь 3*4 хэмжээтэй, сүүлийн 3 сарын дотор авхуулсан, урагшаа цэх харсан, арын фон нь цайвар цулгуй өнгийн, нарны шил болон малгайгүй байна.",
+	},
+	{
+		id: "phone",
+		icon: <IconPhone size={13} className="text-blue-500 shrink-0 mt-0.5" />,
+		text: "Та одоо системд бүртгүүлсэн утасны дугаараа ашиглахгүй байгаа бол одоо ашиглаж байгаа дугаараа бичнэ үү.",
 	},
 ];
 
@@ -395,9 +363,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 	const [noticeOpen, setNoticeOpen] = useState(true);
 	const [examData, setExamData] = useState<ExamineeListData | null>(null);
 	const [examDataLoading, setExamDataLoading] = useState(true);
-
-	// password → илгээх утга (plaintext эсвэл generated)
-	// displayPassword → UI-д харуулах утга (passwordauto эсвэл generated)
+	const [displayPhone, setDisplayPhone] = useState<string>(d.phone ?? "");
 	const [password, setPassword] = useState<string>(() => generatePassword());
 	const [displayPassword, setDisplayPassword] = useState<string>("");
 
@@ -405,6 +371,12 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 	const [uploadedImgUrl, setUploadedImgUrl] = useState<string>("");
 	const [isUploadingImage, setIsUploadingImage] = useState(false);
 	const [isDragging, setIsDragging] = useState(false);
+
+	// ── Crop modal state ──────────────────────────────────────────────────────
+	const [cropSrc, setCropSrc] = useState<string | null>(null);
+	const [cropFileName, setCropFileName] = useState<string>("photo.jpg");
+	const [cropOpen, setCropOpen] = useState(false);
+
 	const fileRef = useRef<HTMLInputElement>(null);
 	const age = calcAge(d.dateofbirth);
 
@@ -418,16 +390,10 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 		fetchExamineeList(d.personId)
 			.then((data) => {
 				setExamData(data);
-
-				// Profile зураг
 				if (data?.profile) {
 					setProfileImg(data.profile);
 					setUploadedImgUrl(data.profile);
 				}
-
-				// Нууц үг логик:
-				// passwordauto байвал → тэрийг харуулж илгээнэ (өөрчлөхгүй)
-				// байхгүй бол → generate хийсэн утгыг хэвээр үлдээнэ
 				if (data?.passwordauto) {
 					setDisplayPassword(data.passwordauto);
 					setPassword(data.passwordauto);
@@ -436,6 +402,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 					setDisplayPassword(gen);
 					setPassword(gen);
 				}
+				if (data?.phone) setDisplayPhone(data.phone);
 			})
 			.catch(() => {
 				setExamData(null);
@@ -446,17 +413,29 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 			.finally(() => setExamDataLoading(false));
 	}, [d.personId]);
 
-	const processFile = useCallback(
-		async (file: File) => {
-			if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-				toast.error("Зөвхөн JPEG / PNG / WEBP зураг оруулна уу");
-				return;
-			}
-			if (file.size > 5 * 1024 * 1024) {
-				toast.error("Зурагны хэмжээ 5MB-аас хэтрэхгүй байх ёстой");
-				return;
-			}
-			const blobUrl = URL.createObjectURL(file);
+	// ── Файл сонгоход crop modal нээх ────────────────────────────────────────
+	const processFile = useCallback((file: File) => {
+		if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+			toast.error("Зөвхөн JPEG / PNG / WEBP зураг оруулна уу");
+			return;
+		}
+		if (file.size > 10 * 1024 * 1024) {
+			toast.error("Зурагны хэмжээ 10MB-аас хэтрэхгүй байх ёстой");
+			return;
+		}
+		// Crop modal-д дамжуулах
+		const url = URL.createObjectURL(file);
+		setCropSrc(url);
+		setCropFileName(file.name);
+		setCropOpen(true);
+	}, []);
+
+	// ── Crop баталгаажуулсны дараа upload хийх ───────────────────────────────
+	const handleCropConfirm = useCallback(
+		async (croppedBlob: Blob) => {
+			setCropOpen(false);
+			// Crop хийсэн зургийг preview-д харуулах
+			const blobUrl = URL.createObjectURL(croppedBlob);
 			setProfileImg((prev) => {
 				if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
 				return blobUrl;
@@ -464,7 +443,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 			setUploadedImgUrl("");
 			setIsUploadingImage(true);
 			try {
-				const url = await uploadProfileImage(file);
+				const url = await uploadProfileImage(croppedBlob, cropFileName);
 				setUploadedImgUrl(url);
 				toast.success("Зураг амжилттай хадгалагдлаа");
 			} catch (err) {
@@ -477,10 +456,19 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				setUploadedImgUrl(fallback ?? "");
 			} finally {
 				setIsUploadingImage(false);
+				// crop src blob-г цэвэрлэх
+				if (cropSrc?.startsWith("blob:")) URL.revokeObjectURL(cropSrc);
+				setCropSrc(null);
 			}
 		},
-		[examData],
+		[cropFileName, cropSrc, examData],
 	);
+
+	const handleCropCancel = useCallback(() => {
+		setCropOpen(false);
+		if (cropSrc?.startsWith("blob:")) URL.revokeObjectURL(cropSrc);
+		setCropSrc(null);
+	}, [cropSrc]);
 
 	const clearImage = useCallback(() => {
 		if (profileImg?.startsWith("blob:")) URL.revokeObjectURL(profileImg);
@@ -516,13 +504,15 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 			toast.warning("Нууц үг үүсгэгдээгүй байна!");
 			return;
 		}
+		if (!displayPhone) {
+			toast.warning("Утасны дугаар оруулна уу!");
+			return;
+		}
 		setIsSaving(true);
 		try {
-			// passwordauto байвал → password хэвээр (өөрчлөхгүй), passwordencrypt хуучин hash
-			// байхгүй бол → шинэ md5 hash үүсгэнэ
 			const isExistingPassword = !!examData?.passwordauto;
 			const passwordEncrypt = isExistingPassword
-				? (examData?.password ?? md5(password)) // хуучин md5 hash-г илгээнэ
+				? (examData?.password ?? md5(password))
 				: md5(password);
 
 			const payload: SavePayload = {
@@ -562,7 +552,6 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 					result?.RetResponse?.ResponseMessage || "Хадгалах амжилтгүй",
 				);
 
-			// ── examinee_list_1-ээс шинэчилсэн мэдээллээр verifyData бүрдүүлнэ ──
 			const fresh = await fetchExamineeList(d.personId);
 
 			const verifyData = {
@@ -571,7 +560,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				reg_number: fresh.register_number,
 				gender_code: fresh.gender_code,
 				dateofbirth: fresh.dateofbirth,
-				phone: fresh.phone,
+				phone: displayPhone || fresh.phone,
 				email: fresh.mail,
 				aimag_name: fresh.aimag_name,
 				sym_name: fresh.sym_name,
@@ -607,6 +596,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 		password,
 		isUploadingImage,
 		examData,
+		displayPhone,
 	]);
 
 	// ── Display утгууд ────────────────────────────────────────────────────────
@@ -618,11 +608,19 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 	const displayAimag = examData?.aimag_name ?? d.aimag_name;
 	const displaySym = examData?.sym_name ?? d.sym_name;
 	const displayNationality = examData?.nationality || d.nationality || "Монгол";
-	const displayAcademicLevel = examData?.academic_level ?? d.academic_level;
+	const _displayAcademicLevel = examData?.academic_level ?? d.academic_level;
 
 	return (
 		<div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-500 overflow-hidden">
 			<NoticeModal open={noticeOpen} onClose={() => setNoticeOpen(false)} />
+
+			{/* ── Crop Modal ── */}
+			<ImageCropModal
+				open={cropOpen}
+				imageSrc={cropSrc}
+				onConfirm={handleCropConfirm}
+				onCancel={handleCropCancel}
+			/>
 
 			{/* ── ACTION BAR ── */}
 			<div className="sticky top-1 left-10 right-10 z-40 border rounded-2xl bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border-gray-200/50 dark:border-gray-700/50 shadow-sm">
@@ -687,160 +685,6 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 
 			<div className="pt-16 p-3 lg:p-3">
 				<div className="container mx-auto flex flex-col gap-3">
-					{/* ── HERO CARD ── */}
-					<Card className={CARD_CLS}>
-						<CardContent className="p-4">
-							<div className="flex flex-col md:flex-row items-center gap-4">
-								<div className="flex flex-col items-center gap-1.5 shrink-0">
-									<input
-										ref={fileRef}
-										type="file"
-										accept="image/jpeg,image/png,image/webp"
-										className="hidden"
-										onChange={(e) => {
-											const f = e.target.files?.[0];
-											if (f) processFile(f);
-											e.target.value = "";
-										}}
-									/>
-									<button
-										type="button"
-										onClick={() =>
-											!isUploadingImage && fileRef.current?.click()
-										}
-										onDragOver={(e) => {
-											e.preventDefault();
-											setIsDragging(true);
-										}}
-										onDragLeave={() => setIsDragging(false)}
-										onDrop={(e) => {
-											e.preventDefault();
-											setIsDragging(false);
-											const f = e.dataTransfer.files?.[0];
-											if (f) processFile(f);
-										}}
-										className={[
-											"relative w-[90px] h-[90px] rounded-xl border-2 border-dashed overflow-hidden",
-											"flex flex-col items-center justify-center gap-1.5 group transition-all duration-200",
-											isDragging
-												? "border-primary bg-primary/10 scale-105"
-												: profileImg
-													? "border-primary/40 cursor-pointer"
-													: "border-destructive bg-destructive/5 hover:bg-destructive/10 cursor-pointer",
-											isUploadingImage ? "cursor-wait opacity-70" : "",
-										].join(" ")}
-									>
-										{examDataLoading ? (
-											<div className="flex flex-col items-center gap-1">
-												<svg
-													className="animate-spin w-6 h-6 text-muted-foreground"
-													viewBox="0 0 24 24"
-													fill="none"
-												>
-													<title>loading</title>
-													<circle
-														className="opacity-25"
-														cx="12"
-														cy="12"
-														r="10"
-														stroke="currentColor"
-														strokeWidth="4"
-													/>
-													<path
-														className="opacity-75"
-														fill="currentColor"
-														d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-													/>
-												</svg>
-											</div>
-										) : isUploadingImage ? (
-											<div className="flex flex-col items-center gap-1">
-												<svg
-													className="animate-spin w-6 h-6 text-primary"
-													viewBox="0 0 24 24"
-													fill="none"
-												>
-													<title>uploading</title>
-													<circle
-														className="opacity-25"
-														cx="12"
-														cy="12"
-														r="10"
-														stroke="currentColor"
-														strokeWidth="4"
-													/>
-													<path
-														className="opacity-75"
-														fill="currentColor"
-														d="M4 12a8 8 0f018-8v4a4 4 0 00-4 4H4z"
-													/>
-												</svg>
-												<span className="text-[9px] text-muted-foreground font-semibold text-center px-1">
-													Upload...
-												</span>
-											</div>
-										) : profileImg ? (
-											<>
-												<Image
-													src={profileImg}
-													alt="Профайл зураг"
-													fill
-													className="object-cover"
-												/>
-												<div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-1 z-10">
-													<Upload size={16} className="text-white" />
-													<span className="text-[9px] text-white font-bold uppercase tracking-wider">
-														Солих
-													</span>
-												</div>
-												{uploadedImgUrl && (
-													<div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center z-20 shadow">
-														<span className="text-white text-[9px] font-bold">
-															✓
-														</span>
-													</div>
-												)}
-											</>
-										) : (
-											<>
-												<div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center">
-													<ImagePlus size={16} className="text-destructive" />
-												</div>
-												<span className="text-[9px] text-destructive font-semibold text-center px-1 leading-tight">
-													Зураг оруулах
-												</span>
-											</>
-										)}
-									</button>
-									{!profileImg && !isUploadingImage && !examDataLoading && (
-										<span className="text-[9px] text-destructive font-semibold">
-											* Заавал оруулна уу
-										</span>
-									)}
-									{profileImg && !isUploadingImage && (
-										<Button
-											type="button"
-											variant="ghost"
-											size="sm"
-											onClick={clearImage}
-											className="h-auto py-0.5 px-2 text-[9px] text-muted-foreground hover:text-destructive gap-1"
-										>
-											<X size={9} /> Устгах
-										</Button>
-									)}
-								</div>
-
-								<div className="text-center md:text-left flex-1">
-									<h1 className="text-2xl font-bold text-foreground tracking-tight">
-										{displayLastname}{" "}
-										<span className="text-primary">{displayFirstname}</span>
-									</h1>
-								</div>
-							</div>
-						</CardContent>
-					</Card>
-
-					{/* ── GRID ── */}
 					<div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
 						{/* LEFT */}
 						<div className="lg:col-span-5 space-y-2">
@@ -850,6 +694,158 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 										Хувийн мэдээлэл
 									</CardTitle>
 								</CardHeader>
+								<CardContent className="p-4">
+									<div className="flex flex-col md:flex-row items-center gap-4">
+										<div className="flex flex-col items-center gap-1.5 shrink-0">
+											<input
+												ref={fileRef}
+												type="file"
+												accept="image/jpeg,image/png,image/webp"
+												className="hidden"
+												onChange={(e) => {
+													const f = e.target.files?.[0];
+													if (f) processFile(f);
+													e.target.value = "";
+												}}
+											/>
+											<button
+												type="button"
+												onClick={() =>
+													!isUploadingImage && fileRef.current?.click()
+												}
+												onDragOver={(e) => {
+													e.preventDefault();
+													setIsDragging(true);
+												}}
+												onDragLeave={() => setIsDragging(false)}
+												onDrop={(e) => {
+													e.preventDefault();
+													setIsDragging(false);
+													const f = e.dataTransfer.files?.[0];
+													if (f) processFile(f);
+												}}
+												className={[
+													"relative w-[90px] h-[120px] rounded-xl border-2 border-dashed overflow-hidden",
+													"flex flex-col items-center justify-center gap-1.5 group transition-all duration-200",
+													isDragging
+														? "border-primary bg-primary/10 scale-105"
+														: profileImg
+															? "border-primary/40 cursor-pointer"
+															: "border-destructive bg-destructive/5 hover:bg-destructive/10 cursor-pointer",
+													isUploadingImage ? "cursor-wait opacity-70" : "",
+												].join(" ")}
+											>
+												{examDataLoading ? (
+													<div className="flex flex-col items-center gap-1">
+														<svg
+															className="animate-spin w-6 h-6 text-muted-foreground"
+															viewBox="0 0 24 24"
+															fill="none"
+														>
+															<title>loading</title>
+															<circle
+																className="opacity-25"
+																cx="12"
+																cy="12"
+																r="10"
+																stroke="currentColor"
+																strokeWidth="4"
+															/>
+															<path
+																className="opacity-75"
+																fill="currentColor"
+																d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+															/>
+														</svg>
+													</div>
+												) : isUploadingImage ? (
+													<div className="flex flex-col items-center gap-1">
+														<svg
+															className="animate-spin w-6 h-6 text-primary"
+															viewBox="0 0 24 24"
+															fill="none"
+														>
+															<title>uploading</title>
+															<circle
+																className="opacity-25"
+																cx="12"
+																cy="12"
+																r="10"
+																stroke="currentColor"
+																strokeWidth="4"
+															/>
+															<path
+																className="opacity-75"
+																fill="currentColor"
+																d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+															/>
+														</svg>
+														<span className="text-[9px] text-muted-foreground font-semibold text-center px-1">
+															Upload...
+														</span>
+													</div>
+												) : profileImg ? (
+													<>
+														<Image
+															src={profileImg}
+															alt="Профайл зураг"
+															fill
+															className="object-cover"
+														/>
+														<div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-1 z-10">
+															<Upload size={16} className="text-white" />
+															<span className="text-[9px] text-white font-bold uppercase tracking-wider">
+																Солих
+															</span>
+														</div>
+														{uploadedImgUrl && (
+															<div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center z-20 shadow">
+																<span className="text-white text-[9px] font-bold">
+																	✓
+																</span>
+															</div>
+														)}
+													</>
+												) : (
+													<>
+														<div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center">
+															<ImagePlus
+																size={16}
+																className="text-destructive"
+															/>
+														</div>
+														<span className="text-[9px] text-destructive font-semibold text-center px-1 leading-tight">
+															Зураг оруулах
+														</span>
+													</>
+												)}
+											</button>
+											{!profileImg && !isUploadingImage && !examDataLoading && (
+												<span className="text-[9px] text-destructive font-semibold">
+													* Заавал оруулна уу
+												</span>
+											)}
+											{profileImg && !isUploadingImage && (
+												<Button
+													type="button"
+													variant="ghost"
+													size="sm"
+													onClick={clearImage}
+													className="h-auto py-0.5 px-2 text-[9px] text-muted-foreground hover:text-destructive gap-1"
+												>
+													<X size={9} /> Устгах
+												</Button>
+											)}
+										</div>
+
+										<div className="text-center md:text-left flex-1">
+											<h1 className="text-2xl font-bold text-foreground tracking-tight">
+												{displayLastname}{" "}
+												<span className="text-primary">{displayFirstname}</span>
+											</h1>
+										</div>
+									</div>
+								</CardContent>
 								<CardContent className="p-4 pt-3 space-y-2">
 									<div className="grid grid-cols-2 gap-3">
 										<Field label="Овог">
@@ -873,6 +869,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 												}
 											/>
 										</Field>
+
 										<Field label="Нас">
 											<ReadOnlyInput value={String(age)} />
 										</Field>
@@ -880,12 +877,18 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 											<ReadOnlyInput value={fmtDate(d.dateofbirth)} />
 										</Field>
 									</div>
+									<Field label="Регистрийн дугаар">
+										<ReadOnlyInput
+											value={examData?.register_number ?? d.reg_number}
+										/>
+									</Field>
 									<Field label="Үндэс угсаа">
 										<ReadOnlyInput
 											value={displayNationality}
 											icon={<Globe size={13} />}
 										/>
 									</Field>
+
 									<div className="grid grid-cols-2 gap-3">
 										<Field label="И-мэйл">
 											<ReadOnlyInput
@@ -894,10 +897,17 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 											/>
 										</Field>
 										<Field label="Утас">
-											<ReadOnlyInput
-												value={examData?.phone ?? d.phone ?? ""}
-												icon={<Phone size={13} />}
-											/>
+											<div className="relative">
+												<span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none">
+													<Phone size={13} />
+												</span>
+												<input
+													type="text"
+													value={displayPhone}
+													onChange={(e) => setDisplayPhone(e.target.value)}
+													className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs pl-8 focus:outline-none focus:ring-1 focus:ring-ring"
+												/>
+											</div>
 										</Field>
 									</div>
 									<Field label="Нэвтрэх нэр">
@@ -905,34 +915,6 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 											value={examData?.login_name ?? d.login_name}
 											icon={<User size={13} />}
 										/>
-									</Field>
-								</CardContent>
-							</Card>
-
-							{/* ── НУУЦ ҮГ ── */}
-							<Card className={CARD_CLS}>
-								<CardHeader className=" ">
-									<CardTitle className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-										<Lock size={12} /> Нууц үг
-									</CardTitle>
-								</CardHeader>
-								<CardContent className="p-4 pt-3">
-									<Field label="Нууц үг" htmlFor="password" required>
-										<div className="relative">
-											<Input
-												id="password"
-												type="text"
-												value={displayPassword}
-												readOnly
-												className="h-8 text-xs pr-3 font-mono tracking-widest bg-muted/50 cursor-not-allowed select-all border-green-500/40 focus-visible:ring-green-500/20"
-											/>
-										</div>
-										<p className="text-[10px] text-green-600 dark:text-green-500 mt-1 flex items-center gap-1">
-											<Lock size={9} />
-											{examData?.passwordauto
-												? "Таны нууц үг. Нэвтрэх нууц үгээ цээжлээрэй."
-												: "Системээс автоматаар үүсгэгдсэн 6 оронтой нууц үг. Нэвтрэх нууц үгээ цээжлээрэй."}
-										</p>
 									</Field>
 								</CardContent>
 							</Card>
@@ -948,56 +930,33 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 								</CardHeader>
 								<CardContent className="p-0 pt-1.5">
 									<InfoRow label="Сургуулийн нэр" value={displaySchoolname} />
-									<InfoRow
-										label="Анги"
-										value={`${displayAcademicLevel}-р анги`}
-									/>
-									<InfoRow label="Бүлэг" value={displayGroupname} />
+									<InfoRow label="Анги / Бүлэг" value={displayGroupname} />
 									<InfoRow label="Аймаг / Нийслэл" value={displayAimag} />
 									<InfoRow label="Дүүрэг / Сум" value={displaySym} />
 								</CardContent>
 							</Card>
-
 							<Card className={CARD_CLS}>
-								<CardHeader className="pb-0 pt-3 px-4">
-									<CardTitle className="text-[11px] text-muted-foreground">
-										Системийн мэдээлэл
-									</CardTitle>
-								</CardHeader>
-								<CardContent className="p-0 pt-1.5">
-									<InfoRow
-										label="Регистрийн дугаар"
-										value={examData?.register_number ?? d.reg_number}
-										mono
-									/>
-									<InfoRow
-										label="Хүйсийн код"
-										value={
-											examData
-												? `${examData.gender_code} (${examData.gender})`
-												: `${d.gender_code} (${d.gender})`
-										}
-										mono
-									/>
-									<InfoRow label="Нас" value={`${age} нас`} />
-									<InfoRow
-										label="Төрсөн огноо"
-										value={fmtDate(d.dateofbirth)}
-									/>
+								<CardContent className="p-4">
+									<div className="flex flex-col items-center gap-2 py-2">
+										<div className="flex items-center gap-2 text-muted-foreground">
+											<Lock size={13} />
+											<span className="text-[11px] uppercase tracking-widest font-semibold">
+												Нэвтрэх нууц үг
+											</span>
+										</div>
 
-									<div className="p-3 m-3 rounded-lg bg-muted/40 border flex gap-2.5">
-										<div className="bg-muted p-1.5 rounded-md h-fit">
-											<Lock size={12} className="text-muted-foreground" />
+										<div className="w-full rounded-xl border-2 border-green-500/30 bg-green-500/5 dark:bg-green-500/10 px-6 py-4 flex items-center justify-center">
+											<span className="font-mono text-4xl font-bold tracking-[0.25em] text-foreground select-all">
+												{displayPassword}
+											</span>
 										</div>
-										<div>
-											<p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider mb-0.5">
-												Засах боломжгүй мэдээлэл
-											</p>
-											<p className="text-[10px] text-muted-foreground/70 leading-relaxed">
-												Эдгээр мэдээлэл нь системээс автоматаар бөглөгдсөн тул
-												өөрчлөх боломжгүй.
-											</p>
-										</div>
+
+										<p className="text-lg text-green-600 dark:text-green-500 text-center flex items-center gap-1.5">
+											<Lock size={10} />
+											{examData?.passwordauto
+												? "Таны нууц үг. Нэвтрэх нууц үгээ цээжлээрэй."
+												: "Системээс автоматаар үүсгэгдсэн 6 оронтой нууц үг. Нэвтрэх нууц үгээ цээжлээрэй."}
+										</p>
 									</div>
 								</CardContent>
 							</Card>

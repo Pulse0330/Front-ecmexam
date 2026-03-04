@@ -40,59 +40,14 @@ export default function QPayDialog({
 	>("pending");
 	const [showNotPaidMessage, setShowNotPaidMessage] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const pollingRef = useRef<NodeJS.Timeout | null>(null);
 	const notPaidTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-	// Автомат polling — 4 секунд тутамд шалгана
-	useEffect(() => {
-		if (
-			!open ||
-			!qpayData?.invoice_id ||
-			!userId ||
-			paymentStatus === "success"
-		) {
-			if (pollingRef.current) clearInterval(pollingRef.current);
-			return;
-		}
-
-		pollingRef.current = setInterval(async () => {
-			try {
-				const response = await axios.post("/api/qpay/check", {
-					userid: userId.toString(),
-					invoice_id: qpayData.invoice_id,
-				});
-				if (response.data?.RetResponse?.ResponseType === true) {
-					clearInterval(pollingRef.current!);
-					setPaymentStatus("success");
-					if (onPaymentSuccess) {
-						setTimeout(() => {
-							onPaymentSuccess();
-							onOpenChange(false);
-						}, 2000);
-					}
-				}
-			} catch {
-				// polling дахин үргэлжилнэ
-			}
-		}, 4000);
-
-		return () => {
-			if (pollingRef.current) clearInterval(pollingRef.current);
-		};
-	}, [
-		open,
-		qpayData?.invoice_id,
-		userId,
-		paymentStatus,
-		onPaymentSuccess,
-		onOpenChange,
-	]);
+	const errorTimerRef = useRef<NodeJS.Timeout | null>(null);
 
 	// Dialog хаагдахад бүх төлөв reset хийх
 	useEffect(() => {
 		if (!open) {
-			if (pollingRef.current) clearInterval(pollingRef.current);
 			if (notPaidTimerRef.current) clearTimeout(notPaidTimerRef.current);
+			if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
 			setPaymentStatus("pending");
 			setShowNotPaidMessage(false);
 			setError(null);
@@ -105,11 +60,14 @@ export default function QPayDialog({
 			setError("Invoice ID эсвэл User ID байхгүй байна");
 			return;
 		}
+		if (isChecking || paymentStatus === "success") return;
 
 		try {
 			setIsChecking(true);
 			setShowNotPaidMessage(false);
 			setError(null);
+			if (notPaidTimerRef.current) clearTimeout(notPaidTimerRef.current);
+			if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
 
 			const response = await axios.post("/api/qpay/check", {
 				userid: userId.toString(),
@@ -117,7 +75,6 @@ export default function QPayDialog({
 			});
 
 			if (response.data?.RetResponse?.ResponseType === true) {
-				if (pollingRef.current) clearInterval(pollingRef.current);
 				setPaymentStatus("success");
 				if (onPaymentSuccess) {
 					setTimeout(() => {
@@ -134,7 +91,7 @@ export default function QPayDialog({
 		} catch {
 			setError("Төлбөр шалгахад алдаа гарлаа. Дахин оролдоно уу.");
 			setPaymentStatus("failed");
-			setTimeout(() => {
+			errorTimerRef.current = setTimeout(() => {
 				setError(null);
 				setPaymentStatus("pending");
 			}, 5000);
@@ -241,81 +198,27 @@ export default function QPayDialog({
 							)}
 						</AnimatePresence>
 
-						{/* ── Main content: QR + Bank apps side by side ── */}
-						<div className="gap-4">
-							{/* QR Code */}
-							<div className="flex flex-col items-center justify-center gap-3 p-5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/60 dark:border-slate-700/40">
-								<p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-									QR код уншуулах
-								</p>
-								<div className="bg-white p-3 rounded-xl shadow-md border border-slate-100 dark:border-slate-700">
-									{qpayData.qr_image ? (
-										<Image
-											src={`data:image/png;base64,${qpayData.qr_image}`}
-											alt="QPay QR Code"
-											width={200}
-											height={200}
-											className="w-[200px] h-[200px] rounded-lg"
-											unoptimized
-										/>
-									) : (
-										<div className="w-[200px] h-[200px] flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
-											<p className="text-xs text-gray-500">QR код байхгүй</p>
-										</div>
-									)}
-								</div>
-
-								{/* Polling indicator */}
-								{paymentStatus !== "success" && (
-									<div className="flex items-center gap-1.5">
-										<motion.div
-											animate={{ scale: [1, 1.4, 1] }}
-											transition={{
-												repeat: Infinity,
-												duration: 2,
-												ease: "easeInOut",
-											}}
-											className="w-1.5 h-1.5 rounded-full bg-primary"
-										/>
-										<span className="text-[10px] text-muted-foreground">
-											Автомат шалгаж байна...
-										</span>
+						{/* ── QR Code ── */}
+						<div className="flex flex-col items-center justify-center gap-3 p-5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/60 dark:border-slate-700/40">
+							<p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+								QR код уншуулах
+							</p>
+							<div className="bg-white p-3 rounded-xl shadow-md border border-slate-100 dark:border-slate-700">
+								{qpayData.qr_image ? (
+									<Image
+										src={`data:image/png;base64,${qpayData.qr_image}`}
+										alt="QPay QR Code"
+										width={200}
+										height={200}
+										className="w-200px h-200px rounded-lg"
+										unoptimized
+									/>
+								) : (
+									<div className="w-200px h-200px flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+										<p className="text-xs text-gray-500">QR код байхгүй</p>
 									</div>
 								)}
 							</div>
-
-							{/* Bank apps */}
-							{/* {qpayData.urls && qpayData.urls.length > 0 && (
-								<div className="flex flex-col gap-3">
-									<p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground text-center">
-										Банкны аппаар төлөх
-									</p>
-									<div className="grid grid-cols-3 gap-2">
-										{qpayData.urls.map((bank, index) => (
-											<motion.a
-												key={`${bank.name}-${index}`}
-												href={bank.link}
-												target="_blank"
-												rel="noopener noreferrer"
-												whileHover={{ scale: 1.06, y: -2 }}
-												whileTap={{ scale: 0.96 }}
-												className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl border border-slate-200/70 dark:border-slate-700/50 hover:border-primary/40 hover:bg-primary/5 transition-colors bg-white dark:bg-slate-800/50 shadow-sm cursor-pointer"
-											>
-												<Image
-													src={bank.logo}
-													alt={bank.name}
-													width={44}
-													height={44}
-													className="w-11 h-11 object-contain rounded-lg"
-												/>
-												<span className="text-[9px] font-medium text-center leading-tight text-muted-foreground line-clamp-2">
-													{bank.description || bank.name}
-												</span>
-											</motion.a>
-										))}
-									</div>
-								</div>
-							)} */}
 						</div>
 
 						{/* ── Manual check button ── */}
@@ -341,8 +244,7 @@ export default function QPayDialog({
 								)}
 							</Button>
 							<p className="text-[10px] text-center text-muted-foreground mt-2">
-								Төлбөр төлсний дараа автоматаар шалгагдана — гараар дарах
-								шаардлагагүй
+								Банкны аппаар төлсний дараа дээрх товчийг дарна уу
 							</p>
 						</div>
 					</div>

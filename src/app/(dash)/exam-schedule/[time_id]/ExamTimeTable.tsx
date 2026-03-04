@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
 	ChevronDown,
 	ChevronRight,
@@ -10,7 +10,7 @@ import {
 	UserCheck,
 	Users,
 } from "lucide-react";
-import React, { use, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -23,11 +23,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	getExamInfo,
-	getExamRegistrationSend,
-	roomCreateEdit,
-} from "@/lib/dash.api";
+import { getExamRegistrationSend } from "@/lib/dash.api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { ExamInfoItem, StudentSeat } from "@/types/dashboard/exam.types";
 

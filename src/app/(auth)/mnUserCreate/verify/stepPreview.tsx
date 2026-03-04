@@ -6,18 +6,15 @@ import {
 	ChevronRight,
 	CreditCard,
 	Loader2,
-	MapPin,
-	Phone,
-	School,
 	User,
 } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { InfoRow, InfoSection } from "./infoSection";
+
 import type { VerifyData } from "./types";
-import { CARD_CLS, fmtDate } from "./utils";
+import { CARD_CLS } from "./utils";
 
 interface StepPreviewProps {
 	d: VerifyData;
@@ -36,6 +33,16 @@ export function StepPreview({
 	onQPay,
 	onSendAndProceed,
 }: StepPreviewProps) {
+	const calledRef = useRef(false);
+
+	// Төлбөр амжилттай төлөгдмөгц шууд дуудна, давхар дуудахгүй
+	useEffect(() => {
+		if (isPaid && !isLoading && !calledRef.current) {
+			calledRef.current = true;
+			onSendAndProceed();
+		}
+	}, [isPaid, isLoading, onSendAndProceed]);
+
 	return (
 		<Card className={CARD_CLS}>
 			<CardHeader className="pb-3 pt-5 px-5">
@@ -66,26 +73,6 @@ export function StepPreview({
 				</div>
 			</CardHeader>
 			<CardContent className="px-5 pb-5 space-y-4">
-				<Separator />
-				<InfoSection icon={<User size={12} />} title="Хувийн мэдээлэл">
-					<InfoRow label="Нэвтрэх нэр" value={d.login_name} mono />
-					<InfoRow label="Төрсөн огноо" value={fmtDate(d.dateofbirth)} />
-					<InfoRow label="Иргэншил" value={d.nationality || "Монгол"} />
-				</InfoSection>
-				<InfoSection icon={<Phone size={12} />} title="Холбоо барих">
-					<InfoRow label="Утас" value={d.phone} mono />
-					<InfoRow label="Имэйл" value={d.email} />
-				</InfoSection>
-				<InfoSection icon={<MapPin size={12} />} title="Хаяг">
-					<InfoRow label="Аймаг/Хот" value={d.aimag_name} />
-					<InfoRow label="Сум/Дүүрэг" value={d.sym_name} />
-				</InfoSection>
-				<InfoSection icon={<School size={12} />} title="Сургууль">
-					<InfoRow label="Сургуулийн нэр" value={d.schoolname} />
-					<InfoRow label="Анги бүлэг" value={d.studentgroupname} />
-				</InfoSection>
-				<Separator />
-
 				{/* ── QPay төлбөр ── */}
 				<div className="rounded-2xl overflow-hidden border border-primary/20 shadow-sm">
 					<div className="bg-primary/10 px-4 py-3 flex items-center gap-2 border-b border-primary/15">
@@ -94,7 +81,7 @@ export function StepPreview({
 						</div>
 						<div>
 							<p className="text-xs font-bold text-foreground">
-								Бүртгэлийн төлбөр
+								Шалгалтын хураамж
 							</p>
 							<p className="text-[10px] text-muted-foreground">
 								QPay-ээр шууд төлбөр төлөх
@@ -125,8 +112,7 @@ export function StepPreview({
 										</>
 									) : (
 										<>
-											Мэдээлэл баталгаажуулах /Заавал дарна уу/{" "}
-											<ChevronRight size={15} />
+											Мэдээлэл баталгаажуулах <ChevronRight size={15} />
 										</>
 									)}
 								</Button>
@@ -177,8 +163,8 @@ export function StepPreview({
 
 				{!isPaid && (
 					<div className="space-y-1.5">
-						<p className="text-[11px] text-center text-amber-600 dark:text-amber-400 font-medium">
-							⚠ Шалгалт сонгохын тулд эхлээд төлбөр төлнө үү
+						<p className="text-[11px] text-center font-medium">
+							Төлбөр төлөгдсөнөөр таны бүртгэл баталгаажна.
 						</p>
 					</div>
 				)}

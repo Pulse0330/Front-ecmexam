@@ -66,7 +66,7 @@ interface SkuulExamineeData {
 	status_text: string;
 }
 
-interface SkuulPostResponse {
+export interface SkuulPostResponse {
 	RetResponse: {
 		ResponseMessage: string;
 		StatusCode: number;
@@ -330,7 +330,9 @@ async function apiGetStudentExam(
 	if (!r.ok) throw new Error("Серверт холбогдоход алдаа гарлаа");
 	const d: ApiResponse<StudentExamData> = await r.json();
 	if (!d.RetResponse.ResponseType)
-		throw new Error("Энэ регистрийн дугаартай сурагч олдсонгүй");
+		throw new Error(
+			"Регистрийн  дугаар бүртгэлгүй байна. Сургалтын менежертээ хандана уу.",
+		);
 	const student = d.RetData[0] ?? null;
 	if (student) student._source = "exam";
 	return student;
@@ -609,7 +611,7 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 			/>
 
 			<SelectField
-				label="Дүүрэг / Сум"
+				label="Сум / Дүүрэг"
 				placeholder={
 					districtLoading
 						? "Уншиж байна..."
@@ -671,7 +673,7 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 								checkState === "loading" ||
 								(checkState !== "found" && reg.length < 8)
 							}
-							className={`shrink-0 min-w-[90px] h-11 ${checkState !== "found" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}`}
+							className={`shrink-0 min-w-90px h-11 ${checkState !== "found" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}`}
 						>
 							{checkState === "loading" ? (
 								<Loader2 className="w-4 h-4 animate-spin" />
@@ -757,7 +759,7 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 
 									<div className="text-xs space-y-0.5 border-t border-emerald-200 dark:border-emerald-800 pt-2">
 										<p>
-											<span className="font-medium">Сургууль:</span>{" "}
+											<span className="font-medium"></span>{" "}
 											{studentExam.schoolname}
 										</p>
 										{studentExam.studentgroupname && (
