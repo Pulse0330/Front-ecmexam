@@ -104,19 +104,19 @@ export function ExamTimeTable({
 						<TableHeader className="bg-muted/80 sticky top-0 z-20 backdrop-blur-md shadow-sm">
 							<TableRow className="hover:bg-transparent border-b border-border">
 								<TableHead className="w-12.5"></TableHead>
-								<TableHead className="font-bold text-foreground text-sm  tracking-wider h-14">
+								<TableHead className="font-bold text-foreground text-sm  tracking-wider h-11">
 									Өрөөний дугаар
 								</TableHead>
-								<TableHead className="font-bold text-foreground text-sm  tracking-wider text-center h-14">
+								<TableHead className="font-bold text-foreground text-sm  tracking-wider text-center h-11">
 									Нийт PC
 								</TableHead>
-								<TableHead className="font-bold text-foreground text-sm  tracking-wider text-center h-14">
+								<TableHead className="font-bold text-foreground text-sm  tracking-wider text-center h-11">
 									Хуваарилагдсан
 								</TableHead>
-								<TableHead className="text-right font-bold text-foreground text-sm  tracking-wider h-14 pr-6">
+								<TableHead className="text-right font-bold text-foreground text-sm  tracking-wider h-11 pr-6">
 									Нийт сурагч
 								</TableHead>
-								<TableHead className="text-right font-bold text-foreground text-sm  tracking-wider h-14 pr-6"></TableHead>
+								<TableHead className="text-right font-bold text-foreground text-sm  tracking-wider h-11 pr-6"></TableHead>
 							</TableRow>
 						</TableHeader>
 
@@ -136,8 +136,13 @@ export function ExamTimeTable({
 								<TableRow>
 									<TableCell colSpan={6} className="h-60 text-center">
 										<div className="flex flex-col items-center justify-center gap-4 py-10 text-muted-foreground">
-											<Database size={32} strokeWidth={1} />
-											<p className="text-sm font-bold">Мэдээлэл олдсонгүй</p>
+											<div className="rounded-full bg-primary/5 p-6 mb-4 ring-8 ring-primary/2">
+												<Database size={32} strokeWidth={1} />
+											</div>
+
+											<h3 className="text-xl font-bold tracking-tight">
+												Мэдээлэл олдсонгүй
+											</h3>
 										</div>
 									</TableCell>
 								</TableRow>

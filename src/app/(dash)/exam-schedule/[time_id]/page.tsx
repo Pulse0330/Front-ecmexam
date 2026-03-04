@@ -58,10 +58,10 @@ export default function ExamTimePage({ params }: ExamTimePageProps) {
 
 	return (
 		<div className="py-8 px-4 max-w-7xl mx-auto space-y-8">
-			<header className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 border-b pb-8">
+			<header className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b pb-6 text-foreground">
 				<div className="flex items-start gap-4">
 					<IBackButton className="mt-1" />
-					<div className="space-y-1">
+					<div>
 						<div className="flex items-center gap-3">
 							<div className="bg-primary/10 p-2.5 rounded-xl text-primary shrink-0">
 								<CalendarRange size={26} />

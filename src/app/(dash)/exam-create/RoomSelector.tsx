@@ -71,7 +71,7 @@ export function RoomSelector({ selectedId, onSelect }: RoomSelectorProps) {
 						</div>
 					))}
 				</div>
-			) : rooms.length === 0 ? (
+			) : rooms === null || rooms.length === 0 ? (
 				<div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
 					<DoorOpen size={32} className="mb-2 opacity-20" />
 					<p className="text-sm italic">Өрөө олдсонгүй</p>

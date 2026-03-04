@@ -242,14 +242,14 @@ export default function RoomPage() {
 					))}
 				</div>
 			) : (
-				<div className="flex flex-col items-center justify-center py-24 border-2 border-dashed rounded-3xl bg-muted/5 animate-in fade-in zoom-in duration-300">
+				<div className="flex flex-col items-center justify-center py-24 border-2 border-dashed rounded-3xl animate-in fade-in zoom-in duration-300 bg-card">
 					<div className="rounded-full bg-primary/5 p-6 mb-4 ring-8 ring-primary/2">
 						<DoorOpen className="h-12 w-12 text-primary/40" />
 					</div>
 					<h3 className="text-xl font-bold tracking-tight">
 						Өрөө бүртгэгдээгүй байна
 					</h3>
-					<p className="text-muted-foreground text-sm max-w-[280px] text-center mt-2 font-medium">
+					<p className="text-muted-foreground text-sm max-w-70 text-center mt-2 font-medium">
 						Шалгалт зохион байгуулахын тулд эхлээд өрөөний мэдээллээ оруулна уу.
 					</p>
 					<Button
