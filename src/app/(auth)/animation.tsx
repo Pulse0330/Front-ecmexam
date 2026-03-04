@@ -39,55 +39,38 @@ export default function LoginAnimation() {
 
 			{/* Floating Academic Icons */}
 			<div className="absolute inset-0 pointer-events-none">
-				{/* Book Icon */}
 				<BookOpen
 					className="absolute top-[18%] left-[12%] w-16 h-16 opacity-25 dark:opacity-15 text-indigo-600 dark:text-indigo-400"
 					style={{ animation: "float 6s ease-in-out infinite" }}
 				/>
-
-				{/* Graduation Cap */}
 				<GraduationCap
 					className="absolute top-[65%] left-[10%] w-20 h-20 opacity-25 dark:opacity-15 text-purple-600 dark:text-purple-400"
 					style={{ animation: "float 7s ease-in-out infinite 1s" }}
 				/>
-
-				{/* Light Bulb */}
 				<Lightbulb
 					className="absolute top-[30%] right-[18%] w-16 h-16 opacity-25 dark:opacity-15 text-yellow-600 dark:text-yellow-400"
 					style={{ animation: "float 5.5s ease-in-out infinite 2s" }}
 				/>
-
-				{/* Lock/Security */}
 				<Lock
 					className="absolute bottom-[28%] right-[25%] w-14 h-14 opacity-25 dark:opacity-15 text-green-600 dark:text-green-400"
 					style={{ animation: "float 8s ease-in-out infinite 3s" }}
 				/>
-
-				{/* Trophy */}
 				<Trophy
 					className="absolute top-[50%] right-[15%] w-14 h-14 opacity-25 dark:opacity-15 text-amber-600 dark:text-amber-400"
 					style={{ animation: "float 6.5s ease-in-out infinite 1.5s" }}
 				/>
-
-				{/* Pencil/Edit */}
 				<Pencil
 					className="absolute bottom-[20%] left-[20%] w-14 h-14 opacity-25 dark:opacity-15 text-blue-600 dark:text-blue-400"
 					style={{ animation: "float 7.5s ease-in-out infinite 2.5s" }}
 				/>
-
-				{/* Chart/Progress */}
 				<TrendingUp
 					className="absolute top-[40%] left-[8%] w-14 h-14 opacity-25 dark:opacity-15 text-cyan-600 dark:text-cyan-400"
 					style={{ animation: "float 6.8s ease-in-out infinite 1.8s" }}
 				/>
-
-				{/* Star/Achievement */}
 				<Star
 					className="absolute bottom-[40%] right-[12%] w-12 h-12 opacity-25 dark:opacity-15 text-pink-600 dark:text-pink-400"
 					style={{ animation: "float 7.2s ease-in-out infinite 0.8s" }}
 				/>
-
-				{/* Clock/Time */}
 				<Clock
 					className="absolute top-[75%] right-[35%] w-12 h-12 opacity-25 dark:opacity-15 text-rose-600 dark:text-rose-400"
 					style={{ animation: "float 8.3s ease-in-out infinite 2.2s" }}
@@ -158,14 +141,10 @@ export default function LoginAnimation() {
 							<div
 								className={`absolute inset-0 rounded-2xl bg-linear-to-r ${item.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}
 							></div>
-
-							{/* Icon + Text */}
 							<span className="relative flex items-center gap-2 text-base font-bold text-gray-900 dark:text-white">
 								<span
 									className="transform group-hover:rotate-6 group-hover:scale-110 transition-transform duration-500"
-									style={{
-										animation: "floatIcon 3s ease-in-out infinite",
-									}}
+									style={{ animation: "floatIcon 3s ease-in-out infinite" }}
 								>
 									{item.icon}
 								</span>
@@ -174,42 +153,26 @@ export default function LoginAnimation() {
 						</div>
 					))}
 				</div>
+
+				{/* ── Registration Guide ── */}
 			</div>
 
 			{/* CSS Animations */}
 			<style>{`
         @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0px) rotate(0deg);
-          }
-          50% {
-            transform: translateY(-25px) rotate(5deg);
-          }
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50%       { transform: translateY(-25px) rotate(5deg); }
         }
         @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(30px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(20px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes pulse-scale {
-          0%,
-          100% {
+          0%, 100% {
             transform: scale(1);
             box-shadow: 0 0 40px rgba(99, 102, 241, 0.5);
           }

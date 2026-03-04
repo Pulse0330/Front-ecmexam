@@ -125,7 +125,8 @@ export function StepPreview({
 										</>
 									) : (
 										<>
-											Мэдээлэл илгээх <ChevronRight size={15} />
+											Мэдээлэл баталгаажуулах /Заавал дарна уу/{" "}
+											<ChevronRight size={15} />
 										</>
 									)}
 								</Button>
