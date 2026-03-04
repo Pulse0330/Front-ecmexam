@@ -82,5 +82,26 @@ export interface ExamRoom {
 	pccnt: number;
 	seatcnt: number;
 }
+// ── Types нэмнэ ──
+export interface ExamineeListData {
+	first_name: string;
+	last_name: string;
+	register_number: string;
+	gender: number;
+	mail: string;
+	nationality: string;
+	profile: string | null;
+	school_esis_id: string;
+	student_group_id: string;
+	academic_level: number;
+	personid: string;
+	schooldb: string;
+	schoolname: string;
+	studentgroupname: string;
+	aimag_name: string;
+	sym_name: string;
+	userid: number;
+	password?: string;
+}
 
 export type Step = "preview" | "select_exam" | "paid";

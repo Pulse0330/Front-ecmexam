@@ -104,7 +104,7 @@ export function LoginForm() {
 				throw new Error("Нэвтрэх нэр эсвэл нууц үг буруу байна");
 			}
 			if (!loginRes?.Data?.[0] || !loginRes.Token) {
-				throw new Error("Серверээс буруу хариу ирлээ");
+				throw new Error("Та түр хүлээгээд дахин оролдоно уу");
 			}
 
 			const userData = loginRes.Data[0];

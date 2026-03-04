@@ -18,6 +18,7 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 	const router = useRouter();
 	const [step, setStep] = useState<Step>("preview");
 	const [isLoading, setIsLoading] = useState(false);
+	setStep;
 	const [error, setError] = useState("");
 	const [qpayError, setQpayError] = useState("");
 	const [isPaid, setIsPaid] = useState(false);

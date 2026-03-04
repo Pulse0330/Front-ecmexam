@@ -10,7 +10,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,20 +29,6 @@ const SKUUL_API_BASE = "https://backend.skuul.mn";
 // ─── Types ────────────────────────────────────────────────────────────────────
 type CheckState = "idle" | "loading" | "found" | "not_found" | "error";
 
-// GET /api/examinee хариу — зөвхөн examinee_number агуулна
-interface SkuulGetResponse {
-	RetResponse: {
-		ResponseMessage: string;
-		StatusCode: number;
-		ResponseCode: number;
-		ResponseType: boolean;
-	};
-	RetData: {
-		examinee_number: string;
-	};
-}
-
-// POST /api/examineeskuul хариуны RetData нэг элемент
 interface SkuulExamineeData {
 	examinee_number: string;
 	first_name: string;
@@ -81,7 +66,6 @@ interface SkuulExamineeData {
 	status_text: string;
 }
 
-// POST хариуны бүтэн response
 interface SkuulPostResponse {
 	RetResponse: {
 		ResponseMessage: string;
@@ -90,23 +74,6 @@ interface SkuulPostResponse {
 		ResponseType: boolean;
 	};
 	RetData: SkuulExamineeData[];
-}
-
-interface StudentData {
-	register_number: string;
-	last_name: string;
-	first_name: string;
-	gender: "M" | "F";
-	age: number;
-	address: string;
-	mail: string;
-	nationality: string;
-	examinee_number: string;
-	password: string;
-	profile: string | null;
-	school_esis_id: number;
-	student_group_id: number;
-	academic_level: number;
 }
 
 interface AimagItem {
@@ -131,6 +98,7 @@ interface SchoolItem {
 	serverip: string;
 }
 interface StudentExamData {
+	password?: string;
 	login_name: string;
 	firstname: string;
 	lastname: string;
@@ -157,7 +125,6 @@ interface StudentExamData {
 	institutionid: string;
 	academic_level: number;
 	nationality: string;
-	// Skuul POST-н нэмэлт талбарууд
 	exam_number?: string;
 	exam_name?: string;
 	start_date?: string;
@@ -173,30 +140,8 @@ interface StudentExamData {
 	_source?: "skuul" | "exam";
 }
 
-// ─── Mapper: StudentExamData → StudentData ────────────────────────────────────
-function _mapToStudentData(s: StudentExamData): StudentData {
-	const birthYear = new Date(s.dateofbirth).getFullYear();
-	const age = new Date().getFullYear() - birthYear;
-	return {
-		register_number: s.reg_number,
-		last_name: s.lastname,
-		first_name: s.firstname,
-		gender: s.gender_code ?? (s.gender === 0 ? "F" : "M"),
-		age,
-		address: [s.aimag_name, s.sym_name].filter(Boolean).join(", "),
-		mail: s.email,
-		nationality: s.nationality || "Mongolian",
-		examinee_number: s.personId,
-		password: "",
-		profile: s.img_url,
-		school_esis_id: Number(s.institutionid),
-		student_group_id: Number(s.studentgroupid),
-		academic_level: s.academic_level,
-	};
-}
-
-// ─── Mapper: SkuulExamineeData (POST) → StudentExamData ──────────────────────
-function mapSkuulToStudentExam(s: SkuulExamineeData): StudentExamData {
+// ─── Mapper: SkuulExamineeData → StudentExamData ──────────────────────────────
+function _mapSkuulToStudentExam(s: SkuulExamineeData): StudentExamData {
 	return {
 		login_name: s.register_number,
 		firstname: s.first_name,
@@ -224,7 +169,6 @@ function mapSkuulToStudentExam(s: SkuulExamineeData): StudentExamData {
 		institutionid: s.school_esis_id,
 		academic_level: Number(s.academic_level),
 		nationality: s.nationality,
-		// Шалгалтын нэмэлт мэдээлэл
 		exam_number: s.exam_number,
 		exam_name: s.exam_name,
 		start_date: s.start_date,
@@ -283,87 +227,98 @@ async function apiSchool(aimagId: number, districtId: number) {
 	return r.json();
 }
 
-/**
- * 1-р шат: GET /api/examinee?register_number=РД
- * Зөвхөн examinee_number авна
- */
+// GET /api/examinee → examinee_number эсвэл personId авна
 async function apiCheckStudentSkuulGet(
 	registerNumber: string,
-): Promise<string | null> {
+): Promise<{ examineeNumber: string; personId: string } | null> {
 	try {
 		const r = await fetch(
 			`${SKUUL_API_BASE}/api/examinee?register_number=${registerNumber}`,
-			{
-				method: "GET",
-				headers: { "Content-Type": "application/json" },
-			},
+			{ method: "GET", headers: { "Content-Type": "application/json" } },
 		);
-
 		const data = await r.json();
 		console.log("[GET] examinee response:", JSON.stringify(data));
 
-		// RetResponse.ResponseType эсвэл StatusCode 200 шалгана
 		const ok =
 			data?.RetResponse?.ResponseType === true ||
 			data?.RetResponse?.StatusCode === 200 ||
 			data?.RetResponse?.StatusCode === "200";
 		if (!ok) return null;
 
-		// RetData нь object эсвэл array аль ч байж болно
 		const retData = data?.RetData;
 		if (!retData) return null;
 
-		// Object: { examinee_number: "..." }
-		if (typeof retData === "object" && !Array.isArray(retData)) {
-			return retData.examinee_number ?? null;
-		}
-		// Array: [{ examinee_number: "..." }]
-		if (Array.isArray(retData)) {
-			return retData[0]?.examinee_number ?? null;
-		}
+		const item = Array.isArray(retData) ? retData[0] : retData;
+		if (!item?.examinee_number) return null;
 
-		return null;
+		return {
+			examineeNumber: item.examinee_number,
+			personId: item.personid ?? item.personId ?? "",
+		};
 	} catch (e) {
 		console.error("[GET] examinee error:", e);
 		return null;
 	}
 }
 
-/**
- * 2-р шат: POST /api/examineeskuul
- * GET-н examinee_number-ийг дамжуулна
- */
-async function _apiGetStudentSkuulPost(
-	registerNumber: string,
-	examineeNumber: string,
+// POST /api/examinee_list → сурагчийн бүрэн мэдээлэл авна
+async function apiGetExamineeList(
+	personId: string,
 ): Promise<StudentExamData | null> {
 	try {
-		const r = await fetch(`${SKUUL_API_BASE}/api/examineeskuul`, {
+		const r = await fetch(`${SKUUL_API_BASE}/api/examinee_list`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				register_number: registerNumber,
-				examinee_number: examineeNumber,
-				conn: "skuul",
-			}),
+			body: JSON.stringify({ personid: personId, conn: "skuul" }),
 		});
 		if (!r.ok) return null;
 
-		const data: SkuulPostResponse = await r.json();
+		const data = await r.json();
+		console.log("[POST] examinee_list response:", JSON.stringify(data));
+
 		if (!data?.RetResponse?.ResponseType) return null;
 
-		const student = data.RetData?.[0];
-		if (!student) return null;
+		const item = data.RetData?.[0];
+		if (!item) return null;
 
-		return mapSkuulToStudentExam(student);
-	} catch {
+		// examinee_list response → StudentExamData
+		const student: StudentExamData = {
+			login_name: item.register_number,
+			firstname: item.first_name,
+			lastname: item.last_name,
+			reg_number: item.register_number,
+			gender: item.gender === 1 ? 1 : 0,
+			gender_code: item.gender === 1 ? "M" : "F",
+			phone: null,
+			email: item.mail,
+			aimag_id: "",
+			sym_id: "",
+			class_id: item.academic_level,
+			group_id: Number(item.student_group_id),
+			img_url: item.profile,
+			descr: "",
+			regdate: "",
+			dateofbirth: "",
+			personId: item.personid,
+			schooldb: item.schooldb,
+			schoolname: item.schoolname,
+			studentgroupid: item.student_group_id,
+			studentgroupname: item.studentgroupname,
+			aimag_name: item.aimag_name,
+			sym_name: item.sym_name,
+			institutionid: item.school_esis_id,
+			academic_level: item.academic_level,
+			nationality: item.nationality ?? "",
+			_source: "skuul",
+		};
+		return student;
+	} catch (e) {
+		console.error("[POST] examinee_list error:", e);
 		return null;
 	}
 }
 
-/**
- * 3-р шат: ottapp.ecm.mn-ээс шалгах (fallback)
- */
+// Exam API fallback
 async function apiGetStudentExam(
 	dbname: string,
 	regnumber: string,
@@ -382,12 +337,7 @@ async function apiGetStudentExam(
 	return student;
 }
 
-/**
- * Хосолсон шалгалт:
- * 1. GET  /api/examinee?register_number=РД
- *    → Олдвол: examinee_number-г буцаана (fromSkuul=true), POST дуудахгүй
- *    → Олдохгүй: Exam API → үргэлжлүүлэх боломжтой (fromSkuul=false)
- */
+// Хосолсон шалгалт
 async function checkStudentCombined(
 	registerNumber: string,
 	dbname: string,
@@ -397,29 +347,42 @@ async function checkStudentCombined(
 	fromSkuul: boolean;
 	examineeNumber: string | null;
 }> {
-	// 1-р шат: GET
-	const examineeNumber = await apiCheckStudentSkuulGet(registerNumber);
+	const skuulResult = await apiCheckStudentSkuulGet(registerNumber);
 
-	if (examineeNumber !== null) {
-		console.log(
-			"✅ [1] GET олдлоо → Бүртгэлтэй байна, examinee_number:",
-			examineeNumber,
-		);
-		// Бүртгэлтэй байгаа тул POST дуудахгүй, зөвхөн examineeNumber буцаана
-		return { student: null, fromSkuul: true, examineeNumber };
+	if (skuulResult !== null) {
+		console.log("✅ [1] GET олдлоо → personId:", skuulResult.personId);
+
+		// personId байвал examinee_list дуудна
+		if (skuulResult.personId) {
+			const student = await apiGetExamineeList(skuulResult.personId);
+			if (student) {
+				console.log("✅ [2] examinee_list олдлоо:", student);
+				return {
+					student,
+					fromSkuul: true,
+					examineeNumber: skuulResult.examineeNumber,
+				};
+			}
+		}
+
+		// examinee_list олдохгүй бол зөвхөн examineeNumber харуулна
+		return {
+			student: null,
+			fromSkuul: true,
+			examineeNumber: skuulResult.examineeNumber,
+		};
 	}
 
 	console.log("⚠️ GET олдсонгүй → Exam API шалгаж байна...");
-	// Зөвхөн GET олдохгүй үед Exam API дуудна
 	const examResult = await apiGetStudentExam(dbname, registerNumber);
 	if (examResult) console.log("✅ Exam API олдлоо:", examResult);
 	return { student: examResult, fromSkuul: false, examineeNumber: null };
 }
 
-// ─── Regex: зөвшөөрөгдөх тэмдэгтүүд ─────────────────────────────────────────
+// ─── Regex ────────────────────────────────────────────────────────────────────
 const REG_ALLOWED = /[^A-ZА-ЯӨҮa-zа-яөү0-9]/g;
 
-// ─── SelectField component ────────────────────────────────────────────────────
+// ─── SelectField ──────────────────────────────────────────────────────────────
 interface SelectFieldProps {
 	label: string;
 	placeholder: string;
@@ -502,13 +465,11 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 	const [submitting, setSubmitting] = useState(false);
 	const [submitError, setSubmitError] = useState("");
 
-	const _aimagData = aimagList.find((a) => a.mAcode === aimag);
 	const schoolData = schoolList.find((s) => s.sName === school);
 
 	useEffect(() => {
 		apiAimag()
 			.then((d) => {
-				console.log("Aimag sample:", d.RetData?.[0]);
 				setAimagList(d.RetData ?? []);
 			})
 			.catch(() => setAimagList([]))
@@ -556,10 +517,8 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 			setSchoolList([]);
 			clearReg();
 			if (!val) return;
-
 			const currentAimag = aimagList.find((x) => x.mAcode === aimag);
 			if (!currentAimag) return;
-
 			setSchoolLoading(true);
 			try {
 				const d = await apiSchool(currentAimag.mID, Number(val));
@@ -593,7 +552,6 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 		[checkState, clearReg],
 	);
 
-	// ─── Хосолсон шалгалт ────────────────────────────────────────────────────
 	const checkUser = useCallback(async () => {
 		if (reg.length < 8 || !schoolData) return;
 		setCheckState("loading");
@@ -607,10 +565,9 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 				schoolData.sName,
 			);
 			if (fromSkuul) {
-				// Бүртгэлтэй байна — зөвхөн examineeNumber харуулна
 				setIsSkuulFound(true);
 				setSkuulExamineeNumber(examineeNumber);
-				setStudentExam(null);
+				setStudentExam(student); // examinee_list-ээс ирсэн бол student байна
 				setCheckState("found");
 			} else if (student) {
 				setStudentExam(student);
@@ -632,7 +589,7 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 		try {
 			sessionStorage.setItem("studentExam", JSON.stringify(studentExam));
 			onClose?.();
-			window.location.href = "/mnUserCreate";
+			window.location.href = "/mnUserCreate?status=qpay";
 		} catch (err) {
 			setSubmitError(err instanceof Error ? err.message : "Алдаа гарлаа.");
 			setSubmitting(false);
@@ -743,13 +700,17 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 						</Alert>
 					)}
 
-					{/* ── Бүртгэлтэй байна (Skuul GET олдлоо) ── */}
-					{checkState === "found" && isSkuulFound && (
+					{/* ── Бүртгэлтэй + examinee_list олдсонгүй ── */}
+					{checkState === "found" && isSkuulFound && !studentExam && (
 						<Alert className="border-blue-200 bg-blue-50/50 dark:bg-blue-900/10 dark:border-blue-800">
 							<CheckCircle2 className="h-4 w-4 text-blue-500" />
 							<AlertDescription className="text-blue-700 dark:text-blue-400">
 								<div className="flex flex-col gap-1.5">
-									<p className="font-semibold text-base">Та бүртгэлтэй байна</p>
+									<p className="font-semibold text-base">
+										Таны бүртгэл амжилттай үүслээ. Та 3 сарын 9-өөс хойш дахин
+										хандан БҮРТГЭЛИЙН ХУУДАС болон шалгалтын хуваариа
+										оруулаарай.
+									</p>
 									<p className="text-sm">
 										Таны бүртгэлийн дугаар:{" "}
 										<span className="font-mono font-bold text-blue-800 dark:text-blue-300 text-base">
@@ -761,13 +722,12 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 						</Alert>
 					)}
 
-					{/* ── Exam API-аас олдлоо → дэлгэрэнгүй мэдээлэл ── */}
-					{checkState === "found" && studentExam && !isSkuulFound && (
+					{/* ── examinee_list эсвэл Exam API-аас олдлоо ── */}
+					{checkState === "found" && studentExam && (
 						<Alert className="border-emerald-200 bg-emerald-50/50 dark:bg-emerald-900/10 dark:border-emerald-800">
 							<CheckCircle2 className="h-4 w-4 text-emerald-500" />
 							<AlertDescription className="text-emerald-700 dark:text-emerald-400">
 								<div className="flex flex-col gap-3">
-									{/* Сурагчийн үндсэн мэдээлэл */}
 									<div className="flex items-center gap-3">
 										{studentExam.img_url && (
 											<img
@@ -790,7 +750,6 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 										</div>
 									</div>
 
-									{/* Сургуулийн мэдээлэл */}
 									<div className="text-xs space-y-0.5 border-t border-emerald-200 dark:border-emerald-800 pt-2">
 										<p>
 											<span className="font-medium">Сургууль:</span>{" "}
@@ -813,7 +772,6 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 										)}
 									</div>
 
-									{/* Шалгалтын мэдээлэл */}
 									{studentExam.exam_name && (
 										<div className="text-xs space-y-0.5 border-t border-emerald-200 dark:border-emerald-800 pt-2">
 											<p className="font-medium text-emerald-800 dark:text-emerald-300">
@@ -867,7 +825,7 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 				</div>
 			)}
 
-			{checkState === "found" && school && !isSkuulFound && (
+			{checkState === "found" && school && studentExam && (
 				<>
 					{submitError && (
 						<Alert variant="destructive">
