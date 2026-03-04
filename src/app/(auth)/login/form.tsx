@@ -72,6 +72,7 @@ export function LoginForm() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const redirectUrl = searchParams.get("redirect") || "/home";
+	const tokenLogin = searchParams.get("token");
 	const { setUser, setToken } = useAuthStore();
 	const [open, setOpen] = useState(false);
 
@@ -131,15 +132,19 @@ export function LoginForm() {
 				setCookie(key, val, 7);
 			}
 
-			if (userData.is_enabled === 0) {
-				toast.info("Профайл мэдээллээ бөглөнө үү", {
-					description:
-						"Та профайл мэдээллээ бүрэн бөглөсний дараа системд нэвтрэх боломжтой болно.",
-					duration: 5000,
-				});
-				router.push("/userProfile");
+			if (userData.ugroup === 4 || userData.ugroup === 3) {
+				router.push("/room");
 			} else {
-				router.push(redirectUrl);
+				if (userData.is_enabled === 0) {
+					toast.info("Профайл мэдээллээ бөглөнө үү", {
+						description:
+							"Та профайл мэдээллээ бүрэн бөглөсний дараа системд нэвтрэх боломжтой болно.",
+						duration: 5000,
+					});
+					router.push("/userProfile");
+				} else {
+					router.push(redirectUrl);
+				}
 			}
 		},
 		onError: (error: Error) => {
@@ -151,6 +156,11 @@ export function LoginForm() {
 			form.setFocus("password");
 		},
 	});
+
+	// useEffect(() => {
+	// 	if (tokenLogin) {
+	// 	}
+	// }, [tokenLogin]);
 
 	const onSubmit = (values: FormValues) => mutate(values);
 

@@ -8,7 +8,6 @@ import { Desk } from "@/app/(dash)/room/[room_id]/desk";
 import { LayoutPicker } from "@/app/(dash)/room/[room_id]/mini-room";
 import { IBackButton } from "@/components/iBackButton";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import { Spinner } from "@/components/ui/spinner";
 import { useRoomManager } from "@/hooks/use-room-manager";
 import {
@@ -47,8 +46,6 @@ export default function RoomPage({ params }: RoomPageProps) {
 		isOverlapping,
 		RATIO_X,
 		RATIO_Y,
-		addTable,
-		removeTable,
 		sizeMultiplier,
 	} = useRoomManager(TABLE_UNITS, SNAP_STEP);
 
@@ -74,6 +71,7 @@ export default function RoomPage({ params }: RoomPageProps) {
 	}, [roomDetail, setSizeMultiplier]);
 
 	// Өмнөх олон useEffect-үүдээ устгаад зөвхөн үүнийг үлдээ:
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	useEffect(() => {
 		// 1. Дата ачаалагдаж дуусаагүй бол юу ч хийхгүй
 		if (isDataLoading || isRoomDetailLoading || !roomDetail) return;
@@ -110,13 +108,7 @@ export default function RoomPage({ params }: RoomPageProps) {
 		// ХАМААРАЛ: Энд 'tables'-ыг хасчихсан байгааг анзаараарай!
 		// Энэ нь дата анх ирэхэд л нэг удаа ажиллана гэсэн үг.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [
-		isDataLoading,
-		isRoomDetailLoading,
-		remoteData?.RetData,
-		roomDetail?.roomsize,
-		roomDetail?.num_of_pc,
-	]);
+	}, [isDataLoading, isRoomDetailLoading, remoteData]);
 
 	// Mouse handlers (MouseDown, MouseMove, MouseUp хэвээрээ...)
 	const handleMouseDown = (e: React.MouseEvent, table: Table) => {
@@ -284,9 +276,7 @@ export default function RoomPage({ params }: RoomPageProps) {
 						}}
 					/>
 
-					<div className="absolute top-4 right-4 z-20 flex flex-col gap-2 scale-90 md:scale-100 origin-bottom-right">
-						{/* Удирдлагын товчнууд энд байна */}
-
+					{/* <div className="absolute top-4 right-4 z-20 flex flex-col gap-2 scale-90 md:scale-100 origin-bottom-right">
 						<ButtonGroup orientation="vertical">
 							<Button
 								variant="outline"
@@ -307,7 +297,7 @@ export default function RoomPage({ params }: RoomPageProps) {
 								Ширээ хасах
 							</Button>
 						</ButtonGroup>
-					</div>
+					</div> */}
 
 					{/* CONTROL BUTTONS (BOTTOM RIGHT) */}
 					<div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2 scale-90 md:scale-100 origin-bottom-right">

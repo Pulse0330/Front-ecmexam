@@ -205,7 +205,7 @@ export default function ExamCreatePage() {
 							>
 								<Link href={"/exam-materials"}>
 									<Download size={10} />
-									Хувиар татах
+									Хуваарь татах
 								</Link>
 							</Button>
 						</CardTitle>

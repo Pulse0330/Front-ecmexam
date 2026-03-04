@@ -47,7 +47,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 
 const menuItems = [
 	{ title: "Өрөө", href: "/room" },
-	{ title: "Хувиар", href: "/exam-schedule" },
+	{ title: "Хуваарь", href: "/exam-schedule" },
 	{ title: "Шалгалт бүртгэх", href: "/exam-create" },
 ];
 
