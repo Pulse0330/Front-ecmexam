@@ -35,6 +35,7 @@ import {
 } from "@/types/home";
 import type { UserProfileResponseType } from "@/types/user";
 import ExamLists from "./homeExamCard";
+import MnSorilList from "./mnSorilList";
 
 const ANIMATION_STAGGER = 0.04;
 
@@ -374,6 +375,18 @@ export default function HomePage() {
 					</div>
 				) : (
 					<>
+						{" "}
+						{userId && (
+							<>
+								<SectionDivider
+									title="Монгол хэл бичгийн сорил"
+									href="/Lists/mnSorilList"
+								/>
+								<div className="animate-in fade-in-0 duration-700 delay-700">
+									<MnSorilList />
+								</div>
+							</>
+						)}
 						{hasExams && homeData?.RetDataThirt && (
 							<>
 								<SectionDivider
@@ -387,7 +400,6 @@ export default function HomePage() {
 								</div>
 							</>
 						)}
-
 						{hasSorils && homeData?.RetDataFourth && (
 							<>
 								<SectionDivider title="Сорилууд" href="/Lists/sorilList" />

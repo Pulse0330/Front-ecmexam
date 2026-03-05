@@ -563,6 +563,7 @@ export const getQPayInvoice = async (
 	return data;
 };
 //------------------------------- МХБШ ---------------------------------//
+
 export const getExamVariants = async (
 	userId: number,
 ): Promise<ExamVariantsResponse> => {
@@ -571,7 +572,7 @@ export const getExamVariants = async (
 		{
 			procname: "api_exam_variants",
 			userid: userId,
-			conn: "skuul",
+			conn: "skuul", // ← ЭНЭ УТГЫГ ШАЛГА
 		},
 	);
 	return data;
