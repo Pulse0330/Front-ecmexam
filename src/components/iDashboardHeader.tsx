@@ -49,6 +49,7 @@ const menuItems = [
 	{ title: "Өрөө", href: "/room" },
 	{ title: "Хуваарь", href: "/exam-schedule" },
 	{ title: "Шалгалт бүртгэх", href: "/exam-create" },
+	{ title: "Матерал", href: "/exam-download" },
 ];
 
 export function IDashboardHeader() {
@@ -79,11 +80,8 @@ export function IDashboardHeader() {
 			});
 
 			clearAuth();
-
 			sessionStorage.clear();
-
 			queryClient.clear();
-
 			router.push("/login");
 		} catch (error) {
 			console.error("Logout error:", error);

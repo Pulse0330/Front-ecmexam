@@ -244,7 +244,8 @@ export function StudentSelector({
 													{student.last_name.charAt(0)}. {student.first_name}
 												</p>
 												<p className="text-[10px] font-mono text-muted-foreground uppercase">
-													{student.examinee_number} | {student.register_number}
+													{student.examinee_number} * {student.register_number}*{" "}
+													{student.studentgroupname}
 												</p>
 											</div>
 											{locked ? (

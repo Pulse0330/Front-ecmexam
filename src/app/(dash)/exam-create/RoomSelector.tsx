@@ -153,7 +153,7 @@ export function RoomSelector({ selectedId, onSelect }: RoomSelectorProps) {
 												asChild
 											>
 												<Link href={`room/${room.id}`}>
-													Ширээ зохион байгуулах
+													Ширээний зохион байгуулалт
 													<ArrowRight size={10} />
 												</Link>
 											</Button>

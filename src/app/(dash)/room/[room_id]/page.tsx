@@ -168,16 +168,20 @@ export default function RoomPage({ params }: RoomPageProps) {
 
 	const { mutate: saveLayout, isPending } = useMutation({
 		mutationFn: saveRoomLayout,
-		onSuccess: () => {
-			toast.success("Зохион байгуулалт амжилттай хадгалагдлаа!");
+		onSuccess: (res) => {
+			if (res.ResponseCode === 11) {
+				toast.error("Зохион байгуулалт амжилтгүй");
+			} else {
+				toast.success("Зохион байгуулалт амжилттай хадгалагдлаа!");
+			}
 		},
 	});
 
 	const handleSave = () => {
 		saveLayout({
 			roomId: Number(roomId),
-			userId: userId || 0, // Таны жишээн дээр 0 байсан тул
-			tables: tables, // useRoomManager-аас ирж буй tables state
+			userId: userId || 0,
+			tables: tables,
 			sizes: sizeMultiplier,
 		});
 	};
