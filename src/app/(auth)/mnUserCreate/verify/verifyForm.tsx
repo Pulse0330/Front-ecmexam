@@ -15,6 +15,11 @@ import { API_BASE } from "./utils";
 export type { VerifyData };
 
 export default function VerifyForm({ data: d }: { data: VerifyData }) {
+	console.log("d.password:", d.password);
+	console.log("d.aimag_name:", d.aimag_name);
+	console.log("d.sym_name:", d.sym_name);
+	console.log("d.dateofbirth:", d.dateofbirth);
+
 	const router = useRouter();
 	const [step, setStep] = useState<Step>("preview");
 	const [isLoading, setIsLoading] = useState(false);
@@ -31,6 +36,14 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 	// ── /api/examineesend ─────────────────────────────────────────────────────
 	const sendExaminee = useCallback(async (): Promise<boolean> => {
 		setError("");
+		console.log("=== examineesend payload ===");
+		console.log("password:", d.password);
+		console.log("reg_number:", d.reg_number);
+		console.log("aimag_name:", d.aimag_name);
+		console.log("sym_name:", d.sym_name);
+		console.log("dateofbirth:", d.dateofbirth);
+		console.log("img_url:", d.img_url);
+		console.log("============================");
 		try {
 			const res = await fetch(`${API_BASE}/api/examineesend`, {
 				method: "POST",
@@ -153,6 +166,13 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 	}, []);
 
 	const handleSendAndProceed = useCallback(async () => {
+		console.log("=== d утгууд ===");
+		console.log("d.password:", d.password);
+		console.log("d.aimag_name:", d.aimag_name);
+		console.log("d.sym_name:", d.sym_name);
+		console.log("d.dateofbirth:", d.dateofbirth);
+		console.log("d.img_url:", d.img_url);
+		console.log("================");
 		const sent = await sendExaminee();
 		if (!sent) return;
 

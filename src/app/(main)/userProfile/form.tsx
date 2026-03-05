@@ -419,21 +419,18 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 
 			const result = await uploadImage(formData);
 
-			let imageUrl = "";
-			if (Array.isArray(result) && result.length > 0) {
-				imageUrl = result[0]?.url || result[0]?.path || result[0];
-			} else if (result?.url) {
-				imageUrl = result.url;
-			} else if (typeof result === "string") {
-				imageUrl = result;
+			// UploadFileResult shape: { fileStatus: number, message: string, file: { url, ... } }
+			if (result.fileStatus !== 0) {
+				throw new Error(result.message || "Upload амжилтгүй боллоо");
 			}
 
-			if (imageUrl) {
-				setUploadedImageUrl(imageUrl);
-				setSelectedImage(file);
-			} else {
-				throw new Error("Upload хариу буруу байна");
+			const imageUrl = result.file?.url;
+			if (!imageUrl) {
+				throw new Error("Upload хариуд URL байхгүй байна");
 			}
+
+			setUploadedImageUrl(imageUrl);
+			setSelectedImage(file);
 		} catch (error: unknown) {
 			console.error("❌ Зураг upload хийхэд алдаа:", error);
 			const errorMessage =
@@ -448,6 +445,60 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 			setIsUploadingImage(false);
 		}
 	};
+	// 	const file = e.target.files?.[0];
+	// 	if (!file) return;
+
+	// 	if (!file.type.startsWith("image/")) {
+	// 		alert("Зөвхөн зураг файл сонгоно уу");
+	// 		return;
+	// 	}
+	// 	if (file.size > 10 * 1024 * 1024) {
+	// 		alert("Зургийн хэмжээ 10MB-аас бага байх ёстой");
+	// 		return;
+	// 	}
+
+	// 	try {
+	// 		setIsUploadingImage(true);
+
+	// 		const webpBlob = await convertToWebP(file, 0.85);
+	// 		const previewUrl = URL.createObjectURL(webpBlob);
+	// 		setImagePreview(previewUrl);
+
+	// 		const formData = new FormData();
+	// 		const webpFileName = file.name.replace(/\.[^/.]+$/, ".webp");
+	// 		formData.append("file", webpBlob, webpFileName);
+
+	// 		const result = await uploadImage(formData);
+
+	// 		let imageUrl = "";
+	// 		if (Array.isArray(result) && result.length > 0) {
+	// 			imageUrl = result[0]?.url || result[0]?.path || result[0];
+	// 		} else if (result?.url) {
+	// 			imageUrl = result.url;
+	// 		} else if (typeof result === "string") {
+	// 			imageUrl = result;
+	// 		}
+
+	// 		if (imageUrl) {
+	// 			setUploadedImageUrl(imageUrl);
+	// 			setSelectedImage(file);
+	// 		} else {
+	// 			throw new Error("Upload хариу буруу байна");
+	// 		}
+	// 	} catch (error: unknown) {
+	// 		console.error("❌ Зураг upload хийхэд алдаа:", error);
+	// 		const errorMessage =
+	// 			error instanceof Error
+	// 				? error.message
+	// 				: "Зураг upload хийхэд алдаа гарлаа";
+	// 		alert(errorMessage);
+	// 		setImagePreview("");
+	// 		setSelectedImage(null);
+	// 		setUploadedImageUrl("");
+	// 	} finally {
+	// 		setIsUploadingImage(false);
+	// 	}
+	// };
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -609,7 +660,6 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 													onChange={handleImageChange}
 													disabled={isUploadingImage}
 												/>
-
 												{isUploadingImage && (
 													<p className="text-xs mt-2 animate-pulse">
 														Уншиж байна...

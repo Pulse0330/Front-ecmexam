@@ -576,7 +576,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				student_group_id: fresh.student_group_id,
 				schooldb: fresh.schooldb,
 				userid: fresh.userid,
-				password: fresh.passwordauto,
+				password: fresh.passwordauto || fresh.password || password,
 				age: fresh.age ?? null,
 				address: fresh.address ?? null,
 			};
