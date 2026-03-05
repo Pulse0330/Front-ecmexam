@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
 		// Call the external QPay API
 		const response = await fetch(
-			"https://ottapp.ecm.mn/api/get_qpayinvoiceweb",
+			"https://backend.skuul.mn/api/get_qpayinvoiceweb",
 			{
 				method: "POST",
 				headers: {

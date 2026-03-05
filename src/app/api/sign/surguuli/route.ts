@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 			district_id: requestBody.district_id,
 		});
 
-		const response = await fetch("https://ottapp.ecm.mn/api/school", {
+		const response = await fetch("https://backend.skuul.mn/api/school", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(requestBody),

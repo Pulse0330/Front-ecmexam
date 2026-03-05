@@ -20,7 +20,7 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
 	const [qpayError, setQpayError] = useState("");
-	const [isPaid, setIsPaid] = useState(false);
+	const [isPaid, setIsPaid] = useState(true);
 	const [examineeNumber, setExamineeNumber] = useState<string | null>(null);
 	const [examinee, setExaminee] = useState<ExamineeItem | null>(null);
 	const [_examineeLoading, setExamineeLoading] = useState(false);
@@ -77,33 +77,36 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 	}, [d]);
 
 	// ── /api/examinee_list ────────────────────────────────────────────────────
-	const fetchExaminee = useCallback(async () => {
-		if (examinee) return examinee;
-		setExamineeLoading(true);
-		setError("");
-		try {
-			const res = await fetch(`${API_BASE}/api/examinee_list_1`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ personid: d.personId, conn: "skuul" }),
-			});
-			if (!res.ok) throw new Error("Серверт холбогдоход алдаа гарлаа");
-			const json = await res.json();
-			if (!json?.RetResponse?.ResponseType)
-				throw new Error(
-					json?.RetResponse?.ResponseMessage || "Бүртгэл олдсонгүй",
-				);
-			const item: ExamineeItem = json.RetData?.[0];
-			if (!item) throw new Error("Шалгуулагчийн мэдээлэл олдсонгүй");
-			setExaminee(item);
-			return item;
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Алдаа гарлаа");
-			return null;
-		} finally {
-			setExamineeLoading(false);
-		}
-	}, [d.personId, examinee]);
+	const fetchExaminee = useCallback(
+		async (forceRefresh = false) => {
+			if (examinee && !forceRefresh) return examinee;
+			setExamineeLoading(true);
+			setError("");
+			try {
+				const res = await fetch(`${API_BASE}/api/examinee_list_1`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ personid: d.personId, conn: "skuul" }),
+				});
+				if (!res.ok) throw new Error("Серверт холбогдоход алдаа гарлаа");
+				const json = await res.json();
+				if (!json?.RetResponse?.ResponseType)
+					throw new Error(
+						json?.RetResponse?.ResponseMessage || "Бүртгэл олдсонгүй",
+					);
+				const item: ExamineeItem = json.RetData?.[0];
+				if (!item) throw new Error("Шалгуулагчийн мэдээлэл олдсонгүй");
+				setExaminee(item);
+				return item;
+			} catch (err) {
+				setError(err instanceof Error ? err.message : "Алдаа гарлаа");
+				return null;
+			} finally {
+				setExamineeLoading(false);
+			}
+		},
+		[d.personId, examinee],
+	);
 
 	// ── QPay invoice ──────────────────────────────────────────────────────────
 	const invokeQPay = useCallback(async (targetExaminee: ExamineeItem) => {
@@ -114,13 +117,14 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					amount: "20000",
-					userid: String(targetExaminee.userid),
+					amount: "20",
+					user_id: String(targetExaminee.userid),
 					device_token: "",
-					orderid: "9",
-					bilid: "99",
-					classroom_id: "0",
-					urls: [],
+					isott: "1",
+					bill_type: "9",
+					bill_id: "99",
+					billmonth: "1",
+					code: "1",
 					conn: {
 						user: "edusr",
 						password: "sql$erver43",
@@ -146,21 +150,56 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 		let target = examinee;
 		if (!target) target = await fetchExaminee();
 		if (!target) return;
+
+		// ── ispay === 1 бол төлбөр аль хэдийн төлөгдсөн ──────────────────────
+		if (target.ispay === 1) {
+			setIsPaid(true);
+			toast.info("Төлбөр аль хэдийн төлөгдсөн байна.");
+			const sent = await sendExaminee();
+			if (sent) {
+				// SMS илгээх
+				try {
+					await fetch("https://backend.skuul.mn/api/sms_loop", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							phone: d.phone,
+							msgtext: `Нэвтрэх нэр: ${d.login_name} Нууц үг: ${d.password} `,
+							conn: "skuul",
+						}),
+					});
+				} catch {
+					// SMS алдаа гарсан ч үргэлжлүүлнэ
+				}
+				toast.success("Амжилттай илгээгдлээ");
+				setStep("paid");
+			}
+			return;
+		}
+
 		await invokeQPay(target);
-	}, [examinee, fetchExaminee, invokeQPay]);
+	}, [examinee, fetchExaminee, invokeQPay, sendExaminee, d]);
 
 	// ── Төлбөр амжилттай төлөгдсөний дараа л examineesend дуудна ──────────────
 	const handlePaymentSuccess = useCallback(async () => {
 		setQpayOpen(false);
 		setQpayData(null);
-		setIsPaid(true);
 
+		// Серверээс ispay шинэчлэгдсэн эсэхийг шалгах
+		const target = await fetchExaminee(true);
+		if (!target || target.ispay !== 1) {
+			setQpayError("Төлбөр баталгаажаагүй байна. Дахин оролдоно уу.");
+			return;
+		}
+
+		setIsPaid(true);
 		const sent = await sendExaminee();
 		if (!sent) return;
 
 		// ── SMS илгээх ──
 		try {
-			await fetch("https://ottapp.ecm.mn/api/sms_loop", {
+			await fetch("https://backend.skuul.mn/api/sms_loop", {
+				// ← гурван slash засав
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -175,7 +214,7 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 
 		toast.success("Амжилттай илгээгдлээ");
 		setStep("paid");
-	}, [sendExaminee, d]);
+	}, [fetchExaminee, sendExaminee, d]);
 
 	// ── "Бүртгүүлэх" товч → зөвхөн QPay нээнэ ───────────────────────────────
 	const handleSendAndProceed = useCallback(async () => {

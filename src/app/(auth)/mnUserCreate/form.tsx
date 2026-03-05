@@ -166,25 +166,15 @@ async function uploadProfileImage(
 	originalName: string,
 ): Promise<string> {
 	const formData = new FormData();
+	formData.append("folder", "studentProfile");
 	formData.append("file", blob, originalName);
+
 	const result = await uploadImage(formData);
-	const extractUrl = (item: unknown): string => {
-		if (!item) return "";
-		if (typeof item === "string") return item;
-		if (typeof item === "object") {
-			const obj = item as Record<string, unknown>;
-			if (typeof obj.FileWebUrl === "string") return obj.FileWebUrl;
-			if (typeof obj.url === "string") return obj.url;
-			if (typeof obj.path === "string") return obj.path;
-		}
-		return "";
-	};
-	const imageUrl =
-		Array.isArray(result) && result.length > 0
-			? extractUrl(result[0])
-			: extractUrl(result);
-	if (!imageUrl) throw new Error("Upload хариу буруу байна");
-	return imageUrl;
+
+	// ECM API: { fileStatus: 0, file: { url: "..." } }
+	if (result?.file?.url) return result.file.url;
+
+	throw new Error("Upload хариу буруу байна");
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -576,11 +566,13 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				student_group_id: fresh.student_group_id,
 				schooldb: fresh.schooldb,
 				userid: fresh.userid,
-				password: fresh.passwordauto || fresh.password || password,
+				password: fresh.passwordauto,
 				age: fresh.age ?? null,
 				address: fresh.address ?? null,
 			};
-
+			console.log("fresh.passwordauto:", fresh.passwordauto);
+			console.log("fresh.password:", fresh.password);
+			console.log("password state:", password);
 			sessionStorage.removeItem("studentExam");
 			sessionStorage.setItem("verifyData", JSON.stringify(verifyData));
 			toast.success("Амжилттай хадгалагдлаа!");

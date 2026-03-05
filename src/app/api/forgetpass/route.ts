@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
 		try {
 			const externalResponse = await fetch(
-				"https://ottapp.ecm.mn/api/forgetpass",
+				"https://backend.skuul.mn/api/forgetpass",
 				{
 					method: "POST",
 					headers: {

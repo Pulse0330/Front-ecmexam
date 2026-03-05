@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
 		// Backend руу хүсэлт илгээнэ (server-side, CORS-гүй)
 		const backendResponse = await fetch(
-			"https://ottapp.ecm.mn/api/register_sysuser",
+			"https://backend.skuul.mn/api/register_sysuser",
 			{
 				method: "POST",
 				headers: {

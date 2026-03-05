@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Printer } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { BackButton } from "./backButton";
@@ -226,13 +226,37 @@ export function StepPaid({
 					</div>
 				</div>
 
-				<Button
-					onClick={() => window.print()}
-					className="w-full h-12 font-bold gap-2 shadow-lg"
-				>
-					<Printer size={16} />
-					Батламж хуудас хэвлэх
-				</Button>
+				{/* ── Нэвтрэх мэдээлэл ── */}
+				<div className="rounded-2xl border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 p-4 space-y-3 text-sm">
+					<p className="text-muted-foreground leading-relaxed">
+						Таны бүртгэл амжилттай үүслээ. Та{" "}
+						<span className="font-semibold text-foreground">3 сарын 9-өөс</span>{" "}
+						хойш дахин хандан доорх нэвтрэх нэр, нууц үгийг оруулж{" "}
+						<span className="font-semibold text-foreground">
+							БҮРТГЭЛИЙН ХУУДАС
+						</span>{" "}
+						болон шалгалтын хуваариа сонгоорой.
+					</p>
+
+					<div className="rounded-xl border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-900 divide-y divide-blue-100 dark:divide-blue-800">
+						<div className="flex items-center justify-between px-4 py-3 gap-3">
+							<span className="text-muted-foreground text-xs shrink-0">
+								Нэвтрэх нэр
+							</span>
+							<span className="font-mono font-bold text-sm tracking-wide text-foreground">
+								{d.login_name ?? "—"}
+							</span>
+						</div>
+						<div className="flex items-center justify-between px-4 py-3 gap-3">
+							<span className="text-muted-foreground text-xs shrink-0">
+								Нууц үг
+							</span>
+							<span className="font-mono font-bold text-sm tracking-wide text-foreground">
+								{d.password ?? "—"}
+							</span>
+						</div>
+					</div>
+				</div>
 
 				<Button
 					variant="outline"

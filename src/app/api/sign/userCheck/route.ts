@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
 		console.log("=== CHECK-USER API: Sending to backend ===", requestBody);
 
-		const response = await fetch("https://ottapp.ecm.mn/api/checkuser", {
+		const response = await fetch("https://backend.skuul.mn/api/checkuser", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(requestBody),

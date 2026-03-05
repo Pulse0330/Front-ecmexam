@@ -22,7 +22,7 @@ import {
 
 // ─── Env ──────────────────────────────────────────────────────────────────────
 const EXAM_API_BASE =
-	process.env.NEXT_PUBLIC_EXAM_API_URL ?? "https://ottapp.ecm.mn";
+	process.env.NEXT_PUBLIC_EXAM_API_URL ?? "https:/backend.skuul.mn";
 
 const SKUUL_API_BASE = "https://backend.skuul.mn";
 
@@ -661,9 +661,9 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 							maxLength={10}
 							disabled={checkState === "found"}
 							className={`flex-1 font-mono text-base tracking-widest text-center h-11
-								${checkState === "not_found" || checkState === "error" ? "border-destructive focus-visible:ring-destructive" : ""}
-								${checkState === "found" ? "border-emerald-500 bg-emerald-50/30 dark:bg-emerald-900/10" : ""}
-							`}
+									${checkState === "not_found" || checkState === "error" ? "border-destructive focus-visible:ring-destructive" : ""}
+									${checkState === "found" ? "border-emerald-500 bg-emerald-50/30 dark:bg-emerald-900/10" : ""}
+								`}
 						/>
 						<Button
 							type="button"
