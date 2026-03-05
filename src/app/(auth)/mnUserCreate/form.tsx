@@ -25,7 +25,6 @@ import {
 	useState,
 } from "react";
 import { toast } from "sonner";
-import { toISODate } from "@/app/(auth)/mnUserCreate/verify/utils";
 import { ImageCropModal } from "@/components/imageCropModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -530,7 +529,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				group_id: d.group_id,
 				img_url: uploadedImgUrl,
 				descr: d.descr,
-				dateofbirth: d.dateofbirth?.slice(0, 10) ?? "",
+				dateofbirth: d.dateofbirth,
 				personId: d.personId,
 				schooldb: d.schooldb,
 				schoolname: d.schoolname,
@@ -560,7 +559,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				lastname: fresh.last_name,
 				reg_number: fresh.register_number,
 				gender_code: fresh.gender_code,
-				dateofbirth: toISODate(fresh.dateofbirth),
+				dateofbirth: fresh.dateofbirth,
 				phone: displayPhone || fresh.phone || null,
 				email: fresh.mail,
 				aimag_name: fresh.aimag_name,

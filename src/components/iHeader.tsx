@@ -61,7 +61,7 @@ const NAV_LINKS = [
 const EXAM_LINKS: Array<{ href: string; label: string; icon: LucideIcon }> = [
 	{
 		href: "",
-		label: "Монгол хэлний шалгалт",
+		label: "МХБ шалгалт",
 		icon: FeatherIcon,
 	},
 	{
