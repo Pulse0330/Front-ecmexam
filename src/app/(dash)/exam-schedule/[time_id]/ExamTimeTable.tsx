@@ -104,13 +104,13 @@ export function ExamTimeTable({
 									Өрөөний дугаар
 								</TableHead>
 								<TableHead className="font-bold text-foreground text-sm  tracking-wider text-center h-11">
-									Нийт PC
+									Нийт төхөөрөмж
 								</TableHead>
 								<TableHead className="font-bold text-foreground text-sm  tracking-wider text-center h-11">
 									Хуваарилагдсан
 								</TableHead>
 								<TableHead className="text-right font-bold text-foreground text-sm  tracking-wider h-11 pr-6">
-									Нийт сурагч
+									Нийт суралцагч
 								</TableHead>
 								<TableHead className="text-right font-bold text-foreground text-sm  tracking-wider h-11 pr-6"></TableHead>
 							</TableRow>

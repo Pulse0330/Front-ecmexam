@@ -47,7 +47,7 @@ export default function RoomPage({ params }: RoomPageProps) {
 		RATIO_X,
 		RATIO_Y,
 		sizeMultiplier,
-	} = useRoomManager(TABLE_UNITS, SNAP_STEP);
+	} = useRoomManager(TABLE_UNITS);
 
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [currentLayout, setCurrentLayout] = useState<LayoutType>("rows_3");
@@ -89,6 +89,7 @@ export default function RoomPage({ params }: RoomPageProps) {
 				xPos: pc.colnum,
 				yPos: pc.rownum,
 				name: pc.seat_number,
+				seat_number: pc.seat_number,
 			}));
 
 			setTables(mappedTables);
@@ -208,6 +209,7 @@ export default function RoomPage({ params }: RoomPageProps) {
 				xPos: pc.colnum,
 				yPos: pc.rownum,
 				name: pc.seat_number,
+				seat_number: pc.seat_number,
 			}));
 
 			setTables(mappedTables);
@@ -232,9 +234,9 @@ export default function RoomPage({ params }: RoomPageProps) {
 					<IBackButton />
 					<div>
 						<h1 className="text-2xl font-bold tracking-tight items-center flex gap-2">
-							Ширээ зохион байгуулалт{" "}
+							Ширээний зохион байгуулалт{" "}
 							<span className="text-muted-foreground">
-								| {roomDetail?.room_number || "—"}
+								| {roomDetail?.room_number || "—"}-р өрөө
 							</span>
 						</h1>
 						<p className="text-xs text-muted-foreground mt-1">
@@ -251,7 +253,7 @@ export default function RoomPage({ params }: RoomPageProps) {
 					) : (
 						<div className="flex items-center gap-2">
 							<Save size={16} />
-							{remoteData?.RetData === null ? "Хадгалах" : "Засварлах"}
+							{remoteData?.RetData === null ? "Хадгалах" : "Засах"}
 						</div>
 					)}
 				</Button>
@@ -323,7 +325,7 @@ export default function RoomPage({ params }: RoomPageProps) {
 								<Minus size={16} />
 							</Button>
 							<div className="px-2 flex items-center text-[10px] font-bold text-muted-foreground">
-								ӨРӨӨ
+								Хэмжээ
 							</div>
 							<Button
 								variant="ghost"

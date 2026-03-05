@@ -124,25 +124,45 @@ export function RoomCreateEditDialog({
 			<DialogContent className="sm:max-w-md">
 				<form onSubmit={form.handleSubmit((data) => mutation.mutate(data))}>
 					<DialogHeader>
-						<DialogTitle>{isEdit ? "Өрөө засах" : "Өрөө нэмэх"}</DialogTitle>
+						<DialogTitle>{isEdit ? "Өрөө засах" : "Өрөө бүртгэх"}</DialogTitle>
 						<DialogDescription>Мэдээллээ бүрэн оруулна уу.</DialogDescription>
 					</DialogHeader>
 
 					<FieldGroup className="mt-4 gap-3">
+						<Controller
+							name="branchname"
+							control={form.control}
+							render={({ field, fieldState }) => (
+								<Field data-invalid={fieldState.invalid}>
+									<FieldLabel>Хичээлийн байр </FieldLabel>
+									<div className="relative ">
+										<MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+										<Input
+											{...field}
+											className="pl-9"
+											placeholder="Хичээлийн байр "
+										/>
+									</div>
+									{fieldState.invalid && (
+										<FieldError>{fieldState.error?.message}</FieldError>
+									)}
+								</Field>
+							)}
+						/>
 						{/* Name Field */}
 						<Controller
 							name="name"
 							control={form.control}
 							render={({ field, fieldState }) => (
 								<Field data-invalid={fieldState.invalid}>
-									<FieldLabel>Сургуулийн нэр</FieldLabel>
+									<FieldLabel>Шалгалт авах өрөөний нэр</FieldLabel>
 									<div className="relative ">
 										<Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
 										<Input
 											{...field}
 											className="pl-9"
 											aria-invalid={fieldState.invalid}
-											placeholder="#-р сургууль"
+											placeholder="Шалгалт авах өрөөний нэр"
 										/>
 									</div>
 									{fieldState.invalid && (
@@ -158,14 +178,14 @@ export function RoomCreateEditDialog({
 							control={form.control}
 							render={({ field, fieldState }) => (
 								<Field data-invalid={fieldState.invalid}>
-									<FieldLabel>Өрөөний дугаар</FieldLabel>
+									<FieldLabel>Өрөөний дугаар </FieldLabel>
 									<div className="relative ">
 										<DoorOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
 										<Input
 											{...field}
 											className="pl-9"
 											aria-invalid={fieldState.invalid}
-											placeholder="101"
+											placeholder="Өрөөний дугаар"
 										/>
 									</div>
 									{fieldState.invalid && (
@@ -176,28 +196,13 @@ export function RoomCreateEditDialog({
 						/>
 
 						{/* Branch Name Field */}
-						<Controller
-							name="branchname"
-							control={form.control}
-							render={({ field, fieldState }) => (
-								<Field data-invalid={fieldState.invalid}>
-									<FieldLabel>Салбар</FieldLabel>
-									<div className="relative ">
-										<MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-										<Input {...field} className="pl-9" placeholder="#-р байр" />
-									</div>
-									{fieldState.invalid && (
-										<FieldError>{fieldState.error?.message}</FieldError>
-									)}
-								</Field>
-							)}
-						/>
+
 						<Controller
 							name="pccount"
 							control={form.control}
 							render={({ field, fieldState }) => (
 								<Field data-invalid={fieldState.invalid}>
-									<FieldLabel>Компьютерын тоо</FieldLabel>
+									<FieldLabel>Компьютер / Төхөөрөмжийн тоо</FieldLabel>
 									<div className="relative ">
 										<Monitor className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
 										<Input
@@ -205,7 +210,7 @@ export function RoomCreateEditDialog({
 											className="pl-9"
 											type="number"
 											aria-invalid={fieldState.invalid}
-											placeholder="Компьютерын тоо"
+											placeholder="Компьютер / Төхөөрөмжийн тоо"
 										/>
 									</div>
 									{fieldState.invalid && (

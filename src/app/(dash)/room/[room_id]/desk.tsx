@@ -9,6 +9,7 @@ interface DeskProps {
 	gridX: number;
 	gridY: number;
 	tableUnits: number;
+
 	onMouseDown: (e: React.MouseEvent, table: Table) => void;
 }
 
@@ -18,6 +19,7 @@ export function Desk({
 	gridX,
 	gridY,
 	tableUnits,
+
 	onMouseDown,
 }: DeskProps) {
 	return (
@@ -45,7 +47,8 @@ export function Desk({
 						: "bg-indigo-500/10 border-indigo-500/30 hover:border-indigo-500 text-indigo-600 dark:text-indigo-400 dark:bg-indigo-500/40"
 				}`}
 			>
-				<Monitor />
+				{/* <Monitor /> */}
+				{table.seat_number}
 			</div>
 		</button>
 	);

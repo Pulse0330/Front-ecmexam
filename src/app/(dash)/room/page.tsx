@@ -114,7 +114,7 @@ export default function RoomPage() {
 					className="gap-2 shadow-sm"
 				>
 					<Plus size={18} />
-					Шинэ өрөө нэмэх
+					Шалгалтын өрөө бүртгэх
 				</Button>
 			</header>
 			{/* 2. Content Area */}
@@ -192,21 +192,10 @@ export default function RoomPage() {
 							<CardContent className="flex flex-col gap-4 pb-2 justify-between  h-full">
 								<div className="space-y-2">
 									<div className="flex items-start gap-2.5">
-										<Building className="text-primary mt-0.5" size={15} />
-										<div className="min-w-0">
-											<p className="text-[9px] leading-none text-muted-foreground uppercase font-bold tracking-tighter">
-												Сургууль
-											</p>
-											<p className="text-sm font-semibold mt-0.5 truncate text-foreground/90">
-												{room.name ? room.name : "-"}
-											</p>
-										</div>
-									</div>
-									<div className="flex items-start gap-2.5">
 										<MapPin className="text-primary mt-0.5" size={15} />
 										<div className="min-w-0">
 											<p className="text-[9px] leading-none text-muted-foreground uppercase font-bold tracking-tighter">
-												Салбар
+												Хичээлийн байр
 											</p>
 											<p className="text-sm font-medium mt-0.5 truncate text-foreground/80">
 												{room.branchname ? room.branchname : "-"}
@@ -214,10 +203,22 @@ export default function RoomPage() {
 										</div>
 									</div>
 									<div className="flex items-start gap-2.5">
+										<Building className="text-primary mt-0.5" size={15} />
+										<div className="min-w-0">
+											<p className="text-[9px] leading-none text-muted-foreground uppercase font-bold tracking-tighter">
+												Шалгалт авах өрөөний нэр
+											</p>
+											<p className="text-sm font-semibold mt-0.5 truncate text-foreground/90">
+												{room.name ? room.name : "-"}
+											</p>
+										</div>
+									</div>
+
+									<div className="flex items-start gap-2.5">
 										<Monitor className="text-primary mt-0.5" size={15} />
 										<div className="min-w-0">
 											<p className="text-[9px] leading-none text-muted-foreground uppercase font-bold tracking-tighter">
-												Компьютер
+												Компьютер / Tөхөөрөмжийн тоо
 											</p>
 											<p className="text-sm font-medium mt-0.5 truncate text-foreground/80">
 												{room.pccnt ? (
@@ -251,7 +252,7 @@ export default function RoomPage() {
 								>
 									<Link href={`/room/${room.id}`}>
 										<Monitor size={14} className="mr-2" />
-										Ширээ зохион байгуулах
+										Ширээний зохион байгуулалт
 									</Link>
 								</Button>
 							</CardFooter>
@@ -274,7 +275,7 @@ export default function RoomPage() {
 						variant="outline"
 						className="mt-6 gap-2 rounded-full px-6 shadow-sm"
 					>
-						<Plus size={16} /> Анхны өрөөг нэмэх
+						<Plus size={16} /> Шалгалтын өрөө бүртгэх
 					</Button>
 				</div>
 			)}
