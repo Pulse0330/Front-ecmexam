@@ -17,7 +17,7 @@ interface QPayInvoiceResponse {
 }
 
 // ── Server-side config (клиентэд хэзээ ч бүү илгээ) ──────────────────────────
-const DB_CONN = {
+const _DB_CONN = {
 	user: "edusr",
 	password: "sql$erver43",
 	database: "ikh_skuul",
@@ -26,67 +26,32 @@ const DB_CONN = {
 	options: { encrypt: false, trustServerCertificate: false },
 };
 
-const BACKEND_URL = "https://ottapp.ecm.mn/api/get_qpayinvoice";
+const _BACKEND_URL = "https://ottapp.ecm.mn/api/get_qpayinvoice";
 
 // ── POST — Invoice үүсгэх ─────────────────────────────────────────────────────
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
 	try {
-		const body = await request.json();
+		const body = await req.json();
 
-		if (!body.amount || !body.userid || !body.orderid || !body.bilid) {
-			return NextResponse.json(
-				{ error: "amount, userid, orderid, bilid шаардлагатай" },
-				{ status: 400 },
-			);
-		}
-
-		const payload = {
-			amount: String(body.amount),
-			userid: String(body.userid),
-			device_token: body.device_token ?? "",
-			orderid: String(body.orderid),
-			bilid: String(body.bilid),
-			classroom_id: body.classroom_id ?? "0",
-			urls: [],
-			conn: DB_CONN,
-		};
-
-		const res = await fetch(BACKEND_URL, {
+		const res = await fetch("https://ottapp.ecm.mn/api/get_qpayinvoice", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(payload),
+			body: JSON.stringify(body),
 		});
 
-		const text = await res.text();
-
-		let data: QPayInvoiceResponse;
-		try {
-			data = JSON.parse(text);
-		} catch {
-			return NextResponse.json(
-				{ error: "Backend буруу хариу буцаалаа", details: text },
-				{ status: 502 },
-			);
-		}
-
 		if (!res.ok) {
+			const text = await res.text();
 			return NextResponse.json(
-				{ error: "QPay API алдаа", details: data },
+				{ error: `Upstream error: ${res.status}`, detail: text },
 				{ status: res.status },
 			);
 		}
 
-		if (!data?.qr_image) {
-			return NextResponse.json(
-				{ error: "QR image олдсонгүй", details: data },
-				{ status: 502 },
-			);
-		}
-
+		const data = await res.json();
 		return NextResponse.json(data);
-	} catch (error) {
+	} catch (err) {
 		return NextResponse.json(
-			{ error: error instanceof Error ? error.message : "Server error" },
+			{ error: err instanceof Error ? err.message : "QPay алдаа гарлаа" },
 			{ status: 500 },
 		);
 	}

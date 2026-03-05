@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 			},
 		};
 
-		const response = await fetch("https://ottapp.ecm.mn/api/aimag", {
+		const response = await fetch("https://backend.skuul.mn/api/aimag", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(requestBody),

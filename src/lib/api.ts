@@ -547,7 +547,7 @@ export const getQPayInvoice = async (
 	topics: number[],
 ): Promise<QPayInvoiceResponse> => {
 	const { data } = await api.post<QPayInvoiceResponse>(
-		"https://ottapp.ecm.mn/api/api_get_qpayinvoice",
+		"https://backend.skuul.mn/api/api_get_qpayinvoice",
 		{
 			amount,
 			userid: userId,

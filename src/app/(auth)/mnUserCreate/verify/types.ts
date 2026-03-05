@@ -49,6 +49,7 @@ export interface ExamineeItem {
 	flag: number | null;
 	flagname: string;
 	userid: number;
+	ispay: number;
 }
 
 export interface ExamDate {

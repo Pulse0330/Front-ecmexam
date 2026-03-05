@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 		const config = {
 			method: "post",
 			maxBodyLength: Infinity,
-			url: "https://ottapp.ecm.mn/api/api_get_qpayinvoice",
+			url: "https://backend.skuul.mn/api/api_get_qpayinvoice",
 			headers: {
 				"Content-Type": "application/json",
 			},

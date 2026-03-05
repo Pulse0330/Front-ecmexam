@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
 		console.log("=== CLASS API: Sending to backend ===", payload);
 
-		const classResponse = await fetch("https://ottapp.ecm.mn/api/class", {
+		const classResponse = await fetch("https://backend.skuul.mn/api/class", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(payload),
