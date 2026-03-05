@@ -223,7 +223,7 @@ export default function ExamCreatePage() {
 				<Card className="md:col-span-2 lg:col-span-4 flex flex-col border-border bg-card overflow-hidden gap-0 pb-0 h-125 lg:h-full">
 					<CardHeader className=" pb-0 shrink-0">
 						<CardTitle className="text-sm font-semibold flex items-center gap-2">
-							<Users size={16} /> 3. Сурагчид сонгох
+							<Users size={16} /> 3. Суралцагч сонгох
 						</CardTitle>
 					</CardHeader>
 					<CardContent className="p-0 flex-1 overflow-hidden relative gap-0">

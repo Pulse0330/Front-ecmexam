@@ -43,7 +43,7 @@ export default function ExamMaterialsPage() {
 						</p>
 					</div>
 				</div>
-				<Button
+				{/* <Button
 					onClick={() => examSave()}
 					disabled={isPending}
 					className="w-full md:w-auto"
@@ -59,7 +59,7 @@ export default function ExamMaterialsPage() {
 							Хуваарь татах
 						</div>
 					)}
-				</Button>
+				</Button> */}
 			</header>
 
 			<ExamTable

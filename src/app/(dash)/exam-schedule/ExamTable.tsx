@@ -66,15 +66,15 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 								<TableHead className="font-semibold text-foreground text-sm  tracking-wider text-center h-11">
 									Хугацаа
 								</TableHead>
-								<TableHead className="font-semibold text-foreground text-sm  tracking-wider h-11">
-									Бүртгэл эхлэх / дуусах
+								<TableHead className="font-semibold text-foreground text-sm  tracking-wider h-11 leading-4">
+									Бүртгэл эхлэх / дуусах <br /> огноо
 								</TableHead>
 
-								<TableHead className="font-semibold text-foreground text-sm  tracking-wider h-11">
-									Далгаварын сан нээгдэх
+								<TableHead className="font-semibold text-foreground text-sm  tracking-wider h-11 leading-4">
+									Даалгаврын сан <br /> нээгдэх огноо
 								</TableHead>
 								<TableHead className="text-right font-semibold text-foreground text-sm  tracking-wider h-11 pr-6">
-									Хуваарь
+									Шалгалтын хуваарь
 								</TableHead>
 							</TableRow>
 						</TableHeader>
@@ -142,10 +142,10 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 											<TableCell className="text-center py-3">
 												<Badge
 													variant="outline"
-													className="font-bold bg-background text-[10px] py-0 h-5 border-border/60 border"
+													className="font-bold bg-background text-[10px] py-0 h-7 px-2 border-border/60 border"
 												>
 													<Clock size={10} className="mr-1 text-primary" />
-													{exam.duration}м
+													{exam.duration} мин
 												</Badge>
 											</TableCell>
 											<TableCell className="py-3 flex gap-2 items-center">
@@ -210,7 +210,7 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 																className="text-primary"
 															/>
 															<h4 className="text-[11px] font-black text-foreground uppercase tracking-wider">
-																Цагуудын хуваарь
+																Шалгалтын цагийн хуваарь
 															</h4>
 														</div>
 														<div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
@@ -271,18 +271,20 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 																					</span>
 																				</div>
 																			</TableCell>
-																			<TableCell className="py-1   items-center flex justify-end w-full">
-																				<Button
-																					asChild
-																					size={"xs"}
-																					variant={"outline"}
-																				>
-																					<Link
-																						href={`/exam-schedule/${date.exam_date_id}`}
+																			<TableCell className="py-1   items-center w-full">
+																				<div className="flex justify-end ">
+																					<Button
+																						asChild
+																						size={"xs"}
+																						variant={"outline"}
 																					>
-																						Дэлгэрэнгүй
-																					</Link>
-																				</Button>
+																						<Link
+																							href={`/exam-schedule/${date.exam_date_id}`}
+																						>
+																							Дэлгэрэнгүй
+																						</Link>
+																					</Button>
+																				</div>
 																			</TableCell>
 																		</TableRow>
 																	))}

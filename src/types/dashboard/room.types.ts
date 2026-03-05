@@ -39,6 +39,7 @@ export interface Table {
 	xPos: number;
 	yPos: number;
 	name: string;
+	seat_number: string;
 }
 
 export interface GridPos {

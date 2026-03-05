@@ -97,7 +97,7 @@ export default function ExamPrintService({
 					<FileDown className=" h-4 w-4" />
 					{isGenerating
 						? `Боловсруулж байна... ${progress}%`
-						: "Хариултын хуудас"}
+						: "Эсээний хуудас"}
 				</Button>
 
 				<Button variant="outline" onClick={() => setIsPreview(!isPreview)}>
