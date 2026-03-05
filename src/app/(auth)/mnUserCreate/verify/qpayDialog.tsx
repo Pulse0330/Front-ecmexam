@@ -27,6 +27,9 @@ interface QPayDialogProps {
 	onPaymentSuccess?: () => void;
 }
 
+const POLL_COUNT = 5;
+const POLL_INTERVAL_MS = 2000; // 2 секунд тутамд нэг хүсэлт → нийт ~10 секунд
+
 export default function QPayDialog({
 	open,
 	onOpenChange,
@@ -35,25 +38,33 @@ export default function QPayDialog({
 	onPaymentSuccess,
 }: QPayDialogProps) {
 	const [isChecking, setIsChecking] = useState(false);
+	const [countdown, setCountdown] = useState(0); // харагдах секунд
 	const [paymentStatus, setPaymentStatus] = useState<
 		"pending" | "success" | "failed"
 	>("pending");
 	const [showNotPaidMessage, setShowNotPaidMessage] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+
 	const notPaidTimerRef = useRef<NodeJS.Timeout | null>(null);
 	const errorTimerRef = useRef<NodeJS.Timeout | null>(null);
+	const pollAbortRef = useRef(false); // polling дундаас зогсоох flag
 
 	// Dialog хаагдахад бүх төлөв reset хийх
 	useEffect(() => {
 		if (!open) {
+			pollAbortRef.current = true; // явж буй polling зогсоо
 			if (notPaidTimerRef.current) clearTimeout(notPaidTimerRef.current);
 			if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
 			setPaymentStatus("pending");
 			setShowNotPaidMessage(false);
 			setError(null);
 			setIsChecking(false);
+			setCountdown(0);
 		}
 	}, [open]);
+
+	const sleep = (ms: number) =>
+		new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 	const checkPaymentStatus = async () => {
 		if (!qpayData?.invoice_id || !userId) {
@@ -62,41 +73,73 @@ export default function QPayDialog({
 		}
 		if (isChecking || paymentStatus === "success") return;
 
-		try {
-			setIsChecking(true);
-			setShowNotPaidMessage(false);
-			setError(null);
-			if (notPaidTimerRef.current) clearTimeout(notPaidTimerRef.current);
-			if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+		// Reset
+		pollAbortRef.current = false;
+		setIsChecking(true);
+		setShowNotPaidMessage(false);
+		setError(null);
+		if (notPaidTimerRef.current) clearTimeout(notPaidTimerRef.current);
+		if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
 
-			const response = await axios.post("/api/qpay/check", {
-				userid: userId.toString(),
-				invoice_id: qpayData.invoice_id,
-			});
+		// Countdown: нийт хугацаа = POLL_COUNT * POLL_INTERVAL_MS / 1000 секунд
+		const totalSeconds = Math.ceil((POLL_COUNT * POLL_INTERVAL_MS) / 1000);
+		setCountdown(totalSeconds);
 
-			if (response.data?.RetResponse?.ResponseType === true) {
-				setPaymentStatus("success");
-				if (onPaymentSuccess) {
-					setTimeout(() => {
-						onPaymentSuccess();
-						onOpenChange(false);
-					}, 2000);
+		// Countdown ticker — 1 секунд тутам буурна
+		const countdownInterval = setInterval(() => {
+			setCountdown((prev) => {
+				if (prev <= 1) {
+					clearInterval(countdownInterval);
+					return 0;
 				}
-			} else {
-				setShowNotPaidMessage(true);
-				notPaidTimerRef.current = setTimeout(() => {
-					setShowNotPaidMessage(false);
-				}, 5000);
+				return prev - 1;
+			});
+		}, 1000);
+
+		let found = false;
+
+		for (let attempt = 1; attempt <= POLL_COUNT; attempt++) {
+			if (pollAbortRef.current) break;
+
+			try {
+				const response = await axios.post("/api/qpay/check", {
+					userid: userId.toString(),
+					invoice_id: qpayData.invoice_id,
+				});
+
+				if (response.data?.RetResponse?.ResponseType === true) {
+					found = true;
+					break;
+				}
+			} catch {
+				// Дунд алдаа гарсан ч дараагийн оролдлого үргэлжилнэ
 			}
-		} catch {
-			setError("Төлбөр шалгахад алдаа гарлаа. Дахин оролдоно уу.");
-			setPaymentStatus("failed");
-			errorTimerRef.current = setTimeout(() => {
-				setError(null);
-				setPaymentStatus("pending");
+
+			// Сүүлийн оролдлого биш бол хүлээнэ
+			if (attempt < POLL_COUNT && !pollAbortRef.current) {
+				await sleep(POLL_INTERVAL_MS);
+			}
+		}
+
+		clearInterval(countdownInterval);
+		setCountdown(0);
+		setIsChecking(false);
+
+		if (pollAbortRef.current) return; // dialog хаагдсан
+
+		if (found) {
+			setPaymentStatus("success");
+			if (onPaymentSuccess) {
+				setTimeout(() => {
+					onPaymentSuccess();
+					onOpenChange(false);
+				}, 2000);
+			}
+		} else {
+			setShowNotPaidMessage(true);
+			notPaidTimerRef.current = setTimeout(() => {
+				setShowNotPaidMessage(false);
 			}, 5000);
-		} finally {
-			setIsChecking(false);
 		}
 	};
 
@@ -232,7 +275,12 @@ export default function QPayDialog({
 								{isChecking ? (
 									<>
 										<Loader2 className="w-4 h-4 animate-spin" />
-										Шалгаж байна...
+										Шалгаж байна
+										{countdown > 0 && (
+											<span className="ml-1 tabular-nums text-sm opacity-80">
+												({countdown}с)
+											</span>
+										)}
 									</>
 								) : paymentStatus === "success" ? (
 									<>

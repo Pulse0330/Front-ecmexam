@@ -26,7 +26,7 @@ const DB_CONN = {
 	options: { encrypt: false, trustServerCertificate: false },
 };
 
-const BACKEND_URL = "https://ottapp.ecm.mn/api/api_get_qpayinvoice";
+const BACKEND_URL = "https://ottapp.ecm.mn/api/get_qpayinvoice";
 
 // ── POST — Invoice үүсгэх ─────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {

@@ -31,33 +31,36 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 	// ── /api/examineesend ─────────────────────────────────────────────────────
 	const sendExaminee = useCallback(async (): Promise<boolean> => {
 		setError("");
+
+		const body = {
+			register_number: d.reg_number,
+			last_name: d.lastname,
+			first_name: d.firstname,
+			gender: d.gender_code,
+			age: d.age ?? null,
+			address: d.address ?? null,
+			mail: d.email,
+			nationality: d.nationality || "Mongolian",
+			password: d.password,
+			profile: d.img_url ?? null,
+			school_esis_id: d.school_esis_id,
+			student_group_id: d.student_group_id,
+			academic_level: d.academic_level,
+			personid: d.personId,
+			schooldb: d.schooldb,
+			schoolname: d.schoolname,
+			studentgroupname: d.studentgroupname,
+			aimag_name: d.aimag_name,
+			sym_name: d.sym_name,
+			dateofbirth: d.dateofbirth,
+			conn: "skuul",
+		};
+
 		try {
 			const res = await fetch(`${API_BASE}/api/examineesend`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					register_number: d.reg_number,
-					last_name: d.lastname,
-					first_name: d.firstname,
-					gender: d.gender_code,
-					age: d.age ?? null, // ← засах
-					address: d.address ?? null, // ← засах
-					mail: d.email,
-					nationality: d.nationality || "Mongolian",
-					password: d.password,
-					profile: d.img_url ?? null,
-					school_esis_id: d.school_esis_id,
-					student_group_id: d.student_group_id,
-					academic_level: d.academic_level,
-					personid: d.personId,
-					schooldb: d.schooldb,
-					schoolname: d.schoolname,
-					studentgroupname: d.studentgroupname,
-					aimag_name: d.aimag_name, // ← нэмэх
-					sym_name: d.sym_name, // ← нэмэх
-					dateofbirth: d.dateofbirth,
-					conn: "skuul",
-				}),
+				body: JSON.stringify(body),
 			});
 			if (!res.ok) throw new Error("Бүртгэл илгээхэд алдаа гарлаа");
 			const json = await res.json();
@@ -146,13 +149,12 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 		await invokeQPay(target);
 	}, [examinee, fetchExaminee, invokeQPay]);
 
-	const handlePaymentSuccess = useCallback(() => {
+	// ── Төлбөр амжилттай төлөгдсөний дараа л examineesend дуудна ──────────────
+	const handlePaymentSuccess = useCallback(async () => {
 		setQpayOpen(false);
 		setQpayData(null);
 		setIsPaid(true);
-	}, []);
 
-	const handleSendAndProceed = useCallback(async () => {
 		const sent = await sendExaminee();
 		if (!sent) return;
 
@@ -175,13 +177,17 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 		setStep("paid");
 	}, [sendExaminee, d]);
 
+	// ── "Бүртгүүлэх" товч → зөвхөн QPay нээнэ ───────────────────────────────
+	const handleSendAndProceed = useCallback(async () => {
+		await handleQPay();
+	}, [handleQPay]);
+
 	const handleQpayOpenChange = useCallback((open: boolean) => {
 		setQpayOpen(open);
 		if (!open) setQpayData(null);
 	}, []);
 
 	const STEPS = ["preview", "paid"] as const;
-
 	const stepIdx = STEPS.indexOf(step as "preview" | "paid");
 
 	return (

@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 			conn: DB_CONN,
 		};
 
-		const res = await fetch("https://ottapp.ecm.mn/api/get_qpaycheckweb", {
+		const res = await fetch("https://ottapp.ecm.mn/api/get_qpaycheck", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(payload),
