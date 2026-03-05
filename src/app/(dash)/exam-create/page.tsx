@@ -197,7 +197,7 @@ export default function ExamCreatePage() {
 							<span className="flex items-center gap-2">
 								<BookOpen size={16} /> 2. Шалгалт / Хуваарь
 							</span>
-							<Button
+							{/* <Button
 								size="sm"
 								variant="ghost"
 								className="h-7 text-[10px] gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
@@ -207,7 +207,7 @@ export default function ExamCreatePage() {
 									<Download size={10} />
 									Хуваарь татах
 								</Link>
-							</Button>
+							</Button> */}
 						</CardTitle>
 					</CardHeader>
 					<CardContent className="p-0 flex-1 overflow-hidden relative gap-0">

@@ -6,6 +6,7 @@ import { CalendarRange, Clock, Info } from "lucide-react";
 import { use, useMemo } from "react";
 import ExamPrintService from "@/app/(dash)/exam-schedule/[time_id]/ExamPrintService";
 import { ExamTimeTable } from "@/app/(dash)/exam-schedule/[time_id]/ExamTimeTable";
+import { mockExamTimeResponse } from "@/app/(dash)/exam-schedule/mock";
 import { IBackButton } from "@/components/iBackButton";
 import { Skeleton } from "@/components/ui/skeleton"; // Skeleton байвал ашиглах
 import { getExamInfo, getExamRegistrationList } from "@/lib/dash.api";
@@ -20,15 +21,18 @@ export default function ExamTimePage({ params }: ExamTimePageProps) {
 	const { userId } = useAuthStore();
 
 	// Queries
-	const { data: registrationData, isLoading: isListLoading } = useQuery({
-		queryKey: ["get_exam_registration_list", time_id, userId],
-		queryFn: () =>
-			getExamRegistrationList({
-				userId: userId ? Number(userId) : 0,
-				examDateId: Number(time_id),
-			}),
-		enabled: !!userId && !!time_id,
-	});
+	// const { data: registrationData, isLoading: isListLoading } = useQuery({
+	// 	queryKey: ["get_exam_registration_list", time_id, userId],
+	// 	queryFn: () =>
+	// 		getExamRegistrationList({
+	// 			userId: userId ? Number(userId) : 0,
+	// 			examDateId: Number(time_id),
+	// 		}),
+	// 	enabled: !!userId && !!time_id,
+	// });
+
+	const registrationData = mockExamTimeResponse;
+	const isListLoading = false;
 
 	const { data: examInfo, isLoading: isInfoLoading } = useQuery({
 		queryKey: ["api_exam_info_by_examdateid", time_id, userId],

@@ -259,7 +259,7 @@ export function ExamTimeTable({
 																			<TableCell className="py-1">
 																				<Badge
 																					variant="outline"
-																					className="text-[11px] h-4 py-0"
+																					className="text-[11px] h-6 py-0"
 																				>
 																					{student.studentgroupname}
 																				</Badge>

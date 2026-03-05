@@ -71,14 +71,15 @@ export const saveRoomLayout = async (payload: {
 	sizes: number;
 }): Promise<{
 	ResponseMessage: string;
-	StatusCode: string;
-	ResponseCode: string;
+	StatusCode: number;
+	ResponseCode: number;
 	ResponseType: boolean;
 }> => {
 	// Таны Table[] бүтцийг серверийн хүлээж авах subjson бүтэц рүү хөрвүүлнэ
 	const subjson = payload.tables.map((table) => ({
 		rownum: table.yPos, // yPos-ийг мөр (row) гэж үзвэл
 		colnum: table.xPos, // xPos-ийг багана (column) гэж үзвэл
+		seat_number: table.seat_number,
 	}));
 
 	const { data } = await api1.post("/roompcinsert", {

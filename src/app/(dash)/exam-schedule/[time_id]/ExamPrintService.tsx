@@ -90,24 +90,21 @@ export default function ExamPrintService({
 		<div className="p-4 flex flex-col gap-6">
 			{/* Control Panel */}
 			<div className="flex items-center gap-3  shadow-sm">
-				<Button
-					disabled={isGenerating || !!exam_rooms}
-					onClick={handleDownloadPDF}
-				>
+				<Button disabled={isGenerating} onClick={handleDownloadPDF}>
 					<FileDown className=" h-4 w-4" />
 					{isGenerating
 						? `Боловсруулж байна... ${progress}%`
 						: "Эсээний хуудас"}
 				</Button>
 
-				<Button variant="outline" onClick={() => setIsPreview(!isPreview)}>
+				{/* <Button variant="outline" onClick={() => setIsPreview(!isPreview)}>
 					{isPreview ? (
 						<EyeOff className="mr-2 h-4 w-4" />
 					) : (
 						<Eye className="mr-2 h-4 w-4" />
 					)}
 					{isPreview ? "Preview Хаах" : "Layout Харах"}
-				</Button>
+				</Button> */}
 			</div>
 
 			{/* Rendering & Preview Area */}
@@ -148,17 +145,20 @@ export default function ExamPrintService({
 										<div className="flex flex-col gap-1 w-full ">
 											<span className="text-xs">Хуудас (1/2)</span>
 											<h1 className="text-2xl font-black uppercase m-0 leading-none">
-												Шалгалтын хуудас
+												{examInfo?.name}
 											</h1>
-											<p className="text-base mt-2">
-												Анги: <b>{student.studentgroupname}</b>
+											<p className="text-sm">
+												{/* {examInfo.} */}
+												{/* Анги: <b>{student.studentgroupname}</b> */}
+												examdate? {room.room_number}-р өрөө,{" "}
+												{student.seat_number} суудал
 											</p>
-											<p className="text-xl font-bold my-1">
+											{/* <p className="text-xl font-bold my-1">
 												{student.last_name} {student.first_name}
-											</p>
-											<div className="text-xs text-gray-700">
-												Бүртгэл: <b>{student.examinee_number}</b> | РД:{" "}
-												{student.register_number}
+											</p> */}
+											<div className="text-sm">
+												Шалгуулагч: <b>{student.examinee_number}</b> ( РД:{" "}
+												<b>{student.register_number}</b> )
 											</div>
 										</div>
 										<div className="text-center">
@@ -175,33 +175,77 @@ export default function ExamPrintService({
 											</p>
 										</div>
 									</div>
-									<div className="mt-6 border-2 border-black p-6 flex-1 bg-white">
-										{/* <div className="grid grid-cols-2 gap-x-12 gap-y-3">
-											{Array.from({ length: 28 }).map((_, i) => (
-												<div
-													key={i}
-													className="flex items-center gap-3 border-b border-gray-200 pb-1"
-												>
-													<span className="font-bold w-6 text-sm text-right">
-														{i + 1}.
-													</span>
-													<div className="flex gap-2">
-														{["A", "B", "C", "D", "E"].map((choice) => (
-															<div
-																key={choice}
-																className="w-5 h-5 border border-black rounded-full flex items-center justify-center text-[10px] font-medium"
-															>
-																{choice}
-															</div>
-														))}
-													</div>
-												</div>
-											))}
-										</div> */}
-									</div>
-									<div className="mt-4 text-[10px] text-gray-400 border-t border-dashed pt-2 flex justify-between uppercase font-bold tracking-tighter">
-										<span>Exam System: BOTGO</span>
-										<span>Page: 1 / 2 (Front)</span>
+									<div className="mt-6  p-6 flex-1 bg-white">
+										<table className="w-full border-collapse text-sm">
+											<tbody>
+												<tr>
+													<td className="pb-4 pr-8 w-1/2">
+														<div className="flex gap-2 items-center">
+															<span className="whitespace-nowrap">Бүлэг:</span>
+															<span className="border-b border-black w-full">
+																{student.studentgroupname
+																	? student.studentgroupname
+																	: "-"}
+															</span>
+														</div>
+													</td>
+													<td className="pb-4 pl-8 w-1/2">
+														<div className="flex gap-2 items-center">
+															<span className="whitespace-nowrap">Хянагч:</span>
+															<span className="border-b border-black w-full">
+																&nbsp;
+															</span>
+														</div>
+													</td>
+												</tr>
+												<tr>
+													<td className="pb-4 pr-8 w-1/2">
+														<div className="flex gap-2 items-center">
+															<span className="whitespace-nowrap">Нэр:</span>
+															<span className="border-b border-black w-full">
+																{student.first_name} {student.last_name}
+															</span>
+														</div>
+													</td>
+
+													<td className="pb-2 pl-8 w-1/2">
+														<div className="flex gap-2 items-center">
+															<span className="whitespace-nowrap">
+																Гарийн үсэг:
+															</span>
+															<span className="border-b border-black w-full">
+																&nbsp;
+															</span>
+														</div>
+													</td>
+												</tr>
+											</tbody>
+										</table>
+										<div className="text-sm mt-6">
+											<p className="mb-6">
+												Өөрийн сонгож авсан сэдвээр эх зохион бичиэ үү.
+											</p>
+											<p>
+												Бичихдээ уншигчдад сонирхолтой, өөрийн амьдралд
+												тохиолдсон бодит wйл явдал, эерэг дурсамжид
+												тулгуурлахаас гадна бүтэц, өнгө яас, сэдэв агуулгын
+												харьцааг оночтой гаргаж, дүр дүрслэл баримт мэдээллийг
+												зохистой ашиглан хэл зуй, найруулга, зөв бичийн дурмийн
+												алдаагуй бичээрэй. Бичгийн соёл оноонд нөлөөлөхийг
+												анхаарна уу. /Үгийн тоо: 200-250/
+											</p>
+										</div>
+										<div className="flex-1 flex flex-col justify-around mt-4">
+											{Array.from({ length: 20 }, (_, i) => i).map(
+												(lineNum) => (
+													<div
+														key={`line-${student.id}-${lineNum}`}
+														className="border-b border-gray-200 w-full"
+														style={{ minHeight: "28px" }}
+													/>
+												),
+											)}
+										</div>
 									</div>
 								</div>
 							</div>
@@ -219,15 +263,13 @@ export default function ExamPrintService({
 								>
 									<div className="flex justify-between border-b border-black pb-2 shrink-0 items-center">
 										<div>
-											<p className="text-sm font-bold uppercase">
-												Нэмэлт ажил, тайлбар бичих хэсэг
-											</p>
-											<p className="text-[11px] text-gray-600 italic">
-												{student.last_name} {student.first_name} (
-												{student.examinee_number})
-											</p>
+											<span className="text-xs">Хуудас (2/2)</span>
+											<div className="text-sm">
+												Шалгуулагч: <b>{student.examinee_number}</b> ( РД:{" "}
+												<b>{student.register_number}</b> )
+											</div>
 										</div>
-										<div className="opacity-40 grayscale">
+										<div className=" grayscale">
 											<QRCodeSVG
 												value={JSON.stringify({
 													id: student.id,
@@ -238,18 +280,14 @@ export default function ExamPrintService({
 											/>
 										</div>
 									</div>
-
-									<div className="mt-4 border-x border-t border-black/10 flex-1 relative bg-[linear-gradient(#e5e7eb_1px,transparent_1px)] bg-size-[100%_8mm]">
-										<div className="absolute inset-0 p-4">
-											<span className="text-[10px] text-gray-300 font-mono italic">
-												Бодолт, тайлбараа энд бичнэ үү...
-											</span>
-										</div>
-									</div>
-
-									<div className="mt-4 flex justify-between text-[10px] text-gray-400 border-t border-dashed pt-2 uppercase font-bold tracking-tighter">
-										<span>Санамж: QR кодыг бохирдуулахгүй байна уу.</span>
-										<span>Page: 2 / 2 (Back)</span>
+									<div className="flex-1 flex flex-col justify-around mt-4">
+										{Array.from({ length: 32 }, (_, i) => i).map((lineNum) => (
+											<div
+												key={`line-${student.id}-${lineNum}`}
+												className="border-b border-gray-200 w-full"
+												style={{ minHeight: "28px" }}
+											/>
+										))}
 									</div>
 								</div>
 							</div>
