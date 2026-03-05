@@ -1,6 +1,7 @@
 "use client";
 
 import { IconPhone } from "@tabler/icons-react";
+import crypto from "crypto";
 import {
 	AlertTriangle,
 	ArrowRight,
@@ -14,7 +15,6 @@ import {
 	User,
 	X,
 } from "lucide-react";
-import md5 from "md5";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+
 import { uploadImage } from "@/utils/upload";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -478,6 +479,16 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 	}, []);
 
 	const handleContinue = useCallback(async () => {
+		const password_hasher = (_password: string) => {
+			const hashed = crypto
+				.createHash("md5")
+				.update(_password, "ucs-2")
+				.digest("hex");
+			console.log("password:", password);
+			console.log("hashed:", hashed);
+			return hashed;
+		};
+
 		if (!profileImg) {
 			toast.warning("Зураг оруулаагүй байна");
 			return;
@@ -502,8 +513,8 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 		try {
 			const isExistingPassword = !!examData?.passwordauto;
 			const passwordEncrypt = isExistingPassword
-				? (examData?.password ?? md5(password))
-				: md5(password);
+				? (examData?.password ?? password_hasher(password))
+				: password_hasher(password);
 
 			const payload: SavePayload = {
 				loginname: d.login_name,

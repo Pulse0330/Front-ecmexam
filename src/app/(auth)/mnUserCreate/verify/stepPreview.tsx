@@ -2,7 +2,6 @@
 
 import {
 	AlertCircle,
-	CheckCircle2,
 	ChevronRight,
 	CreditCard,
 	Loader2,
@@ -94,12 +93,7 @@ export function StepPreview({
 					<div className="bg-white/40 dark:bg-gray-900/40 px-4 py-3 space-y-3">
 						{isPaid ? (
 							<div className="space-y-3">
-								<div className="flex items-center gap-2 p-2.5 bg-green-500/10 border border-green-500/20 rounded-xl">
-									<CheckCircle2 size={13} className="text-green-600 shrink-0" />
-									<p className="text-[11px] text-green-700 dark:text-green-400 font-medium">
-										Төлбөр амжилттай төлөгдлөо
-									</p>
-								</div>
+								<div className="flex items-center gap-2 p-2.5 bg-green-500/10 border border-green-500/20 rounded-xl"></div>
 								<Button
 									onClick={onSendAndProceed}
 									disabled={isLoading}
