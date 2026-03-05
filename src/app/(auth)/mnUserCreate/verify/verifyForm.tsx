@@ -40,8 +40,8 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 					last_name: d.lastname,
 					first_name: d.firstname,
 					gender: d.gender_code,
-					age: null,
-					address: null,
+					age: d.age ?? null, // ← засах
+					address: d.address ?? null, // ← засах
 					mail: d.email,
 					nationality: d.nationality || "Mongolian",
 					password: d.password,
@@ -53,8 +53,8 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 					schooldb: d.schooldb,
 					schoolname: d.schoolname,
 					studentgroupname: d.studentgroupname,
-					aimag_name: d.aimag_name,
-					sym_name: d.sym_name,
+					aimag_name: d.aimag_name, // ← нэмэх
+					sym_name: d.sym_name, // ← нэмэх
 					dateofbirth: d.dateofbirth,
 					conn: "skuul",
 				}),
@@ -79,7 +79,7 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 		setExamineeLoading(true);
 		setError("");
 		try {
-			const res = await fetch(`${API_BASE}/api/examinee_list`, {
+			const res = await fetch(`${API_BASE}/api/examinee_list_1`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ personid: d.personId, conn: "skuul" }),

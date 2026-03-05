@@ -375,9 +375,7 @@ export function StepPaid({
 						</>
 					)}
 
-					<div className="cert-footer">
-						SKUUL.MN – БОЛОВСРОЛЫН ЦАХИМ ПЛАТФОРМ © 2019 – {year}
-					</div>
+					<div className="cert-footer"></div>
 				</div>
 			</div>
 		</>

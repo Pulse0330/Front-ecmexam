@@ -25,7 +25,8 @@ import {
 	useState,
 } from "react";
 import { toast } from "sonner";
-import { ImageCropModal } from "@/components/imageCropModal"; // ← шинэ crop modal
+import { toISODate } from "@/app/(auth)/mnUserCreate/verify/utils";
+import { ImageCropModal } from "@/components/imageCropModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -76,6 +77,8 @@ interface ExamineeListData {
 	gender: number;
 	phone: string;
 	mail: string;
+	age: number | null;
+	address: string | null;
 	aimag_id: string | null;
 	sym_id: string | null;
 	class_id: number;
@@ -163,7 +166,7 @@ async function uploadProfileImage(
 	originalName: string,
 ): Promise<string> {
 	const formData = new FormData();
-	formData.append("file", blob, originalName.replace(/\.[^/.]+$/, ".webp"));
+	formData.append("file", blob, originalName);
 	const result = await uploadImage(formData);
 	const extractUrl = (item: unknown): string => {
 		if (!item) return "";
@@ -423,18 +426,16 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 			toast.error("Зурагны хэмжээ 10MB-аас хэтрэхгүй байх ёстой");
 			return;
 		}
-		// Crop modal-д дамжуулах
 		const url = URL.createObjectURL(file);
 		setCropSrc(url);
 		setCropFileName(file.name);
 		setCropOpen(true);
 	}, []);
 
-	// ── Crop баталгаажуулсны дараа upload хийх ───────────────────────────────
+	// ── Crop баталгаажуулсны дараа WebP болгоод upload хийх ─────────────────
 	const handleCropConfirm = useCallback(
 		async (croppedBlob: Blob) => {
 			setCropOpen(false);
-			// Crop хийсэн зургийг preview-д харуулах
 			const blobUrl = URL.createObjectURL(croppedBlob);
 			setProfileImg((prev) => {
 				if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
@@ -456,7 +457,6 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				setUploadedImgUrl(fallback ?? "");
 			} finally {
 				setIsUploadingImage(false);
-				// crop src blob-г цэвэрлэх
 				if (cropSrc?.startsWith("blob:")) URL.revokeObjectURL(cropSrc);
 				setCropSrc(null);
 			}
@@ -521,7 +521,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				lastname: d.lastname,
 				reg_number: d.reg_number,
 				gender: d.gender_code === "M" ? 1 : 0,
-				phone: d.phone ?? "",
+				phone: displayPhone,
 				email: d.email,
 				aimag_id: Number(d.aimag_id) || 0,
 				sym_id: Number(d.sym_id) || 0,
@@ -559,8 +559,8 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				lastname: fresh.last_name,
 				reg_number: fresh.register_number,
 				gender_code: fresh.gender_code,
-				dateofbirth: fresh.dateofbirth,
-				phone: displayPhone || fresh.phone,
+				dateofbirth: toISODate(fresh.dateofbirth),
+				phone: displayPhone || fresh.phone || null,
 				email: fresh.mail,
 				aimag_name: fresh.aimag_name,
 				sym_name: fresh.sym_name,
@@ -568,15 +568,17 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				studentgroupname: fresh.studentgroupname,
 				class_id: fresh.academic_level,
 				academic_level: fresh.academic_level,
-				img_url: uploadedImgUrl,
-				nationality: fresh.nationality,
+				img_url: uploadedImgUrl || examData?.profile || null,
+				nationality: fresh.nationality || "Mongolian",
 				login_name: fresh.login_name,
 				personId: fresh.personid,
 				school_esis_id: fresh.school_esis_id,
 				student_group_id: fresh.student_group_id,
 				schooldb: fresh.schooldb,
 				userid: fresh.userid,
-				password: fresh.passwordauto || password,
+				password: fresh.passwordauto,
+				age: fresh.age ?? null,
+				address: fresh.address ?? null,
 			};
 
 			sessionStorage.removeItem("studentExam");
@@ -869,7 +871,6 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 												}
 											/>
 										</Field>
-
 										<Field label="Нас">
 											<ReadOnlyInput value={String(age)} />
 										</Field>
@@ -888,7 +889,6 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 											icon={<Globe size={13} />}
 										/>
 									</Field>
-
 									<div className="grid grid-cols-2 gap-3">
 										<Field label="И-мэйл">
 											<ReadOnlyInput
@@ -944,13 +944,11 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 												Нэвтрэх нууц үг
 											</span>
 										</div>
-
 										<div className="w-full rounded-xl border-2 border-green-500/30 bg-green-500/5 dark:bg-green-500/10 px-6 py-4 flex items-center justify-center">
 											<span className="font-mono text-4xl font-bold tracking-[0.25em] text-foreground select-all">
 												{displayPassword}
 											</span>
 										</div>
-
 										<p className="text-lg text-green-600 dark:text-green-500 text-center flex items-center gap-1.5">
 											<Lock size={10} />
 											{examData?.passwordauto
