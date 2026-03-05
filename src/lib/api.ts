@@ -43,6 +43,7 @@ import type {} from "@/types/login/sign/registerChoose/aimag";
 import type {} from "@/types/login/sign/registerChoose/duureg";
 import type {} from "@/types/login/sign/registerChoose/sum";
 import type {} from "@/types/login/sign/registerChoose/surguuli";
+import type { ExamVariantsResponse } from "@/types/mnExam/examVariants";
 import type { getplaninfoCourseData } from "@/types/paymentCourse/getplaninfo";
 import type { QPayInvoiceResponse } from "@/types/Qpay/qpayinvoice";
 import type { ApiSorillistsResponse } from "@/types/soril/sorilLists";
@@ -559,5 +560,19 @@ export const getQPayInvoice = async (
 		},
 	);
 
+	return data;
+};
+//------------------------------- МХБШ ---------------------------------//
+export const getExamVariants = async (
+	userId: number,
+): Promise<ExamVariantsResponse> => {
+	const { data } = await api.post<ExamVariantsResponse>(
+		"https://backend.skuul.mn/api/list",
+		{
+			procname: "api_exam_variants",
+			userid: userId,
+			conn: "skuul",
+		},
+	);
 	return data;
 };

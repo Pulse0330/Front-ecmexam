@@ -98,7 +98,7 @@ interface ExamCardProps {
 }
 
 function getExamLockStatus(exam: PastExam) {
-	return exam.ispay === 0 && exam.isopensoril === 0;
+	return exam.ispay === 1 && exam.isopensoril === 0;
 }
 
 const ExamCard = memo(
