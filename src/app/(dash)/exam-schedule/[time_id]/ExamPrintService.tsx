@@ -6,6 +6,7 @@ import { domToCanvas } from "modern-screenshot";
 import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import type { ExamInfoItem, ExamRoom } from "@/types/dashboard/exam.types";
 
 export default function ExamPrintService({
@@ -87,27 +88,19 @@ export default function ExamPrintService({
 	};
 
 	return (
-		<div className="p-4 flex flex-col gap-6">
-			{/* Control Panel */}
-			<div className="flex items-center gap-3  shadow-sm">
-				<Button disabled={isGenerating} onClick={handleDownloadPDF}>
-					<FileDown className=" h-4 w-4" />
-					{isGenerating
-						? `Боловсруулж байна... ${progress}%`
-						: "Эсээний хуудас"}
-				</Button>
-
-				{/* <Button variant="outline" onClick={() => setIsPreview(!isPreview)}>
-					{isPreview ? (
-						<EyeOff className="mr-2 h-4 w-4" />
-					) : (
-						<Eye className="mr-2 h-4 w-4" />
-					)}
-					{isPreview ? "Preview Хаах" : "Layout Харах"}
-				</Button> */}
-			</div>
-
-			{/* Rendering & Preview Area */}
+		<>
+			<DropdownMenuItem
+				onSelect={(e) => {
+					e.preventDefault(); // dropdown хаагдахаас сэргийлнэ
+					handleDownloadPDF();
+				}}
+				disabled={isGenerating}
+			>
+				<FileDown className="h-4 w-4" />
+				{isGenerating
+					? `Боловсруулж байна... ${progress}%`
+					: "Эсээний хуудас хэвлэх PDF"}
+			</DropdownMenuItem>
 			<div
 				className={`
                 ${
@@ -295,6 +288,6 @@ export default function ExamPrintService({
 					)),
 				)}
 			</div>
-		</div>
+		</>
 	);
 }

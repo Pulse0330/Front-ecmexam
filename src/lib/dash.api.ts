@@ -2,6 +2,8 @@ import api1 from "@/lib/axios1";
 import type {
 	batchRegisterExamResponseType,
 	getExamInfoResponseType,
+	getExamMateralResponseType,
+	getExamMateralVariantDownloadResponseType,
 	getExamResponseType,
 	getExamSaveResponseType,
 	getExamTimeResponseType,
@@ -259,5 +261,44 @@ export const getExamInfo = async ({
 		exam_date_id: examDateId,
 		conn: "skuul",
 	});
+	return data;
+};
+export const getExamMetaralList = async ({
+	userId,
+	examDateId,
+	examId,
+}: {
+	userId: number;
+	examDateId: number;
+	examId: number;
+}): Promise<getExamMateralResponseType> => {
+	const { data } = await api1.post<getExamMateralResponseType>("/list", {
+		procname: "api_exam_date_variants",
+		exam_id: examId,
+		exam_date_id: examDateId,
+		userid: userId,
+		conn: "skuul",
+	});
+	return data;
+};
+
+export const getExamMateralVariantDownload = async ({
+	userId,
+	examDateId,
+	examId,
+}: {
+	userId: number;
+	examDateId: number;
+	examId: number;
+}): Promise<getExamMateralVariantDownloadResponseType> => {
+	const { data } = await api1.post<getExamMateralVariantDownloadResponseType>(
+		"/syncvariantsbyexam",
+		{
+			userid: userId,
+			exam_date_id: examDateId,
+			exam_id: examId,
+			conn: "skuul",
+		},
+	);
 	return data;
 };

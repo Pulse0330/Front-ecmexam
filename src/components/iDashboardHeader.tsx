@@ -49,7 +49,8 @@ const menuItems = [
 	{ title: "Өрөө", href: "/room" },
 	{ title: "Хуваарь", href: "/exam-schedule" },
 	{ title: "Шалгалт бүртгэх", href: "/exam-create" },
-	{ title: "Матерал", href: "/exam-download" },
+	// { title: "Матерал", href: "/exam-download" },
+	{ title: "Бүртгүүлсэн суралцагч", href: "/registered-students" },
 ];
 
 export function IDashboardHeader() {
