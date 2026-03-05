@@ -117,7 +117,7 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					amount: "20",
+					amount: "20000",
 					user_id: String(targetExaminee.userid),
 					device_token: "",
 					isott: "1",
