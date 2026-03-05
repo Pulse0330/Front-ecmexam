@@ -6,7 +6,12 @@ export function fmtDate(iso: string): string {
 		day: "2-digit",
 	});
 }
-
+export function toISODate(val: string): string {
+	if (!val) return "";
+	const d = new Date(val);
+	if (Number.isNaN(d.getTime())) return val;
+	return d.toISOString().slice(0, 10);
+}
 export function fmtDateTime(iso: string): string {
 	if (!iso) return "—";
 	const d = new Date(iso);

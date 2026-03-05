@@ -4,10 +4,13 @@ export interface VerifyData {
 	reg_number: string;
 	gender_code: "M" | "F";
 	dateofbirth: string;
+
 	phone: string | null;
 	email: string;
-	aimag_name: string;
-	sym_name: string;
+	aimag_name: string; // ← нэмэх
+	sym_name: string; // ← нэмэх
+	age: number | null; // ← нэмэх
+	address: string | null; // ← нэмэх
 	schoolname: string;
 	studentgroupname: string;
 	class_id: number;
@@ -22,7 +25,6 @@ export interface VerifyData {
 	password: string;
 	userid: number;
 }
-
 export interface ExamineeItem {
 	id: number;
 	examinee_number: string;
@@ -103,6 +105,11 @@ export interface ExamineeListData {
 	sym_name: string;
 	userid: number;
 	password?: string;
+	passwordauto?: string; // ← нэмэх
+	phone?: string; // ← нэмэх
+	age?: number | null; // ← нэмэх
+	address?: string | null; // ← нэмэх
+	login_name?: string; // ← нэмэх
 }
 
 export type Step = "preview" | "select_exam" | "paid";
