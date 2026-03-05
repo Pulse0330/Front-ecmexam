@@ -159,7 +159,7 @@ export function StudentSelector({
 						/>
 					</div>
 					<Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
-						<SelectTrigger className="w-[110px] h-9 text-xs">
+						<SelectTrigger className="w-27.5 h-9 text-xs">
 							<SelectValue placeholder="Анги" />
 						</SelectTrigger>
 						<SelectContent>
@@ -244,8 +244,8 @@ export function StudentSelector({
 													{student.last_name.charAt(0)}. {student.first_name}
 												</p>
 												<p className="text-[10px] font-mono text-muted-foreground uppercase">
-													{student.examinee_number} * {student.register_number}*{" "}
-													{student.studentgroupname}
+													{student.examinee_number} • {student.register_number}{" "}
+													•{student.studentgroupname}
 												</p>
 											</div>
 											{locked ? (

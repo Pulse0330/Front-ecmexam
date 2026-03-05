@@ -60,6 +60,7 @@ export interface StudentItem {
 	studentgroupname: string;
 	aimag_name: string | null;
 	sym_name: string | null;
+	passwordauto: string;
 }
 
 export interface getStudentsResponseType {
@@ -122,6 +123,7 @@ export interface getExamTimeResponseType {
 	};
 	RetData: ExamRoom[];
 }
+
 export interface ExamInfoItem {
 	id: number;
 	exam_id: number;
@@ -142,4 +144,39 @@ export interface getExamInfoResponseType {
 		ResponseType: boolean;
 	};
 	RetData: ExamInfoItem[];
+}
+
+export interface ExamVariant {
+	variantId: number;
+	variant_number: number;
+	lesson_name: string;
+	exam_id: number;
+	exam_date_id: number;
+	userId: number;
+	institutionid: number;
+	sections_cnt: number;
+	questions_cnt: number;
+}
+
+export interface getExamMateralResponseType {
+	RetResponse: {
+		ResponseMessage: string;
+		StatusCode: number;
+		ResponseCode: number;
+		ResponseType: boolean;
+	};
+	RetData: ExamVariant[];
+}
+
+export interface getExamMateralVariantDownloadResponseType {
+	RetResponse: {
+		ResponseMessage: string;
+		StatusCode: number;
+		ResponseCode: number;
+		ResponseType: boolean;
+	};
+	RetData: {
+		error_code: string;
+		details: string;
+	};
 }

@@ -43,23 +43,25 @@ export default function ExamMaterialsPage() {
 						</p>
 					</div>
 				</div>
-				{/* <Button
-					onClick={() => examSave()}
-					disabled={isPending}
-					className="w-full md:w-auto"
-				>
-					{isPending ? (
-						<div className="flex items-center gap-2">
-							<Spinner />
-							Татаж байна...
-						</div>
-					) : (
-						<div className="flex items-center gap-2">
-							<Download size={14} />
-							Хуваарь татах
-						</div>
-					)}
-				</Button> */}
+				{userId === 303866 && (
+					<Button
+						onClick={() => examSave()}
+						disabled={isPending}
+						className="w-full md:w-auto"
+					>
+						{isPending ? (
+							<div className="flex items-center gap-2">
+								<Spinner />
+								Татаж байна...
+							</div>
+						) : (
+							<div className="flex items-center gap-2">
+								<Download size={14} />
+								Хуваарь татах
+							</div>
+						)}
+					</Button>
+				)}
 			</header>
 
 			<ExamTable
