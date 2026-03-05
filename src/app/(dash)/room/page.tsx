@@ -143,7 +143,7 @@ export default function RoomPage() {
 					{data.map((room) => (
 						<Card
 							key={room.id}
-							className="relative flex flex-col justify-between border shadow-sm hover:ring-2 hover:ring-primary/10 hover:border-primary/30 transition-all duration-300 gap-3 h-86"
+							className="relative flex flex-col justify-between border shadow-sm hover:ring-2 hover:ring-primary/10 hover:border-primary/30 transition-all duration-300 gap-1 h-90"
 						>
 							<CardHeader className="pb-3">
 								<div className="flex justify-between items-start">
@@ -237,8 +237,9 @@ export default function RoomPage() {
 									<p className="text-[9px] leading-none text-muted-foreground uppercase font-bold ">
 										Тайлбар
 									</p>
-									<p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-1 italic">
-										{room.description || "Нэмэлт тайлбар бүртгэгдээгүй байна."}
+									<p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2 italic">
+										{room.description ||
+											"Нэмэлт тайлбар бүртгэгдээгүй байна."}{" "}
 									</p>
 								</div>
 							</CardContent>
