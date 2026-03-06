@@ -26,6 +26,7 @@ export const roomCreateEdit = async ({
 	optype,
 	num_of_pc,
 	school_esis_id,
+	esisroomid,
 }: {
 	id: number;
 	name: string;
@@ -36,6 +37,7 @@ export const roomCreateEdit = async ({
 	optype: number;
 	num_of_pc: number;
 	school_esis_id: string;
+	esisroomid: string;
 }): Promise<CreateEditRoomResponseType> => {
 	const { data } = await api1.post<CreateEditRoomResponseType>("/roomsend", {
 		id,
@@ -47,6 +49,7 @@ export const roomCreateEdit = async ({
 		optype,
 		num_of_pc,
 		school_esis_id,
+		esisroomid,
 		conn: "skuul",
 	});
 	return data;
@@ -183,6 +186,33 @@ export const batchRegisterExams = async ({
 			userid: userId,
 			conn: "skuul",
 			registrations, // Сурагчдын массив энд орно
+		},
+	);
+	return data;
+};
+
+export const userRegisterExams = async ({
+	userId,
+	examinee_number,
+	exam_id,
+	exam_date_id,
+	exam_room_id,
+}: {
+	userId: number;
+	examinee_number: number;
+	exam_id: number;
+	exam_room_id: number;
+	exam_date_id: number;
+}): Promise<batchRegisterExamResponseType> => {
+	const { data } = await api1.post<batchRegisterExamResponseType>(
+		"/examregistrationsingle",
+		{
+			userid: userId,
+			conn: "skuul",
+			examinee_number,
+			exam_id,
+			exam_date_id,
+			exam_room_id,
 		},
 	);
 	return data;

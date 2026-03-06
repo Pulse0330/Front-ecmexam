@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 import { number } from "zod";
 import { RoomCreateEditDialog } from "@/app/(dash)/room/RoomCreateEditDialog";
 import {
@@ -67,15 +68,19 @@ export default function RoomPage() {
 				branchname: "",
 				descr: "",
 				name: "",
-				room_number: "",
+				room_number: "100",
 				num_of_pc: 0,
 				school_esis_id: "",
 			};
 			return roomCreateEdit(payload);
 		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["api_get_exam_rooms"] });
-			setIsDeleteOpen(false);
+		onSuccess: (res) => {
+			if (res.RetResponse.ResponseCode === 11) {
+				toast.error(res.RetResponse.ResponseMessage);
+			} else {
+				queryClient.invalidateQueries({ queryKey: ["api_get_exam_rooms"] });
+				setIsDeleteOpen(false);
+			}
 		},
 	});
 

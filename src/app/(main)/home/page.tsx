@@ -15,7 +15,8 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { memo, useCallback, useEffect } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
+import { ExamVerifyDialog } from "@/app/(main)/home/ExamVerify";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -327,6 +328,7 @@ SectionDivider.displayName = "SectionDivider";
 export default function HomePage() {
 	const { userId } = useAuthStore();
 	const { setProfile } = useUserStore();
+	const [isVerifyOpen, setIsVerifyOpen] = useState(false);
 
 	const { data: homeData, isLoading: isHomeLoading } =
 		useQuery<HomeResponseType>({
@@ -368,6 +370,7 @@ export default function HomePage() {
 				<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700">
 					<HeroSection username={username} />
 				</div>
+				<ExamVerifyDialog isOpen={isVerifyOpen} setOpen={setIsVerifyOpen} />
 
 				{isHomeLoading || isProfileLoading ? (
 					<div className="flex items-center justify-center py-24">

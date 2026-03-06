@@ -23,9 +23,14 @@ interface RoomSelectorProps {
 	selectedId: string | null;
 	// Сонгох үед id болон esisroomid-г хамт буцаана
 	onSelect: (id: SelectedRoom) => void;
+	acctionHidden?: boolean;
 }
 
-export function RoomSelector({ selectedId, onSelect }: RoomSelectorProps) {
+export function RoomSelector({
+	selectedId,
+	onSelect,
+	acctionHidden = false,
+}: RoomSelectorProps) {
 	const { userId } = useAuthStore();
 
 	const { data: rooms = [], isLoading } = useQuery({
@@ -116,7 +121,7 @@ export function RoomSelector({ selectedId, onSelect }: RoomSelectorProps) {
 													<span
 														className={!hasPC ? "text-muted-foreground" : ""}
 													>
-														{room.room_number}
+														{room.room_number}-р өрөө
 													</span>
 													{room.branchname && (
 														<span className="text-[10px] font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded truncate">
@@ -145,18 +150,20 @@ export function RoomSelector({ selectedId, onSelect }: RoomSelectorProps) {
 										</div>
 
 										{!hasPC ? (
-											// Энэ товчлуур одоо opacity: 100 буюу тод харагдана
-											<Button
-												size="sm"
-												variant="outline" // Текстэн товчлуур биш хүрээтэй бол илүү тод харагдаж магадгүй
-												className="h-7 text-[10px] gap-1 text-blue-600 border-blue-200 hover:text-blue-700 hover:bg-blue-50 relative z-10"
-												asChild
-											>
-												<Link href={`room/${room.id}`}>
-													Ширээний зохион байгуулалт
-													<ArrowRight size={10} />
-												</Link>
-											</Button>
+											// acctionHidden === false үед л Link-ийг харуулна
+											!acctionHidden && (
+												<Button
+													size="sm"
+													variant="outline"
+													className="h-7 text-[10px] gap-1 text-blue-600 border-blue-200 hover:text-blue-700 hover:bg-blue-50 relative z-10"
+													asChild
+												>
+													<Link href={`room/${room.id}`}>
+														Ширээний зохион байгуулалт
+														<ArrowRight size={10} />
+													</Link>
+												</Button>
+											)
 										) : (
 											<Badge
 												variant="secondary"
