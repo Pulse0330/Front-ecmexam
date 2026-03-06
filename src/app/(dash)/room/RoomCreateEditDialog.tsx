@@ -40,6 +40,7 @@ const roomSchema = z.object({
 	descr: z.string().optional(),
 	pccount: z.string().min(1, "Компьютерын тоо заавал хэрэгтэй"),
 	school_esis_id: z.string().optional(),
+	esisroomid: z.number().optional(),
 });
 
 type RoomFormValues = z.infer<typeof roomSchema>;
@@ -81,7 +82,9 @@ export function RoomCreateEditDialog({
 				descr: values.descr ?? "",
 				num_of_pc: Number(values.pccount),
 				school_esis_id: values.school_esis_id ?? "",
+				esisroomid: values.esisroomid ?? "",
 			};
+			console.log("payload", payload);
 			return roomCreateEdit(payload);
 		},
 		onSuccess: () => {
@@ -109,6 +112,7 @@ export function RoomCreateEditDialog({
 				descr: roomDetail.description,
 				pccount: String(roomDetail.num_of_pc),
 				school_esis_id: roomDetail.school_esis_id,
+				esisroomid: roomDetail.esisroomid,
 			});
 		}
 	}, [roomDetail, isEdit, form.reset]);

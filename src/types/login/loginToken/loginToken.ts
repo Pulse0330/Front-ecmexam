@@ -33,4 +33,5 @@ export type User = {
 	school_id: number;
 	sch_name: string;
 	studentgroupname: string;
+	examinee_number: string;
 };

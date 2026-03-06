@@ -1,8 +1,8 @@
 export interface CreateEditRoomResponseType {
 	RetResponse: {
 		ResponseMessage: string;
-		StatusCode: string;
-		ResponseCode: string;
+		StatusCode: number;
+		ResponseCode: number;
 		ResponseType: boolean;
 	};
 }
