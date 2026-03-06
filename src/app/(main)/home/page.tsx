@@ -397,9 +397,9 @@ const { data: myExamInfo } = useQuery({
 					<HeroSection username={username} />
 				</div>
 				{myExamInfo && (
-  <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-200">
-    <ExamInfoCard exam={myExamInfo} />
-  </div>
+<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-200 max-w-xs">
+  <ExamInfoCard exam={myExamInfo} />
+</div>
 )}
 				<ExamVerifyDialog
 					examList={examList}

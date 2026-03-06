@@ -30,6 +30,8 @@ import {
 	getExamById,
 	getNewExamFill,
 	saveExamAnswer,
+	savemnExamAnswer,
+	 deletemnExamAnswer,
 } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type {
@@ -117,6 +119,39 @@ type AnswerAction =
 // ─────────────────────────────────────────────
 // Utility helpers
 // ─────────────────────────────────────────────
+const callSaveApi = (
+  ctx: SaveContext,
+  questionId: number,
+  answerId: number,
+  queTypeId: number,
+  answer: string,
+  rowNum: number,
+) => {
+  if (ctx.isNewExam) {
+    return savemnExamAnswer(
+      ctx.userId, ctx.examId, questionId,
+      answerId, queTypeId, answer, rowNum,
+      ctx.examDateId, ctx.examRegId,
+    );
+  }
+  return saveExamAnswer(
+    ctx.userId, ctx.examId, questionId,
+    answerId, queTypeId, answer, rowNum,
+  );
+};
+const callDeleteApi = (
+  ctx: SaveContext,
+  questionId: number,
+  answerId: number,
+) => {
+  if (ctx.isNewExam) {
+    return deletemnExamAnswer(
+      ctx.userId, ctx.examId, questionId,
+      answerId, ctx.examRegId, ctx.examDateId,
+    );
+  }
+  return deleteExamAnswer(ctx.userId, ctx.examId, questionId, answerId);
+};
 const isValidId = (id: unknown): id is number =>
 	typeof id === "number" && id !== 0 && !Number.isNaN(id);
 
@@ -212,7 +247,10 @@ type SaveContext = {
 	examId: number;
 	questionId: number;
 	rowNum: number;
+	 isNewExam: boolean; 
 	answer: AnswerValue;
+  examDateId: number;
+  examRegId: number;
 	previousAnswer: AnswerValue | undefined;
 	examAnswers: {
 		question_id: number;
@@ -222,229 +260,151 @@ type SaveContext = {
 };
 
 const deleteType1 = async (ctx: SaveContext): Promise<void> => {
-	const prev = ctx.previousAnswer;
-	if (typeof prev === "number" && isValidId(prev)) {
-		await deleteExamAnswer(ctx.userId, ctx.examId, ctx.questionId, prev).catch(
-			(e) => console.error(`Failed to delete Type1 Q${ctx.questionId}:`, e),
-		);
-	}
+  const prev = ctx.previousAnswer;
+  if (typeof prev === "number" && isValidId(prev)) {
+    await callDeleteApi(ctx, ctx.questionId, prev).catch(
+      (e) => console.error(`Failed to delete Type1 Q${ctx.questionId}:`, e)
+    );
+  }
 };
 
 const deleteType2 = async (ctx: SaveContext): Promise<void> => {
-	const prev = ctx.previousAnswer;
-	if (Array.isArray(prev) && prev.length > 0) {
-		await Promise.allSettled(
-			prev.map((id) =>
-				deleteExamAnswer(ctx.userId, ctx.examId, ctx.questionId, id),
-			),
-		);
-	}
+  const prev = ctx.previousAnswer;
+  if (Array.isArray(prev) && prev.length > 0) {
+    await Promise.allSettled(
+      prev.map((id) => callDeleteApi(ctx, ctx.questionId, id))
+    );
+  }
 };
 
 const deleteType3 = async (ctx: SaveContext): Promise<void> => {
-	const prev = ctx.previousAnswer;
-	if (typeof prev === "object" && prev !== null && !Array.isArray(prev)) {
-		const prevMap = prev as Record<number, string>;
-		const prevIds = Object.keys(prevMap)
-			.map(Number)
-			.filter((id) => isValidId(id) && prevMap[id]?.trim());
-		if (prevIds.length > 0) {
-			await Promise.allSettled(
-				prevIds.map((id) =>
-					deleteExamAnswer(ctx.userId, ctx.examId, ctx.questionId, id),
-				),
-			);
-		}
-	}
+  const prev = ctx.previousAnswer;
+  if (typeof prev === "object" && prev !== null && !Array.isArray(prev)) {
+    const prevMap = prev as Record<number, string>;
+    const prevIds = Object.keys(prevMap)
+      .map(Number)
+      .filter((id) => isValidId(id) && prevMap[id]?.trim());
+    if (prevIds.length > 0) {
+      await Promise.allSettled(
+        prevIds.map((id) => callDeleteApi(ctx, ctx.questionId, id))
+      );
+    }
+  }
 };
 
 const deleteType4 = async (ctx: SaveContext): Promise<void> => {
-	if (ctx.previousAnswer === undefined) return;
-	const existing = ctx.examAnswers.find(
-		(a) =>
-			a.question_id === ctx.questionId &&
-			a.answer_type === QuestionType.TEXT_FILL,
-	);
-	if (existing) {
-		await deleteExamAnswer(
-			ctx.userId,
-			ctx.examId,
-			ctx.questionId,
-			existing.answer_id,
-		).catch((e) =>
-			console.error(`Failed to delete Type4 Q${ctx.questionId}:`, e),
-		);
-	}
+  if (ctx.previousAnswer === undefined) return;
+  const existing = ctx.examAnswers.find(
+    (a) => a.question_id === ctx.questionId && a.answer_type === QuestionType.TEXT_FILL,
+  );
+  if (existing) {
+    await callDeleteApi(ctx, ctx.questionId, existing.answer_id).catch(
+      (e) => console.error(`Failed to delete Type4 Q${ctx.questionId}:`, e)
+    );
+  }
 };
 
 const deleteType5 = async (ctx: SaveContext): Promise<void> => {
-	const prev = ctx.previousAnswer;
-	if (Array.isArray(prev) && prev.length > 0) {
-		const valid = prev.filter(isValidId);
-		if (valid.length > 0) {
-			await Promise.allSettled(
-				valid.map((id) =>
-					deleteExamAnswer(ctx.userId, ctx.examId, ctx.questionId, id),
-				),
-			);
-		}
-	}
+  const prev = ctx.previousAnswer;
+  if (Array.isArray(prev) && prev.length > 0) {
+    const valid = prev.filter(isValidId);
+    if (valid.length > 0) {
+      await Promise.allSettled(
+        valid.map((id) => callDeleteApi(ctx, ctx.questionId, id))
+      );
+    }
+  }
 };
 
 const deleteType6 = async (ctx: SaveContext): Promise<void> => {
-	const answer = ctx.answer;
-	if (typeof answer !== "object" || answer === null || Array.isArray(answer))
-		return;
-	const currentIds = extractAnswerIds(
-		normalizeMatchingAnswer(answer as Record<number, number | number[]>),
-	);
-	const previousIds = new Set<number>();
-	const prev = ctx.previousAnswer;
-	if (typeof prev === "object" && prev !== null && !Array.isArray(prev)) {
-		for (const ids of normalizeMatchingAnswer(
-			prev as Record<number, number | number[]>,
-		).values()) {
-			for (const id of ids) previousIds.add(id);
-		}
-	}
-	const toDelete = Array.from(previousIds).filter((id) => !currentIds.has(id));
-	if (toDelete.length > 0) {
-		await Promise.allSettled(
-			toDelete.map((id) =>
-				deleteExamAnswer(ctx.userId, ctx.examId, ctx.questionId, id),
-			),
-		);
-	}
+  const answer = ctx.answer;
+  if (typeof answer !== "object" || answer === null || Array.isArray(answer)) return;
+  const currentIds = extractAnswerIds(
+    normalizeMatchingAnswer(answer as Record<number, number | number[]>)
+  );
+  const previousIds = new Set<number>();
+  const prev = ctx.previousAnswer;
+  if (typeof prev === "object" && prev !== null && !Array.isArray(prev)) {
+    for (const ids of normalizeMatchingAnswer(prev as Record<number, number | number[]>).values()) {
+      for (const id of ids) previousIds.add(id);
+    }
+  }
+  const toDelete = Array.from(previousIds).filter((id) => !currentIds.has(id));
+  if (toDelete.length > 0) {
+    await Promise.allSettled(
+      toDelete.map((id) => callDeleteApi(ctx, ctx.questionId, id))
+    );
+  }
 };
 
 const saveType1 = async (ctx: SaveContext): Promise<void> => {
-	const ans = ctx.answer;
-	if (typeof ans === "number" && isValidId(ans)) {
-		await saveExamAnswer(
-			ctx.userId,
-			ctx.examId,
-			ctx.questionId,
-			ans,
-			QuestionType.SINGLE_CHOICE,
-			"1",
-			ctx.rowNum,
-		);
-	}
+  const ans = ctx.answer;
+  if (typeof ans === "number" && isValidId(ans)) {
+    await callSaveApi(ctx, ctx.questionId, ans, QuestionType.SINGLE_CHOICE, "1", ctx.rowNum);
+  }
 };
 
 const saveType2 = async (ctx: SaveContext): Promise<void> => {
-	const ans = ctx.answer;
-	if (Array.isArray(ans) && ans.length > 0) {
-		await Promise.all(
-			ans.map((id) =>
-				saveExamAnswer(
-					ctx.userId,
-					ctx.examId,
-					ctx.questionId,
-					id,
-					QuestionType.MULTI_CHOICE,
-					"1",
-					ctx.rowNum,
-				),
-			),
-		);
-	}
+  const ans = ctx.answer;
+  if (Array.isArray(ans) && ans.length > 0) {
+    await Promise.all(
+      ans.map((id) => callSaveApi(ctx, ctx.questionId, id, QuestionType.MULTI_CHOICE, "1", ctx.rowNum))
+    );
+  }
 };
 
 const saveType3 = async (ctx: SaveContext): Promise<void> => {
-	const ans = ctx.answer;
-	if (typeof ans === "object" && ans !== null && !Array.isArray(ans)) {
-		const entries = Object.entries(ans as Record<number, string>)
-			.map(([k, v]) => [Number(k), v] as [number, string])
-			.filter(([aid, val]) => isValidId(aid) && val.trim());
-		if (entries.length > 0) {
-			await Promise.all(
-				entries.map(([id, val]) =>
-					saveExamAnswer(
-						ctx.userId,
-						ctx.examId,
-						ctx.questionId,
-						id,
-						QuestionType.NUMBER_INPUT,
-						val,
-						ctx.rowNum,
-					),
-				),
-			);
-		}
-	}
+  const ans = ctx.answer;
+  if (typeof ans === "object" && ans !== null && !Array.isArray(ans)) {
+    const entries = Object.entries(ans as Record<number, string>)
+      .map(([k, v]) => [Number(k), v] as [number, string])
+      .filter(([aid, val]) => isValidId(aid) && val.trim());
+    if (entries.length > 0) {
+      await Promise.all(
+        entries.map(([id, val]) => callSaveApi(ctx, ctx.questionId, id, QuestionType.NUMBER_INPUT, val, ctx.rowNum))
+      );
+    }
+  }
 };
 
 const saveType4 = async (ctx: SaveContext): Promise<void> => {
-	const ans = ctx.answer;
-	if (typeof ans === "string" && ans.trim()) {
-		const existing = ctx.examAnswers.find(
-			(a) =>
-				a.question_id === ctx.questionId &&
-				a.answer_type === QuestionType.TEXT_FILL,
-		);
-		if (existing) {
-			await saveExamAnswer(
-				ctx.userId,
-				ctx.examId,
-				ctx.questionId,
-				existing.answer_id,
-				QuestionType.TEXT_FILL,
-				ans,
-				ctx.rowNum,
-			);
-		}
-	}
+  const ans = ctx.answer;
+  if (typeof ans === "string" && ans.trim()) {
+    const existing = ctx.examAnswers.find(
+      (a) => a.question_id === ctx.questionId && a.answer_type === QuestionType.TEXT_FILL,
+    );
+    if (existing) {
+      await callSaveApi(ctx, ctx.questionId, existing.answer_id, QuestionType.TEXT_FILL, ans, ctx.rowNum);
+    }
+  }
 };
 
 const saveType5 = async (ctx: SaveContext): Promise<void> => {
-	const ans = ctx.answer;
-	if (Array.isArray(ans) && ans.length > 0) {
-		const valid = ans.filter(
-			(id): id is number => isValidId(id) && typeof id === "number",
-		);
-		if (valid.length > 0) {
-			await Promise.all(
-				valid.map((id, index) =>
-					saveExamAnswer(
-						ctx.userId,
-						ctx.examId,
-						ctx.questionId,
-						id,
-						QuestionType.ORDERING,
-						(index + 1).toString(),
-						ctx.rowNum,
-					),
-				),
-			);
-		}
-	}
+  const ans = ctx.answer;
+  if (Array.isArray(ans) && ans.length > 0) {
+    const valid = ans.filter((id): id is number => isValidId(id) && typeof id === "number");
+    if (valid.length > 0) {
+      await Promise.all(
+        valid.map((id, index) =>
+          callSaveApi(ctx, ctx.questionId, id, QuestionType.ORDERING, (index + 1).toString(), ctx.rowNum)
+        )
+      );
+    }
+  }
 };
 
 const saveType6 = async (ctx: SaveContext): Promise<void> => {
-	const ans = ctx.answer;
-	if (typeof ans === "object" && ans !== null && !Array.isArray(ans)) {
-		const matches = normalizeMatchingAnswer(
-			ans as Record<number, number | number[]>,
-		);
-		const promises: Promise<unknown>[] = [];
-		for (const [qRefId, aRefIds] of matches.entries()) {
-			for (const aRefId of aRefIds) {
-				promises.push(
-					saveExamAnswer(
-						ctx.userId,
-						ctx.examId,
-						ctx.questionId,
-						aRefId,
-						QuestionType.MATCHING,
-						String(qRefId),
-						ctx.rowNum,
-					),
-				);
-			}
-		}
-		if (promises.length > 0) await Promise.all(promises);
-	}
+  const ans = ctx.answer;
+  if (typeof ans === "object" && ans !== null && !Array.isArray(ans)) {
+    const matches = normalizeMatchingAnswer(ans as Record<number, number | number[]>);
+    const promises: Promise<unknown>[] = [];
+    for (const [qRefId, aRefIds] of matches.entries()) {
+      for (const aRefId of aRefIds) {
+        promises.push(callSaveApi(ctx, ctx.questionId, aRefId, QuestionType.MATCHING, String(qRefId), ctx.rowNum));
+      }
+    }
+    if (promises.length > 0) await Promise.all(promises);
+  }
 };
 
 const DELETE_HANDLERS: Record<number, (ctx: SaveContext) => Promise<void>> = {
@@ -533,6 +493,8 @@ export default function ExamPage() {
 	const variantNumber = Number(searchParams.get("variant"));
 	const examType = Number(searchParams.get("exam_type"));
 	const _isNewExam = examType === 2;
+	const examDateId = Number(searchParams.get("exam_date_id"));
+const examRegId = Number(searchParams.get("exam_reg_id"));
 	// FIX: questionsMapRef — handleAnswerChange-д O(1) хайлт
 	const questionsMapRef = useRef<
 		Map<number, { que_type_id: number; row_num: string }>
@@ -602,8 +564,11 @@ export default function ExamPage() {
 					questionId,
 					rowNum,
 					answer,
+					  isNewExam: _isNewExam,
 					previousAnswer: lastSavedAnswers.current.get(questionId),
 					examAnswers: examDataRef.current?.Answers ?? [],
+					 examDateId,
+  examRegId,
 				};
 				await DELETE_HANDLERS[queTypeId]?.(ctx);
 				await SAVE_HANDLERS[queTypeId]?.(ctx);
@@ -833,11 +798,13 @@ export default function ExamPage() {
 
 	const examSources = useMemo((): ExamSource[] => {
 		return allQuestions.reduce<ExamSource[]>((acc, q, index) => {
+
 			if (q.source_name || q.source_img) {
+
 				acc.push({
 					questionIndex: index,
 					questionLabel: `${index + 1}-р асуулт`,
-					sourceName: q.source_name,
+					 sourceName: q.source_name?.replace(/&nbsp;/g, " ") ?? null,
 					sourceImg: q.source_img,
 					rowNum: q.row_num,
 					assigSourceId: q.assig_source_id ?? null,

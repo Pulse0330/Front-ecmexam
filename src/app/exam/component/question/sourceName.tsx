@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, FileText } from "lucide-react";
 import { memo, useMemo, useState } from "react";
 import MathContent from "@/app/exam/component/examUtils/MathContent";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import HtmlContent from "../examUtils/htmlContent";
 
 // ─────────────────────────────────────────────
 // Types
@@ -91,7 +92,7 @@ function formatRowRange(rowNums: number[]): string {
 	);
 
 	if (isContiguous) {
-		return `${rowNums[0]}–${rowNums[rowNums.length - 1]}-р асуултууд`;
+		return `Доорх эхийг уншаад ${rowNums[0]}–${rowNums[rowNums.length - 1]}-р асуултуудад хариулаарай`;
 	}
 
 	return `${rowNums.map((n) => `${n}`).join(", ")}-р асуултууд`;
@@ -169,22 +170,23 @@ const SourceBlock = memo(function SourceBlock({
 			</button>
 
 			{/* Body */}
-			{expanded && (
-				<div className="px-4 pb-4 space-y-3">
-					{source.sourceImg && (
-						<img
-							src={source.sourceImg}
-							alt="Эхийн зураг"
-							className="w-full rounded-md object-cover max-h-64"
-						/>
-					)}
-					{source.sourceName && (
-						<div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed prose prose-sm max-w-none dark:prose-invert overflow-y-auto max-h-[60vh] pr-1 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600">
-							<MathContent html={source.sourceName} />
-						</div>
-					)}
-				</div>
-			)}
+{expanded && (
+    <div className="px-4 pb-4 space-y-3">
+        {source.sourceImg && (
+            <img
+                src={source.sourceImg}
+                alt="Эхийн зураг"
+                className="w-full rounded-md object-cover max-h-64"
+            />
+        )}
+        {source.sourceName && (
+    <HtmlContent
+    html={source.sourceName}
+    className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed prose prose-sm max-w-none dark:prose-invert overflow-y-auto max-h-[60vh] pr-1 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 [&_*]:break-words [&_*]:whitespace-normal"
+/>
+        )}
+    </div>
+)}
 		</div>
 	);
 });
