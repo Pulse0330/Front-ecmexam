@@ -180,3 +180,24 @@ export interface getExamMateralVariantDownloadResponseType {
 		details: string;
 	};
 }
+
+export interface Exam1111 {
+	exam_id: number;
+	exam_date_id: number;
+	open_date: string; // ISO date string
+	exam_number: string;
+	duration: number; // minutes
+	name: string;
+	start_date: string; // ISO date string
+	end_date: string; // ISO date string
+	burtguulsen: number;
+}
+export interface getExamTimedResponseType {
+	RetResponse: {
+		ResponseMessage: string;
+		StatusCode: number;
+		ResponseCode: number;
+		ResponseType: boolean;
+	};
+	RetData: Exam1111[];
+}

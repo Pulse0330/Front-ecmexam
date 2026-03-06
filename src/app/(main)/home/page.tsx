@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import {
 	ArrowRight,
 	Calendar,
-	ChevronRight,
 	ClipboardCheck,
 	Clock,
 	HelpCircle,
@@ -25,7 +24,8 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { getHomeScreen, getUserProfile } from "@/lib/api";
+import { getHomeScreen, getmnExamUserCheck, getUserProfile } from "@/lib/api";
+import { getExamTime } from "@/lib/dash.api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUserStore } from "@/stores/useUserStore";
 import {
@@ -38,6 +38,8 @@ import type { UserProfileResponseType } from "@/types/user";
 import ExamLists from "./homeExamCard";
 import MnExamList from "./mnExamlist";
 import MnSorilList from "./mnSorilList";
+import { Exam1111 } from "@/types/dashboard/exam.types";
+import { ExamInfoCard } from "./examBurtguulsen";
 
 const ANIMATION_STAGGER = 0.04;
 
@@ -312,8 +314,8 @@ const SectionDivider = memo(({ title, href }: SectionDividerProps) => (
 					href={href}
 					className="group flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer transition-all duration-300 hover:gap-2"
 				>
-					<span className="group-hover:underline">Бүгдийг харах</span>
-					<ChevronRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+					{/* <span className="group-hover:underline">Бүгдийг харах</span> */}
+					{/* <ChevronRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" /> */}
 				</Link>
 			</div>
 		</div>
@@ -325,9 +327,12 @@ SectionDivider.displayName = "SectionDivider";
 // ============================================================================
 // HOME PAGE
 // ============================================================================
+export function isBurtguulsen(list: Exam1111[]) {
+	return list.some((item) => item.burtguulsen === 1);
+}
 
 export default function HomePage() {
-	const { userId } = useAuthStore();
+	const { userId, user } = useAuthStore();
 	const { setProfile } = useUserStore();
 
 	const { data: homeData, isLoading: isHomeLoading } =
@@ -340,6 +345,27 @@ export default function HomePage() {
 			refetchOnWindowFocus: false,
 		});
 
+	const {
+		data: examList = [],
+		isLoading,
+		isFetched,
+	} = useQuery({
+		queryKey: ["get_exam_v2", userId],
+		queryFn: () =>
+			getExamTime({
+				userId: Number(userId),
+				examinee_number: user?.examinee_number || "",
+			}),
+		enabled: !!userId && !!user?.examinee_number,
+		select: (res) => res.RetData || [],
+	});
+	
+const { data: myExamInfo } = useQuery({
+  queryKey: ["myExamInfo", userId, user?.examinee_number],
+  queryFn: () => getmnExamUserCheck(user?.examinee_number ?? "", Number(userId)),
+  enabled: !!userId && !!user?.examinee_number,
+  select: (res) => res.RetData?.[0] ?? null, 
+});
 	const { data: profileData, isLoading: isProfileLoading } =
 		useQuery<UserProfileResponseType>({
 			queryKey: ["userProfile", userId],
@@ -370,7 +396,16 @@ export default function HomePage() {
 				<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700">
 					<HeroSection username={username} />
 				</div>
-				<ExamVerifyDialog />
+				{myExamInfo && (
+  <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-200">
+    <ExamInfoCard exam={myExamInfo} />
+  </div>
+)}
+				<ExamVerifyDialog
+					examList={examList}
+					isLoading={isLoading}
+					isFetched={isFetched}
+				/>
 
 				{isHomeLoading || isProfileLoading ? (
 					<div className="flex items-center justify-center py-24">
@@ -422,6 +457,7 @@ export default function HomePage() {
 								</div>
 							</>
 						)}
+					
 					</>
 				)}
 			</div>

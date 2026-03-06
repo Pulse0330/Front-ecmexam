@@ -52,6 +52,7 @@ import type { SorilresultListResponseType } from "@/types/soril/sorilResultLists
 import type { UserProfileResponseType } from "@/types/user";
 import type { userUpdateResponse } from "@/types/userUpdate";
 import api1 from "./axios1";
+import { mnExamUserCheckResponseType } from "@/types/mnExam/mnExamUserCheck";
 //-------------------------------Auth---------------------------------//
 
 // ===== LoginToken request =====
@@ -291,6 +292,19 @@ export const getExamVariants = async (
 		userid: userId,
 	});
 	return data;
+};
+//=====Миний шалгалтын мэдээлэл========
+export const getmnExamUserCheck = async (
+  examinee_number: string,
+  userId: number,
+): Promise<mnExamUserCheckResponseType> => {
+  const { data } = await api1.post<mnExamUserCheckResponseType>("/list", {
+    procname: "api_my_exam_info",
+    examinee_number,
+    userid: userId,
+
+  });
+  return data;
 };
 
 // ===== Exam choosed  =====

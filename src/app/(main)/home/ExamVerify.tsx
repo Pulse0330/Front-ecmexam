@@ -1,11 +1,7 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, } from "@tanstack/react-query";
 import { BookOpen, School } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import {
-	ExamSelector,
-	type SelectedExam,
-} from "@/app/(dash)/exam-create/ExamSelector";
 import {
 	RoomSelector,
 	type SelectedRoom,
@@ -23,8 +19,23 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { userRegisterExams } from "@/lib/dash.api";
 import { useAuthStore } from "@/stores/useAuthStore";
+import type { Exam1111 } from "@/types/dashboard/exam.types";
+import { ExamSelectorV2, type SelectedExam } from "./StudentExamSelect";
+import { isBurtguulsen } from "./page";
 
-export function ExamVerifyDialog() {
+
+export function ExamVerifyDialog({
+
+isFetched,
+	examList,
+	isLoading,
+	
+}: {
+	examList: Exam1111[];
+	isLoading: boolean;
+	isFetched: boolean;
+
+}) {
 	const { userId, user } = useAuthStore();
 	const [isOpen, setOpen] = useState(false);
 
@@ -43,6 +54,8 @@ export function ExamVerifyDialog() {
 	const handleExamSelect = (exam: SelectedExam) => {
 		setSelectedExam(exam);
 	};
+
+	
 
 	const { mutate, isPending } = useMutation({
 		mutationFn: userRegisterExams,
@@ -74,17 +87,19 @@ export function ExamVerifyDialog() {
 			exam_id: selectedExam.examId,
 			exam_date_id: selectedExam?.examDateId,
 			exam_room_id: selectedEsisRoomID,
-			examinee_number: Number(user?.examinee_number),
+			examinee_number: String(user?.examinee_number),
 		});
 	};
 
 	useEffect(() => {
-		if (user?.examinee_number === "") {
-			setOpen(false);
-		} else {
+		if (!isFetched) return; // ← fetch дуусаагүй бол юу ч хийхгүй
+
+		if (user?.examinee_number && !isBurtguulsen(examList)) {
 			setOpen(true);
+		} else {
+			setOpen(false);
 		}
-	}, [user]);
+	}, [user, examList, isFetched, isBurtguulsen]);
 
 	return (
 		<AlertDialog open={isOpen} onOpenChange={setOpen}>
@@ -126,9 +141,11 @@ export function ExamVerifyDialog() {
 						</CardHeader>
 						<CardContent className="p-0 flex-1 overflow-hidden relative gap-0">
 							<div className="absolute inset-0  ">
-								<ExamSelector
+								<ExamSelectorV2
 									onSelect={handleExamSelect}
 									selectedExamDateId={selectedExam?.uiId || null}
+									data={examList}
+									isLoading={isLoading}
 								/>
 							</div>
 						</CardContent>

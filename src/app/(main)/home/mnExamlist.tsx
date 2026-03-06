@@ -8,6 +8,7 @@ import { memo, useCallback } from "react";
 import { getExamVariantslist } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { mnExamData, mnExamResponse } from "@/types/mnExam/mnExamList";
+import { IconClick, IconClockPlay } from "@tabler/icons-react";
 
 const ANIMATION_STAGGER = 0.04;
 
@@ -15,14 +16,20 @@ const ANIMATION_STAGGER = 0.04;
 // HELPERS
 // ============================================================================
 
-function formatTime(dateStr: string) {
-	const d = new Date(dateStr);
-	return d.toLocaleTimeString("mn-MN", { hour: "2-digit", minute: "2-digit" });
-}
+function formatMNTime(dateString: string) {
+  const date = new Date(dateString);
 
-function formatDate(dateStr: string) {
-	const d = new Date(dateStr);
-	return d.toLocaleDateString("mn-MN", { month: "2-digit", day: "2-digit" });
+  const formatter = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Ulaanbaatar",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
+  return formatter.format(date).replace("T", " ");
 }
 
 // ============================================================================
@@ -41,9 +48,9 @@ const ExamCard = memo(({ item, index }: ExamCardProps) => {
 		router.push(`/exam/${item.exam_number}?exam_type=${item.exam_type}`);
 	}, [router, item.exam_number, item.exam_type]);
 
-	const startTime = formatTime(item.start_date);
-	const endTime = formatTime(item.end_date);
-	const dateLabel = formatDate(item.start_date);
+	const startTime = formatMNTime(item.start_date);
+	const endTime = formatMNTime(item.end_date);
+
 
 	return (
 		<motion.div
@@ -63,13 +70,6 @@ const ExamCard = memo(({ item, index }: ExamCardProps) => {
 					<div className="absolute inset-0 bg-linear-to-br from-primary/20 via-primary/10 to-background" />
 					<div className="absolute inset-0 bg-linear-to-t from-background/85 via-background/50 to-transparent" />
 
-					{/* Date badge */}
-					<div className="absolute top-1.5 left-1.5 z-10">
-						<span className="text-[8px] sm:text-[9px] font-semibold bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
-							{dateLabel}
-						</span>
-					</div>
-
 					{/* Duration */}
 					<div className="absolute bottom-0 left-0 right-0 p-1 sm:p-1.5 z-10">
 						<span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate block">
@@ -79,26 +79,25 @@ const ExamCard = memo(({ item, index }: ExamCardProps) => {
 				</div>
 
 				{/* Content */}
-				<div className="p-1.5 sm:p-2 md:p-2.5 pb-7 sm:pb-8 md:pb-9 flex flex-col flex-1 space-y-1 sm:space-y-1.5">
-					<div className="space-y-0.5 flex-1 min-h-0">
-						<h3 className="text-[10px] sm:text-xs md:text-sm font-semibold line-clamp-1 leading-tight transition-colors duration-300 text-foreground group-hover:text-primary">
-							{startTime} – {endTime}
-						</h3>
-					</div>
+<div className="p-1.5 sm:p-2 pb-6 sm:pb-7 flex flex-col flex-1 space-y-1">
+  <h3 className="text-[9px] sm:text-[10px] font-semibold line-clamp-1 leading-tight transition-colors text-foreground group-hover:text-primary">
+     Эхлэх: {startTime}
+  </h3>
+  <h3 className="text-[9px] sm:text-[10px] line-clamp-1 leading-tight transition-colors text-foreground group-hover:text-primary">
+    Дуусах: {endTime}
+  </h3>
 
-					{/* Stats */}
-					<div className="flex items-center gap-0.5 sm:gap-1 text-muted-foreground pt-1 border-t border-border/50">
-						<Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
-						<span className="font-medium text-[8px] sm:text-[9px] md:text-xs">
-							{item.duration} мин
-						</span>
-					</div>
+  <div className="flex items-center gap-0.5 text-muted-foreground pt-0.5 border-t border-border/50">
+    <Clock className="w-2 h-2 sm:w-2.5 sm:h-2.5 shrink-0" />
+    <span className="text-[7px] sm:text-[8px] font-medium">
+      {item.duration} мин
+    </span>
+  </div>
 
-					{/* Arrow */}
-					<div className="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 md:bottom-2.5 md:right-2.5 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center transition-all duration-300 bg-muted/50 group-hover:bg-foreground group-hover:scale-110">
-						<ArrowRight className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 text-muted-foreground group-hover:text-background group-hover:translate-x-0.5 transition-all" />
-					</div>
-				</div>
+  <div className="absolute bottom-1 right-1 sm:bottom-1.5 sm:right-1.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center transition-all duration-300 bg-muted/50 group-hover:bg-foreground group-hover:scale-110">
+    <ArrowRight className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-muted-foreground group-hover:text-background group-hover:translate-x-0.5 transition-all" />
+  </div>
+</div>
 			</button>
 		</motion.div>
 	);
