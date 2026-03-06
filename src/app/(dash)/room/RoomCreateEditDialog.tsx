@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import z from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -188,7 +189,7 @@ export function RoomCreateEditDialog({
 										<Input
 											{...field}
 											className="pl-9"
-											type="number"
+											type="num"
 											aria-invalid={fieldState.invalid}
 											placeholder="Өрөөний дугаар"
 										/>
@@ -216,6 +217,23 @@ export function RoomCreateEditDialog({
 											type="number"
 											aria-invalid={fieldState.invalid}
 											placeholder="Компьютер / Төхөөрөмжийн тоо"
+											min={isEdit ? roomDetail?.num_of_pc : 1}
+											onChange={(e) => {
+												field.onChange(e.target.value); // чөлөөтэй бичнэ
+											}}
+											onBlur={(e) => {
+												const val = Number(e.target.value);
+												const minVal = isEdit
+													? (roomDetail?.num_of_pc ?? 1)
+													: 1;
+												if (val < minVal) {
+													field.onChange(String(minVal)); // blur дээр засна
+													toast.warning(
+														"Бүртгэсэн өрөө засах одоогоор боломжгүй байгаа тул та өрөөгөө түр хааж шинээр өрөө бүртгэнэ үү.",
+													);
+												}
+												field.onBlur();
+											}}
 										/>
 									</div>
 									{fieldState.invalid && (

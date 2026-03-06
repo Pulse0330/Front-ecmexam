@@ -22,6 +22,7 @@ export interface Room {
 	esisroomid: number;
 	num_of_pc: number;
 	school_esis_id: string;
+	schoolesisid: string;
 }
 
 export interface getRoomsResponseType {
@@ -40,6 +41,7 @@ export interface Table {
 	yPos: number;
 	name: string;
 	seat_number: string;
+	exam_seat_id: number;
 }
 
 export interface GridPos {
@@ -55,6 +57,7 @@ export interface Computers {
 	roomid: number;
 	rownum: number;
 	colnum: number; // ISO date string
+	exam_seat_id: number;
 }
 
 export interface getRoomComputersResponseType {

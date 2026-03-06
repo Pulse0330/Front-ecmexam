@@ -4,10 +4,12 @@ import type {
 	getExamInfoResponseType,
 	getExamMateralResponseType,
 	getExamMateralVariantDownloadResponseType,
+	getExamPrintResponseType,
 	getExamResponseType,
 	getExamSaveResponseType,
 	getExamTimedResponseType,
 	getExamTimeResponseType,
+	getExamVariantResponseType,
 	getStudentsResponseType,
 } from "@/types/dashboard/exam.types";
 import type {
@@ -76,10 +78,12 @@ export const saveRoomLayout = async (payload: {
 	tables: Table[];
 	sizes: number;
 }): Promise<{
-	ResponseMessage: string;
-	StatusCode: number;
-	ResponseCode: number;
-	ResponseType: boolean;
+	RetResponse: {
+		ResponseMessage: string;
+		StatusCode: number;
+		ResponseCode: number;
+		ResponseType: boolean;
+	};
 }> => {
 	// Таны Table[] бүтцийг серверийн хүлээж авах subjson бүтэц рүү хөрвүүлнэ
 	const subjson = payload.tables.map((table) => ({
@@ -347,5 +351,72 @@ export const getExamTime = async ({
 		userid: userId,
 		conn: "skuul",
 	});
+	return data;
+};
+
+export const getExamPrintList = async ({
+	userId,
+	examDateId,
+	examId,
+	esisroomid,
+}: {
+	userId: number;
+	examDateId: number;
+	examId: number;
+	esisroomid: number;
+}): Promise<getExamPrintResponseType> => {
+	const { data } = await api1.post<getExamPrintResponseType>("/list", {
+		procname: "api_exam_esse_print",
+		userid: userId,
+		exam_date_id: examDateId,
+		exam_id: examId,
+		esisroomid: esisroomid,
+		conn: "skuul",
+	});
+	return data;
+};
+
+export const getExamEsseUpload = async ({
+	exam_register_id,
+	question_id,
+	file_url,
+	file_type,
+}: {
+	exam_register_id: number;
+	question_id: number;
+	file_url: string;
+	file_type: string;
+}): Promise<getExamMateralVariantDownloadResponseType> => {
+	const { data } = await api1.post<getExamMateralVariantDownloadResponseType>(
+		"/examregistrationsfiles",
+		{
+			exam_register_id,
+			question_id,
+			file_url,
+			file_type,
+			conn: "skuul",
+		},
+	);
+	return data;
+};
+
+export const getVariantDistribute = async ({
+	examDateId,
+	examId,
+	examRoomId,
+}: {
+	examDateId: number;
+	examId: number;
+	examRoomId: number;
+}): Promise<getExamVariantResponseType> => {
+	const { data } = await api1.post<getExamVariantResponseType>(
+		"/examvariantdistribute",
+		{
+			exam_date_id: examDateId,
+			exam_id: examId,
+			exam_room_id: examRoomId,
+			conn: "skuul",
+		},
+	);
 	return data;
 };

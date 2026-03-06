@@ -103,6 +103,12 @@ export interface StudentSeat {
 	exam_registration_id: number | null;
 	status_code: number;
 	status_text: string;
+	login_name: string;
+	passwordauto: string;
+	variant_number: string | null;
+	qrcode: string | null;
+	file_url: string | null;
+	questionId: number | null;
 }
 
 export interface ExamRoom {
@@ -200,4 +206,49 @@ export interface getExamTimedResponseType {
 		ResponseType: boolean;
 	};
 	RetData: Exam1111[];
+}
+
+export interface getExamTimeResponseType {
+	RetResponse: {
+		ResponseMessage: string;
+		StatusCode: number;
+		ResponseCode: number;
+		ResponseType: boolean;
+	};
+	RetData: ExamRoom[];
+}
+
+export interface ExamRegistration {
+	name: string;
+	exam_date: string;
+	room_number: string;
+	room_name: string;
+	seat_number: number;
+	register_number: string;
+	studentgroupname: string;
+	firstname: string;
+	exam_registration_id: number;
+	question: string;
+	qrcode: string;
+	examinee_number: string;
+}
+
+export interface getExamPrintResponseType {
+	RetResponse: {
+		ResponseMessage: string;
+		StatusCode: number;
+		ResponseCode: number;
+		ResponseType: boolean;
+	};
+	RetData: ExamRegistration[];
+}
+
+export interface getExamVariantResponseType {
+	RetResponse: {
+		ResponseMessage: string;
+		StatusCode: number;
+		ResponseCode: number;
+		ResponseType: boolean;
+	};
+	RetData: null;
 }

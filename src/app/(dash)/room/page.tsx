@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	Building,
+	CircleOff,
 	DoorOpen,
 	Edit,
 	Loader2,
@@ -67,7 +68,7 @@ export default function RoomPage() {
 				branchname: "",
 				descr: "",
 				name: "",
-				room_number: "",
+				room_number: "100",
 				num_of_pc: 0,
 				school_esis_id: "",
 				esisroomid: "",
@@ -148,7 +149,11 @@ export default function RoomPage() {
 					{data.map((room) => (
 						<Card
 							key={room.id}
-							className="relative flex flex-col justify-between border shadow-sm hover:ring-2 hover:ring-primary/10 hover:border-primary/30 transition-all duration-300 gap-1 h-90"
+							className={`relative flex flex-col justify-between border shadow-sm transition-all duration-300 gap-1 h-90 ${
+								room.flag === 1
+									? "opacity-50 pointer-events-none bg-muted/40 border-dashed"
+									: "hover:ring-2 hover:ring-primary/10 hover:border-primary/30"
+							}`}
 						>
 							<CardHeader className="pb-3">
 								<div className="flex justify-between items-start">
@@ -161,12 +166,20 @@ export default function RoomPage() {
 										</h2>
 									</div>
 
+									{/* Flag badge */}
+									{room.flag === 1 && (
+										<span className="absolute top-2 right-2 text-[9px] uppercase font-bold bg-destructive/10 text-destructive border border-destructive/20 px-2 py-0.5 rounded-full">
+											Түр хаагдсан
+										</span>
+									)}
+
 									<DropdownMenu>
 										<DropdownMenuTrigger asChild>
 											<Button
 												variant="ghost"
 												size="icon"
 												className="h-8 w-8 hover:bg-muted"
+												disabled={room.flag === 1}
 											>
 												<MoreVertical
 													size={18}
@@ -183,11 +196,10 @@ export default function RoomPage() {
 											</DropdownMenuItem>
 											<DropdownMenuSeparator />
 											<DropdownMenuItem
-												className="text-destructive focus:text-destructive font-medium cursor-pointer"
+												className="font-medium cursor-pointer"
 												onClick={() => confirmDelete(room)}
 											>
-												<Trash2 className="mr-2 h-4 w-4 text-destructive" />{" "}
-												Устгах
+												<CircleOff className="mr-2 h-4 w-4" /> Түр хаах
 											</DropdownMenuItem>
 										</DropdownMenuContent>
 									</DropdownMenu>
@@ -227,7 +239,7 @@ export default function RoomPage() {
 											</p>
 											<p className="text-sm font-medium mt-0.5 truncate text-foreground/80">
 												{room.pccnt ? (
-													room.pccnt
+													`${room.pccnt}`
 												) : (
 													<span className="text-xs italic">
 														зохион байгуулагүй байна.
@@ -254,12 +266,20 @@ export default function RoomPage() {
 									variant="secondary"
 									size="sm"
 									className="h-8 text-[11px] font-bold w-full hover:bg-primary hover:text-primary-foreground transition-colors group"
-									asChild
+									disabled={room.flag === 1}
+									asChild={room.flag !== 1}
 								>
-									<Link href={`/room/${room.id}`}>
-										<Monitor size={14} className="mr-2" />
-										Ширээний зохион байгуулалт
-									</Link>
+									{room.flag !== 1 ? (
+										<Link href={`/room/${room.id}`}>
+											<Monitor size={14} className="mr-2" />
+											Ширээний зохион байгуулалт
+										</Link>
+									) : (
+										<>
+											<Monitor size={14} className="mr-2" />
+											Ширээний зохион байгуулалт
+										</>
+									)}
 								</Button>
 							</CardFooter>
 						</Card>
@@ -295,13 +315,13 @@ export default function RoomPage() {
 					<AlertDialogHeader>
 						<AlertDialogTitle className="flex items-center gap-2 justify-center flex-col">
 							<div className="bg-primary/10 p-2 rounded-lg text-primary">
-								<Trash2 className=" text-destructive" />
+								<CircleOff />
 							</div>
-							<p>Өрөө устгах</p>
+							<p>Өрөө түр хаах</p>
 						</AlertDialogTitle>
 						<AlertDialogDescription className="text-center">
 							Та <span className="font-bold">{roomToDelete?.room_number}</span>{" "}
-							дугаар өрөөг устгахдаа итгэлтэй байна уу?
+							дугаар өрөөг түр хаахдаа итгэлтэй байна уу?
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<div className="flex flex-col justify-end gap-2 pt-2">
@@ -319,7 +339,7 @@ export default function RoomPage() {
 									Устгаж байна...
 								</>
 							) : (
-								"Устгах"
+								"Түр хаах"
 							)}
 						</Button>
 						<Button

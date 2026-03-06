@@ -1,33 +1,22 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format, isValid } from "date-fns";
-import {
-	CalendarRange,
-	Clock,
-	Download,
-	Info,
-	Printer,
-	Users,
-} from "lucide-react";
-import { use, useMemo } from "react";
+import { CalendarRange, Clock, Download } from "lucide-react";
+import { use } from "react";
 import { toast } from "sonner";
-import ExamPrintService from "@/app/(dash)/exam-schedule/[time_id]/ExamPrintService";
 import { ExamTimeTable } from "@/app/(dash)/exam-schedule/[time_id]/ExamTimeTable";
 import { VariantList } from "@/app/(dash)/exam-schedule/[time_id]/VariantList";
-import { mockExamTimeResponse } from "@/app/(dash)/exam-schedule/mock";
 import { IBackButton } from "@/components/iBackButton";
 import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import { Skeleton } from "@/components/ui/skeleton"; // Skeleton байвал ашиглах
 import { Spinner } from "@/components/ui/spinner";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
 	getExamInfo,
 	getExamMateralVariantDownload,
@@ -56,9 +45,6 @@ export default function ExamTimePage({ params }: ExamTimePageProps) {
 		enabled: !!userId && !!time_id,
 	});
 
-	// const registrationData = mockExamTimeResponse;
-	// const isListLoading = false;
-
 	const { data: examInfo, isLoading: isInfoLoading } = useQuery({
 		queryKey: ["api_exam_info_by_examdateid", time_id, userId],
 		queryFn: () =>
@@ -69,21 +55,6 @@ export default function ExamTimePage({ params }: ExamTimePageProps) {
 		enabled: !!userId && !!time_id,
 		select: (res) => res.RetData?.[0],
 	});
-
-	// Массив өгөгдлийг тогтворжуулах
-	const examRooms = useMemo(
-		() => registrationData?.RetData || [],
-		[registrationData],
-	);
-
-	// Огноо форматлах туслах функц
-	const formatDateSafe = (dateStr?: string) => {
-		if (!dateStr) return "Тодорхойгүй";
-		const date = new Date(dateStr);
-		return isValid(date) ? format(date, "yyyy.MM.dd HH:mm") : "Буруу огноо";
-	};
-
-	const isLoading = isListLoading || isInfoLoading;
 
 	const { data: materalData, isLoading: materalIsLoading } = useQuery({
 		queryKey: ["get_exam_materal_list", time_id, userId, examInfo],
@@ -117,8 +88,10 @@ export default function ExamTimePage({ params }: ExamTimePageProps) {
 		},
 	});
 
+	const hasMaterial = (materalData?.RetData?.length ?? 0) > 0;
+
 	return (
-		<div className="py-8 px-4 max-w-7xl mx-auto space-y-8">
+		<div className="py-6 max-w-7xl mx-auto space-y-8">
 			<header className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b pb-6 text-foreground">
 				<div className="flex items-start gap-4">
 					<IBackButton className="mt-1" />
@@ -144,61 +117,48 @@ export default function ExamTimePage({ params }: ExamTimePageProps) {
 									{examInfo?.duration || 0} минут
 								</span>
 							</span>
-							{/* <span className="hidden md:inline text-slate-300">|</span> */}
-							{/* <span className="flex items-center gap-1.5">
-								<Info size={14} className="text-emerald-500" />
-								Бүртгэл:{" "}
-								<span className="font-semibold text-foreground">
-									{`${formatDateSafe(
-										examInfo?.register_start_date,
-									)} | ${formatDateSafe(examInfo?.register_end_date)}`}
-								</span>
-							</span> */}
 						</div>
 					</div>
 				</div>
 
 				<div className="flex items-center gap-2 w-full lg:w-auto">
-					<Button onClick={() => mutate()}>
-						{isPending ? (
-							<div className="flex items-center gap-2">
-								<Spinner />
-								Татаж байна...
-							</div>
-						) : (
-							<div className="flex items-center gap-2">
-								<Download /> Шалгалтын материал вариентууд татах
-							</div>
-						)}
-					</Button>
-
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button variant="outline">
-								<Printer />
-								Багшийн хэвлэх хэсэг
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent className="w-60" align="center">
-							<DropdownMenuGroup>
-								<ExamPrintService exam_rooms={examRooms} examInfo={examInfo} />
-								<DropdownMenuSeparator />
-								<DropdownMenuItem>
-									<Users /> Бүртгэлийн хуудас
-								</DropdownMenuItem>
-							</DropdownMenuGroup>
-						</DropdownMenuContent>
-					</DropdownMenu>
+					<TooltipProvider>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<span>
+									<Button
+										onClick={() => mutate()}
+										disabled={isPending || hasMaterial}
+									>
+										{isPending ? (
+											<div className="flex items-center gap-2">
+												<Spinner />
+												Татаж байна...
+											</div>
+										) : (
+											<div className="flex items-center gap-2">
+												<Download /> Материал татах
+											</div>
+										)}
+									</Button>
+								</span>
+							</TooltipTrigger>
+							{hasMaterial && (
+								<TooltipContent>
+									<p>Материал татагдсан байна, дахин татах шаардлагагүй</p>
+								</TooltipContent>
+							)}
+						</Tooltip>
+					</TooltipProvider>
 				</div>
 			</header>
 			<VariantList
 				data={materalData?.RetData || null}
 				isLoading={materalIsLoading}
-				openExam={examInfo?.open_date}
 			/>
 			<ExamTimeTable
-				data={examRooms}
-				isLoading={isLoading}
+				data={registrationData?.RetData || []} // Шууд датаг дамжуулна
+				isLoading={isListLoading || isInfoLoading}
 				timeId={Number(time_id)}
 				examInfo={examInfo}
 			/>

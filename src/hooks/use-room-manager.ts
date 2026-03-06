@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import type { GridPos, LayoutType, Table } from "@/types/dashboard/room.types";
 
 export const useRoomManager = (TABLE_UNITS: number) => {
-	const [tableCount, setTableCount] = useState(36);
+	const [tableCount, setTableCount] = useState(1);
 	const [sizeMultiplier, setSizeMultiplier] = useState(48);
 	const [activeTable, setActiveTable] = useState<number | null>(null);
 
@@ -12,10 +12,41 @@ export const useRoomManager = (TABLE_UNITS: number) => {
 	const GRID_Y = RATIO_Y * sizeMultiplier;
 
 	const generateLayout = useCallback(
-		(type: LayoutType, count: number, gX: number, gY: number) => {
+		(
+			type: LayoutType,
+			count: number,
+			gX: number,
+			gY: number,
+			existingTables?: Table[],
+		) => {
 			const tables: Table[] = [];
 			const colGap = 10;
 			const rowGap = 10;
+
+			// exam_seat_id > 0 байгаа бүртгэгдсэн ширээнүүдийг seat_number-аар индекс хийх
+			const registeredMap = new Map<string, Table>();
+			if (existingTables) {
+				for (const t of existingTables) {
+					if (t.exam_seat_id && t.exam_seat_id > 0) {
+						registeredMap.set(t.seat_number, t);
+					}
+				}
+			}
+
+			const buildTable = (i: number, x: number, y: number): Table => {
+				const seatNumber = (i + 1).toString();
+				const registered = registeredMap.get(seatNumber);
+				return {
+					id: i + 1,
+					seat_number: seatNumber,
+					xPos: Math.round(x / 10) * 10,
+					yPos: Math.round(y / 10) * 10,
+					// Бүртгэлтэй ширээний нэр болон exam_seat_id-г хадгалах,
+					// шинэ ширээнд 0 өгөх
+					name: registered?.name ?? "Сурагч",
+					exam_seat_id: registered?.exam_seat_id ?? 0,
+				};
+			};
 
 			if (type === "u_shape") {
 				const dynamicGap = 10;
@@ -51,13 +82,7 @@ export const useRoomManager = (TABLE_UNITS: number) => {
 						y = offsetY + totalHeight;
 					}
 
-					tables.push({
-						id: i + 1,
-						seat_number: (i + 1).toString(), // Суудлын дугаар нэмэгдсэн
-						xPos: Math.round(x / 10) * 10,
-						yPos: Math.round(y / 10) * 10,
-						name: "Suragch",
-					});
+					tables.push(buildTable(i, x, y));
 				}
 			} else {
 				const sections = type === "rows_3" ? 3 : 2;
@@ -80,25 +105,90 @@ export const useRoomManager = (TABLE_UNITS: number) => {
 					const rowInSec = Math.floor(itemInSec / cols);
 					const colIdx = itemInSec % cols;
 
-					tables.push({
-						id: i + 1,
-						seat_number: (i + 1).toString(), // Суудлын дугаар нэмэгдсэн
-						xPos:
-							Math.round((offsetX + colIdx * (TABLE_UNITS + colGap)) / 10) * 10,
-						yPos:
-							Math.round(
-								(offsetY +
-									sectionIdx * (TABLE_UNITS * rowsPerSection + sectionGap) +
-									rowInSec * (TABLE_UNITS + rowGap)) /
-									10,
-							) * 10,
-						name: `Сурагч`,
-					});
+					tables.push(
+						buildTable(
+							i,
+							offsetX + colIdx * (TABLE_UNITS + colGap),
+							offsetY +
+								sectionIdx * (TABLE_UNITS * rowsPerSection + sectionGap) +
+								rowInSec * (TABLE_UNITS + rowGap),
+						),
+					);
 				}
 			}
 			return tables;
 		},
 		[TABLE_UNITS],
+	);
+
+	const addExtraTables = useCallback(
+		(
+			existingTables: Table[],
+			totalCount: number,
+		): {
+			allTables: Table[];
+			newTables: Table[];
+		} => {
+			if (totalCount <= existingTables.length) {
+				return { allTables: existingTables, newTables: [] };
+			}
+
+			const extraCount = totalCount - existingTables.length;
+			const maxId =
+				existingTables.length > 0
+					? Math.max(...existingTables.map((t) => t.id))
+					: 0;
+			const maxSeatNum =
+				existingTables.length > 0
+					? Math.max(...existingTables.map((t) => parseInt(t.seat_number) || 0))
+					: 0;
+
+			const addedTables: Table[] = [];
+
+			for (let i = 0; i < extraCount; i++) {
+				const newId = maxId + i + 1;
+				const newSeatNum = (maxSeatNum + i + 1).toString();
+
+				let newX = 0,
+					newY = 0,
+					foundSpot = false;
+
+				for (let x = 0; x < GRID_X - TABLE_UNITS; x += 10) {
+					for (let y = 0; y < GRID_Y - TABLE_UNITS; y += 10) {
+						const isOccupied = [...existingTables, ...addedTables].some(
+							(t) =>
+								x < t.xPos + TABLE_UNITS &&
+								x + TABLE_UNITS > t.xPos &&
+								y < t.yPos + TABLE_UNITS &&
+								y + TABLE_UNITS > t.yPos,
+						);
+						if (!isOccupied) {
+							newX = x;
+							newY = y;
+							foundSpot = true;
+							break;
+						}
+					}
+					if (foundSpot) break;
+				}
+
+				// Шинээр нэмэгдсэн ширээ — exam_seat_id = 0
+				addedTables.push({
+					id: newId,
+					seat_number: newSeatNum,
+					xPos: newX,
+					yPos: newY,
+					name: `Сурагч ${newSeatNum}`,
+					exam_seat_id: 0,
+				});
+			}
+
+			return {
+				allTables: [...existingTables, ...addedTables],
+				newTables: addedTables,
+			};
+		},
+		[GRID_X, GRID_Y, TABLE_UNITS],
 	);
 
 	const [tables, setTables] = useState<Table[]>([]);
@@ -111,13 +201,10 @@ export const useRoomManager = (TABLE_UNITS: number) => {
 			const currentGridX = RATIO_X * sizeMultiplier;
 			const currentGridY = RATIO_Y * sizeMultiplier;
 
-			const newTables = generateLayout(
-				type,
-				finalCount,
-				currentGridX,
-				currentGridY,
+			// Одоогийн tables-ийг дамжуулж бүртгэлтэй exam_seat_id-уудыг хадгалах
+			setTables((prev) =>
+				generateLayout(type, finalCount, currentGridX, currentGridY, prev),
 			);
-			setTables(newTables);
 		},
 		[generateLayout, tableCount, sizeMultiplier],
 	);
@@ -144,7 +231,6 @@ export const useRoomManager = (TABLE_UNITS: number) => {
 			const maxId = prev.length > 0 ? Math.max(...prev.map((t) => t.id)) : 0;
 			const newId = maxId + 1;
 
-			// Суудлын дугаарыг одоо байгаа хамгийн их дугаар дээр үндэслэж үүсгэх
 			const maxSeatNum =
 				prev.length > 0
 					? Math.max(...prev.map((t) => parseInt(t.seat_number) || 0))
@@ -175,12 +261,14 @@ export const useRoomManager = (TABLE_UNITS: number) => {
 				if (foundSpot) break;
 			}
 
+			// Шинээр нэмэгдсэн ширээ — exam_seat_id = 0
 			const newTable: Table = {
 				id: newId,
-				seat_number: newSeatNumber, // Шинэ суудлын дугаар
+				seat_number: newSeatNumber,
 				xPos: newX,
 				yPos: newY,
 				name: `Сурагч ${newSeatNumber}`,
+				exam_seat_id: 0,
 			};
 
 			return [...prev, newTable];
@@ -216,5 +304,6 @@ export const useRoomManager = (TABLE_UNITS: number) => {
 		RATIO_Y,
 		addTable,
 		removeTable,
+		addExtraTables,
 	};
 };
