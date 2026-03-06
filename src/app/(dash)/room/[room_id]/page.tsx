@@ -2,11 +2,22 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Minus, Plus, Save } from "lucide-react";
-import { use, useEffect, useRef, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Desk } from "@/app/(dash)/room/[room_id]/desk";
 import { LayoutPicker } from "@/app/(dash)/room/[room_id]/mini-room";
 import { IBackButton } from "@/components/iBackButton";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useRoomManager } from "@/hooks/use-room-manager";
@@ -47,14 +58,18 @@ export default function RoomPage({ params }: RoomPageProps) {
 		RATIO_X,
 		RATIO_Y,
 		sizeMultiplier,
+		addExtraTables,
 	} = useRoomManager(TABLE_UNITS);
 
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [currentLayout, setCurrentLayout] = useState<LayoutType>("rows_3");
+	const [newlyAddedTables, setNewlyAddedTables] = useState<Table[]>([]);
 
 	const { data: remoteData, isLoading: isDataLoading } = useQuery({
 		queryKey: ["room-positions", roomId],
-		queryFn: () => getComputerPositions({ userId: 0, roomid: Number(roomId) }),
+		queryFn: () =>
+			getComputerPositions({ userId: Number(userId), roomid: Number(roomId) }),
+		enabled: !!userId,
 	});
 
 	const { data: roomDetail, isLoading: isRoomDetailLoading } = useQuery({
@@ -64,52 +79,48 @@ export default function RoomPage({ params }: RoomPageProps) {
 		select: (res) => res.RetData[0],
 	});
 
-	useEffect(() => {
-		if (roomDetail?.roomsize) {
-			setSizeMultiplier(roomDetail.roomsize);
-		}
-	}, [roomDetail, setSizeMultiplier]);
+	// useEffect(() => {
+	// 	if (roomDetail?.roomsize) {
+	// 		setSizeMultiplier(roomDetail.roomsize);
+	// 	}
+	// }, [roomDetail, setSizeMultiplier]);
 
 	// Өмнөх олон useEffect-үүдээ устгаад зөвхөн үүнийг үлдээ:
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	useEffect(() => {
-		// 1. Дата ачаалагдаж дуусаагүй бол юу ч хийхгүй
 		if (isDataLoading || isRoomDetailLoading || !roomDetail) return;
-
-		// 2. Өрөөний хэмжээг нэг удаа тохируулах
 		if (roomDetail.roomsize) {
 			setSizeMultiplier(roomDetail.roomsize);
 		}
 
-		// 3. Ширээнүүдийг байрлуулах үндсэн логик
+		const totalPcCount = roomDetail.num_of_pc || 0;
+
 		if (remoteData?.RetData && remoteData.RetData.length > 0) {
-			// Хэрэв датабазад хадгалсан БАЙРШИЛ БАЙГАА бол
 			const mappedTables: Table[] = remoteData.RetData.map((pc) => ({
 				id: pc.seatid,
 				xPos: pc.colnum,
 				yPos: pc.rownum,
 				name: pc.seat_number,
 				seat_number: pc.seat_number,
+				exam_seat_id: pc.exam_seat_id,
 			}));
 
-			setTables(mappedTables);
-			setTableCount(mappedTables.length);
+			// ✅ num_of_pc > RetData.length бол хоосон байршлаас шинэ PC нэмнэ
+			const { allTables, newTables } = addExtraTables(
+				mappedTables,
+				totalPcCount,
+			);
+			setNewlyAddedTables(newTables);
+			setTables(allTables);
+			setTableCount(allTables.length);
 		} else {
-			// Хэрэв ШИНЭ ӨРӨӨ (хадгалсан дата байхгүй) бол
-			const pcCount = roomDetail.num_of_pc || 0;
-			setTableCount(pcCount);
-
-			// Зөвхөн tables хоосон үед л анхны layout-ыг онооно
-			// Ингэснээр infinite loop-ээс сэргийлнэ
-			if (tables.length === 0 && pcCount > 0) {
-				applyLayout(currentLayout, pcCount);
+			setTableCount(totalPcCount);
+			if (tables.length === 0 && totalPcCount > 0) {
+				applyLayout(currentLayout, totalPcCount);
 			}
 		}
-
-		// ХАМААРАЛ: Энд 'tables'-ыг хасчихсан байгааг анзаараарай!
-		// Энэ нь дата анх ирэхэд л нэг удаа ажиллана гэсэн үг.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [isDataLoading, isRoomDetailLoading, remoteData]);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: tables intentionally excluded
+	}, [isDataLoading, isRoomDetailLoading, remoteData, roomDetail]);
 
 	// Mouse handlers (MouseDown, MouseMove, MouseUp хэвээрээ...)
 	const handleMouseDown = (e: React.MouseEvent, table: Table) => {
@@ -169,57 +180,51 @@ export default function RoomPage({ params }: RoomPageProps) {
 	const { mutate: saveLayout, isPending } = useMutation({
 		mutationFn: saveRoomLayout,
 		onSuccess: (res) => {
-			if (res.ResponseCode === 11) {
-				toast.error("Зохион байгуулалт амжилтгүй");
+			if (res.RetResponse.ResponseCode === 11) {
+				toast.error(res.RetResponse.ResponseMessage);
 			} else {
-				toast.success("Зохион байгуулалт амжилттай хадгалагдлаа!");
+				toast.success(res.RetResponse.ResponseMessage);
 			}
 		},
 	});
 
 	const handleSave = () => {
+		// Шинэ ширээ байгаа эсэхээс хамааран явуулах дата өөрчлөгдөнө
+		const tablesToSave =
+			newlyAddedTables.length > 0 ? newlyAddedTables : tables;
+
 		saveLayout({
 			roomId: Number(roomId),
 			userId: userId || 0,
-			tables: tables,
+			tables: tablesToSave, // ✅ Зөвхөн шинэ ширээнүүд
 			sizes: sizeMultiplier,
 		});
 	};
 
-	useEffect(() => {
-		if (roomDetail) {
-			if (roomDetail.roomsize) setSizeMultiplier(roomDetail.roomsize);
+	// remoteData-гийн анхны байршлуудыг map хийж авах
+	const originalPositions = useMemo(() => {
+		const map = new Map<number, { xPos: number; yPos: number }>();
+		remoteData?.RetData?.forEach((pc) => {
+			map.set(pc.seatid, { xPos: pc.colnum, yPos: pc.rownum });
+		});
+		return map;
+	}, [remoteData]);
 
-			// Хэрэв өмнө нь хадгалсан байршил байхгүй бол (RetData хоосон)
-			// Шууд num_of_pc-ээр нь layout үүсгэнэ
-			if (remoteData?.RetData && remoteData.RetData.length === 0) {
-				setTableCount(roomDetail.num_of_pc);
-				applyLayout(currentLayout, roomDetail.num_of_pc);
-			}
-		}
-	}, [
-		roomDetail,
-		remoteData,
-		setSizeMultiplier,
-		applyLayout,
-		currentLayout,
-		setTableCount,
-	]);
+	// Байршил өөрчлөгдсөн ширээнүүдийг тодорхойлох
+	const movedTables = useMemo(() => {
+		return new Set(
+			tables
+				.filter((t) => {
+					if (!t.exam_seat_id || t.exam_seat_id === 0) return false;
+					const original = originalPositions.get(t.id);
+					if (!original) return false;
+					return t.xPos !== original.xPos || t.yPos !== original.yPos;
+				})
+				.map((t) => t.id),
+		);
+	}, [tables, originalPositions]);
 
-	useEffect(() => {
-		if (remoteData?.RetData && remoteData.RetData.length > 0) {
-			const mappedTables: Table[] = remoteData.RetData.map((pc) => ({
-				id: pc.seatid,
-				xPos: pc.colnum,
-				yPos: pc.rownum,
-				name: pc.seat_number,
-				seat_number: pc.seat_number,
-			}));
-
-			setTables(mappedTables);
-			setTableCount(mappedTables.length);
-		}
-	}, [remoteData, setTables, setTableCount]);
+	const isAlreadyRegistered = remoteData !== null;
 
 	if (isDataLoading || isRoomDetailLoading) {
 		return (
@@ -248,19 +253,48 @@ export default function RoomPage({ params }: RoomPageProps) {
 						</p>
 					</div>
 				</div>
-				<Button onClick={handleSave} className="w-full md:w-auto">
-					{isPending ? (
-						<div className="flex items-center gap-2">
-							<Spinner />
-							Хадгалж байна...
-						</div>
-					) : (
-						<div className="flex items-center gap-2">
-							<Save size={16} />
-							{remoteData?.RetData === null ? "Хадгалах" : "Засах"}
-						</div>
-					)}
-				</Button>
+				<AlertDialog>
+					{/* Хэрэв бүртгэгдсэн бол товчийг идэвхгүй болгоно */}
+					<AlertDialogTrigger asChild>
+						<Button className={`w-full md:w-auto `}>
+							{isPending ? (
+								<div className="flex items-center gap-2">
+									<Spinner /> Хадгалж байна...
+								</div>
+							) : (
+								<div className="flex items-center gap-2">
+									<Save size={16} />
+									{"Хадгалах"}
+								</div>
+							)}
+						</Button>
+					</AlertDialogTrigger>
+
+					<AlertDialogContent>
+						<AlertDialogHeader>
+							<AlertDialogTitle>
+								{isAlreadyRegistered
+									? "Бүртгэлтэй байна"
+									: "Та итгэлтэй байна уу?"}
+							</AlertDialogTitle>
+							<AlertDialogDescription>
+								{isAlreadyRegistered
+									? "Энэ өрөөний байршил аль хэдийн бүртгэгдсэн байна. Та дахин бүртгэх боломжгүй."
+									: "Та ширээний байршлыг хадгалах гэж байна. Энэ үйлдлийг хийхэд бэлэн үү?"}
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<AlertDialogFooter>
+							<AlertDialogCancel>
+								{isAlreadyRegistered ? "Хаах" : "Болих"}
+							</AlertDialogCancel>
+							{
+								<AlertDialogAction onClick={handleSave}>
+									Тийм, хадгалах
+								</AlertDialogAction>
+							}
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
 			</header>
 
 			<div className="flex flex-col lg:flex-row gap-6 items-start">
@@ -347,13 +381,16 @@ export default function RoomPage({ params }: RoomPageProps) {
 							key={table.id}
 							table={table}
 							isActive={activeTable === table.id}
+							isMoved={movedTables.has(table.id)} // ← нэмэх
 							gridX={GRID_X}
 							gridY={GRID_Y}
+							isNew={newlyAddedTables.some((t) => t.id === table.id)}
 							tableUnits={TABLE_UNITS}
 							onMouseDown={handleMouseDown}
 						/>
 					))}
 				</main>
+
 				<aside className="w-full lg:w-48  flex flex-col gap-4">
 					<div className="flex flex-col gap-2 px-1">
 						<span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">
@@ -369,6 +406,18 @@ export default function RoomPage({ params }: RoomPageProps) {
 					</div>
 				</aside>
 			</div>
+			<div className="flex gap-6">
+				<div className="flex items-center gap-3">
+					<div className="bg-indigo-500/10 border-indigo-500/30 hover:border-indigo-500 text-indigo-600 dark:text-indigo-400 dark:bg-indigo-500/40  size-10 rounded-md flex items-center justify-center border-2 transition-all shadow-md p-0.5"></div>{" "}
+					Бүртгэдсэн ширээ
+				</div>
+				<div className="flex items-center gap-3">
+					{" "}
+					<div className="bg-orange-100 dark:bg-orange-900/40 dark:border-orange-500 text-orange-500 border-orange-500  size-10 rounded-md flex items-center justify-center border-2 transition-all shadow-md p-0.5"></div>
+					Нэмж бүртгэсэн ширээ
+				</div>
+			</div>
+			{/* Header хэсгийн товчлуур */}
 		</div>
 	);
 }

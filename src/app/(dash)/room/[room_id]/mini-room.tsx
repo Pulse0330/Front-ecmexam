@@ -120,7 +120,7 @@ export function LayoutPicker({ currentLayout, onSelect }: LayoutPickerProps) {
 						key={option.id}
 						type="button"
 						onClick={() => onSelect(option.id)}
-						className={`group relative flex flex-col min-w-[180px] lg:w-full p-3  border-dashed border-2 border-primary inset-shadow-lg rounded-2xl transition-all duration-300 snap-center ${
+						className={`group relative flex flex-col min-w-45 lg:w-full p-3  border-dashed border-2 border-primary inset-shadow-lg rounded-2xl transition-all duration-300 snap-center ${
 							isActive
 								? "bg-background shadow-[0_10px_40px_rgba(0,0,0,0.1)] border-solid z-10"
 								: "bg-card/40 border border-border/40 hover:bg-background hover:border-primary hover:shadow-md"

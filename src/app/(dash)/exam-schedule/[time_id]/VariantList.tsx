@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -7,10 +6,9 @@ import type { ExamVariant } from "@/types/dashboard/exam.types";
 interface Props {
 	data?: ExamVariant[] | null;
 	isLoading?: boolean;
-	openExam: string | undefined;
 }
 
-export function VariantList({ data, isLoading, openExam }: Props) {
+export function VariantList({ data, isLoading }: Props) {
 	// 1️⃣ Loading
 	if (isLoading) {
 		return (
@@ -37,11 +35,8 @@ export function VariantList({ data, isLoading, openExam }: Props) {
 		return (
 			<Card>
 				<CardContent className="py-10 text-center text-muted-foreground text-sm">
-					Шалгалтын матерал вариентууд татах татагдаагүй байна. | Шалгалт
-					эхэлхээс 1 цагын өмнө татна. <br />
-					<span className="text-base">
-						{openExam ? format(new Date(openExam), "yyyy.MM.dd HH:mm") : "-"}
-					</span>
+					Шалгалтын материал вариантууд татагдаагүй байна. | Шалгалт эхлэхээс 1
+					цагийн өмнө татна.
 				</CardContent>
 			</Card>
 		);
@@ -63,8 +58,12 @@ export function VariantList({ data, isLoading, openExam }: Props) {
 				</div>
 
 				<div className="flex flex-wrap gap-2">
-					{data.map((v) => (
-						<Badge key={v.variantId} variant="secondary" className="h-10 px-3">
+					{data.map((v, i) => (
+						<Badge
+							key={`${v.variantId}-${i}`}
+							variant="secondary"
+							className="h-10 px-3"
+						>
 							Хувилбар: {v.variant_number}
 						</Badge>
 					))}

@@ -1,6 +1,5 @@
 "use client";
 
-import { Monitor } from "lucide-react";
 import type { Table } from "@/types/dashboard/room.types";
 
 interface DeskProps {
@@ -9,7 +8,8 @@ interface DeskProps {
 	gridX: number;
 	gridY: number;
 	tableUnits: number;
-
+	isNew?: boolean; // ← нэмэх
+	isMoved?: boolean;
 	onMouseDown: (e: React.MouseEvent, table: Table) => void;
 }
 
@@ -19,6 +19,7 @@ export function Desk({
 	gridX,
 	gridY,
 	tableUnits,
+	isNew,
 
 	onMouseDown,
 }: DeskProps) {
@@ -44,7 +45,9 @@ export function Desk({
 				className={`w-full h-full rounded-md flex items-center justify-center border-2 transition-all shadow-md p-0.5 ${
 					isActive
 						? "bg-indigo-600 border-indigo-400 shadow-indigo-500/50 scale-110 text-white"
-						: "bg-indigo-500/10 border-indigo-500/30 hover:border-indigo-500 text-indigo-600 dark:text-indigo-400 dark:bg-indigo-500/40"
+						: isNew
+							? " bg-orange-100 dark:bg-orange-900/40 dark:border-orange-500 text-orange-500 border-orange-500"
+							: "bg-indigo-500/10 border-indigo-500/30 hover:border-indigo-500 text-indigo-600 dark:text-indigo-400 dark:bg-indigo-500/40"
 				}`}
 			>
 				{/* <Monitor /> */}

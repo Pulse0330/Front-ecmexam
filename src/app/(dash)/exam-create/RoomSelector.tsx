@@ -44,7 +44,6 @@ export function RoomSelector({
 		select: (res) => res.RetData,
 	});
 
-	// RadioGroup утга солигдох үед өрөөг олж esisroomid-г дамжуулах
 	const handleValueChange = (id: string) => {
 		const foundRoom = rooms.find((r) => String(r.id) === id);
 		if (foundRoom) {
@@ -89,28 +88,28 @@ export function RoomSelector({
 				>
 					{rooms.map((room: Room) => {
 						const hasPC = room.pccnt !== null && room.pccnt > 0;
+						const isDisabled = !hasPC || room.flag === 1; // 👈 ЭНЭ
 
 						return (
 							<div key={room.id} className="relative group">
 								<Label
 									htmlFor={`room-${room.id}`}
 									className={`relative flex flex-col p-3 rounded-xl border transition-all cursor-pointer ${
-										!hasPC
-											? "bg-muted/20 border-dashed" // Эндээс opacity-60-ыг хасав
+										isDisabled
+											? "bg-muted/20 border-dashed"
 											: selectedId === String(room.id)
 												? "border-primary bg-primary/5 ring-1 ring-primary shadow-sm"
 												: "border-border bg-card hover:border-primary/50 hover:bg-muted/50"
 									}`}
 								>
-									{/* Дээд талын мэдээлэл: hasPC-гүй бол opacity-60 болгоно */}
 									<div
-										className={`flex items-start w-full ${!hasPC ? "opacity-60" : ""}`}
+										className={`flex items-start w-full ${isDisabled ? "opacity-60" : ""}`}
 									>
 										<div className="flex items-center gap-3 w-full">
 											<RadioGroupItem
 												value={String(room.id)}
 												id={`room-${room.id}`}
-												disabled={!hasPC}
+												disabled={isDisabled} // 👈 ЭНЭ
 											/>
 											<div className="flex flex-col gap-0.5 overflow-hidden">
 												<div className="flex items-center gap-2 font-medium text-sm">
@@ -119,7 +118,9 @@ export function RoomSelector({
 														className="text-muted-foreground"
 													/>
 													<span
-														className={!hasPC ? "text-muted-foreground" : ""}
+														className={
+															isDisabled ? "text-muted-foreground" : ""
+														}
 													>
 														{room.room_number}-р өрөө
 													</span>
@@ -139,18 +140,22 @@ export function RoomSelector({
 										</div>
 									</div>
 
-									{/* Доод талын хэсэг */}
 									<div className="mt-2 flex items-center justify-between border-t border-border/50 pt-2 w-full">
-										{/* Суудлын тоог hasPC-гүй үед бүдгэрүүлнэ */}
 										<div
-											className={`flex items-center gap-1.5 text-[11px] text-muted-foreground ${!hasPC ? "opacity-60" : ""}`}
+											className={`flex items-center gap-1.5 text-[11px] text-muted-foreground ${isDisabled ? "opacity-60" : ""}`}
 										>
 											<Monitor size={14} className="text-muted-foreground" />
 											<span>{room.pccnt ?? 0} суудал</span>
 										</div>
 
-										{!hasPC ? (
-											// acctionHidden === false үед л Link-ийг харуулна
+										{room.flag === 1 ? (
+											<Badge
+												variant={"secondary"}
+												className="text-[9px] h-4 bg-green-500/10 text-red-600 border-none px-1"
+											>
+												Түр хаагдсан
+											</Badge>
+										) : !hasPC ? (
 											!acctionHidden && (
 												<Button
 													size="sm"
