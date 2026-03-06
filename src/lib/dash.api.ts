@@ -6,6 +6,7 @@ import type {
 	getExamMateralVariantDownloadResponseType,
 	getExamResponseType,
 	getExamSaveResponseType,
+	getExamTimedResponseType,
 	getExamTimeResponseType,
 	getStudentsResponseType,
 } from "@/types/dashboard/exam.types";
@@ -199,7 +200,7 @@ export const userRegisterExams = async ({
 	exam_room_id,
 }: {
 	userId: number;
-	examinee_number: number;
+	examinee_number: string;
 	exam_id: number;
 	exam_room_id: number;
 	exam_date_id: number;
@@ -330,5 +331,21 @@ export const getExamMateralVariantDownload = async ({
 			conn: "skuul",
 		},
 	);
+	return data;
+};
+
+export const getExamTime = async ({
+	userId,
+	examinee_number,
+}: {
+	userId: number;
+	examinee_number: string;
+}): Promise<getExamTimedResponseType> => {
+	const { data } = await api1.post<getExamTimedResponseType>("/list", {
+		procname: "api_exam_mhl_choose_list",
+		examinee_number: examinee_number,
+		userid: userId,
+		conn: "skuul",
+	});
 	return data;
 };
