@@ -24,7 +24,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { getHomeScreen, getmnExamUserCheck, getUserProfile } from "@/lib/api";
+import { getHomeScreen, getmnExamUserCheck, getUserProfile , getMNPrint } from "@/lib/api";
 import { getExamTime } from "@/lib/dash.api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUserStore } from "@/stores/useUserStore";
@@ -36,10 +36,12 @@ import {
 } from "@/types/home";
 import type { UserProfileResponseType } from "@/types/user";
 import ExamLists from "./homeExamCard";
-import MnExamList from "./mnExamlist";
+import MnExamList from "./mnExamlist"; 
 import MnSorilList from "./mnSorilList";
 import { Exam1111 } from "@/types/dashboard/exam.types";
 import { ExamInfoCard } from "./examBurtguulsen";
+
+import MnExamPrint from "./mnPrint";
 
 const ANIMATION_STAGGER = 0.04;
 
@@ -281,6 +283,7 @@ const SorilLists = memo(({ pastExams }: SorilListsProps) => {
 	}
 
 	return (
+		
 		<div className="px-2">
 			<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3 px-2">
 				{pastExams.map((exam, index) => (
@@ -332,55 +335,74 @@ export function isBurtguulsen(list: Exam1111[]) {
 }
 
 export default function HomePage() {
-	const { userId, user } = useAuthStore();
-	const { setProfile } = useUserStore();
+const { userId, user } = useAuthStore();
+const { setProfile } = useUserStore();
 
-	const { data: homeData, isLoading: isHomeLoading } =
-		useQuery<HomeResponseType>({
-			queryKey: ["homeScreen", userId],
-			queryFn: () => getHomeScreen(userId ?? 0),
-			enabled: !!userId,
-			retry: 2,
-			staleTime: 5 * 60 * 1000,
-			refetchOnWindowFocus: false,
-		});
+const { data: profileData, isLoading: isProfileLoading } =
+  useQuery<UserProfileResponseType>({
+    queryKey: ["userProfile", userId],
+    queryFn: () => getUserProfile(userId ?? 0),
+    enabled: !!userId,
+    retry: 2,
+    staleTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
-	const {
-		data: examList = [],
-		isLoading,
-		isFetched,
-	} = useQuery({
-		queryKey: ["get_exam_v2", userId],
-		queryFn: () =>
-			getExamTime({
-				userId: Number(userId),
-				examinee_number: user?.examinee_number || "",
-			}),
-		enabled: !!userId && !!user?.examinee_number,
-		select: (res) => res.RetData || [],
-	});
-	
+const { data: homeData, isLoading: isHomeLoading } =
+  useQuery<HomeResponseType>({
+    queryKey: ["homeScreen", userId],
+    queryFn: () => getHomeScreen(userId ?? 0),
+    enabled: !!userId,
+    retry: 2,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+  
+
+const {
+  data: examList = [],
+  isLoading,
+  isFetched,
+} = useQuery({
+  queryKey: ["get_exam_v2", userId],
+  queryFn: () =>
+    getExamTime({
+      userId: Number(userId),
+      examinee_number: user?.examinee_number || "",
+    }),
+  enabled: !!userId && !!user?.examinee_number,
+  select: (res) => res.RetData || [],
+});
+
 const { data: myExamInfo } = useQuery({
   queryKey: ["myExamInfo", userId, user?.examinee_number],
   queryFn: () => getmnExamUserCheck(user?.examinee_number ?? "", Number(userId)),
   enabled: !!userId && !!user?.examinee_number,
-select: (res) => res.RetData ?? [],
+  select: (res) => {
+    console.log("🔍 myExamInfo raw:", res); // ✅ нэм
+    return res.RetData ?? [];
+  },
 });
-	const { data: profileData, isLoading: isProfileLoading } =
-		useQuery<UserProfileResponseType>({
-			queryKey: ["userProfile", userId],
-			queryFn: () => getUserProfile(userId ?? 0),
-			enabled: !!userId,
-			retry: 2,
-			staleTime: 10 * 60 * 1000,
-			refetchOnWindowFocus: false,
-		});
+const { data: printData } = useQuery({
+  queryKey: ["mn_print", userId, user?.examinee_number],
+  queryFn: () =>
+    getMNPrint({
+      userId: Number(userId),
+      examineeNumber: String(user?.examinee_number ?? ""),
+    }),
+  enabled: !!userId && !!user?.examinee_number,
+  select: (res) => {
+    console.log("✅ printData:", res);
+    return res.RetData ?? [];
+  },
+});
 
-	useEffect(() => {
-		if (profileData?.RetData?.length) {
-			setProfile(profileData.RetData[0]);
-		}
-	}, [profileData, setProfile]);
+
+useEffect(() => {
+  if (profileData?.RetData?.length) {
+    setProfile(profileData.RetData[0]);
+  }
+}, [profileData, setProfile]);
 
 	const username = profileData?.RetData?.[0]?.username ?? "Хэрэглэгч";
 	const hasExams = Boolean(homeData?.RetDataThirt?.length);
@@ -398,10 +420,19 @@ select: (res) => res.RetData ?? [],
 				</div>
 
 {myExamInfo && myExamInfo.length > 0 ? (
-  <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-200 flex flex-row gap-3 overflow-x-auto">
+  <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-200 space-y-8">
     {myExamInfo.map((exam, index) => (
-      <div key={`${exam.exam_number}-${index}`} className="shrink-0 w-72">
-        <ExamInfoCard exam={exam} />
+      <div key={`${exam.exam_number}-${index}`} className="space-y-4">
+        
+        {/* Exam info card */}
+        <div className="flex flex-row gap-3 overflow-x-auto">
+          <div className="shrink-0 w-72">
+            <ExamInfoCard exam={exam} />
+          </div>
+        </div>
+
+        {/* Variants — map дотор тул exam.exam_id ажиллана ✅ */}
+        
       </div>
     ))}
   </div>
@@ -421,29 +452,17 @@ select: (res) => res.RetData ?? [],
 					</div>
 				) : (
 					<>
-						{" "}
-						{userId && (
-							<>
-								<SectionDivider
-									title="Монгол хэл бичгийн шалгалт"
-									href="/Lists/mnSorilList"
-								/>
-								<div className="animate-in fade-in-0 duration-700 delay-700">
-									<MnExamList />
-								</div>
-							</>
-						)}
-						{userId && (
-							<>
-								<SectionDivider
-									title="Монгол хэл бичгийн сорил"
-									href="/Lists/mnSorilList"
-								/>
-								<div className="animate-in fade-in-0 duration-700 delay-700">
-									<MnSorilList />
-								</div>
-							</>
-						)}
+		{printData && printData.length > 0 && (
+  <MnExamPrint printList={printData} />
+
+)}
+						<SectionDivider
+          title="Шалгалтын вариантууд"
+          href="/Lists/mnSorilList"
+        />
+	   <div className="animate-in fade-in-0 duration-700">
+          <MnExamList/>
+        </div>
 						{hasExams && homeData?.RetDataThirt && (
 							<>
 								<SectionDivider
@@ -465,6 +484,9 @@ select: (res) => res.RetData ?? [],
 								</div>
 							</>
 						)}
+
+     
+
 					
 					</>
 				)}

@@ -134,7 +134,7 @@ export const QuestionCard = memo(function QuestionCard({
 							<div className="flex-1 min-w-0">
 								<div className="flex items-start justify-between gap-2 mb-4">
 									<div className="font-semibold text-lg flex-1 leading-relaxed prose prose-sm max-w-none">
-										<MathContent html={q.question_name} />
+										 <MathContent html={q.question_name.replace(/<img[^>]*>/gi, "")} />
 									</div>
 									<BookmarkButton
 										isBookmarked={isBookmarked}
@@ -167,7 +167,7 @@ export const QuestionCard = memo(function QuestionCard({
 					</div>
 					<div className="flex-1 min-w-0">
 						<div className="font-semibold leading-relaxed prose prose-sm max-w-none text-sm">
-							<MathContent html={q.question_name} />
+							 <MathContent html={q.question_name.replace(/<img[^>]*>/gi, "")} />
 						</div>
 					</div>
 					<div className="flex items-center gap-2 shrink-0">

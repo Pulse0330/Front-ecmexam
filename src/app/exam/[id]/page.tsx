@@ -54,7 +54,7 @@ import ExamSourceCard from "../component/question/sourceName";
 
 /** Асуултын төрлөөр автомат хадгалалтын хугацаа (мс) */
 const SAVE_DELAYS = {
-	DEFAULT: 5000,
+	DEFAULT: 1000,
 	TYPE_3_NUMBER: 5000,
 	TYPE_4_FILL: 5000,
 	TYPE_5_ORDER: 3000,
@@ -123,20 +123,20 @@ const callSaveApi = (
   ctx: SaveContext,
   questionId: number,
   answerId: number,
-  queTypeId: number,
+  queTypeId: number,  // ← 3-р параметр
   answer: string,
   rowNum: number,
 ) => {
   if (ctx.isNewExam) {
     return savemnExamAnswer(
       ctx.userId, ctx.examId, questionId,
-      answerId, queTypeId, answer, rowNum,
+      answerId, queTypeId, answer, rowNum,  // ✅ зөв
       ctx.examDateId, ctx.examRegId,
     );
   }
   return saveExamAnswer(
     ctx.userId, ctx.examId, questionId,
-    answerId, queTypeId, answer, rowNum,
+    answerId, queTypeId, answer, rowNum,   // ✅ зөв
   );
 };
 const callDeleteApi = (
@@ -341,9 +341,9 @@ const saveType1 = async (ctx: SaveContext): Promise<void> => {
   const ans = ctx.answer;
   if (typeof ans === "number" && isValidId(ans)) {
     await callSaveApi(ctx, ctx.questionId, ans, QuestionType.SINGLE_CHOICE, "1", ctx.rowNum);
+    //                                    ↑ans=answerId  ↑queTypeId=1  ↑answer="1"  ↑rowNum
   }
 };
-
 const saveType2 = async (ctx: SaveContext): Promise<void> => {
   const ans = ctx.answer;
   if (Array.isArray(ans) && ans.length > 0) {
@@ -490,11 +490,13 @@ export default function ExamPage() {
 	const lastSavedAnswers = useRef<Map<number, AnswerValue>>(new Map());
 	const examDataRef = useRef<ApiExamResponse | null>(null);
 	const searchParams = useSearchParams();
-	const variantNumber = Number(searchParams.get("variant"));
-	const examType = Number(searchParams.get("exam_type"));
-	const _isNewExam = examType === 2;
 	const examDateId = Number(searchParams.get("exam_date_id"));
 const examRegId = Number(searchParams.get("exam_reg_id"));
+const examIdFromParams = Number(searchParams.get("exam_id"));
+	const variantNumber = Number(searchParams.get("variant"));
+	const examType = Number(searchParams.get("exam_type"));
+	const _isNewExam = examType === 4; //4
+
 	// FIX: questionsMapRef — handleAnswerChange-д O(1) хайлт
 	const questionsMapRef = useRef<
 		Map<number, { que_type_id: number; row_num: string }>
@@ -511,7 +513,9 @@ const examRegId = Number(searchParams.get("exam_reg_id"));
 
 	const examIdParam = Number(id);
 	const isValidUserId = !!userId && userId > 0;
-	const isValidExamId = !Number.isNaN(examIdParam) && examIdParam > 0;
+const isValidExamId = _isNewExam
+    ? true
+    : !Number.isNaN(examIdParam) && examIdParam > 0;
 
 	const {
 		data: examData,
@@ -558,18 +562,18 @@ const examRegId = Number(searchParams.get("exam_reg_id"));
 			if (savingQuestions.current.has(questionId)) return false;
 			try {
 				savingQuestions.current.add(questionId);
-				const ctx: SaveContext = {
-					userId: userId ?? 0,
-					examId,
-					questionId,
-					rowNum,
-					answer,
-					  isNewExam: _isNewExam,
-					previousAnswer: lastSavedAnswers.current.get(questionId),
-					examAnswers: examDataRef.current?.Answers ?? [],
-					 examDateId,
-  examRegId,
-				};
+const ctx: SaveContext = {
+    userId: userId ?? 0,
+    examId: _isNewExam ? examIdFromParams : examId, // ✅ params-аас
+    questionId,
+    rowNum,
+    answer,
+    isNewExam: _isNewExam,
+    previousAnswer: lastSavedAnswers.current.get(questionId),
+    examAnswers: examDataRef.current?.Answers ?? [],
+    examDateId,
+    examRegId,
+};
 				await DELETE_HANDLERS[queTypeId]?.(ctx);
 				await SAVE_HANDLERS[queTypeId]?.(ctx);
 				lastSavedAnswers.current.set(questionId, answer);
@@ -627,42 +631,31 @@ const examRegId = Number(searchParams.get("exam_reg_id"));
 		[processPendingAnswers],
 	);
 
-	const handleAnswerChange = useCallback(
-		(questionId: number, answer: AnswerValue) => {
-			// FIX: O(1) Map.get() — өмнө O(n) Questions.find() байсан
-			const question = questionsMapRef.current.get(questionId);
-			if (!question) return;
+const handleAnswerChange = useCallback(
+    (questionId: number, answer: AnswerValue) => {
+        const question = questionsMapRef.current.get(questionId);
+        if (!question) return;
 
-			if (areAnswersEqual(selectedAnswersRef.current[questionId], answer))
-				return;
+        const current = selectedAnswersRef.current[questionId];
+        const finalAnswer =
+            question.que_type_id === QuestionType.SINGLE_CHOICE && current === answer
+                ? null
+                : answer;
 
-			const rowNum = Number(question.row_num);
-			const queTypeId = question.que_type_id;
+        if (areAnswersEqual(current, finalAnswer)) return;
 
-			const existingTimer = typingTimers.current.get(questionId);
-			if (existingTimer) clearTimeout(existingTimer);
-			setCurrentTypingId(questionId);
-			const typingTimer = setTimeout(() => {
-				if (isMountedRef.current) {
-					setCurrentTypingId((prev) => (prev === questionId ? null : prev));
-				}
-				typingTimers.current.delete(questionId);
-			}, TYPING_INDICATOR_DELAY);
-			typingTimers.current.set(questionId, typingTimer);
-
-			dispatchAnswer({ type: "SET_ANSWER", questionId, answer });
-			setPending(questionId, {
-				questionId,
-				answer,
-				queTypeId,
-				rowNum,
-				timestamp: Date.now(),
-			});
-
-			scheduleAutoSave(DELAY_BY_TYPE[queTypeId] ?? SAVE_DELAYS.DEFAULT);
-		},
-		[scheduleAutoSave, setPending],
-	);
+        dispatchAnswer({ type: "SET_ANSWER", questionId, answer: finalAnswer });
+        setPending(questionId, {
+            questionId,
+            answer: finalAnswer,
+            queTypeId: question.que_type_id,
+            rowNum: Number(question.row_num),
+            timestamp: Date.now(),
+        });
+        scheduleAutoSave(DELAY_BY_TYPE[question.que_type_id] ?? SAVE_DELAYS.DEFAULT);
+    },
+    [scheduleAutoSave, setPending],
+);
 
 	const handleManualSave = useCallback(() => {
 		if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -984,31 +977,58 @@ const examRegId = Number(searchParams.get("exam_reg_id"));
 										examTime={examInfo.minut}
 										answeredCount={answeredCount}
 										totalCount={totalCount}
+										    examRegId={examRegId}        
+    variantId={variantNumber} 
 									/>
 								</div>
 							)}
 						</div>
 					</aside>
 
-					<main className="col-span-3">
-						<div className="space-y-5">
-							{allQuestions.map((q, index) => (
-								<div key={q.question_id} id={`question-${index}`}>
-									<MemoDesktopQuestionCard
-										question={q}
-										index={index}
-										selectedAnswer={selectedAnswers[q.question_id]}
-										isBookmarked={!!bookmarkedMap[q.question_id]}
-										isTyping={currentTypingId === q.question_id}
-										onAnswerChange={handleAnswerChange}
-										onBookmarkToggle={toggleBookmark}
-										examId={examId}
-										userId={userId ?? 0}
-									/>
-								</div>
-							))}
-						</div>
-					</main>
+				<main className="col-span-3">
+  <div className="space-y-5">
+    {(() => {
+      let lastSectionNumber: number | null = null;
+      return allQuestions.map((q, index) => {
+        const showSectionHeader =
+          q.section_number !== null &&
+          q.section_number !== lastSectionNumber;
+        if (showSectionHeader) lastSectionNumber = q.section_number;
+
+        return (
+          <div key={q.question_id}>
+            {showSectionHeader && (
+              <div className="flex items-center gap-3 py-3 px-4 mb-2 bg-blue-50 dark:bg-blue-900/30 rounded-xl border border-blue-200 dark:border-blue-700">
+                <div className="w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center shrink-0">
+                  <span className="text-white text-sm font-bold">
+                    {q.section_number}
+                  </span>
+                </div>
+                <span className="text-base font-bold text-blue-700 dark:text-blue-300">
+                  {q.section_number}-р хэсэг
+                </span>
+                <div className="flex-1 h-px bg-blue-200 dark:bg-blue-700" />
+              </div>
+            )}
+            <div id={`question-${index}`}>
+              <MemoDesktopQuestionCard
+                question={q}
+                index={index}
+                selectedAnswer={selectedAnswers[q.question_id]}
+                isBookmarked={!!bookmarkedMap[q.question_id]}
+                isTyping={currentTypingId === q.question_id}
+                onAnswerChange={handleAnswerChange}
+                onBookmarkToggle={toggleBookmark}
+                examId={examId}
+                userId={userId ?? 0}
+              />
+            </div>
+          </div>
+        );
+      });
+    })()}
+  </div>
+</main>
 
 					<aside className="col-span-2">
 						<div className="sticky top-6 space-y-4">
@@ -1075,21 +1095,39 @@ const examRegId = Number(searchParams.get("exam_reg_id"));
 				</div>
 
 				<div className="flex-1 overflow-y-auto px-3 py-3">
-					{currentQuestion && (
-						<MemoMobileQuestionCard
-							key={currentQuestion.question_id}
-							question={currentQuestion}
-							index={currentQuestionIndex}
-							selectedAnswer={selectedAnswers[currentQuestion.question_id]}
-							isBookmarked={!!bookmarkedMap[currentQuestion.question_id]}
-							isTyping={currentTypingId === currentQuestion.question_id}
-							onAnswerChange={handleAnswerChange}
-							onBookmarkToggle={toggleBookmark}
-							examId={examId}
-							userId={userId ?? 0}
-						/>
-					)}
-				</div>
+  {currentQuestion && (
+    <>
+      {/* Section header — зөвхөн section эхний асуулт дээр */}
+      {currentQuestion.section_number !== null &&
+        (currentQuestionIndex === 0 ||
+          allQuestions[currentQuestionIndex - 1]?.section_number !==
+            currentQuestion.section_number) && (
+          <div className="flex items-center gap-3 py-2.5 px-4 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-xl border border-blue-200 dark:border-blue-700">
+            <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
+              <span className="text-white text-xs font-bold">
+                {currentQuestion.section_number}
+              </span>
+            </div>
+            <span className="text-sm font-bold text-blue-700 dark:text-blue-300">
+              {currentQuestion.section_number}-р хэсэг
+            </span>
+          </div>
+        )}
+      <MemoMobileQuestionCard
+        key={currentQuestion.question_id}
+        question={currentQuestion}
+        index={currentQuestionIndex}
+        selectedAnswer={selectedAnswers[currentQuestion.question_id]}
+        isBookmarked={!!bookmarkedMap[currentQuestion.question_id]}
+        isTyping={currentTypingId === currentQuestion.question_id}
+        onAnswerChange={handleAnswerChange}
+        onBookmarkToggle={toggleBookmark}
+        examId={examId}
+        userId={userId ?? 0}
+      />
+    </>
+  )}
+</div>
 
 				<div className="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 shadow-lg">
 					<div className="px-3 py-2 space-y-2">
@@ -1130,6 +1168,8 @@ const examRegId = Number(searchParams.get("exam_reg_id"));
 									examTime={examInfo.minut}
 									answeredCount={answeredCount}
 									totalCount={totalCount}
+									 examRegId={examRegId}       // ✅ нэмэх
+        variantId={variantNumber}
 								/>
 							)}
 						</div>
