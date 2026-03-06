@@ -73,7 +73,7 @@ export function LoginForm() {
 	const searchParams = useSearchParams();
 	const redirectUrl = searchParams.get("redirect") || "/home";
 	const tokenLogin = searchParams.get("token");
-	const uname = searchParams.get("uname");
+	// const uname = searchParams.get("uname");
 	const { setUser, setToken } = useAuthStore();
 	const [open, setOpen] = useState(false);
 
@@ -159,14 +159,8 @@ export function LoginForm() {
 	});
 
 	const { mutate: tokenLoginMutate, isPending: tokenIsLoading } = useMutation({
-		mutationFn: async ({
-			token1,
-			username,
-		}: {
-			token1: string;
-			username: string;
-		}) => {
-			const loginRes = await loginToken(token1, username);
+		mutationFn: async ({ token1 }: { token1: string }) => {
+			const loginRes = await loginToken(token1);
 
 			if (!loginRes?.RetResponse?.ResponseType) {
 				throw new Error("Нэвтрэх нэр эсвэл нууц үг буруу байна");
@@ -226,11 +220,11 @@ export function LoginForm() {
 	});
 
 	useEffect(() => {
-		if (tokenLogin && uname) {
+		if (tokenLogin) {
 			// Энд аргументуудаа объект байдлаар илгээнэ
-			tokenLoginMutate({ token1: tokenLogin, username: uname });
+			tokenLoginMutate({ token1: tokenLogin });
 		}
-	}, [tokenLogin, uname, tokenLoginMutate]);
+	}, [tokenLogin, tokenLoginMutate]);
 
 	const onSubmit = (values: FormValues) => mutate(values);
 

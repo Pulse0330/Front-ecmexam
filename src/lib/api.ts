@@ -74,11 +74,9 @@ export const loginTokenRequest = async (
 
 export const loginToken = async (
 	token: string,
-	username: string,
 ): Promise<LoginTokenResponse<User>> => {
 	const { data } = await api.post<LoginTokenResponse<User>>("/ikhlogintoken", {
 		LoginToken: token,
-		username: username,
 	});
 
 	return data;
@@ -339,7 +337,7 @@ export const savemnExamAnswer = async (
 	answer: string = "",
 	rowNum: number,
 	exam_date_id: number,
-	exam_reg_id :number,
+	exam_reg_id: number,
 ): Promise<ExamAnswerResponse> => {
 	const { data } = await api.post<ExamAnswerResponse>("/apiexamchoosedanswer", {
 		que_type_id: queTypeId,
@@ -349,19 +347,19 @@ export const savemnExamAnswer = async (
 		row_num: rowNum,
 		exam_id: examId,
 		user_id: userId,
-		exam_date_id :exam_date_id,
-		exam_reg_id:exam_reg_id,
+		exam_date_id: exam_date_id,
+		exam_reg_id: exam_reg_id,
 	});
 	return data;
 };
-// ===== mnExam delete  ===== 
+// ===== mnExam delete  =====
 export const deletemnExamAnswer = async (
 	userId: number,
 	examId: number,
 	questionId: number,
 	answerId: number,
-	exam_reg_id :number,
-exam_date_id : number,
+	exam_reg_id: number,
+	exam_date_id: number,
 ): Promise<ExamChoosedAnswerDeleteResponse> => {
 	const { data } = await api.post<ExamChoosedAnswerDeleteResponse>(
 		"/apiexamdeletedanswer",
@@ -370,8 +368,8 @@ exam_date_id : number,
 			exam_id: examId,
 			question_id: questionId,
 			answer_id: answerId,
-			exam_date_id :exam_date_id,
-			exam_reg_id:exam_reg_id,
+			exam_date_id: exam_date_id,
+			exam_reg_id: exam_reg_id,
 		},
 	);
 	return data;
