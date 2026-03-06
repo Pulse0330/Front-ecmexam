@@ -534,34 +534,27 @@ export const Navbar01: React.FC = () => {
 		pathname.includes("/Lists/courseList") ||
 		pathname.includes("/Lists/paymentCoureList");
 
-	const handleLogout = async () => {
-		try {
-			// 1. Call logout API if available
-			// await logoutAPI();
+const handleLogout = async () => {
+  try {
+    const cookiesToRemove = ["auth-token", "user-id", "firstname", "img-url"];
+    cookiesToRemove.forEach((cookie) => {
+      Cookies.remove(cookie, { path: "/" });
+    });
 
-			// 2. Clear cookies
-			const cookiesToRemove = ["auth-token", "user-id", "firstname", "img-url"];
-			cookiesToRemove.forEach((cookie) => {
-				Cookies.remove(cookie, { path: "/" });
-			});
+    clearAuth();
 
-			// 3. Clear Zustand (includes localStorage cleanup)
-			clearAuth();
+    // Persist store бүрийг цэвэрлэх
+    localStorage.clear();
+    sessionStorage.clear();
 
-			// 4. Clear session storage
-			sessionStorage.clear();
+    queryClient.clear();
 
-			// 5. Clear React Query cache
-			queryClient.clear();
-
-			// 6. Navigate to login
-			router.push("/login");
-		} catch (error) {
-			console.error("Logout error:", error);
-			// Force reload as fallback
-			window.location.href = "/login";
-		}
-	};
+    router.push("/login");
+  } catch (error) {
+    console.error("Logout error:", error);
+    window.location.href = "/login";
+  }
+};
 
 	return (
 		<>
