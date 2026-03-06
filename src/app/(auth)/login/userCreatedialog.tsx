@@ -546,7 +546,7 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 			const v = e.target.value
 				.replace(REG_ALLOWED, "")
 				.toUpperCase()
-				.slice(0, 100);
+				.slice(0, 25);
 			setReg(v);
 			if (checkState !== "idle") clearReg();
 		},
