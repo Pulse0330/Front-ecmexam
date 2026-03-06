@@ -36,6 +36,7 @@ import {
 } from "@/types/home";
 import type { UserProfileResponseType } from "@/types/user";
 import ExamLists from "./homeExamCard";
+import MnExamList from "./mnExamlist";
 import MnSorilList from "./mnSorilList";
 
 const ANIMATION_STAGGER = 0.04;
@@ -378,6 +379,17 @@ export default function HomePage() {
 				) : (
 					<>
 						{" "}
+						{userId && (
+							<>
+								<SectionDivider
+									title="Монгол хэл бичгийн шалгалт"
+									href="/Lists/mnSorilList"
+								/>
+								<div className="animate-in fade-in-0 duration-700 delay-700">
+									<MnExamList />
+								</div>
+							</>
+						)}
 						{userId && (
 							<>
 								<SectionDivider

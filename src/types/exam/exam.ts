@@ -6,7 +6,7 @@ export type AnswerValue =
 	| string
 	| Record<number, string>
 	| Record<number, number>
-	| Record<number, number[]> // 👈 ЭНЭ МӨРИЙГ НЭМЭХ
+	| Record<number, number[]>
 	| null;
 export interface Question {
 	row_num: string;
@@ -21,6 +21,9 @@ export interface Question {
 	source_img: string | null;
 	is_shinjilgee: number;
 	is_bodolt: number;
+	assig_source_id: number | null;
+	section_number: number;
+	sectionId: number;
 }
 
 export interface Answer {
