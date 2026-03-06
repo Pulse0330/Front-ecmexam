@@ -68,9 +68,10 @@ export default function RoomPage() {
 				branchname: "",
 				descr: "",
 				name: "",
-				room_number: "100",
+				room_number: "",
 				num_of_pc: 0,
 				school_esis_id: "",
+				esisroomid: "",
 			};
 			return roomCreateEdit(payload);
 		},
