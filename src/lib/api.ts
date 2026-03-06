@@ -45,6 +45,7 @@ import type {} from "@/types/login/sign/registerChoose/sum";
 import type {} from "@/types/login/sign/registerChoose/surguuli";
 import type { ExamVariantsResponse } from "@/types/mnExam/examVariants";
 import type { mnExamResponse } from "@/types/mnExam/mnExamList";
+import { mnExamUserCheckResponseType } from "@/types/mnExam/mnExamUserCheck";
 import type { getplaninfoCourseData } from "@/types/paymentCourse/getplaninfo";
 import type { QPayInvoiceResponse } from "@/types/Qpay/qpayinvoice";
 import type { ApiSorillistsResponse } from "@/types/soril/sorilLists";
@@ -52,7 +53,6 @@ import type { SorilresultListResponseType } from "@/types/soril/sorilResultLists
 import type { UserProfileResponseType } from "@/types/user";
 import type { userUpdateResponse } from "@/types/userUpdate";
 import api1 from "./axios1";
-import { mnExamUserCheckResponseType } from "@/types/mnExam/mnExamUserCheck";
 //-------------------------------Auth---------------------------------//
 
 // ===== LoginToken request =====
@@ -74,9 +74,11 @@ export const loginTokenRequest = async (
 
 export const loginToken = async (
 	token: string,
+	username: string,
 ): Promise<LoginTokenResponse<User>> => {
 	const { data } = await api.post<LoginTokenResponse<User>>("/ikhlogintoken", {
 		LoginToken: token,
+		username: username,
 	});
 
 	return data;
@@ -295,16 +297,15 @@ export const getExamVariants = async (
 };
 //=====Миний шалгалтын мэдээлэл========
 export const getmnExamUserCheck = async (
-  examinee_number: string,
-  userId: number,
+	examinee_number: string,
+	userId: number,
 ): Promise<mnExamUserCheckResponseType> => {
-  const { data } = await api1.post<mnExamUserCheckResponseType>("/list", {
-    procname: "api_my_exam_info",
-    examinee_number,
-    userid: userId,
-
-  });
-  return data;
+	const { data } = await api1.post<mnExamUserCheckResponseType>("/list", {
+		procname: "api_my_exam_info",
+		examinee_number,
+		userid: userId,
+	});
+	return data;
 };
 
 // ===== Exam choosed  =====
