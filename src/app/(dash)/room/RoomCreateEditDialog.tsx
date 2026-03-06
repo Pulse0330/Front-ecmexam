@@ -82,9 +82,9 @@ export function RoomCreateEditDialog({
 				descr: values.descr ?? "",
 				num_of_pc: Number(values.pccount),
 				school_esis_id: values.school_esis_id ?? "",
-				esisroomid: values.esisroomid ?? "",
+				esisroomid: String(values.esisroomid) ?? "",
 			};
-			console.log("payload", payload);
+
 			return roomCreateEdit(payload);
 		},
 		onSuccess: () => {
