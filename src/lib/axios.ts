@@ -22,7 +22,7 @@ api.interceptors.request.use(
 					password: "sql$erver43",
 					database: "ikh_skuul",
 					server: "172.16.1.79",
-					pool: { max: 400, min: 0, idleTimeoutMillis: 300000 },
+					pool: { max: 600, min: 20, idleTimeoutMillis: 300000 },
 					options: { encrypt: false, trustServerCertificate: false },
 				},
 			};

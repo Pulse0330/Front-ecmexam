@@ -44,8 +44,11 @@ import type {} from "@/types/login/sign/registerChoose/duureg";
 import type {} from "@/types/login/sign/registerChoose/sum";
 import type {} from "@/types/login/sign/registerChoose/surguuli";
 import type { ExamVariantsResponse } from "@/types/mnExam/examVariants";
-import type { mnExamResponse } from "@/types/mnExam/mnExamList";
-import { mnExamUserCheckResponseType } from "@/types/mnExam/mnExamUserCheck";
+import type { ExamAttendanceResponse } from "@/types/mnExam/mnExamAttendance";
+import type { mnExamFinishResponse } from "@/types/mnExam/mnExamFinish";
+import type { mnExamVariantResponse } from "@/types/mnExam/mnExamList";
+import type { mnExamUserCheckResponseType } from "@/types/mnExam/mnExamUserCheck";
+import type { ExamPrintListResponse } from "@/types/mnExam/mnPrint";
 import type { getplaninfoCourseData } from "@/types/paymentCourse/getplaninfo";
 import type { QPayInvoiceResponse } from "@/types/Qpay/qpayinvoice";
 import type { ApiSorillistsResponse } from "@/types/soril/sorilLists";
@@ -266,17 +269,6 @@ export const getNewExamFill = async (
 		exam_id: examId,
 		exam_date_id: examDateId,
 		exam_reg_id: examRegId,
-		userid: userId,
-	});
-	return data;
-};
-// ===== Examlist New request =====
-
-export const getExamVariantslist = async (
-	userId: number,
-): Promise<mnExamResponse> => {
-	const { data } = await api1.post<mnExamResponse>("/api_getexamlist", {
-		examinee_number: "",
 		userid: userId,
 	});
 	return data;
@@ -666,3 +658,60 @@ export const getQPayInvoice = async (
 	return data;
 };
 //------------------------------- МХБШ ---------------------------------//
+
+export const getMNPrint = async (params: {
+	userId: number;
+	examineeNumber: string;
+	examDateId?: number;
+}): Promise<ExamPrintListResponse> => {
+	const { data } = await api1.post<ExamPrintListResponse>("/list", {
+		procname: "api_my_exam_page_print",
+		examinee_number: params.examineeNumber,
+		exam_date_id: params.examDateId ?? 0,
+		userid: params.userId,
+		conn: "skuul",
+	});
+	return data;
+};
+
+export const getMNExamVariants = async (
+	userId: number,
+	examinee_number: string,
+): Promise<mnExamVariantResponse> => {
+	const { data } = await api1.post<mnExamVariantResponse>("/list", {
+		procname: "api_exam_date_variants",
+		userid: userId,
+		examinee_number,
+	});
+	return data;
+};
+
+export const getMNExamFinish = async (
+	exam_register_id: number,
+	variant_id: number,
+): Promise<mnExamFinishResponse> => {
+	const { data } = await api1.post<mnExamFinishResponse>(
+		"/examregistrationsanswers",
+		{
+			exam_register_id,
+			variant_id,
+		},
+	);
+	return data;
+};
+export const getMNExamAttendace = async (
+	exam_registration_id: number | null,
+	status: string,
+	start_time: string,
+	end_time: string,
+	userid: number,
+): Promise<ExamAttendanceResponse> => {
+	const { data } = await api1.post<ExamAttendanceResponse>("/examattendance", {
+		exam_registration_id: exam_registration_id,
+		status: status,
+		start_time: start_time,
+		end_time: end_time,
+		userid: userid,
+	});
+	return data;
+};

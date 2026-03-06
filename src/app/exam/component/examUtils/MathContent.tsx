@@ -6,6 +6,16 @@ interface MathContentProps {
 	html: string;
 }
 
+function cleanHtml(raw: string): string {
+	return raw
+		.replace(/&nbsp;/g, " ")
+		.replace(/&amp;/g, "&")
+		.replace(/&lt;/g, "<")
+		.replace(/&gt;/g, ">")
+		.replace(/&quot;/g, '"')
+		.replace(/&#39;/g, "'");
+}
+
 function MathContent({ html }: MathContentProps) {
 	const mathRef = useRef<HTMLDivElement>(null);
 
@@ -13,32 +23,22 @@ function MathContent({ html }: MathContentProps) {
 		const renderMath = async () => {
 			if (mathRef.current && window.MathJax) {
 				try {
-					// MathJax typesetClear хэрэглэх
 					if (window.MathJax.typesetClear) {
 						window.MathJax.typesetClear([mathRef.current]);
 					}
-
-					// MathJax typesetPromise хэрэглэх
 					if (window.MathJax.typesetPromise) {
 						await window.MathJax.typesetPromise([mathRef.current]);
 					}
-
-					// Container-уудыг wrap болгох
 					const containers = mathRef.current.querySelectorAll("mjx-container");
 					containers.forEach((container: Element) => {
 						const el = container as HTMLElement;
-
-						// Table шалгах
 						const hasTable = container.querySelector("mjx-mtable, mtable");
-
 						if (hasTable) {
-							// Table бол horizontal scroll
 							el.style.display = "block";
 							el.style.maxWidth = "100%";
 							el.style.overflowX = "auto";
 							el.style.overflowY = "hidden";
 						} else {
-							// Энгийн томьёо бол wrap
 							el.style.display = "block";
 							el.style.maxWidth = "100%";
 							el.style.overflow = "visible";
@@ -56,12 +56,14 @@ function MathContent({ html }: MathContentProps) {
 		} else {
 			renderMath();
 		}
-	}, []); // html dependency нэмсэн
+	}, []); // ✅ html шууд dependency болгох
+
+	const cleanedHtml = cleanHtml(html); // render дотор тооцно
 
 	return (
 		<div
 			ref={mathRef}
-			dangerouslySetInnerHTML={{ __html: html }}
+			dangerouslySetInnerHTML={{ __html: cleanedHtml }}
 			className="math-content text-gray-900 dark:text-gray-100"
 			style={{
 				maxWidth: "100%",
