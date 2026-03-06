@@ -9,7 +9,7 @@ import {
 	Loader2,
 	Menu,
 } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import {
 	memo,
 	useCallback,
@@ -19,14 +19,18 @@ import {
 	useRef,
 	useState,
 } from "react";
-
 import FinishExamResultDialog, {
 	type FinishExamDialogHandle,
 } from "@/app/exam/component/finish";
 import ExamMinimap from "@/app/exam/component/minimap";
 import FixedScrollButton from "@/components/FixedScrollButton";
 import { Button } from "@/components/ui/button";
-import { deleteExamAnswer, getExamById, saveExamAnswer } from "@/lib/api";
+import {
+	deleteExamAnswer,
+	getExamById,
+	getNewExamFill,
+	saveExamAnswer,
+} from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type {
 	AnswerValue,
@@ -96,6 +100,9 @@ interface ExamSource {
 	sourceName: string | null | undefined;
 	sourceImg: string | null | undefined;
 	rowNum: string;
+	assigSourceId: number | null;
+	sectionId: number | null;
+	sectionNumber: number | null;
 }
 
 type AnswerState = {
@@ -522,7 +529,10 @@ export default function ExamPage() {
 	const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const lastSavedAnswers = useRef<Map<number, AnswerValue>>(new Map());
 	const examDataRef = useRef<ApiExamResponse | null>(null);
-
+	const searchParams = useSearchParams();
+	const variantNumber = Number(searchParams.get("variant"));
+	const examType = Number(searchParams.get("exam_type"));
+	const _isNewExam = examType === 2;
 	// FIX: questionsMapRef — handleAnswerChange-д O(1) хайлт
 	const questionsMapRef = useRef<
 		Map<number, { que_type_id: number; row_num: string }>
@@ -546,11 +556,18 @@ export default function ExamPage() {
 		isLoading,
 		error,
 	} = useQuery({
-		queryKey: ["exam", userId, id],
+		queryKey: ["exam", userId, id, variantNumber, examType],
 		queryFn: () => {
-			if (!isValidUserId) throw new Error("Unauthorized: userId байхгүй");
+			if (!isValidUserId) throw new Error("Unauthorized");
 			if (!isValidExamId) throw new Error("Invalid examId");
-			return getExamById(userId, examIdParam);
+
+			if (_isNewExam) {
+				return getNewExamFill(userId, variantNumber);
+			} else {
+				return getExamById(userId, examIdParam);
+			}
+
+			// return getNewExamFill(userId, variantNumber);
 		},
 		enabled: isValidUserId && isValidExamId,
 	});
@@ -823,6 +840,9 @@ export default function ExamPage() {
 					sourceName: q.source_name,
 					sourceImg: q.source_img,
 					rowNum: q.row_num,
+					assigSourceId: q.assig_source_id ?? null,
+					sectionId: q.sectionId ?? null,
+					sectionNumber: q.section_number ?? null,
 				});
 			}
 			return acc;

@@ -3,8 +3,9 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Suspense } from "react";
 import Providers from "@/app/Providers";
-import IdleTimerProvider from "@/components/timeLogOut"; // ✅ замаа өөрчил
+import IdleTimerProvider from "@/components/timeLogOut";
 
 const inter = Inter({
 	variable: "--font-inter",
@@ -83,9 +84,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
 				/>
 				<Providers>
 					<IdleTimerProvider>
-						{" "}
-						{/* ✅ Providers-ийн доор wrap хий */}
-						{children}
+						<Suspense fallback={null}>{children}</Suspense>
 					</IdleTimerProvider>
 				</Providers>
 			</body>

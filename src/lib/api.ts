@@ -50,6 +50,7 @@ import type { ApiSorillistsResponse } from "@/types/soril/sorilLists";
 import type { SorilresultListResponseType } from "@/types/soril/sorilResultLists";
 import type { UserProfileResponseType } from "@/types/user";
 import type { userUpdateResponse } from "@/types/userUpdate";
+import api1 from "./axios1";
 //-------------------------------Auth---------------------------------//
 
 // ===== LoginToken request =====
@@ -250,6 +251,47 @@ export const getExamById = async (
 	});
 	return data;
 };
+// ===== Exam New request =====
+export const getNewExamFill = async (
+	userId: number,
+	variantNumber: number,
+	examId = 0,
+	examDateId = 0,
+	examRegId = 0,
+): Promise<ApiExamResponse> => {
+	const { data } = await api1.post<ApiExamResponse>("/api_getexamfill", {
+		variant_number: variantNumber,
+		exam_id: examId,
+		exam_date_id: examDateId,
+		exam_reg_id: examRegId,
+		userid: userId,
+	});
+	return data;
+};
+// ===== Examlist New request =====
+
+export const getExamVariantslist = async (
+	userId: number,
+): Promise<ExamVariantsResponse> => {
+	const { data } = await api1.post<ExamVariantsResponse>("/api_getexamlist", {
+		examinee_number: "",
+		userid: userId,
+	});
+	return data;
+};
+
+// ===== Soril New request =====
+
+export const getExamVariants = async (
+	userId: number,
+): Promise<ExamVariantsResponse> => {
+	const { data } = await api1.post<ExamVariantsResponse>("/list", {
+		procname: "api_exam_variants",
+		userid: userId,
+	});
+	return data;
+};
+
 // ===== Exam choosed  =====
 export const saveExamAnswer = async (
 	userId: number,
@@ -563,17 +605,3 @@ export const getQPayInvoice = async (
 	return data;
 };
 //------------------------------- МХБШ ---------------------------------//
-
-export const getExamVariants = async (
-	userId: number,
-): Promise<ExamVariantsResponse> => {
-	const { data } = await api.post<ExamVariantsResponse>(
-		"https://backend.skuul.mn/api/list",
-		{
-			procname: "api_exam_variants",
-			userid: userId,
-			conn: "skuul", // ← ЭНЭ УТГЫГ ШАЛГА
-		},
-	);
-	return data;
-};

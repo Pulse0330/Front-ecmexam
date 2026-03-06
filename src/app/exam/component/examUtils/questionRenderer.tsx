@@ -1,7 +1,6 @@
 "use client";
 
 import { type JSX, memo, useMemo } from "react";
-import MathContent from "@/app/exam/component/examUtils/MathContent";
 import FillInTheBlankQuestion from "@/app/exam/component/question/fillblank";
 import MatchingByLine from "@/app/exam/component/question/matching";
 import MultiSelectQuestion from "@/app/exam/component/question/multiselect";
@@ -49,7 +48,7 @@ function SingleSelectRenderer({
 
 	return (
 		<>
-			{(q.source_name || q.source_img) && (
+			{/* {(q.source_name || q.source_img) && (
 				<div className="mt-3 p-3 border rounded-lg">
 					{q.source_img && (
 						<img
@@ -65,7 +64,7 @@ function SingleSelectRenderer({
 						</div>
 					)}
 				</div>
-			)}
+			)} */}
 			<SingleSelectQuestion
 				questionId={q.question_id}
 				questionText={q.question_name}

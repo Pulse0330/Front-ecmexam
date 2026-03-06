@@ -1,4 +1,4 @@
-// components/exam/LessonFilter.tsx
+// components/LessonFilter.tsx
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ interface Lesson {
 
 interface LessonFilterProps {
 	lessons: Lesson[];
-	selectedLessonId: number;
+	selectedLessonId: number | null; // null-г нэмсэн
 	onLessonSelect: (lessonId: number) => void;
 }
 
@@ -22,46 +22,55 @@ export default function LessonFilter({
 	selectedLessonId,
 	onLessonSelect,
 }: LessonFilterProps) {
-	return (
-		<div className="mb-4">
-			{/* Desktop & Tablet */}
-			<div className="hidden sm:flex gap-2 flex-wrap">
-				{lessons.map((lesson) => (
-					<Tooltip key={lesson.lesson_id}>
-						<TooltipTrigger asChild>
-							<Button
-								type="button"
-								onClick={() => onLessonSelect(lesson.lesson_id)}
-								variant={
-									selectedLessonId === lesson.lesson_id ? "default" : "outline"
-								}
-								className={cn(
-									"px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap",
-									selectedLessonId === lesson.lesson_id && "shadow-lg",
-								)}
-								aria-label={`${lesson.lesson_name} хичээл сонгох`}
-								aria-pressed={selectedLessonId === lesson.lesson_id}
-							>
-								{lesson.lesson_name}
-							</Button>
-						</TooltipTrigger>
-					</Tooltip>
-				))}
-			</div>
+	// Хэрэв lessons хоосон эсвэл selectedLessonId null бол харуулахгүй
+	if (lessons.length === 0 || selectedLessonId === null) {
+		return null;
+	}
 
-			{/* Mobile */}
-			<select
-				value={selectedLessonId}
-				onChange={(e) => onLessonSelect(Number(e.target.value))}
-				className="sm:hidden w-full px-4 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
-				aria-label="Хичээл сонгох"
-			>
-				{lessons.map((lesson) => (
-					<option key={lesson.lesson_id} value={lesson.lesson_id}>
-						{lesson.lesson_name}
-					</option>
-				))}
-			</select>
+	return (
+		<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+			<div className="flex items-center gap-3 pb-2">
+				{/* Desktop - Horizontal buttons */}
+				<div className="hidden md:flex gap-2 flex-wrap">
+					{lessons.map((lesson) => (
+						<Tooltip key={lesson.lesson_id}>
+							<TooltipTrigger asChild>
+								<Button
+									type="button"
+									onClick={() => onLessonSelect(lesson.lesson_id)}
+									variant={
+										selectedLessonId === lesson.lesson_id
+											? "default"
+											: "outline"
+									}
+									className={cn(
+										"px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap",
+										selectedLessonId === lesson.lesson_id && "shadow-lg",
+									)}
+									aria-label={`${lesson.lesson_name} хичээл сонгох`}
+									aria-pressed={selectedLessonId === lesson.lesson_id}
+								>
+									{lesson.lesson_name}
+								</Button>
+							</TooltipTrigger>
+						</Tooltip>
+					))}
+				</div>
+
+				{/* Mobile - Select dropdown */}
+				<select
+					value={selectedLessonId}
+					onChange={(e) => onLessonSelect(Number(e.target.value))}
+					className="md:hidden flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-background border-2 border-input text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+					aria-label="Хичээл сонгох"
+				>
+					{lessons.map((lesson) => (
+						<option key={lesson.lesson_id} value={lesson.lesson_id}>
+							{lesson.lesson_name}
+						</option>
+					))}
+				</select>
+			</div>
 		</div>
 	);
 }
