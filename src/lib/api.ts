@@ -328,6 +328,53 @@ export const saveExamAnswer = async (
 	});
 	return data;
 };
+// ===== mnExam choosed  =====
+export const savemnExamAnswer = async (
+	userId: number,
+	examId: number,
+	questionId: number,
+	answerId: number,
+	queTypeId: number,
+	answer: string = "",
+	rowNum: number,
+	exam_date_id: number,
+	exam_reg_id :number,
+): Promise<ExamAnswerResponse> => {
+	const { data } = await api.post<ExamAnswerResponse>("/apiexamchoosedanswer", {
+		que_type_id: queTypeId,
+		question_id: questionId,
+		answer_id: answerId,
+		answer: answer,
+		row_num: rowNum,
+		exam_id: examId,
+		user_id: userId,
+		exam_date_id :exam_date_id,
+		exam_reg_id:exam_reg_id,
+	});
+	return data;
+};
+// ===== mnExam delete  ===== 
+export const deletemnExamAnswer = async (
+	userId: number,
+	examId: number,
+	questionId: number,
+	answerId: number,
+	exam_reg_id :number,
+exam_date_id : number,
+): Promise<ExamChoosedAnswerDeleteResponse> => {
+	const { data } = await api.post<ExamChoosedAnswerDeleteResponse>(
+		"/apiexamdeletedanswer",
+		{
+			user_id: userId,
+			exam_id: examId,
+			question_id: questionId,
+			answer_id: answerId,
+			exam_date_id :exam_date_id,
+			exam_reg_id:exam_reg_id,
+		},
+	);
+	return data;
+};
 // ===== Exam choosedanswer delete   =====
 export const deleteExamAnswer = async (
 	userId: number,

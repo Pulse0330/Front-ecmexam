@@ -13,6 +13,7 @@ export interface mnExamUserCheckType {
   roomname: string;
   branchname: string;
   description: string;
+  ognoo: string;
 }
 
 export interface mnExamUserCheckResponseType {

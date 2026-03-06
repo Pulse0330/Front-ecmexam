@@ -8,6 +8,8 @@ export interface ExamAnswerRequest {
 	row_num: number;
 	exam_id: number;
 	user_id: number;
+	exam_date_id: number;
+	exam_reg_id: number;
 }
 
 export interface ExamAnswerResponse {
