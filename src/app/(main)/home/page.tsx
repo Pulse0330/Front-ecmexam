@@ -364,7 +364,7 @@ const { data: myExamInfo } = useQuery({
   queryKey: ["myExamInfo", userId, user?.examinee_number],
   queryFn: () => getmnExamUserCheck(user?.examinee_number ?? "", Number(userId)),
   enabled: !!userId && !!user?.examinee_number,
-  select: (res) => res.RetData?.[0] ?? null, 
+select: (res) => res.RetData ?? [],
 });
 	const { data: profileData, isLoading: isProfileLoading } =
 		useQuery<UserProfileResponseType>({
@@ -396,11 +396,19 @@ const { data: myExamInfo } = useQuery({
 				<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700">
 					<HeroSection username={username} />
 				</div>
-				{myExamInfo && (
-<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-200 max-w-xs">
-  <ExamInfoCard exam={myExamInfo} />
-</div>
+
+{myExamInfo && myExamInfo.length > 0 ? (
+  <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-200 flex flex-row gap-3 overflow-x-auto">
+    {myExamInfo.map((exam, index) => (
+      <div key={`${exam.exam_number}-${index}`} className="shrink-0 w-72">
+        <ExamInfoCard exam={exam} />
+      </div>
+    ))}
+  </div>
+) : (
+  <p className="text-sm text-muted-foreground">Бүртгэлтэй шалгалт байхгүй байна.</p>
 )}
+
 				<ExamVerifyDialog
 					examList={examList}
 					isLoading={isLoading}

@@ -60,8 +60,8 @@ api.interceptors.response.use(
 	},
 	(error) => {
 		if (!error.response) {
-			toast.warning("Өө", {
-				description: "Refresh хийгээд үздээ бро",
+			toast.warning("Таны интернэт холболт салсан байна.", {
+				description: "Та системээс гараад дахин нэвтэрнэ үү ",
 			});
 		}
 		return Promise.reject(error);
