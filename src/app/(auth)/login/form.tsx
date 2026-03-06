@@ -132,8 +132,9 @@ export function LoginForm() {
 			for (const [key, val] of cookies) {
 				setCookie(key, val, 7);
 			}
+			const group = Number(userData.ugroup);
 
-			if (userData.ugroup === 4 || userData.ugroup === 3) {
+			if (group === 3 || group === 4) {
 				router.push("/room");
 			} else {
 				if (userData.is_enabled === 0) {
@@ -176,7 +177,6 @@ export function LoginForm() {
 			if (!sessionRes?.RetResponse?.ResponseType) {
 				throw new Error("Session үүсгэх амжилтгүй");
 			}
-
 			return { userData, token };
 		},
 		onSuccess: ({ userData, token }) => {
@@ -193,8 +193,9 @@ export function LoginForm() {
 			for (const [key, val] of cookies) {
 				setCookie(key, val, 7);
 			}
+			const group = Number(userData.ugroup);
 
-			if (userData.ugroup === 4 || userData.ugroup === 3) {
+			if (group === 3 || group === 4) {
 				router.push("/room");
 			} else {
 				if (userData.is_enabled === 0) {
