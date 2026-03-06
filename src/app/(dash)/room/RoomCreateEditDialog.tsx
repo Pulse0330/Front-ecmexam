@@ -188,6 +188,7 @@ export function RoomCreateEditDialog({
 										<Input
 											{...field}
 											className="pl-9"
+											type="number"
 											aria-invalid={fieldState.invalid}
 											placeholder="Өрөөний дугаар"
 										/>
