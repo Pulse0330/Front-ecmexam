@@ -546,7 +546,7 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 			const v = e.target.value
 				.replace(REG_ALLOWED, "")
 				.toUpperCase()
-				.slice(0, 10);
+				.slice(0, 100);
 			setReg(v);
 			if (checkState !== "idle") clearReg();
 		},
@@ -658,7 +658,7 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 							onChange={onRegInput}
 							onKeyDown={(e) => e.key === "Enter" && checkUser()}
 							placeholder="УБ12345678"
-							maxLength={10}
+							maxLength={100}
 							disabled={checkState === "found"}
 							className={`flex-1 font-mono text-base tracking-widest text-center h-11
 									${checkState === "not_found" || checkState === "error" ? "border-destructive focus-visible:ring-destructive" : ""}

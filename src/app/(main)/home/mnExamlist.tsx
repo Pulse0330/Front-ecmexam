@@ -131,7 +131,7 @@ export default function MnExamList() {
 
 	const { data, isLoading, isError } = useQuery<mnExamResponse>({
 		queryKey: ["getExamVariantslist", userId],
-		queryFn: () => getExamVariantslist(userId!),
+		queryFn: () => getExamVariantslist(userId || 0),
 		enabled: !!userId,
 		staleTime: 5 * 60 * 1000,
 		refetchOnWindowFocus: false,

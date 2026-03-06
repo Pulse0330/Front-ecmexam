@@ -44,6 +44,7 @@ import type {} from "@/types/login/sign/registerChoose/duureg";
 import type {} from "@/types/login/sign/registerChoose/sum";
 import type {} from "@/types/login/sign/registerChoose/surguuli";
 import type { ExamVariantsResponse } from "@/types/mnExam/examVariants";
+import type { mnExamResponse } from "@/types/mnExam/mnExamList";
 import type { getplaninfoCourseData } from "@/types/paymentCourse/getplaninfo";
 import type { QPayInvoiceResponse } from "@/types/Qpay/qpayinvoice";
 import type { ApiSorillistsResponse } from "@/types/soril/sorilLists";
@@ -272,8 +273,8 @@ export const getNewExamFill = async (
 
 export const getExamVariantslist = async (
 	userId: number,
-): Promise<ExamVariantsResponse> => {
-	const { data } = await api1.post<ExamVariantsResponse>("/api_getexamlist", {
+): Promise<mnExamResponse> => {
+	const { data } = await api1.post<mnExamResponse>("/api_getexamlist", {
 		examinee_number: "",
 		userid: userId,
 	});
