@@ -16,18 +16,20 @@ import {
 } from "@/components/ui/tooltip"; // Shadcn tooltip импортлох
 import { getExamPrintList } from "@/lib/dash.api";
 import { useAuthStore } from "@/stores/useAuthStore";
-import type { ExamInfoItem } from "@/types/dashboard/exam.types";
+import type { ExamInfoItem, StudentSeat } from "@/types/dashboard/exam.types";
 
 interface ExamPrintServiceProps {
 	examInfo: ExamInfoItem | undefined;
 	timeId: number;
 	roomId: number; // activeRoom-ын оронд шууд id авна
+	students?: StudentSeat[]; // ← нэмэх
 }
 
 export default function ExamPrintService({
 	examInfo,
 	timeId,
 	roomId,
+	students = [], // ← нэмэх
 }: ExamPrintServiceProps) {
 	const { userId } = useAuthStore();
 	const [isGenerating, setIsGenerating] = useState(false);
@@ -99,14 +101,15 @@ export default function ExamPrintService({
 		}
 	};
 
+	const allReady =
+		students.length > 0 && students.every((s) => s.status_code === 3);
+
 	return (
 		<>
 			<TooltipProvider>
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<div className="inline-block">
-							{" "}
-							{/* Button-г wrapper дотор хийнэ */}
 							<Button
 								variant="outline"
 								size="sm"
@@ -115,7 +118,8 @@ export default function ExamPrintService({
 									isGenerating ||
 									!printList ||
 									printList.length === 0 ||
-									isLoading
+									isLoading ||
+									!allReady
 								}
 								className="gap-2"
 							>
@@ -132,9 +136,16 @@ export default function ExamPrintService({
 					</TooltipTrigger>
 
 					{/* Хэрэв printList хоосон бол Tooltip-ийг харуулна */}
-					{(!printList || printList.length === 0) && (
+					{(isGenerating ||
+						!printList ||
+						printList.length === 0 ||
+						isLoading ||
+						!allReady) && (
 						<TooltipContent>
-							<p>Суудал хуваарилаагүй байна.</p>
+							<p className="max-w-xs text-center">
+								Суудал хуваарилах , Вариант хуваарилах бүх сурагчид амжилтай
+								болсны дараа хэвлэх боломжтой.
+							</p>
 						</TooltipContent>
 					)}
 				</Tooltip>
