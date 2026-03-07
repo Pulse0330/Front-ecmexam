@@ -569,6 +569,8 @@ export default function ExamPage() {
 	const examIdFromParams = Number(searchParams.get("exam_id"));
 	const variantNumber = Number(searchParams.get("variant"));
 	const examType = Number(searchParams.get("exam_type"));
+	const variantId = Number(searchParams.get("variant_id"));
+	const _userIdFromParams = Number(searchParams.get("userid"));
 	const _isNewExam = examType === 4; //4
 
 	// FIX: questionsMapRef — handleAnswerChange-д O(1) хайлт
@@ -596,18 +598,29 @@ export default function ExamPage() {
 		isLoading,
 		error,
 	} = useQuery({
-		queryKey: ["exam", userId, id, variantNumber, examType],
+		queryKey: [
+			"exam",
+			userId,
+			variantNumber,
+			examIdFromParams,
+			examDateId,
+			examRegId,
+		],
 		queryFn: () => {
 			if (!isValidUserId) throw new Error("Unauthorized");
 			if (!isValidExamId) throw new Error("Invalid examId");
 
 			if (_isNewExam) {
-				return getNewExamFill(userId, variantNumber);
+				return getNewExamFill(
+					userId,
+					variantId,
+					examIdFromParams,
+					examDateId,
+					examRegId,
+				);
 			} else {
 				return getExamById(userId, examIdParam);
 			}
-
-			// return getNewExamFill(userId, variantNumber);
 		},
 		enabled: isValidUserId && isValidExamId,
 	});

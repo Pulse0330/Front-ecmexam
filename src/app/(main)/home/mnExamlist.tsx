@@ -27,7 +27,7 @@ const VariantCard = memo(({ item, index }: VariantCardProps) => {
 	const router = useRouter();
 	const { userId } = useAuthStore();
 	const examName = item.name?.[0] ?? "";
-	const _variantLabel = item.variant_number ?? 0; // null → 0
+	const _variantLabel = item.variantId ?? 0; // null → 0
 
 	const formattedDate = item.sdate
 		? item.sdate.replace(
@@ -42,7 +42,7 @@ const VariantCard = memo(({ item, index }: VariantCardProps) => {
 
 		try {
 			await getMNExamAttendace(
-				item.exam_registration_id, // null байж болно
+				item.exam_registration_id,
 				"Started",
 				now,
 				"",
@@ -53,9 +53,17 @@ const VariantCard = memo(({ item, index }: VariantCardProps) => {
 			return;
 		}
 
-		router.push(
-			`/exam/${item.exam_id}?variant=${item.variant_number}&exam_type=${examType}&exam_date_id=${item.exam_date_id ?? 0}&exam_reg_id=${item.exam_registration_id}&exam_id=${item.exam_id ?? 0}`,
-		);
+		const params = new URLSearchParams({
+			variant: String(item.variant_number ?? 0),
+			exam_type: String(examType),
+			exam_date_id: String(item.exam_date_id ?? 0),
+			exam_reg_id: String(item.exam_registration_id ?? 0),
+			exam_id: String(item.exam_id ?? 0),
+			variant_id: String(item.variantId ?? 0),
+			userid: String(userId ?? 0),
+		});
+
+		router.push(`/exam/${item.exam_id}?${params.toString()}`);
 	}, [router, item, userId]);
 	return (
 		<motion.div

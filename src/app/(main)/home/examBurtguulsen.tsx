@@ -1,12 +1,14 @@
 import { MapPin, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { mnExamUserCheckType } from "@/types/mnExam/mnExamUserCheck";
+import MnExamPrint from "./mnPrint"; // ← өөрийн замаар солино
 
 interface ExamInfoCardProps {
 	exam: mnExamUserCheckType;
+	printData?: any[]; // ← нэмэгдлээ
 }
 
-export function ExamInfoCard({ exam }: ExamInfoCardProps) {
+export function ExamInfoCard({ exam, printData }: ExamInfoCardProps) {
 	const _examSdate = exam?.start_date
 		? exam.start_date.replace("T", " ").slice(0, 16)
 		: "";
@@ -31,7 +33,7 @@ export function ExamInfoCard({ exam }: ExamInfoCardProps) {
 						<p className="text-[9px] uppercase tracking-wide font-medium">
 							Өрөөний дугаар
 						</p>
-						<p className="text-xs font-semibold text-foreground ">
+						<p className="text-xs font-semibold text-foreground">
 							{exam.roomname} ({exam.room_number})
 						</p>
 					</div>
@@ -58,6 +60,11 @@ export function ExamInfoCard({ exam }: ExamInfoCardProps) {
 
 			{exam.description && (
 				<p className="text-[10px] text-muted-foreground">{exam.description}</p>
+			)}
+
+			{/* Print хэсэг */}
+			{printData && printData.length > 0 && (
+				<MnExamPrint printList={printData} />
 			)}
 		</div>
 	);
