@@ -268,7 +268,7 @@ export default function ExamPrintService({
 						{/* BACK SIDE */}
 						<div className="shadow-2xl border border-gray-300">
 							<div
-								id={`back-${item.qrcode}`}
+								id={`back-${item.register_number}`}
 								className="bg-white text-black p-[15mm] flex flex-col overflow-hidden"
 								style={{
 									width: "210mm",
