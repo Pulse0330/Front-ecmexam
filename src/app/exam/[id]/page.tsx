@@ -1066,7 +1066,7 @@ export default function ExamPage() {
 										answeredCount={answeredCount}
 										totalCount={totalCount}
 										examRegId={examRegId}
-										variantId={variantNumber}
+										variantId={variantId}
 									/>
 								</div>
 							)}
@@ -1257,7 +1257,7 @@ export default function ExamPage() {
 									answeredCount={answeredCount}
 									totalCount={totalCount}
 									examRegId={examRegId} // ✅ нэмэх
-									variantId={variantNumber}
+									variantId={variantId}
 								/>
 							)}
 						</div>

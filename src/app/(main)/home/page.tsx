@@ -42,7 +42,6 @@ import {
 import type { UserProfileResponseType } from "@/types/user";
 import { ExamInfoCard } from "./examBurtguulsen";
 import ExamLists from "./homeExamCard";
-import MnExamList from "./mnExamlist";
 
 const ANIMATION_STAGGER = 0.04;
 
@@ -451,9 +450,9 @@ export default function HomePage() {
 					title="ӨНӨӨДӨР НЭЭЛТТЭЙ БАЙГАА МОНГОЛ ХЭЛ БИЧГИЙН ШАЛГАЛТ "
 					href="/Lists/mnSorilList"
 				/>
-				<div className="animate-in fade-in-0 duration-700">
+				{/* <div className="animate-in fade-in-0 duration-700">
 					<MnExamList />
-				</div>
+				</div> */}
 
 				{isHomeLoading || isProfileLoading ? (
 					<div className="flex items-center justify-center py-24">
