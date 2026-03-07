@@ -169,8 +169,6 @@ export function ExamTimeTable({ data, timeId, examInfo }: ExamRoomTableProps) {
 	// 		)
 	// 	: 0;
 
-	console.log("selectedRoom", selectedRoom);
-
 	return (
 		<div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden flex flex-col h-full">
 			{/* ── Header ── */}
@@ -362,7 +360,7 @@ export function ExamTimeTable({ data, timeId, examInfo }: ExamRoomTableProps) {
 													</span>
 												</TableCell>
 												<TableCell>{s.status_text}</TableCell>
-												{s.status_code === 3 && (
+												{
 													<TableCell>
 														<div className="flex justify-end items-center">
 															{hasUploaded ? (
@@ -381,13 +379,14 @@ export function ExamTimeTable({ data, timeId, examInfo }: ExamRoomTableProps) {
 																		setPdfUploadOpen(true);
 																		setSelectRow(s);
 																	}}
+																	disabled={s.status_code !== 3}
 																>
 																	<Upload />
 																</Button>
 															)}
 														</div>
 													</TableCell>
-												)}
+												}
 											</TableRow>
 										);
 									})}
