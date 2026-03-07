@@ -1,11 +1,11 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getServerDate } from "@/lib/api";
 
 export function useServerTime() {
-	const { data: serverDateString, isLoading } = useQuery({
+	const { data: serverDateString, isLoading } = useQuery<string>({
 		queryKey: ["serverTime"],
 		queryFn: getServerDate,
 		staleTime: 0,
@@ -15,48 +15,44 @@ export function useServerTime() {
 		retryDelay: 1000,
 	});
 
-	const serverDate = useMemo(
-		() => (serverDateString ? new Date(serverDateString) : null),
-		[serverDateString],
+	const syncedAtRef = useRef<{ serverMs: number; localMs: number } | null>(
+		null,
 	);
-
-	const serverDateRef = useRef<number | null>(null);
-	const [tickCount, setTickCount] = useState(0);
+	const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
 	useEffect(() => {
-		if (serverDate) {
-			const newServerTime = serverDate.getTime();
-			if (serverDateRef.current !== newServerTime) {
-				serverDateRef.current = newServerTime;
-				setTickCount(0);
-			}
+		if (!serverDateString) return;
+
+		// Timezone offset огт ашиглахгүй — ISO string шууд UTC-аар parse
+		const parsed = new Date(serverDateString);
+		if (Number.isNaN(parsed.getTime())) {
+			console.error("Invalid server date:", serverDateString);
+			return;
 		}
-	}, [serverDate]);
 
-	useEffect(() => {
-		const interval = setInterval(() => {
-			setTickCount((prev) => prev + 1);
-		}, 1000);
+		syncedAtRef.current = {
+			serverMs: parsed.getTime(),
+			localMs: Date.now(),
+		};
 
+		const update = () => {
+			if (!syncedAtRef.current) return;
+			const elapsed = Date.now() - syncedAtRef.current.localMs;
+			setCurrentTime(new Date(syncedAtRef.current.serverMs + elapsed));
+		};
+
+		update();
+		const interval = setInterval(update, 1000);
 		return () => clearInterval(interval);
-	}, []);
-
-	const currentTime = useMemo(() => {
-		if (!serverDateRef.current) {
-			return null;
-		}
-		return new Date(serverDateRef.current + tickCount * 1000);
-	}, [tickCount]);
+	}, [serverDateString]);
 
 	const [isOnline, setIsOnline] = useState(true);
 
 	useEffect(() => {
 		const handleOnline = () => setIsOnline(true);
 		const handleOffline = () => setIsOnline(false);
-
 		window.addEventListener("online", handleOnline);
 		window.addEventListener("offline", handleOffline);
-
 		return () => {
 			window.removeEventListener("online", handleOnline);
 			window.removeEventListener("offline", handleOffline);
@@ -65,9 +61,7 @@ export function useServerTime() {
 
 	return {
 		currentTime,
-		tickCount, // ✅ ШИНЭ: Export хийх
 		isLoading: isLoading && !currentTime,
-		serverDate,
 		isOnline,
 	};
 }

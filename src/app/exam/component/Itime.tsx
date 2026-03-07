@@ -11,7 +11,6 @@ interface ExamTimerProps {
 	startedDate?: string;
 	onTimeUp?: (isTimeUp: boolean) => void;
 	onAutoFinish?: () => void;
-
 	onTimeUpdate?: (display: string) => void;
 }
 
@@ -22,6 +21,23 @@ const formatTime = (sec: number): string => {
 	return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 };
 
+/**
+ * "2026-03-07 14:00" эсвэл "2026-03-07 11:0" гэх мэт
+ * local-date string-ийг local time-аар parse хийнэ.
+ *
+ * new Date("2026-03-07 14:00") нь зарим browser-т UTC болгон
+ * тайлбарлаж timezone offset нэмдэг — T нэмэн ISO 8601 болгоход
+ * local time-аар тогтвортой parse хийгддэг.
+ */
+const parseLocalDate = (dateStr: string): Date => {
+	// ISO 8601 / UTC format бол шууд parse
+	if (dateStr.includes("T") || dateStr.endsWith("Z")) {
+		return new Date(dateStr);
+	}
+	// "2026-03-07 14:00" → UTC гэж тайлбарлана (server цагтай нийцүүлсэн)
+	const normalized = `${dateStr.replace(" ", "T")}Z`;
+	return new Date(normalized);
+};
 const ExamTimer = memo(function ExamTimer({
 	examEndTime,
 	examMinutes,
@@ -44,11 +60,11 @@ const ExamTimer = memo(function ExamTimer({
 		onTimeUpdateRef.current = onTimeUpdate;
 	}, [onTimeUp, onAutoFinish, onTimeUpdate]);
 
-	// Parse dates ONCE
+	// Parse dates ONCE — local time-аар тайлбарлана
 	const { endDateTime, startDateTime } = useMemo(() => {
 		return {
-			endDateTime: new Date(examEndTime),
-			startDateTime: startedDate ? new Date(startedDate) : null,
+			endDateTime: parseLocalDate(examEndTime),
+			startDateTime: startedDate ? parseLocalDate(startedDate) : null,
 		};
 	}, [examEndTime, startedDate]);
 
@@ -107,7 +123,7 @@ const ExamTimer = memo(function ExamTimer({
 
 	const formattedTime = formatTime(remainingSec);
 
-	// FIX: onTimeUpdate-г тус тусдаа useEffect-д дуудна —
+	// onTimeUpdate-г тус тусдаа useEffect-д дуудна —
 	// auto-finish logic-тай холилдохгүй, render бүрт шинэчлэгдэнэ
 	useEffect(() => {
 		onTimeUpdateRef.current?.(formattedTime);
@@ -120,7 +136,7 @@ const ExamTimer = memo(function ExamTimer({
 		};
 	}, [percentage]);
 
-	// FIX: ended болон isDanger config нэгтгэсэн — давтагдал арилсан
+	// ended болон isDanger config нэгтгэсэн — давтагдал арилсан
 	const config = useMemo(() => {
 		if (status === "ended" || isDanger) {
 			return {
