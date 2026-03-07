@@ -238,13 +238,15 @@ export default function RoomPage() {
 												Бүртгэгдсэн төхөөрөмжийн тоо
 											</p>
 											<p className="text-sm font-medium mt-0.5 truncate text-foreground/80">
-												{room.pccnt ? (
-													`${room.pccnt}`
-												) : (
-													<span className="text-xs italic">
-														зохион байгуулагүй байна.
-													</span>
-												)}
+												{room.num_of_pc ? `${room.num_of_pc}` : "-"}
+											</p>
+										</div>
+										<div className="min-w-0">
+											<p className="text-[9px] leading-none text-muted-foreground uppercase font-bold tracking-tighter">
+												Зохион байгуулсан төхөөрөмж
+											</p>
+											<p className="text-sm font-medium mt-0.5 truncate text-foreground/80">
+												{room.pccnt ? `${room.pccnt}` : "-"}
 											</p>
 										</div>
 									</div>

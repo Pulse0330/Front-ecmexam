@@ -88,10 +88,15 @@ export function RoomCreateEditDialog({
 
 			return roomCreateEdit(payload);
 		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["api_get_exam_rooms"] });
-			setOpen(false);
-			form.reset();
+		onSuccess: (res) => {
+			if (res.RetResponse.ResponseCode === 11) {
+				toast.error(res.RetResponse.ResponseMessage);
+			} else {
+				queryClient.invalidateQueries({ queryKey: ["api_get_exam_rooms"] });
+				setOpen(false);
+				form.reset();
+				toast.success(res.RetResponse.ResponseMessage);
+			}
 		},
 	});
 

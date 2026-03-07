@@ -93,10 +93,10 @@ export default function ExamTimePage({ params }: ExamTimePageProps) {
 	return (
 		<div className="py-6 max-w-7xl mx-auto space-y-8">
 			<header className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b pb-6 text-foreground">
-				<div className="flex items-start gap-4">
+				<div className="flex items-start gap-4 w-full">
 					<IBackButton className="mt-1" />
 					<div>
-						<div className="text-2xl font-bold tracking-tight flex items-center gap-3">
+						<div className="text-2xl font-bold tracking-tight flex items-center gap-3 ">
 							<div className="bg-primary/10 p-2 rounded-lg text-primary">
 								<CalendarRange size={26} />
 							</div>
@@ -121,7 +121,7 @@ export default function ExamTimePage({ params }: ExamTimePageProps) {
 					</div>
 				</div>
 
-				<div className="flex items-center gap-2 w-full lg:w-auto">
+				<div className="flex items-center gap-2  lg:w-auto">
 					<TooltipProvider>
 						<Tooltip>
 							<TooltipTrigger asChild>
