@@ -5,53 +5,58 @@ import { motion } from "framer-motion";
 import { ArrowRight, Clock, HelpCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { memo, useCallback } from "react";
-import { getExamVariantslist } from "@/lib/api";
+import { getMNExamAttendace, getMNExamVariants } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
-import type { mnExamData, mnExamResponse } from "@/types/mnExam/mnExamList";
-import { IconClick, IconClockPlay } from "@tabler/icons-react";
+import type {
+	mnExamVariantData,
+	mnExamVariantResponse,
+} from "@/types/mnExam/mnExamList";
 
 const ANIMATION_STAGGER = 0.04;
 
 // ============================================================================
-// HELPERS
+// VARIANT CARD
 // ============================================================================
 
-function formatMNTime(dateString: string) {
-  const date = new Date(dateString);
-
-  const formatter = new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "Asia/Ulaanbaatar",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-
-  return formatter.format(date).replace("T", " ");
-}
-
-// ============================================================================
-// EXAM CARD
-// ============================================================================
-
-interface ExamCardProps {
-	item: mnExamData;
+interface VariantCardProps {
+	item: mnExamVariantData;
 	index: number;
 }
 
-const ExamCard = memo(({ item, index }: ExamCardProps) => {
+const VariantCard = memo(({ item, index }: VariantCardProps) => {
 	const router = useRouter();
+	const { userId } = useAuthStore();
+	const examName = item.name?.[0] ?? "";
+	const _variantLabel = item.variant_number ?? 0; // null → 0
 
-	const handleClick = useCallback(() => {
-		router.push(`/exam/${item.exam_number}?exam_type=${item.exam_type}`);
-	}, [router, item.exam_number, item.exam_type]);
+	const formattedDate = item.sdate
+		? item.sdate.replace(
+				/(\d{4})-(\d{2})-(\d{2}) (\d+):(\d*)$/,
+				(_, y, m, d, h, min) =>
+					`${y}.${m}.${d} ${h.padStart(2, "0")}:${(min || "0").padStart(2, "0")}`,
+			)
+		: "";
+	const handleClick = useCallback(async () => {
+		const examType = item.exam_type ?? 4;
+		const now = new Date().toISOString();
 
-	const startTime = formatMNTime(item.start_date);
-	const endTime = formatMNTime(item.end_date);
+		try {
+			await getMNExamAttendace(
+				item.exam_registration_id, // null байж болно
+				"Started",
+				now,
+				"",
+				Number(userId),
+			);
+		} catch (err) {
+			console.error("Attendance error:", err);
+			return;
+		}
 
-
+		router.push(
+			`/exam/${item.exam_id}?variant=${item.variant_number}&exam_type=${examType}&exam_date_id=${item.exam_date_id ?? 0}&exam_reg_id=${item.exam_registration_id}&exam_id=${item.exam_id ?? 0}`,
+		);
+	}, [router, item, userId]);
 	return (
 		<motion.div
 			initial={{ opacity: 0, y: 20 }}
@@ -62,48 +67,56 @@ const ExamCard = memo(({ item, index }: ExamCardProps) => {
 			<button
 				type="button"
 				onClick={handleClick}
-				aria-label={`${item.name} шалгалт нээх`}
+				aria-label={`${examName} шалгалт нээх`}
 				className="group h-full w-full relative flex flex-col backdrop-blur-md cursor-pointer transition-all duration-500 ease-out rounded-lg sm:rounded-xl overflow-hidden text-left border border-border/40 bg-card/50 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20"
 			>
-				{/* Header */}
+				{/* Image Header */}
 				<div className="relative w-full aspect-5/2 bg-muted shrink-0">
 					<div className="absolute inset-0 bg-linear-to-br from-primary/20 via-primary/10 to-background" />
 					<div className="absolute inset-0 bg-linear-to-t from-background/85 via-background/50 to-transparent" />
 
-					{/* Duration */}
+					{/* Exam name */}
 					<div className="absolute bottom-0 left-0 right-0 p-1 sm:p-1.5 z-10">
 						<span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate block">
-							{item.name}
+							{examName}
 						</span>
 					</div>
 				</div>
 
 				{/* Content */}
-<div className="p-1.5 sm:p-2 pb-6 sm:pb-7 flex flex-col flex-1 space-y-1">
-  <h3 className="text-[9px] sm:text-[10px] font-semibold line-clamp-1 leading-tight transition-colors text-foreground group-hover:text-primary">
-     Эхлэх: {startTime}
-  </h3>
-  <h3 className="text-[9px] sm:text-[10px] line-clamp-1 leading-tight transition-colors text-foreground group-hover:text-primary">
-    Дуусах: {endTime}
-  </h3>
+				<div className="p-1.5 sm:p-2 md:p-2.5 pb-7 sm:pb-8 md:pb-9 flex flex-col flex-1 space-y-1 sm:space-y-1.5">
+					<div className="space-y-0.5 flex-1 min-h-0">
+						<h3 className="text-[10px] sm:text-xs md:text-sm font-semibold line-clamp-1 leading-tight transition-colors duration-300 text-foreground group-hover:text-primary">
+							{formattedDate}
+						</h3>
+					</div>
 
-  <div className="flex items-center gap-0.5 text-muted-foreground pt-0.5 border-t border-border/50">
-    <Clock className="w-2 h-2 sm:w-2.5 sm:h-2.5 shrink-0" />
-    <span className="text-[7px] sm:text-[8px] font-medium">
-      {item.duration} мин
-    </span>
-  </div>
+					{/* Stats */}
+					<div className="flex items-center justify-between gap-1 sm:gap-1.5 pt-1 border-t border-border/50">
+						<div className="flex items-center gap-0.5 sm:gap-1 text-muted-foreground min-w-0">
+							<Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
+							<span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate">
+								{item.duration} мин
+							</span>
+						</div>
+						<div className="flex items-center gap-0.5 sm:gap-1 text-muted-foreground min-w-0">
+							<span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate">
+								{item.exam_number}
+							</span>
+						</div>
+					</div>
 
-  <div className="absolute bottom-1 right-1 sm:bottom-1.5 sm:right-1.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center transition-all duration-300 bg-muted/50 group-hover:bg-foreground group-hover:scale-110">
-    <ArrowRight className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-muted-foreground group-hover:text-background group-hover:translate-x-0.5 transition-all" />
-  </div>
-</div>
+					{/* Arrow */}
+					<div className="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 md:bottom-2.5 md:right-2.5 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center transition-all duration-300 bg-muted/50 group-hover:bg-foreground group-hover:scale-110">
+						<ArrowRight className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 text-muted-foreground group-hover:text-background group-hover:translate-x-0.5 transition-all" />
+					</div>
+				</div>
 			</button>
 		</motion.div>
 	);
 });
 
-ExamCard.displayName = "ExamCard";
+VariantCard.displayName = "VariantCard";
 
 // ============================================================================
 // SKELETON
@@ -126,16 +139,26 @@ function SkeletonCard() {
 // ============================================================================
 
 export default function MnExamList() {
-	const { userId } = useAuthStore();
+	const { userId, user } = useAuthStore();
 
-	const { data, isLoading, isError } = useQuery<mnExamResponse>({
-		queryKey: ["getExamVariantslist", userId],
-		queryFn: () => getExamVariantslist(userId || 0),
-		enabled: !!userId,
+	const examineeNumber = String(user?.examinee_number ?? "");
+
+	const { data, isLoading, isError } = useQuery<mnExamVariantResponse>({
+		queryKey: ["getMNExamVariants", userId, examineeNumber],
+		queryFn: () => getMNExamVariants(Number(userId), examineeNumber),
+		enabled: !!userId && !!examineeNumber,
 		staleTime: 5 * 60 * 1000,
 		refetchOnWindowFocus: false,
 	});
-
+	const _uniqueData =
+		data?.RetData?.filter(
+			(item, index, self) =>
+				index ===
+				self.findIndex(
+					(e) =>
+						e.exam_id === item.exam_id && e.exam_date_id === item.exam_date_id,
+				),
+		) ?? [];
 	if (isError) {
 		return (
 			<div className="flex flex-col items-center py-12 opacity-40">
@@ -149,9 +172,6 @@ export default function MnExamList() {
 		return (
 			<div className="flex flex-col items-center py-12 opacity-40">
 				<HelpCircle className="w-10 h-10 mb-3 stroke-[1.5px]" />
-				<p className="text-sm font-medium">
-					Туршилтын шалгалт бүртгэгдээгүй байна
-				</p>
 			</div>
 		);
 	}
@@ -162,9 +182,9 @@ export default function MnExamList() {
 				? ["sk-0", "sk-1", "sk-2", "sk-3"].map((id) => (
 						<SkeletonCard key={id} />
 					))
-				: data?.RetData.map((item, idx) => (
-						<ExamCard
-							key={`${item.exam_number}-${item.start_date}`}
+				: (data?.RetData ?? []).map((item, idx) => (
+						<VariantCard
+							key={`${item.exam_id}-${item.exam_date_id}-${idx}`}
 							item={item}
 							index={idx}
 						/>

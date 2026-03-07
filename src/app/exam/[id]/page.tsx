@@ -27,11 +27,11 @@ import FixedScrollButton from "@/components/FixedScrollButton";
 import { Button } from "@/components/ui/button";
 import {
 	deleteExamAnswer,
+	deletemnExamAnswer,
 	getExamById,
 	getNewExamFill,
 	saveExamAnswer,
 	savemnExamAnswer,
-	 deletemnExamAnswer,
 } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type {
@@ -54,7 +54,7 @@ import ExamSourceCard from "../component/question/sourceName";
 
 /** Асуултын төрлөөр автомат хадгалалтын хугацаа (мс) */
 const SAVE_DELAYS = {
-	DEFAULT: 5000,
+	DEFAULT: 1000,
 	TYPE_3_NUMBER: 5000,
 	TYPE_4_FILL: 5000,
 	TYPE_5_ORDER: 3000,
@@ -69,7 +69,7 @@ const DELAY_BY_TYPE: Record<number, number> = {
 };
 
 const BATCH_SIZE = 5;
-const TYPING_INDICATOR_DELAY = 1500;
+const _TYPING_INDICATOR_DELAY = 1500;
 const VALID_QUESTION_TYPES = new Set([1, 2, 3, 4, 5, 6]);
 const IS_BROWSER = typeof window !== "undefined";
 
@@ -120,37 +120,52 @@ type AnswerAction =
 // Utility helpers
 // ─────────────────────────────────────────────
 const callSaveApi = (
-  ctx: SaveContext,
-  questionId: number,
-  answerId: number,
-  queTypeId: number,
-  answer: string,
-  rowNum: number,
+	ctx: SaveContext,
+	questionId: number,
+	answerId: number,
+	queTypeId: number, // ← 3-р параметр
+	answer: string,
+	rowNum: number,
 ) => {
-  if (ctx.isNewExam) {
-    return savemnExamAnswer(
-      ctx.userId, ctx.examId, questionId,
-      answerId, queTypeId, answer, rowNum,
-      ctx.examDateId, ctx.examRegId,
-    );
-  }
-  return saveExamAnswer(
-    ctx.userId, ctx.examId, questionId,
-    answerId, queTypeId, answer, rowNum,
-  );
+	if (ctx.isNewExam) {
+		return savemnExamAnswer(
+			ctx.userId,
+			ctx.examId,
+			questionId,
+			answerId,
+			queTypeId,
+			answer,
+			rowNum, // ✅ зөв
+			ctx.examDateId,
+			ctx.examRegId,
+		);
+	}
+	return saveExamAnswer(
+		ctx.userId,
+		ctx.examId,
+		questionId,
+		answerId,
+		queTypeId,
+		answer,
+		rowNum, // ✅ зөв
+	);
 };
 const callDeleteApi = (
-  ctx: SaveContext,
-  questionId: number,
-  answerId: number,
+	ctx: SaveContext,
+	questionId: number,
+	answerId: number,
 ) => {
-  if (ctx.isNewExam) {
-    return deletemnExamAnswer(
-      ctx.userId, ctx.examId, questionId,
-      answerId, ctx.examRegId, ctx.examDateId,
-    );
-  }
-  return deleteExamAnswer(ctx.userId, ctx.examId, questionId, answerId);
+	if (ctx.isNewExam) {
+		return deletemnExamAnswer(
+			ctx.userId,
+			ctx.examId,
+			questionId,
+			answerId,
+			ctx.examRegId,
+			ctx.examDateId,
+		);
+	}
+	return deleteExamAnswer(ctx.userId, ctx.examId, questionId, answerId);
 };
 const isValidId = (id: unknown): id is number =>
 	typeof id === "number" && id !== 0 && !Number.isNaN(id);
@@ -247,10 +262,10 @@ type SaveContext = {
 	examId: number;
 	questionId: number;
 	rowNum: number;
-	 isNewExam: boolean; 
+	isNewExam: boolean;
 	answer: AnswerValue;
-  examDateId: number;
-  examRegId: number;
+	examDateId: number;
+	examRegId: number;
 	previousAnswer: AnswerValue | undefined;
 	examAnswers: {
 		question_id: number;
@@ -260,151 +275,210 @@ type SaveContext = {
 };
 
 const deleteType1 = async (ctx: SaveContext): Promise<void> => {
-  const prev = ctx.previousAnswer;
-  if (typeof prev === "number" && isValidId(prev)) {
-    await callDeleteApi(ctx, ctx.questionId, prev).catch(
-      (e) => console.error(`Failed to delete Type1 Q${ctx.questionId}:`, e)
-    );
-  }
+	const prev = ctx.previousAnswer;
+	if (typeof prev === "number" && isValidId(prev)) {
+		await callDeleteApi(ctx, ctx.questionId, prev).catch((e) =>
+			console.error(`Failed to delete Type1 Q${ctx.questionId}:`, e),
+		);
+	}
 };
 
 const deleteType2 = async (ctx: SaveContext): Promise<void> => {
-  const prev = ctx.previousAnswer;
-  if (Array.isArray(prev) && prev.length > 0) {
-    await Promise.allSettled(
-      prev.map((id) => callDeleteApi(ctx, ctx.questionId, id))
-    );
-  }
+	const prev = ctx.previousAnswer;
+	if (Array.isArray(prev) && prev.length > 0) {
+		await Promise.allSettled(
+			prev.map((id) => callDeleteApi(ctx, ctx.questionId, id)),
+		);
+	}
 };
 
 const deleteType3 = async (ctx: SaveContext): Promise<void> => {
-  const prev = ctx.previousAnswer;
-  if (typeof prev === "object" && prev !== null && !Array.isArray(prev)) {
-    const prevMap = prev as Record<number, string>;
-    const prevIds = Object.keys(prevMap)
-      .map(Number)
-      .filter((id) => isValidId(id) && prevMap[id]?.trim());
-    if (prevIds.length > 0) {
-      await Promise.allSettled(
-        prevIds.map((id) => callDeleteApi(ctx, ctx.questionId, id))
-      );
-    }
-  }
+	const prev = ctx.previousAnswer;
+	if (typeof prev === "object" && prev !== null && !Array.isArray(prev)) {
+		const prevMap = prev as Record<number, string>;
+		const prevIds = Object.keys(prevMap)
+			.map(Number)
+			.filter((id) => isValidId(id) && prevMap[id]?.trim());
+		if (prevIds.length > 0) {
+			await Promise.allSettled(
+				prevIds.map((id) => callDeleteApi(ctx, ctx.questionId, id)),
+			);
+		}
+	}
 };
 
 const deleteType4 = async (ctx: SaveContext): Promise<void> => {
-  if (ctx.previousAnswer === undefined) return;
-  const existing = ctx.examAnswers.find(
-    (a) => a.question_id === ctx.questionId && a.answer_type === QuestionType.TEXT_FILL,
-  );
-  if (existing) {
-    await callDeleteApi(ctx, ctx.questionId, existing.answer_id).catch(
-      (e) => console.error(`Failed to delete Type4 Q${ctx.questionId}:`, e)
-    );
-  }
+	if (ctx.previousAnswer === undefined) return;
+	const existing = ctx.examAnswers.find(
+		(a) =>
+			a.question_id === ctx.questionId &&
+			a.answer_type === QuestionType.TEXT_FILL,
+	);
+	if (existing) {
+		await callDeleteApi(ctx, ctx.questionId, existing.answer_id).catch((e) =>
+			console.error(`Failed to delete Type4 Q${ctx.questionId}:`, e),
+		);
+	}
 };
 
 const deleteType5 = async (ctx: SaveContext): Promise<void> => {
-  const prev = ctx.previousAnswer;
-  if (Array.isArray(prev) && prev.length > 0) {
-    const valid = prev.filter(isValidId);
-    if (valid.length > 0) {
-      await Promise.allSettled(
-        valid.map((id) => callDeleteApi(ctx, ctx.questionId, id))
-      );
-    }
-  }
+	const prev = ctx.previousAnswer;
+	if (Array.isArray(prev) && prev.length > 0) {
+		const valid = prev.filter(isValidId);
+		if (valid.length > 0) {
+			await Promise.allSettled(
+				valid.map((id) => callDeleteApi(ctx, ctx.questionId, id)),
+			);
+		}
+	}
 };
 
 const deleteType6 = async (ctx: SaveContext): Promise<void> => {
-  const answer = ctx.answer;
-  if (typeof answer !== "object" || answer === null || Array.isArray(answer)) return;
-  const currentIds = extractAnswerIds(
-    normalizeMatchingAnswer(answer as Record<number, number | number[]>)
-  );
-  const previousIds = new Set<number>();
-  const prev = ctx.previousAnswer;
-  if (typeof prev === "object" && prev !== null && !Array.isArray(prev)) {
-    for (const ids of normalizeMatchingAnswer(prev as Record<number, number | number[]>).values()) {
-      for (const id of ids) previousIds.add(id);
-    }
-  }
-  const toDelete = Array.from(previousIds).filter((id) => !currentIds.has(id));
-  if (toDelete.length > 0) {
-    await Promise.allSettled(
-      toDelete.map((id) => callDeleteApi(ctx, ctx.questionId, id))
-    );
-  }
+	const answer = ctx.answer;
+	if (typeof answer !== "object" || answer === null || Array.isArray(answer))
+		return;
+	const currentIds = extractAnswerIds(
+		normalizeMatchingAnswer(answer as Record<number, number | number[]>),
+	);
+	const previousIds = new Set<number>();
+	const prev = ctx.previousAnswer;
+	if (typeof prev === "object" && prev !== null && !Array.isArray(prev)) {
+		for (const ids of normalizeMatchingAnswer(
+			prev as Record<number, number | number[]>,
+		).values()) {
+			for (const id of ids) previousIds.add(id);
+		}
+	}
+	const toDelete = Array.from(previousIds).filter((id) => !currentIds.has(id));
+	if (toDelete.length > 0) {
+		await Promise.allSettled(
+			toDelete.map((id) => callDeleteApi(ctx, ctx.questionId, id)),
+		);
+	}
 };
 
 const saveType1 = async (ctx: SaveContext): Promise<void> => {
-  const ans = ctx.answer;
-  if (typeof ans === "number" && isValidId(ans)) {
-    await callSaveApi(ctx, ctx.questionId, ans, QuestionType.SINGLE_CHOICE, "1", ctx.rowNum);
-  }
+	const ans = ctx.answer;
+	if (typeof ans === "number" && isValidId(ans)) {
+		await callSaveApi(
+			ctx,
+			ctx.questionId,
+			ans,
+			QuestionType.SINGLE_CHOICE,
+			"1",
+			ctx.rowNum,
+		);
+		//                                    ↑ans=answerId  ↑queTypeId=1  ↑answer="1"  ↑rowNum
+	}
 };
-
 const saveType2 = async (ctx: SaveContext): Promise<void> => {
-  const ans = ctx.answer;
-  if (Array.isArray(ans) && ans.length > 0) {
-    await Promise.all(
-      ans.map((id) => callSaveApi(ctx, ctx.questionId, id, QuestionType.MULTI_CHOICE, "1", ctx.rowNum))
-    );
-  }
+	const ans = ctx.answer;
+	if (Array.isArray(ans) && ans.length > 0) {
+		await Promise.all(
+			ans.map((id) =>
+				callSaveApi(
+					ctx,
+					ctx.questionId,
+					id,
+					QuestionType.MULTI_CHOICE,
+					"1",
+					ctx.rowNum,
+				),
+			),
+		);
+	}
 };
 
 const saveType3 = async (ctx: SaveContext): Promise<void> => {
-  const ans = ctx.answer;
-  if (typeof ans === "object" && ans !== null && !Array.isArray(ans)) {
-    const entries = Object.entries(ans as Record<number, string>)
-      .map(([k, v]) => [Number(k), v] as [number, string])
-      .filter(([aid, val]) => isValidId(aid) && val.trim());
-    if (entries.length > 0) {
-      await Promise.all(
-        entries.map(([id, val]) => callSaveApi(ctx, ctx.questionId, id, QuestionType.NUMBER_INPUT, val, ctx.rowNum))
-      );
-    }
-  }
+	const ans = ctx.answer;
+	if (typeof ans === "object" && ans !== null && !Array.isArray(ans)) {
+		const entries = Object.entries(ans as Record<number, string>)
+			.map(([k, v]) => [Number(k), v] as [number, string])
+			.filter(([aid, val]) => isValidId(aid) && val.trim());
+		if (entries.length > 0) {
+			await Promise.all(
+				entries.map(([id, val]) =>
+					callSaveApi(
+						ctx,
+						ctx.questionId,
+						id,
+						QuestionType.NUMBER_INPUT,
+						val,
+						ctx.rowNum,
+					),
+				),
+			);
+		}
+	}
 };
 
 const saveType4 = async (ctx: SaveContext): Promise<void> => {
-  const ans = ctx.answer;
-  if (typeof ans === "string" && ans.trim()) {
-    const existing = ctx.examAnswers.find(
-      (a) => a.question_id === ctx.questionId && a.answer_type === QuestionType.TEXT_FILL,
-    );
-    if (existing) {
-      await callSaveApi(ctx, ctx.questionId, existing.answer_id, QuestionType.TEXT_FILL, ans, ctx.rowNum);
-    }
-  }
+	const ans = ctx.answer;
+	if (typeof ans === "string" && ans.trim()) {
+		const existing = ctx.examAnswers.find(
+			(a) =>
+				a.question_id === ctx.questionId &&
+				a.answer_type === QuestionType.TEXT_FILL,
+		);
+		if (existing) {
+			await callSaveApi(
+				ctx,
+				ctx.questionId,
+				existing.answer_id,
+				QuestionType.TEXT_FILL,
+				ans,
+				ctx.rowNum,
+			);
+		}
+	}
 };
 
 const saveType5 = async (ctx: SaveContext): Promise<void> => {
-  const ans = ctx.answer;
-  if (Array.isArray(ans) && ans.length > 0) {
-    const valid = ans.filter((id): id is number => isValidId(id) && typeof id === "number");
-    if (valid.length > 0) {
-      await Promise.all(
-        valid.map((id, index) =>
-          callSaveApi(ctx, ctx.questionId, id, QuestionType.ORDERING, (index + 1).toString(), ctx.rowNum)
-        )
-      );
-    }
-  }
+	const ans = ctx.answer;
+	if (Array.isArray(ans) && ans.length > 0) {
+		const valid = ans.filter(
+			(id): id is number => isValidId(id) && typeof id === "number",
+		);
+		if (valid.length > 0) {
+			await Promise.all(
+				valid.map((id, index) =>
+					callSaveApi(
+						ctx,
+						ctx.questionId,
+						id,
+						QuestionType.ORDERING,
+						(index + 1).toString(),
+						ctx.rowNum,
+					),
+				),
+			);
+		}
+	}
 };
 
 const saveType6 = async (ctx: SaveContext): Promise<void> => {
-  const ans = ctx.answer;
-  if (typeof ans === "object" && ans !== null && !Array.isArray(ans)) {
-    const matches = normalizeMatchingAnswer(ans as Record<number, number | number[]>);
-    const promises: Promise<unknown>[] = [];
-    for (const [qRefId, aRefIds] of matches.entries()) {
-      for (const aRefId of aRefIds) {
-        promises.push(callSaveApi(ctx, ctx.questionId, aRefId, QuestionType.MATCHING, String(qRefId), ctx.rowNum));
-      }
-    }
-    if (promises.length > 0) await Promise.all(promises);
-  }
+	const ans = ctx.answer;
+	if (typeof ans === "object" && ans !== null && !Array.isArray(ans)) {
+		const matches = normalizeMatchingAnswer(
+			ans as Record<number, number | number[]>,
+		);
+		const promises: Promise<unknown>[] = [];
+		for (const [qRefId, aRefIds] of matches.entries()) {
+			for (const aRefId of aRefIds) {
+				promises.push(
+					callSaveApi(
+						ctx,
+						ctx.questionId,
+						aRefId,
+						QuestionType.MATCHING,
+						String(qRefId),
+						ctx.rowNum,
+					),
+				);
+			}
+		}
+		if (promises.length > 0) await Promise.all(promises);
+	}
 };
 
 const DELETE_HANDLERS: Record<number, (ctx: SaveContext) => Promise<void>> = {
@@ -472,7 +546,7 @@ export default function ExamPage() {
 	}, [selectedAnswers]);
 
 	const [isSaving, setIsSaving] = useState(false);
-	const [currentTypingId, setCurrentTypingId] = useState<number | null>(null);
+	const [currentTypingId, _setCurrentTypingId] = useState<number | null>(null);
 	const [isTimeUp, setIsTimeUp] = useState(false);
 	const [showMobileMinimapOverlay, setShowMobileMinimapOverlay] =
 		useState(false);
@@ -490,11 +564,13 @@ export default function ExamPage() {
 	const lastSavedAnswers = useRef<Map<number, AnswerValue>>(new Map());
 	const examDataRef = useRef<ApiExamResponse | null>(null);
 	const searchParams = useSearchParams();
+	const examDateId = Number(searchParams.get("exam_date_id"));
+	const examRegId = Number(searchParams.get("exam_reg_id"));
+	const examIdFromParams = Number(searchParams.get("exam_id"));
 	const variantNumber = Number(searchParams.get("variant"));
 	const examType = Number(searchParams.get("exam_type"));
-	const _isNewExam = examType === 2;
-	const examDateId = Number(searchParams.get("exam_date_id"));
-const examRegId = Number(searchParams.get("exam_reg_id"));
+	const _isNewExam = examType === 2; //4
+
 	// FIX: questionsMapRef — handleAnswerChange-д O(1) хайлт
 	const questionsMapRef = useRef<
 		Map<number, { que_type_id: number; row_num: string }>
@@ -511,7 +587,9 @@ const examRegId = Number(searchParams.get("exam_reg_id"));
 
 	const examIdParam = Number(id);
 	const isValidUserId = !!userId && userId > 0;
-	const isValidExamId = !Number.isNaN(examIdParam) && examIdParam > 0;
+	const isValidExamId = _isNewExam
+		? true
+		: !Number.isNaN(examIdParam) && examIdParam > 0;
 
 	const {
 		data: examData,
@@ -560,15 +638,15 @@ const examRegId = Number(searchParams.get("exam_reg_id"));
 				savingQuestions.current.add(questionId);
 				const ctx: SaveContext = {
 					userId: userId ?? 0,
-					examId,
+					examId: _isNewExam ? examIdFromParams : examId, // ✅ params-аас
 					questionId,
 					rowNum,
 					answer,
-					  isNewExam: _isNewExam,
+					isNewExam: _isNewExam,
 					previousAnswer: lastSavedAnswers.current.get(questionId),
 					examAnswers: examDataRef.current?.Answers ?? [],
-					 examDateId,
-  examRegId,
+					examDateId,
+					examRegId,
 				};
 				await DELETE_HANDLERS[queTypeId]?.(ctx);
 				await SAVE_HANDLERS[queTypeId]?.(ctx);
@@ -581,7 +659,7 @@ const examRegId = Number(searchParams.get("exam_reg_id"));
 				savingQuestions.current.delete(questionId);
 			}
 		},
-		[userId],
+		[userId, examRegId, examDateId, examIdFromParams, _isNewExam],
 	);
 
 	const processPendingAnswers = useCallback(async () => {
@@ -629,37 +707,29 @@ const examRegId = Number(searchParams.get("exam_reg_id"));
 
 	const handleAnswerChange = useCallback(
 		(questionId: number, answer: AnswerValue) => {
-			// FIX: O(1) Map.get() — өмнө O(n) Questions.find() байсан
 			const question = questionsMapRef.current.get(questionId);
 			if (!question) return;
 
-			if (areAnswersEqual(selectedAnswersRef.current[questionId], answer))
-				return;
+			const current = selectedAnswersRef.current[questionId];
+			const finalAnswer =
+				question.que_type_id === QuestionType.SINGLE_CHOICE &&
+				current === answer
+					? null
+					: answer;
 
-			const rowNum = Number(question.row_num);
-			const queTypeId = question.que_type_id;
+			if (areAnswersEqual(current, finalAnswer)) return;
 
-			const existingTimer = typingTimers.current.get(questionId);
-			if (existingTimer) clearTimeout(existingTimer);
-			setCurrentTypingId(questionId);
-			const typingTimer = setTimeout(() => {
-				if (isMountedRef.current) {
-					setCurrentTypingId((prev) => (prev === questionId ? null : prev));
-				}
-				typingTimers.current.delete(questionId);
-			}, TYPING_INDICATOR_DELAY);
-			typingTimers.current.set(questionId, typingTimer);
-
-			dispatchAnswer({ type: "SET_ANSWER", questionId, answer });
+			dispatchAnswer({ type: "SET_ANSWER", questionId, answer: finalAnswer });
 			setPending(questionId, {
 				questionId,
-				answer,
-				queTypeId,
-				rowNum,
+				answer: finalAnswer,
+				queTypeId: question.que_type_id,
+				rowNum: Number(question.row_num),
 				timestamp: Date.now(),
 			});
-
-			scheduleAutoSave(DELAY_BY_TYPE[queTypeId] ?? SAVE_DELAYS.DEFAULT);
+			scheduleAutoSave(
+				DELAY_BY_TYPE[question.que_type_id] ?? SAVE_DELAYS.DEFAULT,
+			);
 		},
 		[scheduleAutoSave, setPending],
 	);
@@ -798,13 +868,11 @@ const examRegId = Number(searchParams.get("exam_reg_id"));
 
 	const examSources = useMemo((): ExamSource[] => {
 		return allQuestions.reduce<ExamSource[]>((acc, q, index) => {
-
 			if (q.source_name || q.source_img) {
-
 				acc.push({
 					questionIndex: index,
 					questionLabel: `${index + 1}-р асуулт`,
-					 sourceName: q.source_name?.replace(/&nbsp;/g, " ") ?? null,
+					sourceName: q.source_name?.replace(/&nbsp;/g, " ") ?? null,
 					sourceImg: q.source_img,
 					rowNum: q.row_num,
 					assigSourceId: q.assig_source_id ?? null,
@@ -984,6 +1052,8 @@ const examRegId = Number(searchParams.get("exam_reg_id"));
 										examTime={examInfo.minut}
 										answeredCount={answeredCount}
 										totalCount={totalCount}
+										examRegId={examRegId}
+										variantId={variantNumber}
 									/>
 								</div>
 							)}
@@ -992,21 +1062,46 @@ const examRegId = Number(searchParams.get("exam_reg_id"));
 
 					<main className="col-span-3">
 						<div className="space-y-5">
-							{allQuestions.map((q, index) => (
-								<div key={q.question_id} id={`question-${index}`}>
-									<MemoDesktopQuestionCard
-										question={q}
-										index={index}
-										selectedAnswer={selectedAnswers[q.question_id]}
-										isBookmarked={!!bookmarkedMap[q.question_id]}
-										isTyping={currentTypingId === q.question_id}
-										onAnswerChange={handleAnswerChange}
-										onBookmarkToggle={toggleBookmark}
-										examId={examId}
-										userId={userId ?? 0}
-									/>
-								</div>
-							))}
+							{(() => {
+								let lastSectionNumber: number | null = null;
+								return allQuestions.map((q, index) => {
+									const showSectionHeader =
+										q.section_number !== null &&
+										q.section_number !== lastSectionNumber;
+									if (showSectionHeader) lastSectionNumber = q.section_number;
+
+									return (
+										<div key={q.question_id}>
+											{showSectionHeader && (
+												<div className="flex items-center gap-3 py-3 px-4 mb-2 bg-blue-50 dark:bg-blue-900/30 rounded-xl border border-blue-200 dark:border-blue-700">
+													<div className="w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center shrink-0">
+														<span className="text-white text-sm font-bold">
+															{q.section_number}
+														</span>
+													</div>
+													<span className="text-base font-bold text-blue-700 dark:text-blue-300">
+														{q.section_number}-р хэсэг
+													</span>
+													<div className="flex-1 h-px bg-blue-200 dark:bg-blue-700" />
+												</div>
+											)}
+											<div id={`question-${index}`}>
+												<MemoDesktopQuestionCard
+													question={q}
+													index={index}
+													selectedAnswer={selectedAnswers[q.question_id]}
+													isBookmarked={!!bookmarkedMap[q.question_id]}
+													isTyping={currentTypingId === q.question_id}
+													onAnswerChange={handleAnswerChange}
+													onBookmarkToggle={toggleBookmark}
+													examId={examId}
+													userId={userId ?? 0}
+												/>
+											</div>
+										</div>
+									);
+								});
+							})()}
 						</div>
 					</main>
 
@@ -1076,18 +1171,36 @@ const examRegId = Number(searchParams.get("exam_reg_id"));
 
 				<div className="flex-1 overflow-y-auto px-3 py-3">
 					{currentQuestion && (
-						<MemoMobileQuestionCard
-							key={currentQuestion.question_id}
-							question={currentQuestion}
-							index={currentQuestionIndex}
-							selectedAnswer={selectedAnswers[currentQuestion.question_id]}
-							isBookmarked={!!bookmarkedMap[currentQuestion.question_id]}
-							isTyping={currentTypingId === currentQuestion.question_id}
-							onAnswerChange={handleAnswerChange}
-							onBookmarkToggle={toggleBookmark}
-							examId={examId}
-							userId={userId ?? 0}
-						/>
+						<>
+							{/* Section header — зөвхөн section эхний асуулт дээр */}
+							{currentQuestion.section_number !== null &&
+								(currentQuestionIndex === 0 ||
+									allQuestions[currentQuestionIndex - 1]?.section_number !==
+										currentQuestion.section_number) && (
+									<div className="flex items-center gap-3 py-2.5 px-4 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-xl border border-blue-200 dark:border-blue-700">
+										<div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
+											<span className="text-white text-xs font-bold">
+												{currentQuestion.section_number}
+											</span>
+										</div>
+										<span className="text-sm font-bold text-blue-700 dark:text-blue-300">
+											{currentQuestion.section_number}-р хэсэг
+										</span>
+									</div>
+								)}
+							<MemoMobileQuestionCard
+								key={currentQuestion.question_id}
+								question={currentQuestion}
+								index={currentQuestionIndex}
+								selectedAnswer={selectedAnswers[currentQuestion.question_id]}
+								isBookmarked={!!bookmarkedMap[currentQuestion.question_id]}
+								isTyping={currentTypingId === currentQuestion.question_id}
+								onAnswerChange={handleAnswerChange}
+								onBookmarkToggle={toggleBookmark}
+								examId={examId}
+								userId={userId ?? 0}
+							/>
+						</>
 					)}
 				</div>
 
@@ -1130,6 +1243,8 @@ const examRegId = Number(searchParams.get("exam_reg_id"));
 									examTime={examInfo.minut}
 									answeredCount={answeredCount}
 									totalCount={totalCount}
+									examRegId={examRegId} // ✅ нэмэх
+									variantId={variantNumber}
 								/>
 							)}
 						</div>

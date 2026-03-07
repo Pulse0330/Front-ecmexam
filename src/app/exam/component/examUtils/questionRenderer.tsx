@@ -1,6 +1,7 @@
 "use client";
 
 import { type JSX, memo, useMemo } from "react";
+import MathContent from "@/app/exam/component/examUtils/MathContent";
 import FillInTheBlankQuestion from "@/app/exam/component/question/fillblank";
 import MatchingByLine from "@/app/exam/component/question/matching";
 import MultiSelectQuestion from "@/app/exam/component/question/multiselect";
@@ -224,23 +225,27 @@ const QuestionRenderer = memo(function QuestionRenderer({
 		}
 		return null;
 	}
+const questionNameWithoutImg = q.question_name.replace(/<img[^>]*>/gi, "");
 
-	const rendererProps: TypeRendererProps = {
-		q,
-		selectedAnswer,
-		onAnswerChange,
-		examId,
-		userId,
-	};
+const rendererProps: TypeRendererProps = {
+    q: {
+        ...q,
+        question_name: questionNameWithoutImg,
+    },
+    selectedAnswer,
+    onAnswerChange,
+    examId,
+    userId,
+};
 
-	return (
-		<>
-			{q.question_img && (
-				<QuestionImage src={q.question_img} alt="Асуултын зураг" />
-			)}
-			{render(rendererProps)}
-		</>
-	);
+return (
+    <>
+        {q.question_img && (
+            <QuestionImage src={q.question_img} alt="Асуултын зураг" />
+        )}
+        {render(rendererProps)}
+    </>
+);
 });
 
 export default QuestionRenderer;
