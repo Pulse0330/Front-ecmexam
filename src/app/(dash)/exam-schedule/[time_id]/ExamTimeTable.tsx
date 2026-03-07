@@ -238,6 +238,7 @@ export function ExamTimeTable({ data, timeId, examInfo }: ExamRoomTableProps) {
 							examInfo={examInfo}
 							timeId={timeId}
 							roomId={Number(selectedRoomId)}
+							students={selectedRoom.students} // ← нэмэх
 						/>
 					</div>
 				)}

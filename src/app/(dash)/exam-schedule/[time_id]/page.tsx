@@ -57,7 +57,7 @@ export default function ExamTimePage({ params }: ExamTimePageProps) {
 	});
 
 	const { data: materalData, isLoading: materalIsLoading } = useQuery({
-		queryKey: ["get_exam_materal_list", time_id, userId, examInfo],
+		queryKey: ["api_examination_variants", time_id, userId, examInfo],
 		queryFn: () =>
 			getExamMetaralList({
 				userId: userId ? Number(userId) : 0,

@@ -16,18 +16,20 @@ import {
 } from "@/components/ui/tooltip"; // Shadcn tooltip импортлох
 import { getExamPrintList } from "@/lib/dash.api";
 import { useAuthStore } from "@/stores/useAuthStore";
-import type { ExamInfoItem } from "@/types/dashboard/exam.types";
+import type { ExamInfoItem, StudentSeat } from "@/types/dashboard/exam.types";
 
 interface ExamPrintServiceProps {
 	examInfo: ExamInfoItem | undefined;
 	timeId: number;
 	roomId: number; // activeRoom-ын оронд шууд id авна
+	students?: StudentSeat[]; // ← нэмэх
 }
 
 export default function ExamPrintService({
 	examInfo,
 	timeId,
 	roomId,
+	students = [], // ← нэмэх
 }: ExamPrintServiceProps) {
 	const { userId } = useAuthStore();
 	const [isGenerating, setIsGenerating] = useState(false);
@@ -59,8 +61,10 @@ export default function ExamPrintService({
 
 			for (let i = 0; i < printList.length; i++) {
 				const item = printList[i];
-				const frontEl = document.getElementById(`front-${item.qrcode}`);
-				const backEl = document.getElementById(`back-${item.qrcode}`);
+				const frontEl = document.getElementById(
+					`front-${item.register_number}`,
+				);
+				const backEl = document.getElementById(`back-${item.register_number}`);
 
 				if (frontEl) {
 					if (!firstPage) pdf.addPage();
@@ -99,14 +103,15 @@ export default function ExamPrintService({
 		}
 	};
 
+	const allReady =
+		students.length > 0 && students.every((s) => s.status_code === 3);
+
 	return (
 		<>
 			<TooltipProvider>
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<div className="inline-block">
-							{" "}
-							{/* Button-г wrapper дотор хийнэ */}
 							<Button
 								variant="outline"
 								size="sm"
@@ -115,7 +120,8 @@ export default function ExamPrintService({
 									isGenerating ||
 									!printList ||
 									printList.length === 0 ||
-									isLoading
+									isLoading ||
+									!allReady
 								}
 								className="gap-2"
 							>
@@ -132,9 +138,16 @@ export default function ExamPrintService({
 					</TooltipTrigger>
 
 					{/* Хэрэв printList хоосон бол Tooltip-ийг харуулна */}
-					{(!printList || printList.length === 0) && (
+					{(isGenerating ||
+						!printList ||
+						printList.length === 0 ||
+						isLoading ||
+						!allReady) && (
 						<TooltipContent>
-							<p>Суудал хуваарилаагүй байна.</p>
+							<p className="max-w-xs text-center">
+								Суудал хуваарилах , Вариант хуваарилах бүх сурагчид амжилтай
+								болсны дараа хэвлэх боломжтой.
+							</p>
 						</TooltipContent>
 					)}
 				</Tooltip>
@@ -143,11 +156,11 @@ export default function ExamPrintService({
 			{/* Hidden Printing Area */}
 			<div className="fixed -left-2499.75 top-0 overflow-hidden h-0 w-0">
 				{printList?.map((item) => (
-					<div key={item.qrcode} className="flex flex-col gap-10">
+					<div key={item.register_number} className="flex flex-col gap-10">
 						{/* FRONT SIDE */}
 						<div className="shadow-2xl border border-gray-300">
 							<div
-								id={`front-${item.qrcode}`}
+								id={`front-${item.register_number}`}
 								className="bg-white text-black p-[15mm] flex flex-col overflow-hidden"
 								style={{
 									width: "210mm",
