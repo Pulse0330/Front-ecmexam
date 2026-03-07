@@ -235,7 +235,7 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 																			className="h-10 hover:bg-primary/5 border-b border-border/30 last:border-0"
 																			onClick={() => {
 																				route.push(
-																					`/exam-schedule/${date.exam_date_id}`,
+																					`/exam-schedule/${date.exam_date_id}-${date.exam_id}`,
 																				);
 																			}}
 																		>
@@ -279,7 +279,7 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 																						variant={"outline"}
 																					>
 																						<Link
-																							href={`/exam-schedule/${date.exam_date_id}`}
+																							href={`/exam-schedule/${date.exam_date_id}-${date.exam_id}`}
 																						>
 																							Дэлгэрэнгүй
 																						</Link>

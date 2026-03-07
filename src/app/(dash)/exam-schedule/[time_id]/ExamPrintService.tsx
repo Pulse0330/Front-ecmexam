@@ -16,17 +16,17 @@ import {
 } from "@/components/ui/tooltip";
 import { getExamPrintList } from "@/lib/dash.api";
 import { useAuthStore } from "@/stores/useAuthStore";
-import type { ExamInfoItem, StudentSeat } from "@/types/dashboard/exam.types";
+import type { StudentSeat } from "@/types/dashboard/exam.types";
 
 interface ExamPrintServiceProps {
-	examInfo: ExamInfoItem | undefined;
+	exam_id: number | undefined;
 	timeId: number;
 	roomId: number;
 	students?: StudentSeat[];
 }
 
 export default function ExamPrintService({
-	examInfo,
+	exam_id,
 	timeId,
 	roomId,
 	students = [],
@@ -41,7 +41,7 @@ export default function ExamPrintService({
 			getExamPrintList({
 				userId: Number(userId) || 0,
 				examDateId: Number(timeId),
-				examId: Number(examInfo?.exam_id),
+				examId: Number(exam_id),
 				esisroomid: Number(roomId),
 			}),
 		enabled: !!userId && !!timeId && !!roomId,
@@ -189,7 +189,7 @@ export default function ExamPrintService({
 										<div className="flex flex-col gap-1 w-full">
 											<span className="text-xs">Хуудас (1/2)</span>
 											<h1 className="text-2xl font-black uppercase m-0 leading-none">
-												{examInfo?.name}
+												{item?.name}
 											</h1>
 											<p className="text-sm">
 												{format(item.exam_date, "yyyy-MM-dd")},{" "}

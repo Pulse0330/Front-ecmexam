@@ -32,8 +32,9 @@ interface ExamTimePageProps {
 export default function ExamTimePage({ params }: ExamTimePageProps) {
 	const queryClient = useQueryClient();
 
-	const { time_id } = use(params);
+	const { time_id: rawId } = use(params);
 	const { userId } = useAuthStore();
+	const [time_id, exam_id] = rawId.split("-");
 
 	const { data: registrationData, isLoading: isListLoading } = useQuery({
 		queryKey: ["get_exam_registration_list", time_id, userId],
@@ -57,21 +58,21 @@ export default function ExamTimePage({ params }: ExamTimePageProps) {
 	});
 
 	const { data: materalData, isLoading: materalIsLoading } = useQuery({
-		queryKey: ["api_examination_variants", time_id, userId, examInfo],
+		queryKey: ["api_examination_variants", time_id, userId, exam_id],
 		queryFn: () =>
 			getExamMetaralList({
 				userId: userId ? Number(userId) : 0,
 				examDateId: Number(time_id),
-				examId: examInfo?.exam_id || 0,
+				examId: Number(exam_id),
 			}),
-		enabled: !!userId && !!time_id && !!examInfo,
+		enabled: !!userId && !!time_id && !!exam_id,
 	});
 
 	const { mutate, isPending } = useMutation({
 		mutationFn: async () => {
 			const payload = {
 				userId: userId || 0,
-				examId: examInfo?.exam_id || 0,
+				examId: Number(exam_id),
 				examDateId: Number(time_id) || 0,
 			};
 
@@ -160,7 +161,7 @@ export default function ExamTimePage({ params }: ExamTimePageProps) {
 				data={registrationData?.RetData || []} // Шууд датаг дамжуулна
 				isLoading={isListLoading || isInfoLoading}
 				timeId={Number(time_id)}
-				examInfo={examInfo}
+				exam_id={Number(exam_id)}
 			/>
 		</div>
 	);
