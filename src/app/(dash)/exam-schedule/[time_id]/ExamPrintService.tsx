@@ -61,8 +61,10 @@ export default function ExamPrintService({
 
 			for (let i = 0; i < printList.length; i++) {
 				const item = printList[i];
-				const frontEl = document.getElementById(`front-${item.qrcode}`);
-				const backEl = document.getElementById(`back-${item.qrcode}`);
+				const frontEl = document.getElementById(
+					`front-${item.register_number}`,
+				);
+				const backEl = document.getElementById(`back-${item.register_number}`);
 
 				if (frontEl) {
 					if (!firstPage) pdf.addPage();
@@ -154,11 +156,11 @@ export default function ExamPrintService({
 			{/* Hidden Printing Area */}
 			<div className="fixed -left-2499.75 top-0 overflow-hidden h-0 w-0">
 				{printList?.map((item) => (
-					<div key={item.qrcode} className="flex flex-col gap-10">
+					<div key={item.register_number} className="flex flex-col gap-10">
 						{/* FRONT SIDE */}
 						<div className="shadow-2xl border border-gray-300">
 							<div
-								id={`front-${item.qrcode}`}
+								id={`front-${item.register_number}`}
 								className="bg-white text-black p-[15mm] flex flex-col overflow-hidden"
 								style={{
 									width: "210mm",
