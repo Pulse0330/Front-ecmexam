@@ -380,19 +380,21 @@ export default function HomePage() {
 		queryFn: () =>
 			getmnExamUserCheck(user?.examinee_number ?? "", Number(userId)),
 		enabled: !!userId && !!user?.examinee_number,
-		select: (res) => {
-			console.log("🔍 myExamInfo raw:", res); // ✅ нэм
-			return res.RetData ?? [];
-		},
+		select: (res) => res.RetData ?? [],
 	});
+
+	// myExamInfo-с exam_date_id авах
+	const examDateId = myExamInfo?.[0]?.exam_date_id;
+
 	const { data: printData } = useQuery({
-		queryKey: ["mn_print", userId, user?.examinee_number],
+		queryKey: ["mn_print", userId, user?.examinee_number, examDateId],
 		queryFn: () =>
 			getMNPrint({
 				userId: Number(userId),
 				examineeNumber: String(user?.examinee_number ?? ""),
+				examDateId: Number(examDateId), // ← нэмэх
 			}),
-		enabled: !!userId && !!user?.examinee_number,
+		enabled: !!userId && !!user?.examinee_number && !!examDateId, // ← examDateId бэлэн болсон үед л fetch
 		select: (res) => {
 			console.log("✅ printData:", res);
 			return res.RetData ?? [];
@@ -419,28 +421,36 @@ export default function HomePage() {
 				<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700">
 					<HeroSection username={username} />
 				</div>
+				{printData && printData.length > 0 && (
+					<MnExamPrint printList={printData} />
+				)}
+				<SectionDivider
+					title="Монгол хэл бичгийн шалгалт"
+					href="/Lists/mnSorilList"
+				/>
+				<div className="animate-in fade-in-0 duration-700">
+					<MnExamList />
+				</div>
 
+				<SectionDivider title="Бүртгэлийн мэдээлэл" href="/Lists/mnSorilList" />
 				{myExamInfo && myExamInfo.length > 0 ? (
-					<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-200 space-y-8">
-						{myExamInfo.map((exam, index) => (
-							<div key={`${exam.exam_number}-${index}`} className="space-y-4">
-								{/* Exam info card */}
-								<div className="flex flex-row gap-3 overflow-x-auto">
-									<div className="shrink-0 w-72">
-										<ExamInfoCard exam={exam} />
-									</div>
+					<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-200">
+						<div className="flex flex-row gap-3 overflow-x-auto pb-2">
+							{myExamInfo.map((exam, index) => (
+								<div
+									key={`${exam.exam_number}-${index}`}
+									className="shrink-0 w-72"
+								>
+									<ExamInfoCard exam={exam} />
 								</div>
-
-								{/* Variants — map дотор тул exam.exam_id ажиллана ✅ */}
-							</div>
-						))}
+							))}
+						</div>
 					</div>
 				) : (
 					<p className="text-sm text-muted-foreground">
 						Бүртгэлтэй шалгалт байхгүй байна.
 					</p>
 				)}
-
 				<ExamVerifyDialog
 					examList={examList}
 					isLoading={isLoading}
@@ -453,17 +463,6 @@ export default function HomePage() {
 					</div>
 				) : (
 					<>
-						{printData && printData.length > 0 && (
-							<MnExamPrint printList={printData} />
-						)}
-						<SectionDivider
-							title="Монгол хэл бичгийн шалгалт"
-							href="/Lists/mnSorilList"
-						/>
-						<div className="animate-in fade-in-0 duration-700">
-							<MnExamList />
-						</div>
-
 						{hasExams && homeData?.RetDataThirt && (
 							<>
 								<SectionDivider
