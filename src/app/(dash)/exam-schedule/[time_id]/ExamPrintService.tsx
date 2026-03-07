@@ -152,9 +152,16 @@ export default function ExamPrintService({
 					)}
 				</Tooltip>
 			</TooltipProvider>
-
 			{/* Hidden Printing Area */}
-			<div className="fixed -left-2499.75 top-0 overflow-hidden h-0 w-0">
+
+			<div
+				style={{
+					position: "fixed",
+					left: "-9999px",
+					top: 0,
+					pointerEvents: "none",
+				}}
+			>
 				{printList?.map((item) => (
 					<div key={item.register_number} className="flex flex-col gap-10">
 						{/* FRONT SIDE */}
