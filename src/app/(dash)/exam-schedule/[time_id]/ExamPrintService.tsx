@@ -45,7 +45,16 @@ export default function ExamPrintService({
 				esisroomid: Number(roomId),
 			}),
 		enabled: !!userId && !!timeId && !!roomId,
-		select: (res) => res.RetData,
+		select: (res) => {
+			const seen = new Set<string>();
+			return res.RetData?.filter((item) => {
+				const key =
+					item.qrcode ?? `${item.register_number}-${item.examinee_number}`;
+				if (seen.has(key)) return false;
+				seen.add(key);
+				return true;
+			});
+		},
 	});
 
 	const handleDownloadPDF = async () => {
@@ -232,7 +241,7 @@ export default function ExamPrintService({
 													<td className="pb-2 pl-8 w-1/2">
 														<div className="flex gap-2 items-center">
 															<span className="whitespace-nowrap">
-																Гарийн үсэг:
+																Гарын үсэг:
 															</span>
 															<span className="border-b border-black w-full border-dashed">
 																&nbsp;
