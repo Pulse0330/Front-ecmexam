@@ -52,11 +52,6 @@ export function VariantList({ data, isLoading }: Props) {
 			</CardHeader>
 
 			<CardContent className="space-y-4">
-				<div className="text-sm text-muted-foreground">
-					Хэсэг: <span className="font-medium">{lesson.sections_cnt}</span> |
-					Асуулт: <span className="font-medium">{lesson.questions_cnt}</span>
-				</div>
-
 				<div className="flex flex-wrap gap-2">
 					{data.map((v, i) => (
 						<Badge
