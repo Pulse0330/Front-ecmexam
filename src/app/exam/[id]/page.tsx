@@ -569,7 +569,7 @@ export default function ExamPage() {
 	const examIdFromParams = Number(searchParams.get("exam_id"));
 	const variantNumber = Number(searchParams.get("variant"));
 	const examType = Number(searchParams.get("exam_type"));
-	const _isNewExam = examType === 2; //4
+	const _isNewExam = examType === 4; //4
 
 	// FIX: questionsMapRef — handleAnswerChange-д O(1) хайлт
 	const questionsMapRef = useRef<
