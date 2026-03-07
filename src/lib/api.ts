@@ -259,13 +259,13 @@ export const getExamById = async (
 // ===== Exam New request =====
 export const getNewExamFill = async (
 	userId: number,
-	variantNumber: number,
-	examId = 0,
-	examDateId = 0,
-	examRegId = 0,
+	variant_id: number,
+	examId: number,
+	examDateId: number,
+	examRegId: number,
 ): Promise<ApiExamResponse> => {
 	const { data } = await api1.post<ApiExamResponse>("/api_getexamfill", {
-		variant_number: variantNumber,
+		variant_id: variant_id,
 		exam_id: examId,
 		exam_date_id: examDateId,
 		exam_reg_id: examRegId,

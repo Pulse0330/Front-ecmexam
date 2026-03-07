@@ -43,7 +43,6 @@ import type { UserProfileResponseType } from "@/types/user";
 import { ExamInfoCard } from "./examBurtguulsen";
 import ExamLists from "./homeExamCard";
 import MnExamList from "./mnExamlist";
-import MnExamPrint from "./mnPrint";
 
 const ANIMATION_STAGGER = 0.04;
 
@@ -418,17 +417,17 @@ export default function HomePage() {
 			<div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8 relative z-10">
 				<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700">
 					<HeroSection username={username} />
-					<div className="pt-2">
+					<div className="pt-2 flex flex-row gap-4 items-start">
 						<div>
 							{myExamInfo && myExamInfo.length > 0 ? (
-								<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-200 ">
+								<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-200">
 									<div className="flex flex-row gap-3 overflow-x-auto pb-2">
 										{myExamInfo.map((exam, index) => (
 											<div
 												key={`${exam.exam_number}-${index}`}
 												className="shrink-0 w-72"
 											>
-												<ExamInfoCard exam={exam} />
+												<ExamInfoCard exam={exam} printData={printData ?? []} />
 											</div>
 										))}
 									</div>
@@ -439,11 +438,6 @@ export default function HomePage() {
 								</p>
 							)}
 						</div>
-					</div>
-					<div>
-						{printData && printData.length > 0 && (
-							<MnExamPrint printList={printData} />
-						)}
 					</div>
 
 					<ExamVerifyDialog
