@@ -149,8 +149,8 @@ export function ExamTimeTable({ data, timeId, exam_id }: ExamRoomTableProps) {
 		mutationFn: async (values: { room_id: number }) => {
 			return getVariantDistribute({
 				examRoomId: values.room_id,
-				examId: exam_id || 0,
-				examDateId: timeId || 0,
+				examId: exam_id,
+				examDateId: timeId,
 			});
 		},
 		onSuccess: (res) => {
@@ -384,15 +384,15 @@ export function ExamTimeTable({ data, timeId, exam_id }: ExamRoomTableProps) {
 																	</Badge>
 																) : (
 																	<Button
-																		size={"icon-sm"}
+																		size={"sm"}
 																		variant={"outline"}
 																		onClick={() => {
 																			setPdfUploadOpen(true);
 																			setSelectRow(s);
 																		}}
-																		disabled={s.status_code !== 3 || true}
+																		disabled={s.status_code !== 3}
 																	>
-																		<Upload />
+																		<Upload /> Эсээ илгээх PDF
 																	</Button>
 																)}
 															</div>
