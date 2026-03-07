@@ -59,11 +59,11 @@ interface ExamRoom {
 interface ExamRoomTableProps {
 	data: ExamRoom[];
 	isLoading?: boolean;
-	examInfo: ExamInfoItem | undefined;
+	exam_id: number;
 	timeId: number;
 }
 
-export function ExamTimeTable({ data, timeId, examInfo }: ExamRoomTableProps) {
+export function ExamTimeTable({ data, timeId, exam_id }: ExamRoomTableProps) {
 	const { userId } = useAuthStore();
 	const queryClient = useQueryClient();
 	const [selectedRoomId, setSelectedRoomId] = useState<string>("");
@@ -86,7 +86,7 @@ export function ExamTimeTable({ data, timeId, examInfo }: ExamRoomTableProps) {
 			return getExamRegistrationSend({
 				examRoomId: values.room_id,
 				userId: userId || 0,
-				examId: examInfo?.exam_id || 0,
+				examId: exam_id || 0,
 				examDateId: timeId || 0,
 			});
 		},
@@ -149,7 +149,7 @@ export function ExamTimeTable({ data, timeId, examInfo }: ExamRoomTableProps) {
 		mutationFn: async (values: { room_id: number }) => {
 			return getVariantDistribute({
 				examRoomId: values.room_id,
-				examId: examInfo?.exam_id || 0,
+				examId: exam_id || 0,
 				examDateId: timeId || 0,
 			});
 		},
@@ -236,7 +236,7 @@ export function ExamTimeTable({ data, timeId, examInfo }: ExamRoomTableProps) {
 
 						<ExamPrintService
 							key={selectedRoomId}
-							examInfo={examInfo}
+							exam_id={exam_id}
 							timeId={timeId}
 							roomId={Number(selectedRoomId)}
 							students={selectedRoom.students} // ← нэмэх
