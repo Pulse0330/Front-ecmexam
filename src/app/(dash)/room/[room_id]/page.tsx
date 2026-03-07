@@ -189,6 +189,12 @@ export default function RoomPage({ params }: RoomPageProps) {
 	});
 
 	const handleSave = () => {
+		if (tables.length > (roomDetail?.num_of_pc || 0)) {
+			toast.error(
+				`Ширээний тоо ${roomDetail?.num_of_pc}-оос хэтрэх боломжгүй!`,
+			);
+			return;
+		}
 		// Шинэ ширээ байгаа эсэхээс хамааран явуулах дата өөрчлөгдөнө
 		const tablesToSave =
 			newlyAddedTables.length > 0 ? newlyAddedTables : tables;
