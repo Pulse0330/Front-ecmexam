@@ -308,7 +308,7 @@ export const getExamMetaralList = async ({
 	examId: number;
 }): Promise<getExamMateralResponseType> => {
 	const { data } = await api1.post<getExamMateralResponseType>("/list", {
-		procname: "api_exam_date_variants",
+		procname: "api_examination_variants",
 		exam_id: examId,
 		exam_date_id: examDateId,
 		userid: userId,
