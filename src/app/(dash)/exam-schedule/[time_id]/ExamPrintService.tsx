@@ -241,7 +241,7 @@ export default function ExamPrintService({
 													<td className="pb-2 pl-8 w-1/2">
 														<div className="flex gap-2 items-center">
 															<span className="whitespace-nowrap">
-																Гарийн үсэг:
+																Гарын үсэг:
 															</span>
 															<span className="border-b border-black w-full border-dashed">
 																&nbsp;
