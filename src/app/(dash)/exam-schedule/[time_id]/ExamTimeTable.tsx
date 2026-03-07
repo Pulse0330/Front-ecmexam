@@ -289,111 +289,121 @@ export function ExamTimeTable({ data, timeId, examInfo }: ExamRoomTableProps) {
 
 						{/* Table */}
 						<div className="rounded-lg border border-border overflow-hidden">
-							<Table>
-								<TableHeader>
-									<TableRow className="bg-muted/40 hover:bg-muted/40">
-										<TableHead className="w-8 text-center">
-											<Hash
-												size={13}
-												className="mx-auto text-muted-foreground"
-											/>
-										</TableHead>
-										<TableHead>
-											<span className="flex items-center gap-1.5">
-												<BookOpen size={13} className="text-muted-foreground" />
-												Овог нэр
-											</span>
-										</TableHead>
-										<TableHead>
-											<span className="flex items-center gap-1.5">
-												<School size={13} className="text-muted-foreground" />
-												Анги
-											</span>
-										</TableHead>
-										<TableHead>
-											<span className="flex items-center gap-1.5">
-												<Armchair size={13} className="text-muted-foreground" />
-												Суудал №
-											</span>
-										</TableHead>
-										<TableHead>
-											<span className="flex items-center gap-1.5">
-												<ClipboardList
+							<div className="overflow-x-auto">
+								{" "}
+								{/* ← нэмэх */}
+								<Table>
+									<TableHeader>
+										<TableRow className="bg-muted/40 hover:bg-muted/40">
+											<TableHead className="w-8 text-center">
+												<Hash
 													size={13}
-													className="text-muted-foreground"
+													className="mx-auto text-muted-foreground"
 												/>
-												Төлөв
-											</span>
-										</TableHead>
-										<TableHead>
-											<span className="flex items-center gap-1.5 justify-end">
-												<Upload size={13} className="text-muted-foreground" />
-												Хариултын хуудас илгээх
-											</span>
-										</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{selectedRoom.students.map((s, idx) => {
-										const hasUploaded = !!s.file_url;
-										return (
-											<TableRow key={s.id} className="group">
-												<TableCell className="text-center text-xs text-muted-foreground w-8">
-													{idx + 1}
-												</TableCell>
-												<TableCell className="font-medium">
-													<span className="text-muted-foreground">
-														{s.last_name[0]}.
-													</span>{" "}
-													{s.first_name}
-												</TableCell>
-												<TableCell>
-													<Badge
-														variant="outline"
-														className="gap-1 font-normal text-xs"
-													>
-														<School size={10} />
-														{s.studentgroupname}
-													</Badge>
-												</TableCell>
-												<TableCell>
-													<span className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary/10 text-primary font-bold text-sm">
-														{s.seat_number}
-													</span>
-												</TableCell>
-												<TableCell>{s.status_text}</TableCell>
-												{
-													<TableCell>
-														<div className="flex justify-end items-center">
-															{hasUploaded ? (
-																<Badge
-																	variant="secondary"
-																	className="gap-1 h-7 px-3 text-green-500"
-																>
-																	<Check size={12} />
-																	Илгээгдсэн
-																</Badge>
-															) : (
-																<Button
-																	size={"icon-sm"}
-																	variant={"outline"}
-																	onClick={() => {
-																		setPdfUploadOpen(true);
-																		setSelectRow(s);
-																	}}
-																	disabled={s.status_code !== 3}
-																>
-																	<Upload />
-																</Button>
-															)}
-														</div>
+											</TableHead>
+											<TableHead>
+												<span className="flex items-center gap-1.5">
+													<BookOpen
+														size={13}
+														className="text-muted-foreground"
+													/>
+													Овог нэр
+												</span>
+											</TableHead>
+											<TableHead>
+												<span className="flex items-center gap-1.5">
+													<School size={13} className="text-muted-foreground" />
+													Анги
+												</span>
+											</TableHead>
+											<TableHead>
+												<span className="flex items-center gap-1.5">
+													<Armchair
+														size={13}
+														className="text-muted-foreground"
+													/>
+													Суудал №
+												</span>
+											</TableHead>
+											<TableHead>
+												<span className="flex items-center gap-1.5">
+													<ClipboardList
+														size={13}
+														className="text-muted-foreground"
+													/>
+													Төлөв
+												</span>
+											</TableHead>
+											<TableHead>
+												<span className="flex items-center gap-1.5 justify-end">
+													<Upload size={13} className="text-muted-foreground" />
+													Хариултын хуудас илгээх
+												</span>
+											</TableHead>
+										</TableRow>
+									</TableHeader>
+									<TableBody className="overflow-x-auto">
+										{selectedRoom.students.map((s, idx) => {
+											const hasUploaded = !!s.file_url;
+											return (
+												<TableRow key={s.id} className="group">
+													<TableCell className="text-center text-xs text-muted-foreground w-8">
+														{idx + 1}
 													</TableCell>
-												}
-											</TableRow>
-										);
-									})}
-								</TableBody>
-							</Table>
+													<TableCell className="font-medium">
+														<span className="text-muted-foreground">
+															{s.last_name[0]}.
+														</span>{" "}
+														{s.first_name}
+													</TableCell>
+													<TableCell>
+														<Badge
+															variant="outline"
+															className="gap-1 font-normal text-xs"
+														>
+															<School size={10} />
+															{s.studentgroupname}
+														</Badge>
+													</TableCell>
+													<TableCell>
+														<span className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary/10 text-primary font-bold text-sm">
+															{s.seat_number}
+														</span>
+													</TableCell>
+													<TableCell>{s.status_text}</TableCell>
+													{
+														<TableCell>
+															<div className="flex justify-end items-center">
+																{hasUploaded ? (
+																	<Badge
+																		variant="secondary"
+																		className="gap-1 h-7 px-3 text-green-500"
+																	>
+																		<Check size={12} />
+																		Илгээгдсэн
+																	</Badge>
+																) : (
+																	<Button
+																		size={"icon-sm"}
+																		variant={"outline"}
+																		onClick={() => {
+																			setPdfUploadOpen(true);
+																			setSelectRow(s);
+																		}}
+																		disabled={s.status_code !== 3 || true}
+																	>
+																		<Upload />
+																	</Button>
+																)}
+															</div>
+														</TableCell>
+													}
+												</TableRow>
+											);
+										})}
+									</TableBody>
+								</Table>
+							</div>
 						</div>
 					</div>
 				) : (

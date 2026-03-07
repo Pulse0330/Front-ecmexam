@@ -45,7 +45,16 @@ export default function ExamPrintService({
 				esisroomid: Number(roomId),
 			}),
 		enabled: !!userId && !!timeId && !!roomId,
-		select: (res) => res.RetData,
+		select: (res) => {
+			const seen = new Set<string>();
+			return res.RetData?.filter((item) => {
+				const key =
+					item.qrcode ?? `${item.register_number}-${item.examinee_number}`;
+				if (seen.has(key)) return false;
+				seen.add(key);
+				return true;
+			});
+		},
 	});
 
 	const handleDownloadPDF = async () => {
