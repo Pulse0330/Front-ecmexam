@@ -235,6 +235,7 @@ export function ExamTimeTable({ data, timeId, examInfo }: ExamRoomTableProps) {
 						</Button>
 
 						<ExamPrintService
+							key={selectedRoomId}
 							examInfo={examInfo}
 							timeId={timeId}
 							roomId={Number(selectedRoomId)}
