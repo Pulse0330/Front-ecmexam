@@ -49,7 +49,7 @@ const FinishExamResultDialog = forwardRef<
 >(({ examType, answeredCount, totalCount, examRegId, variantId }, ref) => {
 	const router = useRouter();
 	const [open, setOpen] = useState(false);
-	const [_isAutoSubmitting, setIsAutoSubmitting] = useState(false);
+	const [isAutoSubmitting, setIsAutoSubmitting] = useState(false);
 	const autoRedirectTimerRef = useRef<NodeJS.Timeout | null>(null);
 
 	const isDadlaga = examType === 1 || examType === 2;
@@ -101,34 +101,33 @@ const FinishExamResultDialog = forwardRef<
 
 	useImperativeHandle(ref, () => ({
 		triggerFinish: () => {
-			// setIsAutoSubmitting(true);
+			setIsAutoSubmitting(true);
 			setOpen(true);
-			// setTimeout(() => handleFinish(), 500);
+			setTimeout(() => handleFinish(), 500);
 		},
 	}));
 
-	// ── Render: Auto-submit loading ──
-	// if (isAutoSubmitting && isPending) {
-	// 	return (
-	// 		<Dialog open={true} onOpenChange={() => {}}>
-	// 			<DialogTrigger asChild>
-	// 				<Button className="w-full sm:w-auto px-4 sm:px-6 py-3 sm:py-4 font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all flex justify-center items-center gap-2">
-	// 					<span className="hidden sm:inline">Шалгалт дуусгах</span>
-	// 					<span className="sm:hidden">Дуусгах</span>
-	// 					<Send className="w-4 h-4 sm:w-5 sm:h-5" />
-	// 				</Button>
-	// 			</DialogTrigger>
-	// 			<DialogContent className="w-[95vw] max-w-[450px] sm:max-w-[550px] border-t-4 border-t-red-500 p-4 sm:p-6">
-	// 				<div className="flex flex-col justify-center items-center py-8 space-y-4">
-	// 					<Loader2 className="w-12 h-12 sm:w-16 sm:h-16 animate-spin text-red-600" />
-	// 					<p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 font-medium text-center">
-	// 						⏰ Цаг дууслаа. Автоматаар дуусгаж байна...
-	// 					</p>
-	// 				</div>
-	// 			</DialogContent>
-	// 		</Dialog>
-	// 	);
-	// }
+	if (isAutoSubmitting && isPending) {
+		return (
+			<Dialog open={true} onOpenChange={() => {}}>
+				<DialogTrigger asChild>
+					<Button className="w-full sm:w-auto px-4 sm:px-6 py-3 sm:py-4 font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all flex justify-center items-center gap-2">
+						<span className="hidden sm:inline">Шалгалт дуусгах</span>
+						<span className="sm:hidden">Дуусгах</span>
+						<Send className="w-4 h-4 sm:w-5 sm:h-5" />
+					</Button>
+				</DialogTrigger>
+				<DialogContent className="w-[95vw] max-w-[450px] sm:max-w-[550px] border-t-4 border-t-red-500 p-4 sm:p-6">
+					<div className="flex flex-col justify-center items-center py-8 space-y-4">
+						<Loader2 className="w-12 h-12 sm:w-16 sm:h-16 animate-spin text-red-600" />
+						<p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 font-medium text-center">
+							⏰ Цаг дууслаа. Автоматаар дуусгаж байна...
+						</p>
+					</div>
+				</DialogContent>
+			</Dialog>
+		);
+	}
 
 	// ── Render: Confirmation dialog ──
 	return (
