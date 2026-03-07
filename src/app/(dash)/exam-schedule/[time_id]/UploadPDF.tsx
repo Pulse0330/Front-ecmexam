@@ -79,7 +79,7 @@ export function UploadPDFDialog({
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle>
-						{selectRow?.first_name[0]}.{selectRow?.last_name}
+						{selectRow?.last_name[0]}.{selectRow?.first_name}
 					</DialogTitle>
 					<DialogDescription>
 						{selectRow?.register_number} • {selectRow?.seat_number}-р суудал
