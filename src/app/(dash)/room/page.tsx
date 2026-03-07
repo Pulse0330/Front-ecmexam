@@ -235,7 +235,7 @@ export default function RoomPage() {
 										<Monitor className="text-primary mt-0.5" size={15} />
 										<div className="min-w-0">
 											<p className="text-[9px] leading-none text-muted-foreground uppercase font-bold tracking-tighter">
-												Компьютер / Tөхөөрөмжийн тоо
+												Бүртгэгдсэн төхөөрөмжийн тоо
 											</p>
 											<p className="text-sm font-medium mt-0.5 truncate text-foreground/80">
 												{room.pccnt ? (
