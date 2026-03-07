@@ -171,7 +171,7 @@ export default function MnExamList() {
 	if (!isLoading && !data?.RetData?.length) {
 		return (
 			<div className="flex flex-col items-center py-12 opacity-40">
-				<HelpCircle className="w-10 h-10 mb-3 stroke-[1.5px]" />
+				<span>Одоогоор нээлттэй МХБ-ийн шалгалтын материал алга байна</span>
 			</div>
 		);
 	}

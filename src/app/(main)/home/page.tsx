@@ -7,7 +7,6 @@ import {
 	Calendar,
 	ClipboardCheck,
 	Clock,
-	HelpCircle,
 	Loader2,
 	Lock,
 } from "lucide-react";
@@ -279,7 +278,6 @@ const SorilLists = memo(({ pastExams }: SorilListsProps) => {
 	if (!pastExams?.length) {
 		return (
 			<div className="flex flex-col items-center py-24 opacity-40">
-				<HelpCircle className="w-12 h-12 mb-4 stroke-[1.5px]" />
 				<p className="font-bold tracking-tight">Сорил олдсонгүй</p>
 			</div>
 		);
@@ -420,42 +418,48 @@ export default function HomePage() {
 			<div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8 relative z-10">
 				<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700">
 					<HeroSection username={username} />
+					<div className="pt-2">
+						<div>
+							{myExamInfo && myExamInfo.length > 0 ? (
+								<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-200 ">
+									<div className="flex flex-row gap-3 overflow-x-auto pb-2">
+										{myExamInfo.map((exam, index) => (
+											<div
+												key={`${exam.exam_number}-${index}`}
+												className="shrink-0 w-72"
+											>
+												<ExamInfoCard exam={exam} />
+											</div>
+										))}
+									</div>
+								</div>
+							) : (
+								<p className="text-sm text-muted-foreground">
+									Бүртгэлтэй шалгалт байхгүй байна.
+								</p>
+							)}
+						</div>
+					</div>
+					<div>
+						{printData && printData.length > 0 && (
+							<MnExamPrint printList={printData} />
+						)}
+					</div>
+
+					<ExamVerifyDialog
+						examList={examList}
+						isLoading={isLoading}
+						isFetched={isFetched}
+					/>
 				</div>
-				{printData && printData.length > 0 && (
-					<MnExamPrint printList={printData} />
-				)}
+
 				<SectionDivider
-					title="Монгол хэл бичгийн шалгалт"
+					title="ӨНӨӨДӨР НЭЭЛТТЭЙ БАЙГАА МОНГОЛ ХЭЛ БИЧГИЙН ШАЛГАЛТ "
 					href="/Lists/mnSorilList"
 				/>
 				<div className="animate-in fade-in-0 duration-700">
 					<MnExamList />
 				</div>
-
-				<SectionDivider title="Бүртгэлийн мэдээлэл" href="/Lists/mnSorilList" />
-				{myExamInfo && myExamInfo.length > 0 ? (
-					<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-200">
-						<div className="flex flex-row gap-3 overflow-x-auto pb-2">
-							{myExamInfo.map((exam, index) => (
-								<div
-									key={`${exam.exam_number}-${index}`}
-									className="shrink-0 w-72"
-								>
-									<ExamInfoCard exam={exam} />
-								</div>
-							))}
-						</div>
-					</div>
-				) : (
-					<p className="text-sm text-muted-foreground">
-						Бүртгэлтэй шалгалт байхгүй байна.
-					</p>
-				)}
-				<ExamVerifyDialog
-					examList={examList}
-					isLoading={isLoading}
-					isFetched={isFetched}
-				/>
 
 				{isHomeLoading || isProfileLoading ? (
 					<div className="flex items-center justify-center py-24">
@@ -478,7 +482,10 @@ export default function HomePage() {
 						)}
 						{hasSorils && homeData?.RetDataFourth && (
 							<>
-								<SectionDivider title="Сорилууд" href="/Lists/sorilList" />
+								<SectionDivider
+									title="ЭЛСЭЛТИЙН ШАЛГАЛТЫН СОРИЛУУД"
+									href="/Lists/sorilList"
+								/>
 								<div className="animate-in fade-in-0 duration-700 delay-500">
 									<SorilLists pastExams={homeData.RetDataFourth} />
 								</div>
