@@ -169,6 +169,8 @@ export function ExamTimeTable({ data, timeId, examInfo }: ExamRoomTableProps) {
 	// 		)
 	// 	: 0;
 
+	console.log("selectedRoom", selectedRoom);
+
 	return (
 		<div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden flex flex-col h-full">
 			{/* ── Header ── */}

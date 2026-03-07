@@ -83,7 +83,7 @@ export function RoomCreateEditDialog({
 				descr: values.descr ?? "",
 				num_of_pc: Number(values.pccount),
 				school_esis_id: values.school_esis_id ?? "",
-				esisroomid: String(values.esisroomid) ?? "",
+				esisroomid: values.esisroomid ? String(values.esisroomid) : "",
 			};
 
 			return roomCreateEdit(payload);
