@@ -120,6 +120,10 @@ export const QuestionCard = memo(function QuestionCard({
 
 	const isAnswered = isAnsweredValue(selectedAnswer);
 	const borderClass = getBorderClass(isAnswered, isBookmarked, isTyping);
+	const questionHtml =
+		typeof q.question_name === "string"
+			? q.question_name.replace(/<img[^>]*>/gi, "")
+			: "";
 
 	// ── Desktop layout ──────────────────────────────────────────
 	if (variant === "desktop") {
@@ -134,7 +138,7 @@ export const QuestionCard = memo(function QuestionCard({
 							<div className="flex-1 min-w-0">
 								<div className="flex items-start justify-between gap-2 mb-4">
 									<div className="font-semibold text-lg flex-1 leading-relaxed prose prose-sm max-w-none">
-										 <MathContent html={q.question_name.replace(/<img[^>]*>/gi, "")} />
+										<MathContent html={questionHtml} />
 									</div>
 									<BookmarkButton
 										isBookmarked={isBookmarked}
@@ -167,7 +171,7 @@ export const QuestionCard = memo(function QuestionCard({
 					</div>
 					<div className="flex-1 min-w-0">
 						<div className="font-semibold leading-relaxed prose prose-sm max-w-none text-sm">
-							 <MathContent html={q.question_name.replace(/<img[^>]*>/gi, "")} />
+							<MathContent html={questionHtml} />
 						</div>
 					</div>
 					<div className="flex items-center gap-2 shrink-0">

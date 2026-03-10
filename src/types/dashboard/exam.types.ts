@@ -5,6 +5,11 @@ export interface ExamDate {
 	exam_id: number;
 	exam_skuul_id: number;
 	exam_date_id: number;
+	flag?: number | boolean | string;
+	flagname?: string;
+	is_active?: number | boolean | string;
+	is_open?: number | boolean | string;
+	active_flag?: number | boolean | string;
 }
 
 export interface Exam {

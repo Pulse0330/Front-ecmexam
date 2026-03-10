@@ -19,34 +19,34 @@ import {
   useRef,
   useState,
 } from "react";
+import { ExamHeader } from "@/app/exam/component/examUtils/examInfo";
+import {
+  DesktopQuestionCard,
+  MobileQuestionCard,
+} from "@/app/exam/component/examUtils/questionCard";
+import SaveButton from "@/app/exam/component/examUtils/savingButton";
 import FinishExamResultDialog, {
   type FinishExamDialogHandle,
 } from "@/app/exam/component/finish";
+import ExamTimer from "@/app/exam/component/Itime";
 import ExamMinimap from "@/app/exam/component/minimap";
+import ExamSourceCard from "@/app/exam/component/question/sourceName";
 import FixedScrollButton from "@/components/FixedScrollButton";
 import { Button } from "@/components/ui/button";
 import {
   deleteExamAnswer,
   deletemnExamAnswer,
   getExamById,
-  getNewExamFill,
   saveExamAnswer,
   savemnExamAnswer,
 } from "@/lib/api";
+import { checkVariantFill } from "@/lib/dash.api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type {
   AnswerValue,
   ApiExamResponse,
   ChoosedAnswer,
 } from "@/types/exam/exam";
-import { ExamHeader } from "../component/examUtils/examInfo";
-import {
-  DesktopQuestionCard,
-  MobileQuestionCard,
-} from "../component/examUtils/questionCard";
-import SaveButton from "../component/examUtils/savingButton";
-import ExamTimer from "../component/Itime";
-import ExamSourceCard from "../component/question/sourceName";
 
 // ─────────────────────────────────────────────
 // Constants
@@ -589,8 +589,15 @@ export default function ExamPage() {
 
   const examIdParam = Number(id);
   const isValidUserId = !!userId && userId > 0;
+  const hasValidNewExamParams =
+    !Number.isNaN(variantId) &&
+    variantId > 0 &&
+    !Number.isNaN(examIdFromParams) &&
+    examIdFromParams > 0 &&
+    !Number.isNaN(examDateId) &&
+    examDateId > 0;
   const isValidExamId = _isNewExam
-    ? true
+    ? hasValidNewExamParams
     : !Number.isNaN(examIdParam) && examIdParam > 0;
 
   const {
@@ -611,22 +618,37 @@ export default function ExamPage() {
       if (!isValidExamId) throw new Error("Invalid examId");
 
       if (_isNewExam) {
-        return getNewExamFill(
-          userId,
+        return checkVariantFill({
           variantId,
-          examIdFromParams,
+          examId: examIdFromParams,
           examDateId,
-          examRegId,
-        );
+          userId,
+        });
       } else {
         return getExamById(userId, examIdParam);
       }
     },
     enabled: isValidUserId && isValidExamId,
   });
+  console.log(
+    "variantId:",
+    variantId,
+    "examIdFromParams:",
+    examIdFromParams,
+    "examDateId",
+    examDateId,
+    "userId",
+    userId,
+  );
 
   useEffect(() => {
     examDataRef.current = examData ?? null;
+  }, [examData]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    if (!examData?.Questions) return;
+    console.log("[admin-exam] incoming Questions:", examData.Questions);
   }, [examData]);
 
   const setPending = useCallback(
@@ -1042,7 +1064,7 @@ export default function ExamPage() {
         </div>
 
         {/* pt нь header өндөртэй тэнцүү байх ёстой */}
-        <div className="grid grid-cols-6 gap-6 max-w-[1800px] mx-auto px-6 xl:px-8 pb-6 pt-14">
+        <div className="grid grid-cols-6 gap-6 max-w-450 mx-auto px-6 xl:px-8 pb-6 pt-14">
           <aside className="col-span-1">
             <div className="sticky top-16 space-y-4">
               {sharedTimer}
