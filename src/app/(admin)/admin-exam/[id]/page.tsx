@@ -1064,7 +1064,7 @@ export default function ExamPage() {
         </div>
 
         {/* pt нь header өндөртэй тэнцүү байх ёстой */}
-        <div className="grid grid-cols-6 gap-6 max-w-[1800px] mx-auto px-6 xl:px-8 pb-6 pt-14">
+        <div className="grid grid-cols-6 gap-6 max-w-450 mx-auto px-6 xl:px-8 pb-6 pt-14">
           <aside className="col-span-1">
             <div className="sticky top-16 space-y-4">
               {sharedTimer}
@@ -1087,8 +1087,8 @@ export default function ExamPage() {
                     examTime={examInfo.minut}
                     answeredCount={answeredCount}
                     totalCount={totalCount}
-                    examRegId={examRegId}
-                    variantId={variantId}
+                    // examRegId={examRegId}
+                    // variantId={variantId}
                   />
                 </div>
               )}
@@ -1278,8 +1278,8 @@ export default function ExamPage() {
                   examTime={examInfo.minut}
                   answeredCount={answeredCount}
                   totalCount={totalCount}
-                  examRegId={examRegId} // ✅ нэмэх
-                  variantId={variantId}
+                  // examRegId={examRegId}
+                  // variantId={variantId}
                 />
               )}
             </div>
