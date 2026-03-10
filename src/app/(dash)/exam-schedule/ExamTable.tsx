@@ -23,34 +23,71 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { useAuthStore } from "@/stores/useAuthStore";
 import type { Exam } from "@/types/dashboard/exam.types";
 
 interface ExamTableProps {
 	data: Exam[];
 	isLoading?: boolean;
 	onFetchData?: () => void;
+	expandAllOnLoad?: boolean;
 }
 
-export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
+export function ExamTable({
+	data,
+	isLoading,
+	onFetchData,
+	expandAllOnLoad = true,
+}: ExamTableProps) {
 	const route = useRouter();
+	const { user } = useAuthStore();
 	const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
+	const isAdmin = Number(user?.ugroup) === 1;
+	const detailButtonLabel =
+		isAdmin ? "Материал татах" : "Дэлгэрэнгүй";
+
+	const getDetailPath = (examDateId: number, examId: number) =>
+		isAdmin
+			? `/admin-exam-schedule/${examDateId}-${examId}`
+			: `/exam-schedule/${examDateId}-${examId}`;
+
+	const getExamDateStatus = (date: Exam["exam_dates"][number]) => {
+		const rawFlag =
+			date.flag ?? date.is_active ?? date.is_open ?? date.active_flag;
+		if (typeof rawFlag === "boolean") {
+			return { isOpen: rawFlag, label: date.flagname };
+		}
+		if (typeof rawFlag === "number") {
+			return { isOpen: rawFlag === 1, label: date.flagname };
+		}
+		if (typeof rawFlag === "string") {
+			const normalized = rawFlag.trim().toLowerCase();
+			return {
+				isOpen:
+					normalized === "1" ||
+					normalized === "true" ||
+					normalized === "open" ||
+					normalized === "active",
+				label: date.flagname,
+			};
+		}
+		return { isOpen: false, label: date.flagname };
+	};
 
 	const toggleRow = (id: number) => {
 		setExpandedRows((prev) => ({ ...prev, [id]: !prev[id] }));
 	};
 
 	useEffect(() => {
-		if (data.length > 0) {
-			const allExpanded = data.reduce(
-				(acc, exam) => {
-					acc[exam.id] = true;
-					return acc;
-				},
-				{} as Record<number, boolean>,
-			);
-			setExpandedRows(allExpanded);
-		}
-	}, [data]);
+		const rowState = data.reduce(
+			(acc, exam) => {
+				acc[exam.id] = expandAllOnLoad;
+				return acc;
+			},
+			{} as Record<number, boolean>,
+		);
+		setExpandedRows(rowState);
+	}, [data, expandAllOnLoad]);
 
 	return (
 		<div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden flex flex-col h-full">
@@ -223,6 +260,11 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 																		<TableHead className="text-[9px] font-bold uppercase  h-8 px-4">
 																			Дуусах цаг
 																		</TableHead>
+																		{isAdmin && (
+																			<TableHead className="text-[9px] font-bold uppercase  h-8 px-2 text-center">
+																				Төлөв
+																			</TableHead>
+																		)}
 																		<TableHead className="text-[9px] font-bold uppercase  h-8 text-right">
 																			Үйлдэл
 																		</TableHead>
@@ -235,7 +277,10 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 																			className="h-10 hover:bg-primary/5 border-b border-border/30 last:border-0"
 																			onClick={() => {
 																				route.push(
-																					`/exam-schedule/${date.exam_date_id}-${date.exam_id}`,
+																					getDetailPath(
+																						date.exam_date_id,
+																						date.exam_id,
+																					),
 																				);
 																			}}
 																		>
@@ -271,6 +316,29 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 																					</span>
 																				</div>
 																			</TableCell>
+																			{isAdmin && (
+																				(() => {
+																					const status =
+																						getExamDateStatus(date);
+																					return (
+																						<TableCell className="py-1 text-center">
+																							<Badge
+																								variant="outline"
+																								className={
+																									status.isOpen
+																										? "border-emerald-200 bg-emerald-50 text-emerald-700"
+																										: "border-slate-200 bg-slate-50 text-slate-600"
+																								}
+																							>
+																								{status.label ||
+																									(status.isOpen
+																										? "Нээлттэй"
+																										: "Хаалттай")}
+																							</Badge>
+																						</TableCell>
+																					);
+																				})()
+																			)}
 																			<TableCell className="py-1   items-center w-full">
 																				<div className="flex justify-end ">
 																					<Button
@@ -279,9 +347,12 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 																						variant={"outline"}
 																					>
 																						<Link
-																							href={`/exam-schedule/${date.exam_date_id}-${date.exam_id}`}
+																							href={getDetailPath(
+																								date.exam_date_id,
+																								date.exam_id,
+																							)}
 																						>
-																							Дэлгэрэнгүй
+																							{detailButtonLabel}
 																						</Link>
 																					</Button>
 																				</div>

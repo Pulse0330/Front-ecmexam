@@ -18,6 +18,7 @@ import type {
 	getRoomsResponseType,
 	Table,
 } from "@/types/dashboard/room.types";
+import type { ApiExamResponse } from "@/types/exam/exam";
 
 export const roomCreateEdit = async ({
 	id,
@@ -298,6 +299,25 @@ export const getExamInfo = async ({
 	});
 	return data;
 };
+
+export const apiExamDateActive = async ({
+	userId,
+	examId,
+	examDateId,
+}: {
+	userId: number;
+	examId: number;
+	examDateId: number;
+}): Promise<ApiExamResponse> => {
+	const { data } = await api1.post<ApiExamResponse>("/list", {
+		procname: "api_exam_date_active",
+		userid: userId,
+		exam_id: examId,
+		exam_date_id: examDateId,
+		conn: "skuul",
+	});
+	return data;
+};
 export const getExamMetaralList = async ({
 	userId,
 	examDateId,
@@ -419,4 +439,28 @@ export const getVariantDistribute = async ({
 		},
 	);
 	return data;
+};
+
+export const checkVariantFill = async ({
+	variantId,
+	examId,
+	examDateId,
+	userId,
+}: {
+	variantId: number;
+	examId: number;
+	examDateId: number;
+	userId: number;
+}): Promise<ApiExamResponse> => {
+	const { data } = await api1.post(
+		"https://backend.skuul.mn/api/api_varient_fill_checked",
+		{
+			variant_id: variantId,
+			exam_id: examId,
+			exam_date_id: examDateId,
+			userid: userId,
+			conn: "skuul",
+		},
+	);
+	return data as ApiExamResponse;
 };

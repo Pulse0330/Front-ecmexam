@@ -128,7 +128,7 @@ const ExamMinimap = memo(function ExamMinimap({
 									return (
 										<button
 											type="button"
-											key={q.question_id}
+											key={`${q.question_id ?? "q"}-${idx}`}
 											onClick={() => {
 												onQuestionClick(idx);
 												onClose?.();
@@ -168,14 +168,14 @@ const ExamMinimap = memo(function ExamMinimap({
 									</span>
 								</div>
 								<div className="flex flex-wrap gap-2">
-									{bookmarkedQuestionsArray.map((q) => {
+									{bookmarkedQuestionsArray.map((q, bmIdx) => {
 										// ✅ FIX 4: O(n) findIndex → O(1) Map.get()
 										const questionIndex =
 											questionIndexMap.get(q.question_id) ?? -1;
 										return (
 											<button
 												type="button"
-												key={q.question_id}
+												key={`${q.question_id ?? "b"}-${bmIdx}`}
 												onClick={() => {
 													onQuestionClick(questionIndex);
 													onClose?.();
@@ -217,7 +217,7 @@ const ExamMinimap = memo(function ExamMinimap({
 							return (
 								<button
 									type="button"
-									key={q.question_id}
+									key={`${q.question_id ?? "q"}-${idx}`}
 									onClick={() => onQuestionClick(idx)}
 									className={`relative aspect-square rounded-lg transition-all active:scale-90 flex items-center justify-center text-[10px] sm:text-xs font-bold w-full
 										${
@@ -275,13 +275,13 @@ const ExamMinimap = memo(function ExamMinimap({
 							</span>
 						</div>
 						<div className="flex flex-wrap gap-1 sm:gap-1.5">
-							{bookmarkedQuestionsArray.map((q) => {
+							{bookmarkedQuestionsArray.map((q, bmIdx) => {
 								// ✅ FIX 4: O(n) findIndex → O(1) Map.get()
 								const questionIndex = questionIndexMap.get(q.question_id) ?? -1;
 								return (
 									<button
 										type="button"
-										key={q.question_id}
+										key={`${q.question_id ?? "b"}-${bmIdx}`}
 										onClick={() => onQuestionClick(questionIndex)}
 										className="bg-white dark:bg-slate-800 border border-yellow-300 dark:border-yellow-700 rounded-md px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 active:scale-95 transition-all shadow-sm"
 									>

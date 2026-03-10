@@ -46,9 +46,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
 									displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']],
 									processEscapes: true
 								},
-								mml: {
-									parseNodes: true,
-								},
 								startup: {
 									typeset: false
 								},

@@ -1084,7 +1084,7 @@ export default function ExamPage() {
 									if (showSectionHeader) lastSectionNumber = q.section_number;
 
 									return (
-										<div key={q.question_id}>
+										<div key={`${q.question_id ?? "q"}-${index}`}>
 											{showSectionHeader && (
 												<div className="flex items-center gap-3 py-3 px-4 mb-2 bg-blue-50 dark:bg-blue-900/30 rounded-xl border border-blue-200 dark:border-blue-700">
 													<div className="w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center shrink-0">
