@@ -151,7 +151,6 @@ export function LoginForm() {
 								</DialogTitle>
 								<p className="text-xs mt-0.5 font-medium">ЕСМ ГРУПП</p>
 							</div>
-							б
 						</div>
 					</DialogHeader>
 
