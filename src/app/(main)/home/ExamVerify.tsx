@@ -1,11 +1,200 @@
+// import { useMutation } from "@tanstack/react-query";
+// import { BookOpen, School } from "lucide-react";
+// import { useEffect, useState } from "react";
+// import { toast } from "sonner";
+// import {
+// 	RoomSelector,
+// 	type SelectedRoom,
+// } from "@/app/(dash)/exam-create/RoomSelector";
+// import {
+// 	AlertDialog,
+// 	AlertDialogAction,
+// 	AlertDialogCancel,
+// 	AlertDialogContent,
+// 	AlertDialogDescription,
+// 	AlertDialogFooter,
+// 	AlertDialogHeader,
+// 	AlertDialogTitle,
+// } from "@/components/ui/alert-dialog";
+// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// import { userRegisterExams } from "@/lib/dash.api";
+// import { useAuthStore } from "@/stores/useAuthStore";
+// import type { Exam1111 } from "@/types/dashboard/exam.types";
+// import { isBurtguulsen } from "./page";
+// import { ExamSelectorV2, type SelectedExam } from "./StudentExamSelect";
+
+// export function ExamVerifyDialog({
+// 	isFetched,
+// 	examList,
+// 	isLoading,
+// }: {
+// 	examList: Exam1111[];
+// 	isLoading: boolean;
+// 	isFetched: boolean;
+// }) {
+// 	const { userId, user } = useAuthStore();
+// 	const [isOpen, setOpen] = useState(false);
+// 	const [isConfirmOpen, setConfirmOpen] = useState(false); // ← confirmation dialog
+
+// 	const [selectedRoomID, setSelectedRoomID] = useState<string | null>(null);
+// 	const [selectedEsisRoomID, setSelectedEsisRoomID] = useState<number | null>(
+// 		null,
+// 	);
+// 	const [selectedExam, setSelectedExam] = useState<SelectedExam | null>(null);
+
+// 	const handleRoomSelect = (room: SelectedRoom) => {
+// 		setSelectedRoomID(room.id);
+// 		setSelectedEsisRoomID(room.esisroomid);
+// 	};
+
+// 	const handleExamSelect = (exam: SelectedExam) => {
+// 		setSelectedExam(exam);
+// 	};
+
+// 	const { mutate, isPending } = useMutation({
+// 		mutationFn: userRegisterExams,
+// 		onSuccess: (res) => {
+// 			if (res.RetResponse.ResponseCode === 11) {
+// 				toast.error(res.RetResponse.ResponseMessage);
+// 			} else {
+// 				toast.success(res.RetResponse.ResponseMessage);
+// 				setSelectedRoomID(null);
+// 				setSelectedEsisRoomID(null);
+// 				setSelectedExam(null);
+// 			}
+// 		},
+// 	});
+
+// 	const submit = () => {
+// 		if (!selectedExam || !selectedEsisRoomID || !userId || !user) return;
+// 		mutate({
+// 			userId: Number(userId),
+// 			exam_id: selectedExam.examId,
+// 			exam_date_id: selectedExam?.examDateId,
+// 			exam_room_id: selectedEsisRoomID,
+// 			examinee_number: String(user?.examinee_number),
+// 		});
+// 	};
+
+// 	useEffect(() => {
+// 		if (!isFetched) return;
+// 		if (user?.examinee_number && !isBurtguulsen(examList)) {
+// 			setOpen(true);
+// 		} else {
+// 			setOpen(false);
+// 		}
+// 	}, [user, examList, isFetched]);
+
+// 	return (
+// 		<>
+// 			{/* ҮНДСЭН DIALOG */}
+// 			<AlertDialog open={isOpen} onOpenChange={setOpen}>
+// 				<AlertDialogContent className="max-w-4xl sm:max-w-4xl">
+// 					<AlertDialogHeader>
+// 						<AlertDialogTitle>
+// 							<span className=" bg-green-500/10 text-green-600 border-none px-1">
+// 								Та Skuul.mn системд амжилттай нэвтэрлээ
+// 							</span>
+// 						</AlertDialogTitle>
+// 						<AlertDialogDescription>
+// 							Шалгалтын хувиарийг сургалтын менежерээс оруулаагүй байна. Иймд
+// 							сургалтын менежер шалгалтын хувиар оруулсны дараа та шалгалт өгөх
+// 							боломжтой болно
+// 						</AlertDialogDescription>
+// 					</AlertDialogHeader>
+// 					<div className="grid grid-cols-2 gap-4 h-auto lg:h-[calc(100vh-250px)] w-full">
+
+// 						<Card className="flex flex-col border-border bg-card overflow-hidden gap-0 pb-0 h-125 lg:h-full">
+// 							<CardHeader className="pb-0 shrink-0">
+// 								<CardTitle className="text-sm font-semibold flex items-center gap-2 justify-between">
+// 									<span className="flex items-center gap-2">
+// 										<School size={16} /> 1. Шалгалтын өрөө
+// 									</span>
+// 								</CardTitle>
+// 							</CardHeader>
+// 							<CardContent className="p-0 flex-1 overflow-hidden relative gap-0">
+// 								<div className="absolute inset-0">
+// 									<RoomSelector
+// 										selectedId={selectedRoomID}
+// 										onSelect={handleRoomSelect}
+// 										acctionHidden={true}
+// 									/>
+// 								</div>
+// 							</CardContent>
+// 						</Card>
+
+// 						<Card className="flex flex-col border-border bg-card overflow-hidden gap-0 pb-0 h-125 lg:h-full">
+// 							<CardHeader className="pb-0 shrink-0">
+// 								<CardTitle className="text-sm font-semibold flex items-center gap-2 justify-between">
+// 									<span className="flex items-center gap-2">
+// 										<BookOpen size={16} /> 2. Шалгалт / Хуваарь
+// 									</span>
+// 								</CardTitle>
+// 							</CardHeader>
+// 							<CardContent className="p-0 flex-1 overflow-hidden relative gap-0">
+// 								<div className="absolute inset-0">
+// 									<ExamSelectorV2
+// 										onSelect={handleExamSelect}
+// 										selectedExamDateId={selectedExam?.uiId || null}
+// 										data={examList}
+// 										isLoading={isLoading}
+// 									/>
+// 								</div>
+// 							</CardContent>
+// 						</Card>
+// 					</div>
+// 					<AlertDialogFooter>
+// 						<AlertDialogCancel>Хaaх</AlertDialogCancel>
+// 						{/* ← давхардсан Action-г устгаж нэг л үлдээв */}
+// 						<AlertDialogAction
+// 							onClick={(e) => {
+// 								e.preventDefault();
+// 								setConfirmOpen(true);
+// 							}}
+// 							disabled={!selectedExam || !selectedEsisRoomID || isPending}
+// 							className="disabled:opacity-50 disabled:cursor-not-allowed"
+// 						>
+// 							Бүртгэх
+// 						</AlertDialogAction>
+// 					</AlertDialogFooter>
+// 				</AlertDialogContent>
+// 			</AlertDialog>
+
+// 			{/* ✅ CONFIRMATION DIALOG */}
+// 			<AlertDialog open={isConfirmOpen} onOpenChange={setConfirmOpen}>
+// 				<AlertDialogContent>
+// 					<AlertDialogHeader>
+// 						<AlertDialogTitle>
+// 							Та бүртгэхдээ итгэлтэй байна уу?
+// 						</AlertDialogTitle>
+// 						<AlertDialogDescription>
+// 							Сонгосон өрөө болон хуваарьт шалгалтанд бүртгүүлэхийг
+// 							баталгаажуулна уу.
+// 						</AlertDialogDescription>
+// 					</AlertDialogHeader>
+// 					<AlertDialogFooter>
+// 						<AlertDialogCancel onClick={() => setConfirmOpen(false)}>
+// 							Үгүй
+// 						</AlertDialogCancel>
+// 						<AlertDialogAction
+// 							onClick={() => {
+// 								setConfirmOpen(false);
+// 								submit();
+// 							}}
+// 							disabled={isPending}
+// 						>
+// 							{isPending ? "Бүртгэж байна..." : "Тийм"}
+// 						</AlertDialogAction>
+// 					</AlertDialogFooter>
+// 				</AlertDialogContent>
+// 			</AlertDialog>
+// 		</>
+// 	);
+// }
 import { useMutation } from "@tanstack/react-query";
-import { BookOpen, School } from "lucide-react";
+import { Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import {
-	RoomSelector,
-	type SelectedRoom,
-} from "@/app/(dash)/exam-create/RoomSelector";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -16,13 +205,11 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { userRegisterExams } from "@/lib/dash.api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { Exam1111 } from "@/types/dashboard/exam.types";
 import { isBurtguulsen } from "./page";
-import { ExamSelectorV2, type SelectedExam } from "./StudentExamSelect";
-
+import type { SelectedExam } from "./StudentExamSelect";
 export function ExamVerifyDialog({
 	isFetched,
 	examList,
@@ -34,22 +221,12 @@ export function ExamVerifyDialog({
 }) {
 	const { userId, user } = useAuthStore();
 	const [isOpen, setOpen] = useState(false);
-	const [isConfirmOpen, setConfirmOpen] = useState(false); // ← confirmation dialog
+	const [isConfirmOpen, setConfirmOpen] = useState(false);
 
-	const [selectedRoomID, setSelectedRoomID] = useState<string | null>(null);
 	const [selectedEsisRoomID, setSelectedEsisRoomID] = useState<number | null>(
 		null,
 	);
 	const [selectedExam, setSelectedExam] = useState<SelectedExam | null>(null);
-
-	const handleRoomSelect = (room: SelectedRoom) => {
-		setSelectedRoomID(room.id);
-		setSelectedEsisRoomID(room.esisroomid);
-	};
-
-	const handleExamSelect = (exam: SelectedExam) => {
-		setSelectedExam(exam);
-	};
 
 	const { mutate, isPending } = useMutation({
 		mutationFn: userRegisterExams,
@@ -58,7 +235,6 @@ export function ExamVerifyDialog({
 				toast.error(res.RetResponse.ResponseMessage);
 			} else {
 				toast.success(res.RetResponse.ResponseMessage);
-				setSelectedRoomID(null);
 				setSelectedEsisRoomID(null);
 				setSelectedExam(null);
 			}
@@ -87,74 +263,37 @@ export function ExamVerifyDialog({
 
 	return (
 		<>
-			{/* ҮНДСЭН DIALOG */}
 			<AlertDialog open={isOpen} onOpenChange={setOpen}>
 				<AlertDialogContent className="max-w-4xl sm:max-w-4xl">
 					<AlertDialogHeader>
-						<AlertDialogTitle>Шалгалтанд бүртгүүлэх</AlertDialogTitle>
-						<AlertDialogDescription>
-							Та шалгалтын өрөө, шалгалт өгөх хуваарь сонгож үргэжлүүлнэ үү
+						<AlertDialogTitle>
+							<span className="bg-green-500/10 text-green-600 border-none px-1">
+								Та Skuul.mn системд амжилттай нэвтэрлээ
+							</span>
+						</AlertDialogTitle>
+						<AlertDialogDescription asChild>
+							<div className="flex flex-col items-center gap-4 py-6 text-center">
+								Шалгалтын хуваарийг сургалтын менежерээс оруулаагүй байна. Иймд
+								сургалтын менежер шалгалтын хуваарь оруулсны дараа та шалгалт
+								өгөх боломжтой болно.
+								{/* Animated icon */}
+								<div className="relative flex items-center justify-center">
+									<div className="absolute w-20 h-20 rounded-full bg-amber-500/10 animate-ping" />
+									<div className="absolute w-16 h-16 rounded-full bg-amber-500/15 animate-pulse" />
+									<div className="relative w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
+										<Clock className="w-6 h-6 text-amber-500 animate-spin [animation-duration:3s]" />
+									</div>
+								</div>
+							</div>
 						</AlertDialogDescription>
 					</AlertDialogHeader>
-					<div className="grid grid-cols-2 gap-4 h-auto lg:h-[calc(100vh-250px)] w-full">
-						{/* 1. БАГАНА: ӨРӨӨНҮҮД */}
-						<Card className="flex flex-col border-border bg-card overflow-hidden gap-0 pb-0 h-125 lg:h-full">
-							<CardHeader className="pb-0 shrink-0">
-								<CardTitle className="text-sm font-semibold flex items-center gap-2 justify-between">
-									<span className="flex items-center gap-2">
-										<School size={16} /> 1. Шалгалтын өрөө
-									</span>
-								</CardTitle>
-							</CardHeader>
-							<CardContent className="p-0 flex-1 overflow-hidden relative gap-0">
-								<div className="absolute inset-0">
-									<RoomSelector
-										selectedId={selectedRoomID}
-										onSelect={handleRoomSelect}
-										acctionHidden={true}
-									/>
-								</div>
-							</CardContent>
-						</Card>
-						{/* 2. БАГАНА: ШАЛГАЛТУУД */}
-						<Card className="flex flex-col border-border bg-card overflow-hidden gap-0 pb-0 h-125 lg:h-full">
-							<CardHeader className="pb-0 shrink-0">
-								<CardTitle className="text-sm font-semibold flex items-center gap-2 justify-between">
-									<span className="flex items-center gap-2">
-										<BookOpen size={16} /> 2. Шалгалт / Хуваарь
-									</span>
-								</CardTitle>
-							</CardHeader>
-							<CardContent className="p-0 flex-1 overflow-hidden relative gap-0">
-								<div className="absolute inset-0">
-									<ExamSelectorV2
-										onSelect={handleExamSelect}
-										selectedExamDateId={selectedExam?.uiId || null}
-										data={examList}
-										isLoading={isLoading}
-									/>
-								</div>
-							</CardContent>
-						</Card>
-					</div>
+
 					<AlertDialogFooter>
-						<AlertDialogCancel>Хaaх</AlertDialogCancel>
-						{/* ← давхардсан Action-г устгаж нэг л үлдээв */}
-						<AlertDialogAction
-							onClick={(e) => {
-								e.preventDefault();
-								setConfirmOpen(true);
-							}}
-							disabled={!selectedExam || !selectedEsisRoomID || isPending}
-							className="disabled:opacity-50 disabled:cursor-not-allowed"
-						>
-							Бүртгэх
-						</AlertDialogAction>
+						<AlertDialogCancel>Хааx</AlertDialogCancel>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
 
-			{/* ✅ CONFIRMATION DIALOG */}
 			<AlertDialog open={isConfirmOpen} onOpenChange={setConfirmOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>

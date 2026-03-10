@@ -400,15 +400,13 @@ export default function MnExamPrint({ printList }: MnExamPrintProps) {
 		}
 	};
 
-	if (!printList?.length) return null;
-
 	return (
 		<>
 			<Button
 				variant="outline"
 				size="sm"
 				onClick={handleDownloadPDF}
-				disabled={isGenerating || !profilesLoaded}
+				disabled={isGenerating || !profilesLoaded || !printList?.length}
 				className="gap-2"
 			>
 				{isGenerating ? (
@@ -419,7 +417,7 @@ export default function MnExamPrint({ printList }: MnExamPrintProps) {
 				{isGenerating
 					? `Боловсруулж байна... ${progress}%`
 					: !profilesLoaded
-						? "Бэлдэж байна..."
+						? "Шалгалтын хуудас"
 						: "Бүртгэлийн хуудас (PDF)"}
 			</Button>
 

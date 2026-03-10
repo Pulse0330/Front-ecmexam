@@ -21,9 +21,9 @@ export async function POST(request: NextRequest) {
 				database: process.env.DB_CONFIG_NAME || "EDU_CONFIG",
 				server: process.env.DB_CONFIG_SERVER || "172.16.1.151",
 				pool: {
-					max: 100000,
+					max: 100,
 					min: 0,
-					idleTimeoutMillis: 30000000,
+					idleTimeoutMillis: 30000,
 				},
 				options: {
 					encrypt: false,

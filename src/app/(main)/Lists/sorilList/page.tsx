@@ -114,7 +114,7 @@ export default function Sorillists() {
 
 	const handleSorilClick = useCallback(
 		(soril: SorillistsData) => {
-			const isAccessible = soril.isopensoril === 1 || soril.ispay === 1;
+			const isAccessible = soril.isopensoril === 1 || soril.ispay === 0;
 
 			if (!isAccessible) {
 				setSelectedSoril(soril);
@@ -224,9 +224,8 @@ export default function Sorillists() {
 					<DialogHeader>
 						<DialogTitle>Төлбөртэй сорил</DialogTitle>
 						<DialogDescription className="pt-4 space-y-2">
-							<p className="font-medium text-foreground">
-								{selectedSoril?.soril_name}
-							</p>
+							{selectedSoril?.soril_name}
+
 							<p>
 								Энэхүү сорил төлбөртэй юм. Үргэлжлүүлэхийн тулд төлбөр төлөх
 								шаардлагатай.

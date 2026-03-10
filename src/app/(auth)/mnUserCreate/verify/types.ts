@@ -4,13 +4,13 @@ export interface VerifyData {
 	reg_number: string;
 	gender_code: "M" | "F";
 	dateofbirth: string;
-
 	phone: string | null;
+	phone_1: string | null;
 	email: string;
-	aimag_name: string; // ← нэмэх
-	sym_name: string; // ← нэмэх
-	age: number | null; // ← нэмэх
-	address: string | null; // ← нэмэх
+	aimag_name: string;
+	sym_name: string;
+	age: number | null;
+	address: string | null;
 	schoolname: string;
 	studentgroupname: string;
 	class_id: number;
@@ -24,7 +24,10 @@ export interface VerifyData {
 	schooldb: string;
 	password: string;
 	userid: number;
+	// ✅ НЭМСЭН: EEC passed үед true → VerifyForm QPay алгасана
+	_isPaid?: boolean;
 }
+
 export interface ExamineeItem {
 	id: number;
 	examinee_number: string;
@@ -59,7 +62,7 @@ export interface ExamDate {
 	end_date: string;
 	exam_skuul_id: number;
 	exam_date_id: number | null;
-	date?: string; // ← нэмэх
+	date?: string;
 	exam_date?: string;
 }
 
@@ -74,9 +77,10 @@ export interface ExamItem {
 	item_open_date: string;
 	exam_dates: ExamDate[];
 }
+
 export interface ExamRoom {
 	id: number;
-	esisroomid: number; // ← энийг нэмнэ
+	esisroomid: number;
 	name: string;
 	branchname: string;
 	room_number: string;
@@ -86,7 +90,7 @@ export interface ExamRoom {
 	pccnt: number;
 	seatcnt: number;
 }
-// ── Types нэмнэ ──
+
 export interface ExamineeListData {
 	first_name: string;
 	last_name: string;
@@ -106,11 +110,11 @@ export interface ExamineeListData {
 	sym_name: string;
 	userid: number;
 	password?: string;
-	passwordauto?: string; // ← нэмэх
-	phone?: string; // ← нэмэх
-	age?: number | null; // ← нэмэх
-	address?: string | null; // ← нэмэх
-	login_name?: string; // ← нэмэх
+	passwordauto?: string;
+	phone?: string;
+	age?: number | null;
+	address?: string | null;
+	login_name?: string;
 }
 
 export type Step = "preview" | "select_exam" | "paid";

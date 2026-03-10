@@ -5,6 +5,7 @@ import {
 	ArrowRight,
 	CheckCircle2,
 	Loader2,
+	Pencil,
 	RotateCcw,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -22,59 +23,12 @@ import {
 
 // ─── Env ──────────────────────────────────────────────────────────────────────
 const EXAM_API_BASE =
-	process.env.NEXT_PUBLIC_EXAM_API_URL ?? "https:/backend.skuul.mn";
+	process.env.NEXT_PUBLIC_EXAM_API_URL ?? "https://backend.skuul.mn";
 
 const SKUUL_API_BASE = "https://backend.skuul.mn";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type CheckState = "idle" | "loading" | "found" | "not_found" | "error";
-
-interface SkuulExamineeData {
-	examinee_number: string;
-	first_name: string;
-	last_name: string;
-	register_number: string;
-	gender: "M" | "F";
-	age: number;
-	mail: string;
-	address: string;
-	nationality: string;
-	profile: string | null;
-	school_esis_id: string;
-	student_group_id: string;
-	academic_level: string;
-	schoolname: string;
-	studentgroupname: string;
-	aimag_name: string;
-	sym_name: string;
-	exam_id: number;
-	exam_date_id: number;
-	exam_room_id: number;
-	seatid: number | null;
-	seatnumber: number | null;
-	exam_seat_id: number | null;
-	exam_registration_id: number | null;
-	room_number: string;
-	roomname: string;
-	seatposition: string | null;
-	exam_number: string;
-	start_date: string;
-	end_date: string;
-	duration: number;
-	exam_name: string;
-	status_code: number;
-	status_text: string;
-}
-
-export interface SkuulPostResponse {
-	RetResponse: {
-		ResponseMessage: string;
-		StatusCode: number;
-		ResponseCode: number;
-		ResponseType: boolean;
-	};
-	RetData: SkuulExamineeData[];
-}
 
 interface AimagItem {
 	mAcode: string;
@@ -137,52 +91,34 @@ interface StudentExamData {
 	status_code?: number;
 	status_text?: string;
 	age?: number;
-	_source?: "skuul" | "exam";
+	_source?: "skuul" | "exam" | "eec";
+	_isPaid?: boolean;
 }
 
-// ─── Mapper: SkuulExamineeData → StudentExamData ──────────────────────────────
-function _mapSkuulToStudentExam(s: SkuulExamineeData): StudentExamData {
-	return {
-		login_name: s.register_number,
-		firstname: s.first_name,
-		lastname: s.last_name,
-		reg_number: s.register_number,
-		gender: s.gender === "M" ? 1 : 0,
-		gender_code: s.gender,
-		phone: null,
-		email: s.mail,
-		aimag_id: "",
-		sym_id: "",
-		class_id: 0,
-		group_id: Number(s.student_group_id),
-		img_url: s.profile,
-		descr: "",
-		regdate: "",
-		dateofbirth: "",
-		personId: s.examinee_number,
-		schooldb: "",
-		schoolname: s.schoolname,
-		studentgroupid: s.student_group_id,
-		studentgroupname: s.studentgroupname,
-		aimag_name: s.aimag_name,
-		sym_name: s.sym_name,
-		institutionid: s.school_esis_id,
-		academic_level: Number(s.academic_level),
-		nationality: s.nationality,
-		exam_number: s.exam_number,
-		exam_name: s.exam_name,
-		start_date: s.start_date,
-		end_date: s.end_date,
-		duration: s.duration,
-		room_number: s.room_number,
-		roomname: s.roomname,
-		seatnumber: s.seatnumber,
-		seatposition: s.seatposition,
-		status_code: s.status_code,
-		status_text: s.status_text,
-		age: s.age,
-		_source: "skuul",
-	};
+interface ExamineeInfo {
+	examinee_number: string;
+	first_name: string;
+	last_name: string;
+	register_number: string;
+	gender: string;
+	age: number | null;
+	mail: string | null;
+	profile: string | null;
+	schoolname: string | null;
+	studentgroupname: string | null;
+	aimag_name: string | null;
+	sym_name: string | null;
+	exam_name: string | null;
+	start_date: string | null;
+	end_date: string | null;
+	duration: number | null;
+	room_number: string | null;
+	roomname: string | null;
+	seatnumber: number | null;
+	seatposition: string | null;
+	status_text: string | null;
+	status_code: number | null;
+	[key: string]: unknown;
 }
 
 // ─── API Response wrapper ─────────────────────────────────────────────────────
@@ -196,7 +132,7 @@ interface ApiResponse<T> {
 	RetData: T[];
 }
 
-// ─── API helpers ──────────────────────────────────────────────────────────────
+// ─── API helpers (аймаг / дүүрэг / сургууль) ─────────────────────────────────
 async function apiAimag() {
 	const r = await fetch("/api/sign/aimag", {
 		method: "POST",
@@ -227,60 +163,44 @@ async function apiSchool(aimagId: number, districtId: number) {
 	return r.json();
 }
 
-// GET /api/examinee → examinee_number эсвэл personId авна
-async function apiCheckStudentSkuulGet(
-	registerNumber: string,
-): Promise<{ examineeNumber: string; personId: string } | null> {
-	try {
-		const r = await fetch(
-			`${SKUUL_API_BASE}/api/examinee?register_number=${registerNumber}`,
-			{ method: "GET", headers: { "Content-Type": "application/json" } },
+// ─── Exam API fallback ────────────────────────────────────────────────────────
+async function apiGetStudentExam(
+	dbname: string,
+	regnumber: string,
+): Promise<StudentExamData | null> {
+	const r = await fetch(`${EXAM_API_BASE}/api/getstudentexam`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ dbname, regnumber }),
+	});
+	if (!r.ok) throw new Error("Серверт холбогдоход алдаа гарлаа");
+	const d: ApiResponse<StudentExamData> = await r.json();
+	if (!d.RetResponse.ResponseType)
+		throw new Error(
+			"Регистрийн дугаар бүртгэлгүй байна. Сургалтын менежертээ хандана уу.",
 		);
-		const data = await r.json();
-		console.log("[GET] examinee response:", JSON.stringify(data));
-
-		const ok =
-			data?.RetResponse?.ResponseType === true ||
-			data?.RetResponse?.StatusCode === 200 ||
-			data?.RetResponse?.StatusCode === "200";
-		if (!ok) return null;
-
-		const retData = data?.RetData;
-		if (!retData) return null;
-
-		const item = Array.isArray(retData) ? retData[0] : retData;
-		if (!item?.examinee_number) return null;
-
-		return {
-			examineeNumber: item.examinee_number,
-			personId: item.personid ?? item.personId ?? "",
-		};
-	} catch (e) {
-		console.error("[GET] examinee error:", e);
-		return null;
-	}
+	const student = d.RetData[0] ?? null;
+	if (student) student._source = "exam";
+	return student;
 }
 
-// POST /api/examinee_list → сурагчийн бүрэн мэдээлэл авна
+// ─── Skuul examinee_list ──────────────────────────────────────────────────────
 async function apiGetExamineeList(
 	personId: string,
 ): Promise<StudentExamData | null> {
+	if (!personId) return null;
 	try {
-		const r = await fetch(`${SKUUL_API_BASE}/api/examinee_list`, {
+		const r = await fetch(`${SKUUL_API_BASE}/api/examinee_list_1`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ personid: personId, conn: "skuul" }),
 		});
 		if (!r.ok) return null;
-
 		const data = await r.json();
-		console.log("[POST] examinee_list response:", JSON.stringify(data));
-
+		console.log("[examinee_list] response:", JSON.stringify(data));
 		if (!data?.RetResponse?.ResponseType) return null;
-
 		const item = data.RetData?.[0];
 		if (!item) return null;
-
 		const student: StudentExamData = {
 			login_name: item.register_number,
 			firstname: item.first_name,
@@ -312,70 +232,17 @@ async function apiGetExamineeList(
 		};
 		return student;
 	} catch (e) {
-		console.error("[POST] examinee_list error:", e);
+		console.error("[examinee_list] error:", e);
 		return null;
 	}
 }
 
-// Exam API fallback
-async function apiGetStudentExam(
-	dbname: string,
-	regnumber: string,
-): Promise<StudentExamData | null> {
-	const r = await fetch(`${EXAM_API_BASE}/api/getstudentexam`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ dbname, regnumber }),
-	});
-	if (!r.ok) throw new Error("Серверт холбогдоход алдаа гарлаа");
-	const d: ApiResponse<StudentExamData> = await r.json();
-	if (!d.RetResponse.ResponseType)
-		throw new Error(
-			"Регистрийн  дугаар бүртгэлгүй байна. Сургалтын менежертээ хандана уу.",
-		);
-	const student = d.RetData[0] ?? null;
-	if (student) student._source = "exam";
-	return student;
-}
-
-// Хосолсон шалгалт
-async function checkStudentCombined(
-	registerNumber: string,
-	dbname: string,
-	_schoolName: string,
-): Promise<{
-	student: StudentExamData | null;
-	fromSkuul: boolean;
-	examineeNumber: string | null;
-}> {
-	const skuulResult = await apiCheckStudentSkuulGet(registerNumber);
-
-	if (skuulResult !== null) {
-		console.log("✅ [1] GET олдлоо → personId:", skuulResult.personId);
-
-		if (skuulResult.personId) {
-			const student = await apiGetExamineeList(skuulResult.personId);
-			if (student) {
-				console.log("✅ [2] examinee_list олдлоо:", student);
-				return {
-					student,
-					fromSkuul: true,
-					examineeNumber: skuulResult.examineeNumber,
-				};
-			}
-		}
-
-		return {
-			student: null,
-			fromSkuul: true,
-			examineeNumber: skuulResult.examineeNumber,
-		};
-	}
-
-	console.log("⚠️ GET олдсонгүй → Exam API шалгаж байна...");
-	const examResult = await apiGetStudentExam(dbname, registerNumber);
-	if (examResult) console.log("✅ Exam API олдлоо:", examResult);
-	return { student: examResult, fromSkuul: false, examineeNumber: null };
+// ─── RetData normalize ────────────────────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function normalizeRetData(retData: any): any | null {
+	if (!retData) return null;
+	if (Array.isArray(retData)) return retData[0] ?? null;
+	return retData;
 }
 
 // ─── Regex ────────────────────────────────────────────────────────────────────
@@ -439,9 +306,135 @@ function SelectField({
 	);
 }
 
+// ─── ExamineeInfoCard ─────────────────────────────────────────────────────────
+function ExamineeInfoCard({
+	info,
+	loading,
+}: {
+	info: ExamineeInfo | null;
+	loading: boolean;
+}) {
+	if (loading) {
+		return (
+			<div className="mt-2 flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
+				<Loader2 className="w-3.5 h-3.5 animate-spin" />
+				Шалгуулагчийн дэлгэрэнгүй мэдээлэл татаж байна...
+			</div>
+		);
+	}
+	if (!info) return null;
+
+	return (
+		<div className="mt-1 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-900/10 p-3 space-y-2">
+			<div className="flex items-center gap-2">
+				<CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0" />
+				<span className="text-xs font-bold text-blue-700 dark:text-blue-300">
+					Шалгуулагч №{info.examinee_number}
+				</span>
+			</div>
+
+			{info.profile && (
+				<div className="flex justify-center">
+					<img
+						src={info.profile}
+						alt="profile"
+						className="w-14 h-14 rounded-full object-cover border-2 border-blue-300"
+					/>
+				</div>
+			)}
+
+			<div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
+				<InfoRow label="Овог" value={info.last_name} />
+				<InfoRow label="Нэр" value={info.first_name} />
+				<InfoRow label="Регистр" value={info.register_number} mono />
+				<InfoRow
+					label="Хүйс"
+					value={
+						info.gender === "M" || info.gender === "1" ? "Эрэгтэй" : "Эмэгтэй"
+					}
+				/>
+				{info.age != null && <InfoRow label="Нас" value={String(info.age)} />}
+				{info.schoolname && (
+					<div className="col-span-2">
+						<InfoRow label="Сургууль" value={info.schoolname} />
+					</div>
+				)}
+				{info.studentgroupname && (
+					<InfoRow label="Анги/Бүлэг" value={info.studentgroupname} />
+				)}
+				{info.aimag_name && (
+					<InfoRow
+						label="Хаяг"
+						value={`${info.aimag_name}${info.sym_name ? `, ${info.sym_name}` : ""}`}
+					/>
+				)}
+			</div>
+
+			{info.exam_name && (
+				<div className="border-t border-blue-200 dark:border-blue-700 pt-2 space-y-0.5 text-xs">
+					<p className="font-semibold text-blue-800 dark:text-blue-200">
+						{info.exam_name}
+					</p>
+					{info.start_date && (
+						<InfoRow
+							label="Огноо"
+							value={`${new Date(info.start_date).toLocaleString("mn-MN", {
+								year: "numeric",
+								month: "2-digit",
+								day: "2-digit",
+								hour: "2-digit",
+								minute: "2-digit",
+							})}${info.duration ? ` (${info.duration} мин)` : ""}`}
+						/>
+					)}
+					{info.room_number && (
+						<InfoRow
+							label="Өрөө"
+							value={`${info.room_number}${info.roomname ? ` — ${info.roomname}` : ""}`}
+						/>
+					)}
+					{info.seatnumber != null && (
+						<InfoRow label="Суудал" value={String(info.seatnumber)} />
+					)}
+					{info.status_text && (
+						<p className="text-amber-600 dark:text-amber-400">
+							<span className="font-medium">Төлөв: </span>
+							{info.status_text}
+						</p>
+					)}
+				</div>
+			)}
+		</div>
+	);
+}
+
+function InfoRow({
+	label,
+	value,
+	mono = false,
+}: {
+	label: string;
+	value: string | null | undefined;
+	mono?: boolean;
+}) {
+	if (!value) return null;
+	return (
+		<div className="flex gap-1 min-w-0">
+			<span className="text-blue-500 dark:text-blue-400 shrink-0">
+				{label}:
+			</span>
+			<span
+				className={`font-medium text-blue-900 dark:text-blue-100 break-all ${mono ? "font-mono" : ""}`}
+			>
+				{value}
+			</span>
+		</div>
+	);
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
-	const _router = useRouter();
+	const router = useRouter();
 
 	const [aimagList, setAimagList] = useState<AimagItem[]>([]);
 	const [districtList, setDistrictList] = useState<DistrictItem[]>([]);
@@ -466,13 +459,14 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 	const [submitting, setSubmitting] = useState(false);
 	const [submitError, setSubmitError] = useState("");
 
+	const [examineeInfo, setExamineeInfo] = useState<ExamineeInfo | null>(null);
+	const [examineeInfoLoading, setExamineeInfoLoading] = useState(false);
+
 	const schoolData = schoolList.find((s) => s.sName === school);
 
 	useEffect(() => {
 		apiAimag()
-			.then((d) => {
-				setAimagList(d.RetData ?? []);
-			})
+			.then((d) => setAimagList(d.RetData ?? []))
 			.catch(() => setAimagList([]))
 			.finally(() => setAimagLoading(false));
 	}, []);
@@ -485,6 +479,8 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 		setSkuulExamineeNumber(null);
 		setCheckError("");
 		setSubmitError("");
+		setExamineeInfo(null);
+		setExamineeInfoLoading(false);
 	}, []);
 
 	const onAimag = useCallback(
@@ -553,35 +549,254 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 		[checkState, clearReg],
 	);
 
+	// ─── checkUser: шинэ EEC → Skuul → examinees/info → examinee_list → Exam API ─
 	const checkUser = useCallback(async () => {
 		if (reg.length < 8 || !schoolData) return;
 		setCheckState("loading");
 		setCheckError("");
 		setIsSkuulFound(false);
 		setSkuulExamineeNumber(null);
+		setExamineeInfo(null);
+		setExamineeInfoLoading(false);
+
 		try {
-			const { student, fromSkuul, examineeNumber } = await checkStudentCombined(
-				reg,
-				schoolData.dbname,
-				schoolData.sName,
-			);
-			if (fromSkuul) {
-				setIsSkuulFound(true);
-				setSkuulExamineeNumber(examineeNumber);
-				setStudentExam(student);
-				setCheckState("found");
-			} else if (student) {
-				setStudentExam(student);
-				setIsSkuulFound(false);
-				setCheckState("found");
-			} else {
-				setCheckState("not_found");
+			// ── 1️⃣ EEC API ───────────────────────────────────────────────────────
+			console.log("[EEC] шалгаж байна...");
+			const eecRes = await fetch(`${SKUUL_API_BASE}/api/mhb2025/${reg}`, {
+				method: "GET",
+				headers: { "Content-Type": "application/json" },
+			});
+
+			if (eecRes.ok) {
+				const eecData = await eecRes.json();
+				console.log("[EEC] response:", JSON.stringify(eecData));
+
+				const eecOk =
+					eecData?.RetResponse?.ResponseType === true ||
+					eecData?.RetResponse?.StatusCode === 200 ||
+					eecData?.RetResponse?.StatusCode === "200";
+
+				if (eecOk) {
+					const item = normalizeRetData(eecData?.RetData);
+
+					if (item?.register_number) {
+						const mhb2025: string = item.mhb2025 ?? "";
+						console.log("[EEC] mhb2025:", mhb2025);
+
+						const student: StudentExamData = {
+							login_name: item.register_number,
+							firstname: item.first_name ?? item.firstname ?? "",
+							lastname: item.last_name ?? item.lastname ?? "",
+							reg_number: item.register_number,
+							gender: item.gender === "M" || item.gender === 1 ? 1 : 0,
+							gender_code: item.gender === "M" || item.gender === 1 ? "M" : "F",
+							phone: item.phone ?? null,
+							email: item.mail ?? item.email ?? "",
+							aimag_id: item.aimag_id ?? "",
+							sym_id: item.sym_id ?? "",
+							class_id: Number(item.academic_level ?? 0),
+							group_id: Number(item.student_group_id ?? 0),
+							img_url: item.profile ?? item.img_url ?? null,
+							descr: "",
+							regdate: "",
+							dateofbirth: item.dateofbirth ?? "",
+							personId:
+								item.personid ?? item.personId ?? item.examinee_number ?? "",
+							schooldb: item.schooldb ?? "",
+							schoolname: item.schoolname ?? "",
+							studentgroupid: item.student_group_id ?? "",
+							studentgroupname: item.studentgroupname ?? "",
+							aimag_name: item.aimag_name ?? "",
+							sym_name: item.sym_name ?? "",
+							institutionid: item.school_esis_id ?? item.institutionid ?? "",
+							academic_level: Number(item.academic_level ?? 0),
+							nationality: item.nationality ?? "",
+							exam_number: item.exam_number,
+							exam_name: item.exam_name,
+							start_date: item.start_date,
+							end_date: item.end_date,
+							duration: item.duration,
+							room_number: item.room_number,
+							roomname: item.roomname,
+							seatnumber: item.seatnumber ?? null,
+							seatposition: item.seatposition ?? null,
+							status_code: item.status_code,
+							status_text: item.status_text,
+							age: item.age,
+							_source: "eec",
+						};
+
+						// passed → шууд БҮТ рүү redirect
+						if (mhb2025 === "passed") {
+							console.log("✅ [EEC] passed → redirect to БҮТ");
+							sessionStorage.setItem(
+								"studentExam",
+								JSON.stringify({ ...student, _isPaid: true }),
+							);
+							onClose?.();
+							router.push("/mnUserCreate?status=qpay");
+							return;
+						}
+
+						// not_passed болон бусад → дараагийн API руу үргэлжилнэ
+						console.log(`⚠️ [EEC] mhb2025="${mhb2025}" → Skuul шалгаж байна...`);
+					}
+				}
 			}
+
+			console.log("⚠️ EEC олдсонгүй → Skuul шалгаж байна...");
+
+			// ── 2️⃣ Skuul GET: /api/examinee?register_number=:reg ────────────────
+			const skuulRes = await fetch(
+				`${SKUUL_API_BASE}/api/examinee?register_number=${reg}`,
+				{ method: "GET", headers: { "Content-Type": "application/json" } },
+			);
+
+			if (skuulRes.ok) {
+				const skuulData = await skuulRes.json();
+				console.log("[Skuul GET] response:", JSON.stringify(skuulData));
+
+				const skuulOk =
+					skuulData?.RetResponse?.ResponseType === true ||
+					skuulData?.RetResponse?.StatusCode === 200 ||
+					skuulData?.RetResponse?.StatusCode === "200";
+
+				if (skuulOk) {
+					const skuulItem = normalizeRetData(skuulData?.RetData);
+					const examineeNumber: string = skuulItem?.examinee_number ?? "";
+
+					// examinee_number байвал → info API → examinee_list fallback
+					if (examineeNumber) {
+						console.log("✅ [Skuul GET] examinee_number:", examineeNumber);
+						setSkuulExamineeNumber(examineeNumber);
+						setIsSkuulFound(true);
+
+						// ── 3️⃣ GET /api/examinees/info/:examinee_number ──────────────
+						console.log("[examinees/info] шалгаж байна...");
+						const infoRes = await fetch(
+							`${SKUUL_API_BASE}/api/examinees/info/${examineeNumber}`,
+							{
+								method: "GET",
+								headers: { "Content-Type": "application/json" },
+							},
+						);
+
+						if (infoRes.ok) {
+							const infoData = await infoRes.json();
+							console.log(
+								"[examinees/info] response:",
+								JSON.stringify(infoData),
+							);
+
+							const infoItem = normalizeRetData(infoData?.RetData) ?? infoData;
+
+							if (infoItem?.register_number || infoItem?.examinee_number) {
+								console.log("✅ [examinees/info] олдлоо");
+
+								const student: StudentExamData = {
+									login_name: infoItem.register_number ?? "",
+									firstname: infoItem.first_name ?? "",
+									lastname: infoItem.last_name ?? "",
+									reg_number: infoItem.register_number ?? "",
+									gender:
+										infoItem.gender === "M" || infoItem.gender === "1" ? 1 : 0,
+									gender_code:
+										infoItem.gender === "M" || infoItem.gender === "1"
+											? "M"
+											: "F",
+									phone: null,
+									email: infoItem.mail ?? "",
+									aimag_id: "",
+									sym_id: "",
+									class_id: 0,
+									group_id: 0,
+									img_url: infoItem.profile ?? null,
+									descr: "",
+									regdate: "",
+									dateofbirth: "",
+									personId: infoItem.examinee_number ?? "",
+									schooldb: "",
+									schoolname: infoItem.schoolname ?? "",
+									studentgroupid: "",
+									studentgroupname: infoItem.studentgroupname ?? "",
+									aimag_name: infoItem.aimag_name ?? "",
+									sym_name: infoItem.sym_name ?? "",
+									institutionid: "",
+									academic_level: 0,
+									nationality: "",
+									exam_name: infoItem.exam_name ?? undefined,
+									start_date: infoItem.start_date ?? undefined,
+									end_date: infoItem.end_date ?? undefined,
+									duration: infoItem.duration ?? undefined,
+									room_number: infoItem.room_number ?? undefined,
+									roomname: infoItem.roomname ?? undefined,
+									seatnumber: infoItem.seatnumber ?? null,
+									seatposition: infoItem.seatposition ?? null,
+									status_code: infoItem.status_code ?? undefined,
+									status_text: infoItem.status_text ?? undefined,
+									age: infoItem.age ?? undefined,
+									_source: "skuul",
+								};
+
+								setStudentExam({ ...student, _isPaid: false });
+								setExamineeInfo(infoItem as ExamineeInfo);
+								setCheckState("found");
+								return;
+							}
+						}
+
+						// examinees/info хоосон → examinee_list дуудна
+						console.log(
+							"⚠️ examinees/info хоосон → examinee_list шалгаж байна...",
+						);
+						const personId = skuulItem?.personid ?? skuulItem?.personId ?? "";
+						const listStudent = await apiGetExamineeList(personId);
+
+						if (listStudent) {
+							console.log("✅ [examinee_list] олдлоо");
+							setStudentExam({ ...listStudent, _isPaid: false });
+							setCheckState("found");
+							return;
+						}
+
+						// ── examinee_number байгаа ч studentExam олдсонгүй ──────────
+						// Хуучин logic: "Бүртгэл үүслээ" мессеж харуулна (studentExam=null)
+						console.log(
+							"⚠️ examinee_list ч олдсонгүй → бүртгэл үүссэн мессеж харуулна",
+						);
+						setCheckState("found");
+						return;
+					}
+				}
+			}
+
+			console.log("⚠️ Skuul олдсонгүй → Exam API шалгаж байна...");
+
+			// ── 4️⃣ Exam API fallback ─────────────────────────────────────────────
+			const examStudent = await apiGetStudentExam(schoolData.dbname, reg);
+			if (examStudent) {
+				console.log("✅ [Exam API] олдлоо");
+				setStudentExam({ ...examStudent, _isPaid: false });
+				setCheckState("found");
+				return;
+			}
+
+			setCheckState("not_found");
 		} catch (err) {
 			setCheckState("error");
 			setCheckError(err instanceof Error ? err.message : "Алдаа гарлаа");
 		}
-	}, [reg, schoolData]);
+	}, [reg, schoolData, onClose, router]);
+
+	const handleEdit = useCallback(() => {
+		if (!studentExam) return;
+		sessionStorage.setItem("studentExam", JSON.stringify(studentExam));
+		if (skuulExamineeNumber) {
+			sessionStorage.setItem("examineeNumber", skuulExamineeNumber);
+		}
+		onClose?.();
+		router.push("/mnUserCreate/editFormMN");
+	}, [studentExam, skuulExamineeNumber, onClose, router]);
 
 	const handleSubmit = useCallback(async () => {
 		if (!studentExam) return;
@@ -590,12 +805,12 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 		try {
 			sessionStorage.setItem("studentExam", JSON.stringify(studentExam));
 			onClose?.();
-			window.location.href = "/mnUserCreate?status=qpay";
+			router.push("/mnUserCreate?status=qpay");
 		} catch (err) {
 			setSubmitError(err instanceof Error ? err.message : "Алдаа гарлаа.");
 			setSubmitting(false);
 		}
-	}, [studentExam, onClose]);
+	}, [studentExam, onClose, router]);
 
 	return (
 		<div className="space-y-5">
@@ -621,10 +836,7 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 				}
 				options={districtList
 					.filter((d) => d.id)
-					.map((d) => ({
-						value: d.id.toString(),
-						label: d.name,
-					}))}
+					.map((d) => ({ value: d.id.toString(), label: d.name }))}
 				value={district}
 				onValueChange={onDistrict}
 				disabled={!aimag}
@@ -661,9 +873,9 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 							maxLength={100}
 							disabled={checkState === "found"}
 							className={`flex-1 font-mono text-base tracking-widest text-center h-11
-									${checkState === "not_found" || checkState === "error" ? "border-destructive focus-visible:ring-destructive" : ""}
-									${checkState === "found" ? "border-emerald-500 bg-emerald-50/30 dark:bg-emerald-900/10" : ""}
-								`}
+								${checkState === "not_found" || checkState === "error" ? "border-destructive focus-visible:ring-destructive" : ""}
+								${checkState === "found" ? "border-emerald-500 bg-emerald-50/30 dark:bg-emerald-900/10" : ""}
+							`}
 						/>
 						<Button
 							type="button"
@@ -707,7 +919,7 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 						</Alert>
 					)}
 
-					{/* ── Бүртгэлтэй + examinee_list олдсонгүй ── */}
+					{/* ── Skuul-д examinee_number байгаа ч studentExam олдсонгүй (хуучин logic) ── */}
 					{checkState === "found" && isSkuulFound && !studentExam && (
 						<Alert className="border-blue-200 bg-blue-50/50 dark:bg-blue-900/10 dark:border-blue-800">
 							<CheckCircle2 className="h-4 w-4 text-blue-500" />
@@ -729,7 +941,7 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 						</Alert>
 					)}
 
-					{/* ── examinee_list эсвэл Exam API-аас олдлоо ── */}
+					{/* ── studentExam олдсон ── */}
 					{checkState === "found" && studentExam && (
 						<Alert className="border-emerald-200 bg-emerald-50/50 dark:bg-emerald-900/10 dark:border-emerald-800">
 							<CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -758,10 +970,7 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 									</div>
 
 									<div className="text-xs space-y-0.5 border-t border-emerald-200 dark:border-emerald-800 pt-2">
-										<p>
-											<span className="font-medium"></span>{" "}
-											{studentExam.schoolname}
-										</p>
+										<p>{studentExam.schoolname}</p>
 										{studentExam.studentgroupname && (
 											<p>
 												<span className="font-medium">Анги:</span>{" "}
@@ -825,6 +1034,11 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 											)}
 										</div>
 									)}
+
+									<ExamineeInfoCard
+										info={examineeInfo}
+										loading={examineeInfoLoading}
+									/>
 								</div>
 							</AlertDescription>
 						</Alert>
@@ -840,24 +1054,39 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 							<AlertDescription>{submitError}</AlertDescription>
 						</Alert>
 					)}
-					<Button
-						type="button"
-						onClick={handleSubmit}
-						disabled={submitting}
-						className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-all"
-					>
-						{submitting ? (
-							<>
-								<Loader2 className="w-4 h-4 animate-spin mr-2" />
-								Уншиж байна...
-							</>
-						) : (
-							<>
-								Үргэлжлүүлэх
-								<ArrowRight className="w-4 h-4 ml-2" />
-							</>
+					<div className="flex flex-col gap-2">
+						{isSkuulFound && (
+							<Button
+								type="button"
+								variant="outline"
+								onClick={handleEdit}
+								className="w-full h-11 border-emerald-500 text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+							>
+								<Pencil className="w-4 h-4 mr-2" />
+								Мэдээлэл засварлах
+							</Button>
 						)}
-					</Button>
+						{!isSkuulFound && (
+							<Button
+								type="button"
+								onClick={handleSubmit}
+								disabled={submitting}
+								className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-all"
+							>
+								{submitting ? (
+									<>
+										<Loader2 className="w-4 h-4 animate-spin mr-2" />
+										Уншиж байна...
+									</>
+								) : (
+									<>
+										Үргэлжлүүлэх
+										<ArrowRight className="w-4 h-4 ml-2" />
+									</>
+								)}
+							</Button>
+						)}
+					</div>
 				</>
 			)}
 		</div>

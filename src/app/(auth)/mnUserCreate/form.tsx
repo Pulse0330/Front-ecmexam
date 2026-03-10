@@ -67,6 +67,8 @@ export interface StudentExamData {
 	institutionid: string;
 	academic_level: number;
 	nationality: string;
+	// ✅ НЭМСЭН: userCheckForm-оос дамжин ирсэн QPay алгасах тэмдэг
+	_isPaid?: boolean;
 }
 
 interface ExamineeListData {
@@ -76,6 +78,7 @@ interface ExamineeListData {
 	register_number: string;
 	gender: number;
 	phone: string;
+	phone_1: string | null;
 	mail: string;
 	age: number | null;
 	address: string | null;
@@ -114,6 +117,7 @@ interface SavePayload {
 	reg_number: string;
 	gender: number;
 	phone: string;
+	phone_1: string;
 	email: string;
 	aimag_id: number;
 	sym_id: number;
@@ -171,17 +175,31 @@ async function uploadProfileImage(
 
 	const result = await uploadImage(formData);
 
-	// ECM API: { fileStatus: 0, file: { url: "..." } }
 	if (result?.file?.url) return result.file.url;
 
 	throw new Error("Upload хариу буруу байна");
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function generatePassword(): string {
-	return Math.floor(100000 + Math.random() * 900000).toString();
+function isWeakPassword(s: string): boolean {
+	if (!s || s.trim() === "") return true;
+	for (let i = 0; i < s.length - 2; i++) {
+		const a = +s[i],
+			b = +s[i + 1],
+			c = +s[i + 2];
+		if (b === a + 1 && c === a + 2) return true; // 123, 234...
+		if (b === a - 1 && c === a - 2) return true; // 321, 987...
+	}
+	return false;
 }
 
+function generatePassword(): string {
+	let pwd: string;
+	do {
+		pwd = Math.floor(100000 + Math.random() * 900000).toString();
+	} while (isWeakPassword(pwd));
+	return pwd;
+}
 function fmtDate(iso: string): string {
 	if (!iso) return "—";
 	return new Date(iso).toLocaleDateString("mn-MN", {
@@ -357,6 +375,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 	const [examData, setExamData] = useState<ExamineeListData | null>(null);
 	const [examDataLoading, setExamDataLoading] = useState(true);
 	const [displayPhone, setDisplayPhone] = useState<string>(d.phone ?? "");
+	const [displayPhone1, setDisplayPhone1] = useState<string>("");
 	const [password, setPassword] = useState<string>(() => generatePassword());
 	const [displayPassword, setDisplayPassword] = useState<string>("");
 
@@ -387,7 +406,8 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 					setProfileImg(data.profile);
 					setUploadedImgUrl(data.profile);
 				}
-				if (data?.passwordauto) {
+				// passwordauto хоосон эсвэл сул (123 гэх мэт) → шинээр generate
+				if (data?.passwordauto && !isWeakPassword(data.passwordauto)) {
 					setDisplayPassword(data.passwordauto);
 					setPassword(data.passwordauto);
 				} else {
@@ -396,6 +416,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 					setPassword(gen);
 				}
 				if (data?.phone) setDisplayPhone(data.phone);
+				if (data?.phone_1) setDisplayPhone1(data.phone_1);
 			})
 			.catch(() => {
 				setExamData(null);
@@ -508,6 +529,11 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 			toast.warning("Утасны дугаар оруулна уу!");
 			return;
 		}
+		if (!displayPhone1) {
+			toast.warning("Утас 2 дугаар оруулна уу!");
+			return;
+		}
+
 		setIsSaving(true);
 		try {
 			const isExistingPassword = !!examData?.passwordauto;
@@ -522,6 +548,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				reg_number: d.reg_number,
 				gender: d.gender_code === "M" ? 1 : 0,
 				phone: displayPhone,
+				phone_1: displayPhone1,
 				email: d.email,
 				aimag_id: Number(d.aimag_id) || 0,
 				sym_id: Number(d.sym_id) || 0,
@@ -554,6 +581,9 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 
 			const fresh = await fetchExamineeList(d.personId);
 
+			// ✅ ӨӨРЧЛӨЛТ: _isPaid-г d prop-оос уншиж verifyData-д нэмлээ
+			// Энэ утга userCheckForm → sessionStorage → page.tsx → StudentForm props-оор ирнэ
+			// verifyForm нь үүнийг уншиж QPay алгасах эсэхийг шийднэ
 			const verifyData = {
 				firstname: fresh.first_name,
 				lastname: fresh.last_name,
@@ -561,6 +591,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				gender_code: fresh.gender_code,
 				dateofbirth: fresh.dateofbirth,
 				phone: displayPhone || fresh.phone || null,
+				phone_1: displayPhone1 || fresh.phone_1 || null,
 				email: fresh.mail,
 				aimag_name: fresh.aimag_name,
 				sym_name: fresh.sym_name,
@@ -579,10 +610,16 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				password: fresh.passwordauto,
 				age: fresh.age ?? null,
 				address: fresh.address ?? null,
+				// ✅ НЭМСЭН: userCheckForm-д тооцоолсон isPaid утгыг
+				// verifyData-д хадгалж verifyForm-д дамжуулна
+				_isPaid: d._isPaid ?? false,
 			};
+
 			console.log("fresh.passwordauto:", fresh.passwordauto);
 			console.log("fresh.password:", fresh.password);
 			console.log("password state:", password);
+			console.log("[form] verifyData._isPaid:", verifyData._isPaid);
+
 			sessionStorage.removeItem("studentExam");
 			sessionStorage.setItem("verifyData", JSON.stringify(verifyData));
 			toast.success("Амжилттай хадгалагдлаа!");
@@ -601,6 +638,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 		isUploadingImage,
 		examData,
 		displayPhone,
+		displayPhone1,
 	]);
 
 	// ── Display утгууд ────────────────────────────────────────────────────────
@@ -907,6 +945,20 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 													type="text"
 													value={displayPhone}
 													onChange={(e) => setDisplayPhone(e.target.value)}
+													className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs pl-8 focus:outline-none focus:ring-1 focus:ring-ring"
+												/>
+											</div>
+										</Field>
+										<Field label="Нэмэлт утасны дугаар" required>
+											<div className="relative">
+												<span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none">
+													<Phone size={13} />
+												</span>
+												<input
+													type="text"
+													value={displayPhone1}
+													onChange={(e) => setDisplayPhone1(e.target.value)}
+													placeholder="Нэмэлт дугаар"
 													className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs pl-8 focus:outline-none focus:ring-1 focus:ring-ring"
 												/>
 											</div>

@@ -20,7 +20,12 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
 	const [qpayError, setQpayError] = useState("");
-	const [isPaid, setIsPaid] = useState(true);
+
+	// ✅ ЗАСАВ: d._isPaid-г уншиж эхний утгыг тохируулна
+	// passed  → true  → QPay алгасаж шууд examineesend дуудна
+	// not_passed / бусад → false → QPay харуулна
+	const [isPaid, setIsPaid] = useState<boolean>(d._isPaid ?? false);
+
 	const [examineeNumber, setExamineeNumber] = useState<string | null>(null);
 	const [examinee, setExaminee] = useState<ExamineeItem | null>(null);
 	const [_examineeLoading, setExamineeLoading] = useState(false);
@@ -53,6 +58,8 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 			aimag_name: d.aimag_name,
 			sym_name: d.sym_name,
 			dateofbirth: d.dateofbirth,
+			phone: d.phone,
+			phone_1: d.phone_1,
 			conn: "skuul",
 		};
 
@@ -130,7 +137,7 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 						password: "sql$erver43",
 						database: "ikh_skuul",
 						server: "172.16.1.79",
-						pool: { max: 100000, min: 0, idleTimeoutMillis: 30000000 },
+						pool: { max: 100, min: 0, idleTimeoutMillis: 30000 },
 						options: { encrypt: false, trustServerCertificate: false },
 					},
 				}),
@@ -146,20 +153,20 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 		}
 	}, []);
 
+	// ── QPay эсвэл ispay шалгаж бүртгүүлэх ──────────────────────────────────
 	const handleQPay = useCallback(async () => {
 		let target = examinee;
 		if (!target) target = await fetchExaminee();
 		if (!target) return;
 
-		// ── ispay === 1 бол төлбөр аль хэдийн төлөгдсөн ──────────────────────
+		// ispay === 1 бол төлбөр аль хэдийн төлөгдсөн
 		if (target.ispay === 1) {
 			setIsPaid(true);
 			toast.info("Төлбөр аль хэдийн төлөгдсөн байна.");
 			const sent = await sendExaminee();
 			if (sent) {
-				// SMS илгээх
 				try {
-					await fetch("https://backend.skuul.mn/api/sms_loop", {
+					await fetch("https://ottapp.ecm.mn/api/sms_loop", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify({
@@ -180,12 +187,11 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 		await invokeQPay(target);
 	}, [examinee, fetchExaminee, invokeQPay, sendExaminee, d]);
 
-	// ── Төлбөр амжилттай төлөгдсөний дараа л examineesend дуудна ──────────────
+	// ── Төлбөр амжилттай төлөгдсөний дараа л examineesend дуудна ────────────
 	const handlePaymentSuccess = useCallback(async () => {
 		setQpayOpen(false);
 		setQpayData(null);
 
-		// Серверээс ispay шинэчлэгдсэн эсэхийг шалгах
 		const target = await fetchExaminee(true);
 		if (!target || target.ispay !== 1) {
 			setQpayError("Төлбөр баталгаажаагүй байна. Дахин оролдоно уу.");
@@ -196,10 +202,8 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 		const sent = await sendExaminee();
 		if (!sent) return;
 
-		// ── SMS илгээх ──
 		try {
 			await fetch("https://backend.skuul.mn/api/sms_loop", {
-				// ← гурван slash засав
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -216,10 +220,35 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 		setStep("paid");
 	}, [fetchExaminee, sendExaminee, d]);
 
-	// ── "Бүртгүүлэх" товч → зөвхөн QPay нээнэ ───────────────────────────────
+	// ── _isPaid === true үед → examineesend шууд дуудна (QPay алгасна) ───────
+	// StepPreview-ийн useEffect энийг дуудна
 	const handleSendAndProceed = useCallback(async () => {
-		await handleQPay();
-	}, [handleQPay]);
+		setIsLoading(true);
+		setError("");
+		try {
+			const sent = await sendExaminee();
+			if (!sent) return;
+
+			try {
+				await fetch("https://backend.skuul.mn/api/sms_loop", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						phone: d.phone,
+						msgtext: `Нэвтрэх нэр: ${d.login_name} Нууц үг: ${d.password}`,
+						conn: "skuul",
+					}),
+				});
+			} catch {
+				// SMS алдаа гарсан ч үргэлжлүүлнэ
+			}
+
+			toast.success("Амжилттай илгээгдлээ");
+			setStep("paid");
+		} finally {
+			setIsLoading(false);
+		}
+	}, [sendExaminee, d]);
 
 	const handleQpayOpenChange = useCallback((open: boolean) => {
 		setQpayOpen(open);
@@ -285,7 +314,8 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 							</div>
 						</div>
 						<span className="text-xs text-muted-foreground font-medium">
-							{step === "preview" && "Төлбөр төлөх"}
+							{step === "preview" &&
+								(isPaid ? "Баталгаажуулах" : "Төлбөр төлөх")}
 							{step === "paid" && "Бүртгэл амжилттай"}
 						</span>
 					</div>
