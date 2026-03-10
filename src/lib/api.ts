@@ -689,12 +689,16 @@ export const getMNExamVariants = async (
 export const getMNExamFinish = async (
 	exam_register_id: number,
 	variant_id: number,
+	exam_id: number,
+	exam_date_id: number,
 ): Promise<mnExamFinishResponse> => {
 	const { data } = await api1.post<mnExamFinishResponse>(
 		"/examregistrationsanswers",
 		{
-			exam_register_id,
-			variant_id,
+			exam_register_id: exam_register_id,
+			exam_id: exam_id,
+			exam_date_id: exam_date_id,
+			variant_id: variant_id,
 		},
 	);
 	return data;

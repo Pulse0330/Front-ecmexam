@@ -60,9 +60,9 @@ export async function POST(request: NextRequest) {
 			database: database,
 			server: serverip,
 			pool: {
-				max: 100000,
+				max: 100,
 				min: 0,
-				idleTimeoutMillis: 30000000,
+				idleTimeoutMillis: 30000,
 			},
 			options: {
 				encrypt: false,

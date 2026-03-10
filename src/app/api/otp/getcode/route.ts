@@ -16,9 +16,9 @@ export async function POST(request: Request) {
 				database: process.env.DB_NAME || "ikh_skuul",
 				server: process.env.DB_SERVER || "172.16.1.79",
 				pool: {
-					max: 100000,
+					max: 100,
 					min: 0,
-					idleTimeoutMillis: 30000000,
+					idleTimeoutMillis: 30000,
 				},
 				options: {
 					encrypt: false,
