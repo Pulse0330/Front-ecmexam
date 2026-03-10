@@ -30,9 +30,9 @@ export async function POST(request: NextRequest) {
 				database: "ikh_skuul",
 				server: "172.16.1.79",
 				pool: {
-					max: 100000,
+					max: 100,
 					min: 0,
-					idleTimeoutMillis: 30000000,
+					idleTimeoutMillis: 30000,
 				},
 				options: {
 					encrypt: false,

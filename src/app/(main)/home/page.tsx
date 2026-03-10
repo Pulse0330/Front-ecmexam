@@ -43,6 +43,7 @@ import type { UserProfileResponseType } from "@/types/user";
 import { ExamInfoCard } from "./examBurtguulsen";
 import ExamLists from "./homeExamCard";
 import MnExamList from "./mnExamlist";
+import MnExamPrint from "./mnPrint";
 
 const ANIMATION_STAGGER = 0.04;
 
@@ -382,16 +383,15 @@ export default function HomePage() {
 
 	// myExamInfo-с exam_date_id авах
 	const examDateId = myExamInfo?.[0]?.exam_date_id;
-
 	const { data: printData } = useQuery({
 		queryKey: ["mn_print", userId, user?.examinee_number, examDateId],
 		queryFn: () =>
 			getMNPrint({
 				userId: Number(userId),
 				examineeNumber: String(user?.examinee_number ?? ""),
-				examDateId: Number(examDateId), // ← нэмэх
+				examDateId: Number(examDateId),
 			}),
-		enabled: !!userId && !!user?.examinee_number && !!examDateId, // ← examDateId бэлэн болсон үед л fetch
+		enabled: !!userId && !!user?.examinee_number, // ← examDateId нөхцөл хасав
 		select: (res) => {
 			console.log("✅ printData:", res);
 			return res.RetData ?? [];
@@ -414,6 +414,8 @@ export default function HomePage() {
 
 	return (
 		<TooltipProvider>
+			{/* Print хэсэг */}
+			<MnExamPrint printList={printData ?? []} />
 			<div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8 relative z-10">
 				<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700">
 					<HeroSection username={username} />
@@ -433,9 +435,9 @@ export default function HomePage() {
 									</div>
 								</div>
 							) : (
-								<p className="text-sm text-muted-foreground">
-									Бүртгэлтэй шалгалт байхгүй байна.
-								</p>
+								<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-200 w-72">
+									<ExamInfoCard exam={null} isSuccess={false} />
+								</div>
 							)}
 						</div>
 					</div>
