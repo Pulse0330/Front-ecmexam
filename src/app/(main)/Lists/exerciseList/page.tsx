@@ -226,18 +226,14 @@ export default function TestGroupPage() {
 		queryKey: ["allLessonsTests", userId],
 		queryFn: () => getTestFiltered(userId || 0, 0),
 		enabled: !!userId,
-		retry: RETRY_CONFIG.attempts,
-		retryDelay: RETRY_CONFIG.delay,
-		staleTime: 5 * 60 * 1000,
+		retry: false,
 	});
 
 	const { data, isLoading: isLoadingDetails } = useQuery<GetTestGroupResponse>({
 		queryKey: ["testFiltered", userId, selectedLesson],
 		queryFn: () => getTestFiltered(userId || 0, selectedLesson || 0),
 		enabled: !!userId && !!selectedLesson,
-		retry: RETRY_CONFIG.attempts,
-		retryDelay: RETRY_CONFIG.delay,
-		staleTime: 5 * 60 * 1000,
+		retry: false,
 	});
 
 	const handleTestMutation = useCallback(

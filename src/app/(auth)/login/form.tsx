@@ -4,12 +4,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
-
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -22,6 +21,7 @@ import {
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
@@ -34,9 +34,10 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { createSessionRequest, loginTokenRequest } from "@/lib/api";
+import { createSessionRequest, loginToken, loginTokenRequest } from "@/lib/api";
 import { setCookie } from "@/lib/cookie";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { UserCheckForm } from "./mnUserchek";
 
 const formSchema = z.object({
 	username: z.string().min(1, { message: "Нэвтрэх нэр оруулна уу." }),
@@ -45,29 +46,55 @@ const formSchema = z.object({
 		.min(3, { message: "Нууц үг 3-аас доошгүй тэмдэгттэй байх ёстой." }),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
+// Warning icon — тусдаа component болгон гарган авсан, re-render-д шинэ JSX node үүсгэхгүй
+function WarningIcon() {
+	return (
+		<svg
+			className="h-5 w-5 shrink-0 mt-0.5"
+			fill="none"
+			viewBox="0 0 24 24"
+			stroke="currentColor"
+		>
+			<title>Warning</title>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				strokeWidth={2}
+				d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+			/>
+		</svg>
+	);
+}
+
 export function LoginForm() {
+	const router = useRouter();
 	const searchParams = useSearchParams();
 	const redirectUrl = searchParams.get("redirect") || "/home";
-	const { setUser, setToken } = useAuthStore();
+	const tokenLogin = searchParams.get("token");
 	const [announcementOpen, setAnnouncementOpen] = useState(true);
+	// const uname = searchParams.get("uname");
+	const { setUser, setToken } = useAuthStore();
+	const [open, setOpen] = useState(false);
 
-	const form = useForm<z.infer<typeof formSchema>>({
+	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
 		defaultValues: { username: "", password: "" },
 		mode: "onSubmit",
 	});
 
+	// Session expired мэдэгдэл
 	useEffect(() => {
-		const sessionExpired = searchParams.get("session");
-		if (sessionExpired === "expired") {
-			toast.error(
+		if (searchParams.get("session") === "expired") {
+			toast.warning(
 				"Та үйлдэл хийгээгүй 5 минут болсон байна. Дахин нэвтэрнэ үү.",
 			);
 		}
 	}, [searchParams]);
 
 	const { mutate, isPending } = useMutation({
-		mutationFn: async (values: z.infer<typeof formSchema>) => {
+		mutationFn: async (values: FormValues) => {
 			const loginRes = await loginTokenRequest(
 				values.username,
 				values.password,
@@ -78,16 +105,14 @@ export function LoginForm() {
 			if (!loginRes?.RetResponse?.ResponseType) {
 				throw new Error("Нэвтрэх нэр эсвэл нууц үг буруу байна");
 			}
-
 			if (!loginRes?.Data?.[0] || !loginRes.Token) {
-				throw new Error("Серверээс буруу хариу ирлээ");
+				throw new Error("Та түр хүлээгээд дахин оролдоно уу");
 			}
 
 			const userData = loginRes.Data[0];
 			const token = loginRes.Token;
 
 			const sessionRes = await createSessionRequest(userData.id, token, "", "");
-
 			if (!sessionRes?.RetResponse?.ResponseType) {
 				throw new Error("Session үүсгэх амжилтгүй");
 			}
@@ -98,46 +123,118 @@ export function LoginForm() {
 			setUser(userData);
 			setToken(token);
 
-			setCookie("auth-token", token, 7);
-			setCookie("user-id", userData.id.toString(), 7);
-			setCookie("firstname", userData.firstname || "", 7);
-			setCookie("img-url", userData.img_url || "", 7);
-
-			let finalRedirect = redirectUrl;
-
-			if (userData.is_enabled === 0) {
-				finalRedirect = "/userProfile";
-				toast.info("Профайл мэдээллээ бөглөнө үү", {
-					description:
-						"Та профайл мэдээллээ бүрэн бөглөсний дараа системд нэвтрэх боломжтой болно.",
-					duration: 5000,
-				});
-			} else {
-				toast.success("Амжилттай нэвтэрлээ");
+			// Cookie-г нэг дор тохируулна
+			const cookies: [string, string][] = [
+				["auth-token", token],
+				["user-id", String(userData.id)],
+				["firstname", userData.firstname ?? ""],
+				["img-url", userData.img_url ?? ""],
+			];
+			for (const [key, val] of cookies) {
+				setCookie(key, val, 7);
 			}
+			const group = Number(userData.ugroup);
 
-			setTimeout(() => {
-				window.location.href = finalRedirect;
-			}, 300);
+			if (group === 3 || group === 4) {
+				router.push("/room");
+			} else {
+				if (userData.is_enabled === 0) {
+					toast.info("Профайл мэдээллээ бөглөнө үү", {
+						description:
+							"Та профайл мэдээллээ бүрэн бөглөсний дараа системд нэвтрэх боломжтой болно.",
+						duration: 5000,
+					});
+					router.push("/userProfile");
+				} else {
+					router.push(redirectUrl);
+				}
+			}
 		},
 		onError: (error: Error) => {
 			form.setError("root", {
 				type: "manual",
 				message: error.message || "Нэвтрэх нэр эсвэл нууц үг буруу байна",
 			});
-
 			form.setValue("password", "");
 			form.setFocus("password");
 		},
 	});
 
-	const onSubmit = (values: z.infer<typeof formSchema>) => {
-		mutate(values);
-	};
+	const { mutate: tokenLoginMutate, isPending: tokenIsLoading } = useMutation({
+		mutationFn: async ({ token1 }: { token1: string }) => {
+			const loginRes = await loginToken(token1);
+
+			if (!loginRes?.RetResponse?.ResponseType) {
+				throw new Error("Нэвтрэх нэр эсвэл нууц үг буруу байна");
+			}
+			if (!loginRes?.Data?.[0] || !loginRes.Token) {
+				throw new Error("Серверээс буруу хариу ирлээ");
+			}
+
+			const userData = loginRes.Data[0];
+			const token = loginRes.Token;
+
+			const sessionRes = await createSessionRequest(userData.id, token, "", "");
+			if (!sessionRes?.RetResponse?.ResponseType) {
+				throw new Error("Session үүсгэх амжилтгүй");
+			}
+			return { userData, token };
+		},
+		onSuccess: ({ userData, token }) => {
+			setUser(userData);
+			setToken(token);
+
+			// Cookie-г нэг дор тохируулна
+			const cookies: [string, string][] = [
+				["auth-token", token],
+				["user-id", String(userData.id)],
+				["firstname", userData.firstname ?? ""],
+				["img-url", userData.img_url ?? ""],
+			];
+			for (const [key, val] of cookies) {
+				setCookie(key, val, 7);
+			}
+			const group = Number(userData.ugroup);
+
+			if (group === 3 || group === 4) {
+				router.push("/room");
+			} else {
+				if (userData.is_enabled === 0) {
+					toast.info("Профайл мэдээллээ бөглөнө үү", {
+						description:
+							"Та профайл мэдээллээ бүрэн бөглөсний дараа системд нэвтрэх боломжтой болно.",
+						duration: 5000,
+					});
+					router.push("/userProfile");
+				} else {
+					router.push(redirectUrl);
+				}
+			}
+		},
+		onError: (error: Error) => {
+			form.setError("root", {
+				type: "manual",
+				message: error.message || "Нэвтрэх нэр эсвэл нууц үг буруу байна",
+			});
+			form.setValue("password", "");
+			form.setFocus("password");
+		},
+	});
+
+	useEffect(() => {
+		if (tokenLogin) {
+			// Энд аргументуудаа объект байдлаар илгээнэ
+			tokenLoginMutate({ token1: tokenLogin });
+		}
+	}, [tokenLogin, tokenLoginMutate]);
+
+	const onSubmit = (values: FormValues) => mutate(values);
+
+	const hasRootError = !!form.formState.errors.root;
+	const errorMessage = form.formState.errors.root?.message;
 
 	return (
 		<>
-			{/* ── Мэдэгдлийн Dialog ── */}
 			<Dialog open={announcementOpen} onOpenChange={setAnnouncementOpen}>
 				<DialogContent className="sm:max-w-md bg-white dark:bg-gray-900 border-0 shadow-2xl p-0 overflow-hidden">
 					<DialogHeader className=" px-6 py-5">
@@ -179,8 +276,6 @@ export function LoginForm() {
 					</div>
 				</DialogContent>
 			</Dialog>
-
-			{/* ── Login Card ── */}
 			<Card className="w-full max-w-sm bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50">
 				<CardHeader className="space-y-1">
 					<CardTitle className="text-2xl font-semibold">
@@ -192,26 +287,11 @@ export function LoginForm() {
 				<Form {...form}>
 					<form onSubmit={form.handleSubmit(onSubmit)}>
 						<CardContent className="grid gap-4">
-							{form.formState.errors.root && (
+							{hasRootError && (
 								<div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive animate-in fade-in-0 slide-in-from-top-2 duration-300">
 									<div className="flex items-start gap-2">
-										<svg
-											className="h-5 w-5 shrink-0 mt-0.5"
-											fill="none"
-											viewBox="0 0 24 24"
-											stroke="currentColor"
-										>
-											<title>Warning</title>
-											<path
-												strokeLinecap="round"
-												strokeLinejoin="round"
-												strokeWidth={2}
-												d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-											/>
-										</svg>
-										<span className="flex-1">
-											{form.formState.errors.root.message}
-										</span>
+										<WarningIcon />
+										<span className="flex-1">{errorMessage}</span>
 									</div>
 								</div>
 							)}
@@ -227,13 +307,9 @@ export function LoginForm() {
 												placeholder="Нэвтрэх нэр"
 												type="text"
 												autoComplete="username"
+												disabled={isPending || tokenIsLoading}
+												className={hasRootError ? "border-destructive/50 " : ""}
 												{...field}
-												disabled={isPending}
-												className={
-													form.formState.errors.root
-														? "border-destructive/50"
-														: ""
-												}
 											/>
 										</FormControl>
 										<FormMessage />
@@ -252,13 +328,13 @@ export function LoginForm() {
 												placeholder="••••••••"
 												type="password"
 												autoComplete="current-password"
-												{...field}
-												disabled={isPending}
+												disabled={isPending || tokenIsLoading}
 												className={
-													form.formState.errors.root
+													hasRootError
 														? "border-destructive/50 animate-shake"
 														: ""
 												}
+												{...field}
 											/>
 										</FormControl>
 										<FormMessage />
@@ -266,9 +342,15 @@ export function LoginForm() {
 								)}
 							/>
 
-							<Button type="submit" className="w-full" disabled={isPending}>
-								{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-								{isPending ? "Нэвтэрч байна..." : "Нэвтрэх"}
+							<Button
+								type="submit"
+								className="w-full"
+								disabled={isPending || tokenIsLoading}
+							>
+								{(isPending || tokenIsLoading) && (
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								)}
+								{isPending || tokenIsLoading ? "Нэвтэрч байна..." : "Нэвтрэх"}
 							</Button>
 
 							<Button
@@ -282,7 +364,40 @@ export function LoginForm() {
 					</form>
 				</Form>
 
-				<CardFooter className="flex-col gap-4">
+				<CardFooter className="flex-col gap-3 px-6 pb-6 pt-2">
+					{/* <button
+						type="button"
+						onClick={() => setOpen(true)}
+						className="w-full flex items-center justify-between px-7 py-5
+     bg-white border-2 border-emerald-500 rounded-2xl
+     shadow-xl shadow-emerald-500/10 
+     transition-all duration-300 cursor-pointer group"
+					>
+						<div className="flex flex-col items-start gap-0.5">
+							<span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+								Монгол хэл , бичгийн шалгалт
+							</span>
+							<span className="text-base font-bold text-emerald-600 transition-colors">
+								Бүртгэл шалгах
+							</span>
+						</div>
+						<div className="bg-emerald-500 p-2 rounded-full transition-colors">
+							<svg
+								className="w-5 h-5 text-white"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<title>Arrow Right</title>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth="2.5"
+									d="M9 5l7 7-7 7"
+								/>
+							</svg>
+						</div>
+					</button> */}
 					<div className="relative w-full">
 						<div className="absolute inset-0 flex items-center">
 							<span className="w-full border-t" />
@@ -299,18 +414,22 @@ export function LoginForm() {
 						</Button>
 					</p>
 				</CardFooter>
-
-				<style jsx>{`
-					@keyframes shake {
-						0%, 100% { transform: translateX(0); }
-						10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-						20%, 40%, 60%, 80% { transform: translateX(4px); }
-					}
-					.animate-shake {
-						animation: shake 0.5s ease-in-out;
-					}
-				`}</style>
 			</Card>
+			<Dialog open={open} onOpenChange={setOpen}>
+				<DialogContent className="sm:max-w-md flex flex-col bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 max-h-screen sm:max-h-[85vh] p-0 overflow-hidden">
+					<DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
+						<DialogTitle className="text-xl font-bold">
+							Монгол хэл , бичгийн шалгалт
+						</DialogTitle>
+						<DialogDescription>
+							Та бүртгэлээ шалгахын тулд регистерийн дугаараа оруулна уу.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-4">
+						<UserCheckForm onClose={() => setOpen(false)} />
+					</div>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 }

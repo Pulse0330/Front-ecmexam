@@ -162,7 +162,7 @@ const ExamCardItem = memo(
 									variant={isActive ? "default" : "secondary"}
 									className="border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap"
 								>
-									{isActive ? "Идэвхтэй" : "Хаагдсан"}
+									{isActive ? "Идэвхтэй" : "Идэвхгүй"}
 								</Badge>
 							)}
 						</div>

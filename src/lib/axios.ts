@@ -22,30 +22,8 @@ api.interceptors.request.use(
 					password: "sql$erver43",
 					database: "ikh_skuul",
 					server: "172.16.1.79",
-					pool: {
-						max: 20,
-						min: 0,
-						idleTimeoutMillis: 30000, // 30 секунд idle бол release
-						acquireTimeoutMillis: 30000,
-						evictionRunIntervalMillis: 10000, // 10 секунд тутамд шалгах
-						softIdleTimeoutMillis: 20000, // 20 секунд idle бол evict
-						createTimeoutMillis: 30000,
-						destroyTimeoutMillis: 5000,
-						reapIntervalMillis: 1000,
-						createRetryIntervalMillis: 200,
-					},
-					options: {
-						encrypt: false,
-						trustServerCertificate: true,
-						enableArithAbort: true,
-						// ✅ Connection timeout
-						connectionTimeout: 15000, // 15 секунд
-						requestTimeout: 30000, // 30 секунд
-						// ✅ Cancel timeout
-						cancelTimeout: 5000,
-					},
-					connectionRetries: 3,
-					connectionRetryDelay: 3000,
+
+					options: { encrypt: false, trustServerCertificate: false },
 				},
 			};
 		}
@@ -72,9 +50,9 @@ api.interceptors.response.use(
 			}
 
 			// Бусад endpoint-д алдаа шидэх
-			toast.error(data.RetResponse.ResponseMessage || "Алдаа гарлаа", {
-				description: `Status code: ${data.RetResponse.StatusCode}`,
-			});
+			// toast.error(data.RetResponse.ResponseMessage || "Алдаа гарлаа", {
+			// 	description: `Status code: ${data.RetResponse.StatusCode}`,
+			// });
 			return Promise.reject(new Error(data.RetResponse.ResponseMessage));
 		}
 
