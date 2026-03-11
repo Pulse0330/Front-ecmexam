@@ -49,6 +49,7 @@ import type { mnExamFinishResponse } from "@/types/mnExam/mnExamFinish";
 import type { mnExamVariantResponse } from "@/types/mnExam/mnExamList";
 import type { mnExamUserCheckResponseType } from "@/types/mnExam/mnExamUserCheck";
 import type { ExamPrintListResponse } from "@/types/mnExam/mnPrint";
+import type { MNUserCheckResponse } from "@/types/mnExam/mnUserCheck";
 import type { getplaninfoCourseData } from "@/types/paymentCourse/getplaninfo";
 import type { QPayInvoiceResponse } from "@/types/Qpay/qpayinvoice";
 import type { ApiSorillistsResponse } from "@/types/soril/sorilLists";
@@ -581,7 +582,6 @@ export const getTestFiltered = async (
 	userId: number,
 	lesson_id: number,
 ): Promise<GetTestGroupResponse> => {
-	// GetTestGroupResponse байх ёстой
 	const { data } = await api.post<GetTestGroupResponse>(
 		"/gettestgroupbylesson",
 		{
@@ -716,6 +716,14 @@ export const getMNExamAttendace = async (
 		start_time: start_time,
 		end_time: end_time,
 		userid: userid,
+	});
+	return data;
+};
+export const getMNuserCheck = async (
+	regnumber: string,
+): Promise<MNUserCheckResponse> => {
+	const { data } = await api1.post<MNUserCheckResponse>("/myexaminees", {
+		regnumber,
 	});
 	return data;
 };

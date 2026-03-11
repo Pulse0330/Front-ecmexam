@@ -7,7 +7,6 @@ import {
 	ChevronUp,
 	ClipboardList,
 	CreditCard,
-	FeatherIcon,
 	FileText,
 	LogOut,
 	type LucideIcon,
@@ -59,11 +58,6 @@ const NAV_LINKS = [
 ];
 
 const EXAM_LINKS: Array<{ href: string; label: string; icon: LucideIcon }> = [
-	{
-		href: "",
-		label: "МХБ шалгалт",
-		icon: FeatherIcon,
-	},
 	{
 		href: "/Lists/examList",
 		label: "Шалгалтын жагсаалт",
@@ -534,27 +528,27 @@ export const Navbar01: React.FC = () => {
 		pathname.includes("/Lists/courseList") ||
 		pathname.includes("/Lists/paymentCoureList");
 
-const handleLogout = async () => {
-  try {
-    const cookiesToRemove = ["auth-token", "user-id", "firstname", "img-url"];
-    cookiesToRemove.forEach((cookie) => {
-      Cookies.remove(cookie, { path: "/" });
-    });
+	const handleLogout = async () => {
+		try {
+			const cookiesToRemove = ["auth-token", "user-id", "firstname", "img-url"];
+			cookiesToRemove.forEach((cookie) => {
+				Cookies.remove(cookie, { path: "/" });
+			});
 
-    clearAuth();
+			clearAuth();
 
-    // Persist store бүрийг цэвэрлэх
-    localStorage.clear();
-    sessionStorage.clear();
+			// Persist store бүрийг цэвэрлэх
+			localStorage.clear();
+			sessionStorage.clear();
 
-    queryClient.clear();
+			queryClient.clear();
 
-    router.push("/login");
-  } catch (error) {
-    console.error("Logout error:", error);
-    window.location.href = "/login";
-  }
-};
+			router.push("/login");
+		} catch (error) {
+			console.error("Logout error:", error);
+			window.location.href = "/login";
+		}
+	};
 
 	return (
 		<>

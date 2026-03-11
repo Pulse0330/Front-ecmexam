@@ -14,7 +14,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { memo, useCallback, useEffect } from "react";
-import { ExamVerifyDialog } from "@/app/(main)/home/ExamVerify";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,10 +39,7 @@ import {
 	type PastExam,
 } from "@/types/home";
 import type { UserProfileResponseType } from "@/types/user";
-import { ExamInfoCard } from "./examBurtguulsen";
 import ExamLists from "./homeExamCard";
-import MnExamList from "./mnExamlist";
-import MnExamPrint from "./mnPrint";
 
 const ANIMATION_STAGGER = 0.04;
 
@@ -415,12 +411,12 @@ export default function HomePage() {
 	return (
 		<TooltipProvider>
 			{/* Print хэсэг */}
-			<MnExamPrint printList={printData ?? []} />
+			{/* <MnExamPrint printList={printData ?? []} /> */}
 			<div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8 relative z-10">
 				<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700">
 					<HeroSection username={username} />
 					<div className="pt-2 flex flex-row gap-4 items-start">
-						<div>
+						{/* <div>
 							{myExamInfo && myExamInfo.length > 0 ? (
 								<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-200">
 									<div className="flex flex-row gap-3 overflow-x-auto pb-2">
@@ -439,23 +435,23 @@ export default function HomePage() {
 									<ExamInfoCard exam={null} isSuccess={false} />
 								</div>
 							)}
-						</div>
+						</div> */}
 					</div>
 
-					<ExamVerifyDialog
+					{/* <ExamVerifyDialog
 						examList={examList}
 						isLoading={isLoading}
 						isFetched={isFetched}
-					/>
+					/> */}
 				</div>
 
-				<SectionDivider
+				{/* <SectionDivider
 					title="ӨНӨӨДӨР НЭЭЛТТЭЙ БАЙГАА МОНГОЛ ХЭЛ БИЧГИЙН ШАЛГАЛТ "
 					href="/Lists/mnSorilList"
 				/>
 				<div className="animate-in fade-in-0 duration-700">
 					<MnExamList />
-				</div>
+				</div> */}
 
 				{isHomeLoading || isProfileLoading ? (
 					<div className="flex items-center justify-center py-24">
