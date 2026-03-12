@@ -21,23 +21,14 @@ const formatTime = (sec: number): string => {
 	return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 };
 
-/**
- * "2026-03-07 14:00" эсвэл "2026-03-07 11:0" гэх мэт
- * local-date string-ийг local time-аар parse хийнэ.
- *
- * new Date("2026-03-07 14:00") нь зарим browser-т UTC болгон
- * тайлбарлаж timezone offset нэмдэг — T нэмэн ISO 8601 болгоход
- * local time-аар тогтвортой parse хийгддэг.
- */
 const parseLocalDate = (dateStr: string): Date => {
-	// ISO 8601 / UTC format бол шууд parse
 	if (dateStr.includes("T") || dateStr.endsWith("Z")) {
 		return new Date(dateStr);
 	}
-	// "2026-03-07 14:00" → UTC гэж тайлбарлана (server цагтай нийцүүлсэн)
 	const normalized = `${dateStr.replace(" ", "T")}Z`;
 	return new Date(normalized);
 };
+
 const ExamTimer = memo(function ExamTimer({
 	examEndTime,
 	examMinutes,
@@ -47,6 +38,7 @@ const ExamTimer = memo(function ExamTimer({
 	onTimeUpdate,
 }: ExamTimerProps) {
 	const { currentTime, isLoading, isOnline } = useServerTime();
+
 	const hasNotifiedTimeUp = useRef(false);
 	const hasAutoFinished = useRef(false);
 
@@ -60,7 +52,6 @@ const ExamTimer = memo(function ExamTimer({
 		onTimeUpdateRef.current = onTimeUpdate;
 	}, [onTimeUp, onAutoFinish, onTimeUpdate]);
 
-	// Parse dates ONCE — local time-аар тайлбарлана
 	const { endDateTime, startDateTime } = useMemo(() => {
 		return {
 			endDateTime: parseLocalDate(examEndTime),
@@ -81,10 +72,20 @@ const ExamTimer = memo(function ExamTimer({
 
 		const totalSec = examMinutes * 60;
 
+		// ✅ Эхлээд тодорхойлно — хоёр салбарт хэрэглэнэ
+		const msUntilEnd = endDateTime.getTime() - currentTimeMs;
+		const secUntilEnd = Math.floor(msUntilEnd / 1000);
+
 		if (startDateTime) {
 			const elapsedMs = currentTimeMs - startDateTime.getTime();
 			const elapsedSec = Math.floor(elapsedMs / 1000);
-			const remaining = Math.max(0, totalSec - elapsedSec);
+
+			// starteddate-аас тооцсон remaining
+			const remainingFromStart = Math.max(0, totalSec - elapsedSec);
+
+			// ✅ Хоёрын min → аль нь эрт дуусах вэ
+			const remaining = Math.max(0, Math.min(remainingFromStart, secUntilEnd));
+
 			const stat: "before" | "ongoing" | "ended" =
 				elapsedSec < 0 ? "before" : remaining > 0 ? "ongoing" : "ended";
 			const pct = totalSec > 0 ? (remaining / totalSec) * 100 : 0;
@@ -95,20 +96,18 @@ const ExamTimer = memo(function ExamTimer({
 			};
 		}
 
-		// Fallback: endTime-аас тооцох
-		const remainingMs = endDateTime.getTime() - currentTimeMs;
-		const remaining = Math.max(0, Math.floor(remainingMs / 1000));
+		// Fallback: зөвхөн end_time-аас тооцох
+		const remaining = Math.max(0, secUntilEnd);
 		const stat: "before" | "ongoing" | "ended" =
-			remainingMs <= 0 ? "ended" : "ongoing";
+			msUntilEnd <= 0 ? "ended" : "ongoing";
 		const pct = totalSec > 0 ? (remaining / totalSec) * 100 : 0;
 		return {
 			status: stat,
 			remainingSec: remaining,
 			percentage: Math.max(0, Math.min(100, pct)),
 		};
-	}, [currentTimeMs, endDateTime, examMinutes, startDateTime]);
+	}, [currentTimeMs, endDateTime, examMinutes, startDateTime]); // ✅ endDateTime нэмэгдсэн
 
-	// Auto-finish logic
 	useEffect(() => {
 		if (status !== "ended") return;
 		if (!hasNotifiedTimeUp.current) {
@@ -123,8 +122,6 @@ const ExamTimer = memo(function ExamTimer({
 
 	const formattedTime = formatTime(remainingSec);
 
-	// onTimeUpdate-г тус тусдаа useEffect-д дуудна —
-	// auto-finish logic-тай холилдохгүй, render бүрт шинэчлэгдэнэ
 	useEffect(() => {
 		onTimeUpdateRef.current?.(formattedTime);
 	}, [formattedTime]);
@@ -136,7 +133,6 @@ const ExamTimer = memo(function ExamTimer({
 		};
 	}, [percentage]);
 
-	// ended болон isDanger config нэгтгэсэн — давтагдал арилсан
 	const config = useMemo(() => {
 		if (status === "ended" || isDanger) {
 			return {
@@ -185,7 +181,6 @@ const ExamTimer = memo(function ExamTimer({
 			<div
 				className={`rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border-2 ${config.border} ${config.bg} w-full overflow-hidden transition-all duration-300 relative`}
 			>
-				{/* Offline Badge */}
 				{!isOnline && (
 					<div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 md:top-3 md:right-3 z-10">
 						<div className="bg-amber-500 text-white text-[9px] sm:text-[10px] md:text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full font-bold flex items-center gap-1 shadow-md">
@@ -197,7 +192,6 @@ const ExamTimer = memo(function ExamTimer({
 				)}
 
 				<div className="p-4">
-					{/* Timer Display */}
 					<div className="text-center">
 						<div
 							className={`font-mono font-black ${config.timerColor} tracking-tight`}
@@ -206,7 +200,6 @@ const ExamTimer = memo(function ExamTimer({
 						</div>
 					</div>
 
-					{/* Danger Warning */}
 					{status === "ongoing" && isDanger && (
 						<div className="mt-4 sm:mt-6 md:mt-8 bg-red-100 dark:bg-red-900/40 border-2 border-red-300 dark:border-red-700 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 animate-pulse shadow-lg">
 							<p className="text-center font-black text-red-700 dark:text-red-300 text-sm sm:text-base md:text-lg lg:text-xl">
@@ -215,7 +208,6 @@ const ExamTimer = memo(function ExamTimer({
 						</div>
 					)}
 
-					{/* Time's Up Message */}
 					{status === "ended" && (
 						<div className="mt-4 sm:mt-6 md:mt-8 bg-red-100 dark:bg-red-900/40 border-2 border-red-300 dark:border-red-700 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-lg">
 							<p className="text-center font-black text-red-700 dark:text-red-300 text-sm sm:text-base md:text-lg lg:text-xl">

@@ -10,7 +10,9 @@ import {
 	FileText,
 	Loader2,
 	Lock,
+	Timer,
 	Unlock,
+	Zap,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -73,6 +75,48 @@ function computeExamStatus(exam: Exam) {
 	return { isActive, isPaid, isPurchased, isLocked, canTakeExam };
 }
 
+// flag: 0 = Эхлээгүй (хөх), 1 = Идэвхтэй (ногоон), 2+ = Дууссан (саарал)
+const getFlagConfig = (flag: number) => {
+	switch (flag) {
+		case 1:
+			return {
+				label: "Идэвхтэй",
+				Icon: Zap,
+				badgeClass: "bg-emerald-500 hover:bg-emerald-600 text-white",
+				cardBorder:
+					"border-border/40 hover:border-emerald-400/40 hover:shadow-emerald-500/10",
+				headerGradient: "from-emerald-500/80 via-emerald-500/30",
+				titleHover: "group-hover:text-emerald-500",
+				arrowBg: "bg-muted/50 group-hover:bg-emerald-500 group-hover:scale-110",
+				arrowIconClass: "text-muted-foreground group-hover:text-white",
+			};
+		case 0:
+			return {
+				label: "Эхлээгүй",
+				Icon: Timer,
+				badgeClass: "bg-blue-500/90 hover:bg-blue-600 text-white",
+				cardBorder:
+					"border-border/40 hover:border-blue-400/40 hover:shadow-blue-500/10",
+				headerGradient: "from-blue-500/70 via-blue-500/30",
+				titleHover: "group-hover:text-blue-500",
+				arrowBg: "bg-muted/50 group-hover:bg-blue-500 group-hover:scale-110",
+				arrowIconClass: "text-muted-foreground group-hover:text-white",
+			};
+		default:
+			return {
+				label: "Дууссан",
+				Icon: Clock,
+				badgeClass: "bg-slate-500/80 text-white",
+				cardBorder:
+					"border-border/40 hover:border-slate-400/40 hover:shadow-slate-500/10",
+				headerGradient: "from-slate-600/70 via-slate-500/30",
+				titleHover: "group-hover:text-slate-400",
+				arrowBg: "bg-muted/50 group-hover:bg-slate-500 group-hover:scale-110",
+				arrowIconClass: "text-muted-foreground group-hover:text-white",
+			};
+	}
+};
+
 // ============================================================================
 // SINGLE EXAM CARD
 // ============================================================================
@@ -100,6 +144,7 @@ const ExamCardItem = memo(
 			[exam],
 		);
 
+		const flagConfig = getFlagConfig(exam.flag);
 		const isThisCardLoading = loadingExamId === exam.exam_id;
 
 		const handleClick = useCallback(() => {
@@ -126,7 +171,7 @@ const ExamCardItem = memo(
 						"group h-full w-full relative flex flex-col backdrop-blur-md transition-all duration-500 ease-out rounded-lg sm:rounded-xl overflow-hidden text-left",
 						isLocked
 							? "border border-amber-500/40 bg-card/30 hover:shadow-lg hover:shadow-amber-500/20 hover:border-amber-500/60"
-							: "border border-border/40 bg-card/50 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20",
+							: `border bg-card/50 hover:shadow-xl ${flagConfig.cardBorder}`,
 						(!canTakeExam || isNavigating) && "opacity-60 cursor-not-allowed",
 						canTakeExam && !isNavigating && "cursor-pointer",
 					)}
@@ -144,9 +189,9 @@ const ExamCardItem = memo(
 						<div
 							className={cn(
 								"absolute inset-0 bg-linear-to-t to-transparent",
-								isActive
-									? "from-green-400 via-green-400/50"
-									: "from-background/85 via-background/50",
+								isLocked
+									? "from-background/85 via-background/50"
+									: flagConfig.headerGradient,
 							)}
 						/>
 
@@ -164,15 +209,13 @@ const ExamCardItem = memo(
 								</Badge>
 							) : (
 								<Badge
-									variant={isActive ? "default" : "secondary"}
 									className={cn(
 										"border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap",
-										isActive
-											? "bg-green-500 hover:bg-green-600 text-white"
-											: "bg-muted text-muted-foreground",
+										flagConfig.badgeClass,
 									)}
 								>
-									{isActive ? "Идэвхтэй" : "Идэвхгүй"}
+									<flagConfig.Icon className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
+									{flagConfig.label}
 								</Badge>
 							)}
 						</div>
@@ -188,7 +231,7 @@ const ExamCardItem = memo(
 											"text-[10px] sm:text-xs md:text-sm font-semibold line-clamp-1 leading-tight transition-colors duration-300",
 											isLocked
 												? "text-foreground group-hover:text-amber-500"
-												: "text-foreground group-hover:text-primary",
+												: `text-foreground ${flagConfig.titleHover}`,
 										)}
 									>
 										{exam.title}
@@ -203,7 +246,9 @@ const ExamCardItem = memo(
 									{exam.lesson_name}
 								</p>
 							)}
-						</div>{" "}
+						</div>
+
+						{/* Dates */}
 						<div className="flex flex-col gap-0.5 pt-1 border-t border-border/50">
 							<div className="flex items-center justify-between">
 								<span className="font-medium text-[8px] sm:text-[9px] md:text-xs tabular-nums text-muted-foreground">
@@ -224,6 +269,7 @@ const ExamCardItem = memo(
 								</span>
 							</div>
 						</div>
+
 						{/* Stats */}
 						<div className="flex items-center justify-between gap-1 sm:gap-1.5 pt-1 border-t border-border/50">
 							<div className="flex items-center gap-0.5 sm:gap-1 text-muted-foreground min-w-0">
@@ -239,6 +285,7 @@ const ExamCardItem = memo(
 								</span>
 							</div>
 						</div>
+
 						{/* Pay button */}
 						{isLocked && isActive && (
 							<Button
@@ -258,19 +305,25 @@ const ExamCardItem = memo(
 								)}
 							</Button>
 						)}
+
 						{/* Arrow */}
 						<div
 							className={cn(
 								"absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 md:bottom-2.5 md:right-2.5 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center transition-all duration-300",
 								isLocked
 									? "bg-amber-500/20 group-hover:bg-amber-500 group-hover:scale-110"
-									: "bg-muted/50 group-hover:bg-foreground group-hover:scale-110",
+									: flagConfig.arrowBg,
 							)}
 						>
 							{isLocked ? (
 								<Lock className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 text-amber-600 group-hover:text-white transition-all" />
 							) : (
-								<ArrowRight className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 text-muted-foreground group-hover:text-background group-hover:translate-x-0.5 transition-all" />
+								<ArrowRight
+									className={cn(
+										"w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 group-hover:translate-x-0.5 transition-all",
+										flagConfig.arrowIconClass,
+									)}
+								/>
 							)}
 						</div>
 					</div>

@@ -523,15 +523,6 @@ const FinishExamResultDialog = forwardRef<
 							</div>
 
 							<div className="space-y-2">
-								<div className="flex justify-between text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
-									<span className="flex items-center gap-1 sm:gap-2">
-										<Zap className="w-3 h-3 sm:w-4 sm:h-4" />
-										Гүйцэтгэл
-									</span>
-									<span className="font-bold text-base sm:text-lg">
-										{progressPercentage}%
-									</span>
-								</div>
 								<Progress
 									value={progressPercentage}
 									className="h-2 sm:h-3 shadow-inner"

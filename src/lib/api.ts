@@ -122,7 +122,7 @@ export const registerSysUserRequest = async (
 	email: string,
 	firstname: string,
 	lastname: string,
-	phone: number,
+	phone: string,
 	password: string,
 ): Promise<RegisterSysUserResponse> => {
 	const { data } = await api.post<RegisterSysUserResponse>(
