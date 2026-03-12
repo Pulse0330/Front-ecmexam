@@ -1,12 +1,12 @@
 "use client";
 
-import { AlertTriangle, Lock, Shield, Smartphone } from "lucide-react";
+import { AlertTriangle, Lock, Shield, Smartphone, Unlock } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 
 interface ExamProctorProps {
-	onSubmit: () => void; // Автомат submit callback
+	onSubmit?: () => void; // Optional submit callback (manual only)
 	onLogout?: () => void; // Optional logout callback
 	maxViolations?: number; // Default 3
 	strictMode?: boolean; // Default true
@@ -27,16 +27,18 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 	enableFullscreen = true,
 }) => {
 	const [violations, setViolations] = useState<Violation[]>([]);
-	const [blocked, setBlocked] = useState(false);
 	const [dialogMessage, setDialogMessage] = useState<string | null>(null);
 	const [blackScreen, setBlackScreen] = useState(false);
 	const [mouseLeft, setMouseLeft] = useState(false);
 	const [isMobile, setIsMobile] = useState(false);
+	// "warning" = зөрчлийн анхааруулга (unlock боломжтой)
+	// "locked"  = max зөрчилд хүрсэн, гэхдээ дуусгахгүй — зүгээр л хаалттай
+	const [lockState, setLockState] = useState<"none" | "warning" | "locked">(
+		"none",
+	);
 
-	const blockedRef = useRef<boolean>(false);
 	const violationLockRef = useRef<boolean>(false);
 	const mouseTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-
 	const onSubmitRef = useRef(onSubmit);
 	const onLogoutRef = useRef(onLogout);
 
@@ -63,7 +65,8 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 	// ========================
 	const logViolation = useCallback(
 		(type: string, severity: "low" | "medium" | "high", message: string) => {
-			if (blockedRef.current || violationLockRef.current) return;
+			// Аль хэдийн lock горимд байвал шинэ зөрчил бүртгэхгүй
+			if (violationLockRef.current) return;
 			violationLockRef.current = true;
 
 			const violation: Violation = {
@@ -80,42 +83,54 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 					).length;
 
 					if (criticalCount >= maxViolations) {
-						blockedRef.current = true;
-
-						setTimeout(() => {
-							setBlocked(true);
-							setDialogMessage(
-								`🚫 Та ${maxViolations} удаа ноцтой дүрэм зөрчсөн тул шалгалт автоматаар дуусгагдана.`,
-							);
-							setBlackScreen(true);
-
-							setTimeout(() => {
-								onSubmitRef.current();
-								onLogoutRef.current?.();
-							}, 3000);
-						}, 0);
+						// Автоматаар дуусгахгүй — зүгээр л "locked" горим
+						setLockState("locked");
+						setDialogMessage(
+							`🚫 Та ${maxViolations} удаа ноцтой дүрэм зөрчсөн тул шалгалт хаагдлаа. Багш тайлбар авна уу.`,
+						);
+						setBlackScreen(true);
 					} else {
-						setTimeout(() => {
-							setDialogMessage(message);
-							setBlackScreen(true);
-
-							setTimeout(() => {
-								setBlackScreen(false);
-								setDialogMessage(null);
-							}, 2000);
-						}, 0);
+						setLockState("warning");
+						setDialogMessage(message);
+						setBlackScreen(true);
 					}
 
 					return newViolations;
 				});
 
+				// warning горимд 1 секундийн дараа violationLock-г тайлна
+				// locked горимд хэзээ ч тайлахгүй
 				setTimeout(() => {
-					violationLockRef.current = false;
-				}, 1000);
+					setViolations((current) => {
+						const critCount = current.filter(
+							(v) => v.severity === "high",
+						).length;
+						if (critCount < maxViolations) {
+							violationLockRef.current = false;
+						}
+						return current;
+					});
+				}, 1500);
 			}, 0);
 		},
 		[maxViolations],
 	);
+
+	// Warning горимоос гарах — хэрэглэгч "Үргэлжлүүлэх" дарна
+	const handleDismissWarning = useCallback(() => {
+		setViolations((current) => {
+			const critCount = current.filter((v) => v.severity === "high").length;
+			if (critCount >= maxViolations) {
+				// locked горимоос гарахгүй
+				return current;
+			}
+			setBlackScreen(false);
+			setDialogMessage(null);
+			setLockState("none");
+			violationLockRef.current = false;
+			return current;
+		});
+	}, [maxViolations]);
 
 	// ========================
 	// Mobile & Desktop Protections
@@ -126,13 +141,11 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 		const handleTouchStart = (e: TouchEvent) => {
 			if (e.touches.length > 1) {
 				e.preventDefault();
-				if (!blockedRef.current) {
-					logViolation(
-						"MULTI_TOUCH",
-						"medium",
-						"⚠️ Олон хуруу хэрэглэх хориотой!",
-					);
-				}
+				logViolation(
+					"MULTI_TOUCH",
+					"medium",
+					"⚠️ Олон хуруу хэрэглэх хориотой!",
+				);
 			}
 		};
 
@@ -140,39 +153,32 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 		const handleTouchStartTimer = (e: TouchEvent) => {
 			touchTimer = setTimeout(() => {
 				e.preventDefault();
-				if (!blockedRef.current) {
-					logViolation("LONG_PRESS", "medium", "⚠️ Удаан дарах хориотой!");
-				}
+				logViolation("LONG_PRESS", "medium", "⚠️ Удаан дарах хориотой!");
 			}, 500);
 		};
 		const handleTouchEnd = () => clearTimeout(touchTimer);
 
-		// Clipboard
 		const handleCopy = (e: ClipboardEvent) => {
 			e.preventDefault();
-			if (!blockedRef.current)
-				logViolation("COPY_ATTEMPT", "medium", "⚠️ Хуулах хориотой!");
+			logViolation("COPY_ATTEMPT", "medium", "⚠️ Хуулах хориотой!");
 		};
 		const handleCut = (e: ClipboardEvent) => {
 			e.preventDefault();
-			if (!blockedRef.current)
-				logViolation("CUT_ATTEMPT", "medium", "⚠️ Таслах хориотой!");
+			logViolation("CUT_ATTEMPT", "medium", "⚠️ Таслах хориотой!");
 		};
 		const handlePaste = (e: ClipboardEvent) => {
 			e.preventDefault();
-			if (!blockedRef.current)
-				logViolation("PASTE_ATTEMPT", "medium", "⚠️ Буулгах хориотой!");
+			logViolation("PASTE_ATTEMPT", "medium", "⚠️ Буулгах хориотой!");
 		};
 
 		const handleSelectStart = (e: Event) => e.preventDefault();
 		const handleDragStart = (e: DragEvent) => {
 			e.preventDefault();
-			if (!blockedRef.current)
-				logViolation("DRAG_ATTEMPT", "low", "⚠️ Drag хийх хориотой!");
+			logViolation("DRAG_ATTEMPT", "low", "⚠️ Drag хийх хориотой!");
 		};
 
 		const handleOrientationChange = () => {
-			if (!blockedRef.current && isMobile) {
+			if (isMobile) {
 				logViolation(
 					"ORIENTATION_CHANGE",
 					"medium",
@@ -183,18 +189,16 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 
 		const handleBeforePrint = (e: Event) => {
 			e.preventDefault();
-			if (!blockedRef.current)
-				logViolation("PRINT_ATTEMPT", "high", "⚠️ Хэвлэх хориотой!");
+			logViolation("PRINT_ATTEMPT", "high", "⚠️ Хэвлэх хориотой!");
 		};
 
 		const handleKeyUp = (e: KeyboardEvent) => {
 			if (e.key === "PrintScreen") {
-				if (!blockedRef.current)
-					logViolation(
-						"SCREENSHOT_ATTEMPT",
-						"high",
-						"⚠️ Дэлгэцийн зураг авах оролдлого!",
-					);
+				logViolation(
+					"SCREENSHOT_ATTEMPT",
+					"high",
+					"⚠️ Дэлгэцийн зураг авах оролдлого!",
+				);
 			}
 		};
 
@@ -236,7 +240,6 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 			document.removeEventListener("keyup", handleKeyUp);
 			window.removeEventListener("orientationchange", handleOrientationChange);
 			window.removeEventListener("beforeprint", handleBeforePrint);
-
 			bodyStyle.userSelect = "";
 			bodyStyle.webkitUserSelect = "";
 			bodyStyle.webkitTouchCallout = "";
@@ -253,25 +256,103 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 
 		const handleContextMenu = (e: MouseEvent) => {
 			e.preventDefault();
-			if (!blockedRef.current)
-				logViolation("CONTEXT_MENU", "medium", "⚠️ Баруун товчлуур хориглосон!");
+			logViolation("CONTEXT_MENU", "medium", "⚠️ Баруун товчлуур хориглосон!");
 		};
 
 		const handleKeyDown = (e: KeyboardEvent) => {
+			// DevTools
 			if (
 				e.key === "F12" ||
 				(e.ctrlKey &&
 					e.shiftKey &&
-					["I", "J", "C"].includes(e.key.toUpperCase())) ||
-				(e.ctrlKey && ["u", "s"].includes(e.key.toLowerCase()))
+					["I", "J", "C"].includes(e.key.toUpperCase()))
 			) {
 				e.preventDefault();
-				if (!blockedRef.current)
-					logViolation(
-						"DEVTOOLS_ATTEMPT",
-						"high",
-						"⚠️ DevTools нээх оролдлого илрүүлсэн!",
-					);
+				logViolation(
+					"DEVTOOLS_ATTEMPT",
+					"high",
+					"⚠️ DevTools нээх оролдлого илрүүлсэн!",
+				);
+				return;
+			}
+
+			// Ctrl + ... хориотой товчлуурууд
+			if (e.ctrlKey && !e.shiftKey && !e.altKey) {
+				const blocked: Record<string, string> = {
+					n: "⚠️ Шинэ цонх нээх хориотой! (Ctrl+N)",
+					t: "⚠️ Шинэ таб нээх хориотой! (Ctrl+T)",
+					w: "⚠️ Таб хаах хориотой! (Ctrl+W)",
+					r: "⚠️ Хуудас шинэчлэх хориотой! (Ctrl+R)",
+					l: "⚠️ Хаяг мөр нээх хориотой! (Ctrl+L)",
+					u: "⚠️ Эх код харах хориотой! (Ctrl+U)",
+					s: "⚠️ Хадгалах хориотой! (Ctrl+S)",
+					p: "⚠️ Хэвлэх хориотой! (Ctrl+P)",
+					a: "⚠️ Бүгдийг сонгох хориотой! (Ctrl+A)",
+					h: "⚠️ Түүх нээх хориотой! (Ctrl+H)",
+					j: "⚠️ Татаж авсан файл хориотой! (Ctrl+J)",
+					k: "⚠️ Хориотой товчлуур! (Ctrl+K)",
+					b: "⚠️ Хориотой товчлуур! (Ctrl+B)",
+					f: "⚠️ Хайх хориотой! (Ctrl+F)",
+				};
+				const key = e.key.toLowerCase();
+				if (blocked[key]) {
+					e.preventDefault();
+					logViolation("SHORTCUT_ATTEMPT", "medium", blocked[key]);
+					return;
+				}
+			}
+
+			// Ctrl+Shift+N (нууц цонх)
+			if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === "N") {
+				e.preventDefault();
+				logViolation(
+					"INCOGNITO_ATTEMPT",
+					"high",
+					"⚠️ Нууц горим нээх хориотой! (Ctrl+Shift+N)",
+				);
+				return;
+			}
+
+			// Ctrl+Shift+T (хаасан таб нээх)
+			if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === "T") {
+				e.preventDefault();
+				logViolation(
+					"SHORTCUT_ATTEMPT",
+					"medium",
+					"⚠️ Хаасан таб нээх хориотой! (Ctrl+Shift+T)",
+				);
+				return;
+			}
+
+			// Alt+F4 (цонх хаах)
+			if (e.altKey && e.key === "F4") {
+				e.preventDefault();
+				logViolation("WINDOW_CLOSE", "high", "⚠️ Цонх хаах оролдлого! (Alt+F4)");
+				return;
+			}
+
+			// F5 (refresh)
+			if (e.key === "F5") {
+				e.preventDefault();
+				logViolation(
+					"SHORTCUT_ATTEMPT",
+					"medium",
+					"⚠️ Хуудас шинэчлэх хориотой! (F5)",
+				);
+				return;
+			}
+
+			// Escape (fullscreen-с гарах гэх зэрэг)
+			if (e.key === "Escape") {
+				e.preventDefault();
+				return;
+			}
+
+			// Windows key
+			if (e.key === "Meta" || e.key === "OS") {
+				e.preventDefault();
+				logViolation("SHORTCUT_ATTEMPT", "medium", "⚠️ Windows товч хориотой!");
+				return;
 			}
 		};
 
@@ -298,11 +379,7 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 			lastFocusTime = Date.now();
 		};
 		const handleBlur = () => {
-			if (
-				isUserInteracting &&
-				Date.now() - lastFocusTime > 1000 &&
-				!blockedRef.current
-			) {
+			if (isUserInteracting && Date.now() - lastFocusTime > 1000) {
 				logViolation(
 					"TAB_SWITCH",
 					"high",
@@ -312,7 +389,7 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 			isUserInteracting = false;
 		};
 		const handleVisibilityChange = () => {
-			if (document.hidden && isUserInteracting && !blockedRef.current) {
+			if (document.hidden && isUserInteracting) {
 				logViolation(
 					"TAB_HIDDEN",
 					"high",
@@ -342,12 +419,11 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 			setMouseLeft(true);
 			if (mouseTimeoutRef.current) clearTimeout(mouseTimeoutRef.current);
 			mouseTimeoutRef.current = setTimeout(() => {
-				if (!blockedRef.current)
-					logViolation(
-						"MOUSE_LEFT",
-						"medium",
-						"⚠️ Хулгана шалгалтын цонхноос 3 секунд гарсан байна!",
-					);
+				logViolation(
+					"MOUSE_LEFT",
+					"medium",
+					"⚠️ Хулгана шалгалтын цонхноос 3 секунд гарсан байна!",
+				);
 			}, 3000);
 		};
 		const handleMouseEnter = () => {
@@ -366,6 +442,32 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 	}, [logViolation, strictMode, isMobile]);
 
 	// ========================
+	// Browser Back Button Blocker
+	// ========================
+	useEffect(() => {
+		if (!strictMode) return;
+
+		// Push a dummy state so there's always something to "go back" to (our trap)
+		history.pushState(null, "", window.location.href);
+
+		const handlePopState = () => {
+			// Immediately push again to prevent navigation
+			history.pushState(null, "", window.location.href);
+			logViolation(
+				"BACK_BUTTON",
+				"high",
+				"⚠️ Буцах товч дарах хориотой! Шалгалтын хуудсаас гарах оролдлого илрүүлсэн.",
+			);
+		};
+
+		window.addEventListener("popstate", handlePopState);
+
+		return () => {
+			window.removeEventListener("popstate", handlePopState);
+		};
+	}, [logViolation, strictMode]);
+
+	// ========================
 	// Fullscreen Lock
 	// ========================
 	useEffect(() => {
@@ -382,11 +484,7 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 		};
 
 		const handleFullscreenChange = () => {
-			if (
-				!document.fullscreenElement &&
-				hasUserInteracted &&
-				!blockedRef.current
-			) {
+			if (!document.fullscreenElement && hasUserInteracted) {
 				logViolation(
 					"FULLSCREEN_EXIT",
 					"high",
@@ -417,58 +515,125 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 		};
 	}, [logViolation, strictMode, enableFullscreen, isMobile]);
 
-	const criticalViolations = violations.filter(
+	const _criticalViolations = violations.filter(
 		(v) => v.severity === "high",
 	).length;
+	const isLocked = lockState === "locked";
+	const _isWarning = lockState === "warning";
+
+	const overlayContent = (
+		<div
+			style={{
+				position: "fixed",
+				top: 0,
+				left: 0,
+				right: 0,
+				bottom: 0,
+				backgroundColor: "rgba(0,0,0,0.97)",
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "center",
+				zIndex: 2147483647,
+				pointerEvents: "auto",
+			}}
+		>
+			<div
+				style={{
+					color: "white",
+					textAlign: "center",
+					padding: "1.5rem",
+					maxWidth: "28rem",
+					width: "100%",
+				}}
+			>
+				<AlertTriangle
+					className={`w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-6 ${isLocked ? "text-red-500" : "text-yellow-400"} animate-pulse`}
+				/>
+				<h1
+					style={{
+						fontSize: "1.75rem",
+						fontWeight: "bold",
+						marginBottom: "1rem",
+					}}
+				>
+					{isLocked ? "🚫 Шалгалт хаагдлаа" : "⚠️ Анхааруулга"}
+				</h1>
+				<p
+					style={{
+						fontSize: "1rem",
+						lineHeight: "1.6",
+						marginBottom: "1.5rem",
+					}}
+				>
+					{dialogMessage}
+				</p>
+				{isLocked ? (
+					<div>
+						<div
+							style={{
+								background: "rgba(127,29,29,0.5)",
+								border: "1px solid rgb(220,38,38)",
+								borderRadius: "0.5rem",
+								padding: "0.75rem 1rem",
+								fontSize: "0.875rem",
+								color: "rgb(254,202,202)",
+								marginBottom: "0.75rem",
+							}}
+						>
+							Шалгалтын систем хаагдсан. Багшийн зөвшөөрөлгүйгээр үргэлжлүүлэх
+							боломжгүй.
+						</div>
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								gap: "0.5rem",
+								color: "rgb(156,163,175)",
+								fontSize: "0.75rem",
+							}}
+						>
+							<Lock className="w-3 h-3" />
+							<span>Зөвхөн багш тайлах боломжтой</span>
+						</div>
+					</div>
+				) : (
+					<div>
+						<button
+							type="button"
+							onClick={handleDismissWarning}
+							style={{
+								background: "rgb(234,179,8)",
+								color: "black",
+								fontWeight: "bold",
+								padding: "0.75rem 2rem",
+								borderRadius: "0.5rem",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "0.5rem",
+								border: "none",
+								cursor: "pointer",
+								fontSize: "1rem",
+							}}
+						>
+							<Unlock className="w-4 h-4" />
+							Ойлголоо, үргэлжлүүлэх
+						</button>
+					</div>
+				)}
+			</div>
+		</div>
+	);
 
 	return (
 		<>
-			{/* Black screen overlay */}
-			{blackScreen && (
-				<div className="fixed inset-0 bg-black flex items-center justify-center pointer-events-auto">
-					<div className="text-white text-center space-y-4 p-6">
-						<AlertTriangle className="w-16 h-16 sm:w-20 sm:h-20 mx-auto text-red-500 animate-pulse" />
-						<h1 className="text-2xl sm:text-4xl font-bold">
-							{blocked ? "🚫 Шалгалт дууссан!" : "⚠️ Анхааруулга"}
-						</h1>
-						<p className="text-base sm:text-xl max-w-md mx-auto">
-							{dialogMessage}
-						</p>
-						{blocked && (
-							<p className="text-xs sm:text-sm text-gray-400 mt-4">
-								Шалгалт автоматаар дуусгагдаж байна...
-							</p>
-						)}
-					</div>
-				</div>
-			)}
+			{/* Overlay — portal-аар document.body-д шууд render, stacking context-с бүрэн гарна */}
+			{blackScreen &&
+				typeof document !== "undefined" &&
+				createPortal(overlayContent, document.body)}
 
 			{/* Bottom alerts */}
 			<div className="fixed bottom-2 right-2 sm:bottom-4 sm:right-4 z-50 space-y-2 max-w-[90vw] sm:max-w-none pointer-events-none">
-				<Alert
-					variant={
-						criticalViolations >= maxViolations - 1 ? "destructive" : "default"
-					}
-					className="w-56 sm:w-64 shadow-lg pointer-events-auto"
-				>
-					<Shield className="h-3 w-3 sm:h-4 sm:w-4" />
-					<AlertDescription>
-						<div className="font-semibold text-xs sm:text-sm">
-							Ноцтой зөрчил: {criticalViolations}/{maxViolations}
-						</div>
-						{criticalViolations > 0 && criticalViolations < maxViolations && (
-							<div className="text-orange-600 dark:text-orange-400 font-medium text-xs mt-1">
-								⚠️ Дахиад {maxViolations - criticalViolations} зөрчил үлдсэн!
-							</div>
-						)}
-						{blocked && (
-							<div className="text-red-600 dark:text-red-400 font-bold text-xs sm:text-sm mt-1">
-								🚫 Шалгалт хаагдсан!
-							</div>
-						)}
-					</AlertDescription>
-				</Alert>
-
 				{mouseLeft && strictMode && !isMobile && (
 					<Alert
 						variant="destructive"
@@ -512,14 +677,6 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 				<div className="fixed bottom-2 left-2 sm:bottom-4 sm:left-4 bg-card border rounded-lg p-2 sm:p-3 max-w-[90vw] sm:max-w-sm max-h-48 sm:max-h-64 overflow-auto text-xs z-50 shadow-lg">
 					<div className="font-bold mb-2 flex items-center justify-between">
 						<span>Зөрчлийн түүх ({violations.length})</span>
-						<Button
-							onClick={() => setViolations([])}
-							variant="ghost"
-							size="sm"
-							className="text-red-500 hover:text-red-700 text-xs h-auto py-1 px-2"
-						>
-							Цэвэрлэх
-						</Button>
 					</div>
 					{violations.map((v) => (
 						<div

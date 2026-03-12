@@ -59,6 +59,29 @@ function ExamResultDetailPage() {
 			return html;
 		}
 	};
+	const AnswerContent = ({
+		html,
+		text,
+	}: {
+		html?: string | null;
+		text?: string | null;
+	}) => {
+		const content = html?.trim() ? html : text;
+		if (!content?.trim()) return null;
+		if (
+			content.includes("<math") ||
+			content.includes("\\(") ||
+			content.includes("\\[")
+		) {
+			return <MathContent html={content} />;
+		}
+		// safeParse-ийг шууд дуудахгүй — parse import хийж ашиглана
+		try {
+			return <>{parse(content)}</>;
+		} catch {
+			return <>{content}</>;
+		}
+	};
 
 	const getQuestionTypeLabel = (typeId: number) => {
 		const types: Record<number, string> = {
@@ -921,7 +944,9 @@ function ExamResultDetailPage() {
 																	<div className="flex items-start gap-3 mb-2">
 																		<div className="flex-1">
 																			<div className="text-base leading-relaxed text-foreground  p-3 rounded-lg">
-																				{safeParse(question.source_html)}
+																				<MathContent
+																					html={question.source_html}
+																				/>
 																			</div>
 																		</div>
 																	</div>
@@ -957,16 +982,14 @@ function ExamResultDetailPage() {
 											</div>
 											<div className="space-y-4 pl-14">
 												{question.que_type_id === 1 ? (
-													// ========== НЭГ СОНГОЛТТОЙ АСУУЛТ ==========
 													questionAnswers.length === 0 ? (
 														<p className="text-sm text-muted-foreground">
 															Хариулт олдсонгүй
 														</p>
 													) : (
 														<div className="space-y-4">
-															{/* Бүх хариултууд */}
 															<div className="space-y-3">
-																{questionAnswers.map((answer, _idx) => {
+																{questionAnswers.map((answer) => {
 																	const isCorrect = answer.is_true === 1;
 																	const isUserSelected =
 																		userSelectedAnswers.some(
@@ -974,15 +997,9 @@ function ExamResultDetailPage() {
 																		);
 																	const isWrongSelection =
 																		isUserSelected && !isCorrect;
-
 																	const hasImage =
 																		answer.answer_img &&
 																		answer.answer_img.trim() !== "";
-																	const hasText =
-																		(answer.answer_name_html &&
-																			answer.answer_name_html.trim() !== "") ||
-																		(answer.answer_name &&
-																			answer.answer_name.trim() !== "");
 
 																	return (
 																		<div
@@ -1006,25 +1023,16 @@ function ExamResultDetailPage() {
 																							className="rounded-xl shadow-md mt-2"
 																						/>
 																					)}
-
-																					{hasText && (
-																						<div>
-																							{answer.answer_name_html &&
-																							answer.answer_name_html.trim() !==
-																								""
-																								? safeParse(
-																										answer.answer_name_html,
-																									)
-																								: safeParse(answer.answer_name)}
-																						</div>
-																					)}
-
+																					<AnswerContent
+																						html={answer.answer_name_html}
+																						text={answer.answer_name}
+																					/>
 																					{!hasImage &&
-																						!hasText &&
+																						!answer.answer_name_html?.trim() &&
+																						!answer.answer_name?.trim() &&
 																						"Хариулт байхгүй"}
 																				</div>
 																			</div>
-
 																			<div className="shrink-0">
 																				{isUserSelected && isCorrect && (
 																					<div className="px-4 py-2 bg-emerald-500 text-white rounded-xl shadow-lg font-bold text-sm">
@@ -1049,7 +1057,6 @@ function ExamResultDetailPage() {
 																})}
 															</div>
 
-															{/* Зөв хариулт */}
 															{examSummary?.show_true_ans === 1 && (
 																<div className="mt-4 p-4 border border-emerald-900 rounded-2xl shadow-sm">
 																	<p className="text-base font-semibold mb-4">
@@ -1061,13 +1068,6 @@ function ExamResultDetailPage() {
 																			const hasImage =
 																				answer.answer_img &&
 																				answer.answer_img.trim() !== "";
-																			const hasText =
-																				(answer.answer_name_html &&
-																					answer.answer_name_html.trim() !==
-																						"") ||
-																				(answer.answer_name &&
-																					answer.answer_name.trim() !== "");
-
 																			return (
 																				<div
 																					key={answer.answer_id}
@@ -1083,23 +1083,13 @@ function ExamResultDetailPage() {
 																								className="rounded-xl shadow-md mt-2"
 																							/>
 																						)}
-
-																						{hasText && (
-																							<div>
-																								{answer.answer_name_html &&
-																								answer.answer_name_html.trim() !==
-																									""
-																									? safeParse(
-																											answer.answer_name_html,
-																										)
-																									: safeParse(
-																											answer.answer_name,
-																										)}
-																							</div>
-																						)}
-
+																						<AnswerContent
+																							html={answer.answer_name_html}
+																							text={answer.answer_name}
+																						/>
 																						{!hasImage &&
-																							!hasText &&
+																							!answer.answer_name_html?.trim() &&
+																							!answer.answer_name?.trim() &&
 																							"Хариулт байхгүй"}
 																					</div>
 																				</div>

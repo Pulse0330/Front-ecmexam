@@ -77,18 +77,21 @@ function QuestionRow({
 	solutionHtml,
 }: QuestionRowProps) {
 	return (
-		<div className="flex flex-row items-start gap-6 w-full py-3">
-			{/* Зүүн тал: дугаар + асуулт */}
-			<div className="flex flex-row items-start gap-2 flex-1 min-w-0">
-				<span className="bg-blue-500 text-white rounded-md px-2 py-0.5 text-sm font-semibold shrink-0 mt-0.5">
+		<div className="flex flex-col w-full py-3 border-b border-border">
+			{/* Асуулт */}
+			<div className="flex flex-row items-start gap-2">
+				<span className="bg-primary text-primary-foreground rounded-md px-2 py-0.5 text-sm font-semibold shrink-0 mt-0.5">
 					{questionNumber}
 				</span>
 				<MathContent html={questionHtml} />
 			</div>
 
-			{/* Баруун тал: хариулт */}
+			{/* Хариулт */}
 			{solutionHtml && (
-				<div className="flex-1 min-w-0 border-l border-gray-200 dark:border-gray-700 pl-4">
+				<div className="ml-8 mt-2 pl-3 border-l-2 border-chart-2 bg-muted rounded-r-md py-2">
+					<span className="text-xs font-medium text-muted-foreground block mb-1">
+						Зөв хариулт
+					</span>
 					<MathContent html={solutionHtml} />
 				</div>
 			)}
