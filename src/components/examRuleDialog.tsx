@@ -423,9 +423,8 @@ export default function ExamRulesDialog({
 									htmlFor="ack-all"
 									className="text-[10px] sm:text-xs font-medium leading-snug cursor-pointer text-slate-700 dark:text-slate-300"
 								>
-									Би <strong>Шалгалтын дүрэм журам</strong> талаарх бүх дүрмийг
-									уншсан бөгөөд эдгээрийг дагаж мөрдөхөө амлаж байна. Дүрэм
-									зөрчвөл шалгалт дуусгагдаж болохыг ойлгож байна.
+									Би Шалгалтын дүрэмтэй танилцсан бөгөөд энэ дүрмийг зөрчвөл
+									шалгалтнаас гаргахыг зөвшөөрч байна.
 								</label>
 							</div>
 						</div>
