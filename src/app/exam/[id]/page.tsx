@@ -31,7 +31,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { deleteExamAnswer, getExamById, saveExamAnswer } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { AnswerValue } from "@/types/exam/exam";
-import { AdvancedExamProctor } from "../component/examguard";
+// import { AdvancedExamProctor } from "../component/examguard";
 import { ExamHeader } from "../component/examUtils/examInfo";
 import MathContent from "../component/examUtils/MathContent";
 import ExamTimer from "../component/Itime";
@@ -1066,11 +1066,11 @@ export default function ExamPage() {
 									/>
 								</div>
 							)}
-							<AdvancedExamProctor
+							{/* <AdvancedExamProctor
 								maxViolations={1000}
 								strictMode={true}
 								enableFullscreen={true}
-							/>
+							/> */}
 						</div>
 					</aside>
 
