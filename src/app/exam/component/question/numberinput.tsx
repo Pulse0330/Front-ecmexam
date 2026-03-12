@@ -65,7 +65,7 @@ const NumberInputQuestion: React.FC<NumberInputQuestionProps> = ({
 								inputMode="numeric"
 								value={values[ans.answer_id]}
 								onChange={(e) => handleChange(ans.answer_id, e.target.value)}
-								placeholder="0"
+								placeholder=""
 								className="max-w-xs"
 							/>
 						</div>

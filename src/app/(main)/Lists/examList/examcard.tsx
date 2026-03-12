@@ -32,7 +32,10 @@ interface ExamCardProps {
 	onPayClick?: () => void;
 	isCreatingInvoice?: boolean;
 }
-
+const formatDate = (dateStr: string) => {
+	const cleaned = dateStr.replace("T", " ").replace("Z", "").split(".")[0];
+	return cleaned.slice(0, 16); // "2026-03-12 17:23"
+};
 // flag: 0 = Эхлээгүй (хөх), 1 = Идэвхтэй (ногоон), 2+ = Дууссан (саарал)
 const getFlagConfig = (flag: number) => {
 	switch (flag) {
@@ -195,7 +198,10 @@ export default function ExamCard({
 							{exam.lesson_name}
 						</p>
 						<p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1">
-							{exam.ognoo}
+							Эхлэх огноо :{exam.ognoo}
+						</p>
+						<p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1">
+							Дуусах огноо : {formatDate(exam.enddate)}
 						</p>
 					</div>
 

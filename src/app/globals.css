@@ -168,6 +168,10 @@ input[type="number"] {
 	-moz-appearance: textfield;
 }
 
+/* ═══════════════════════════════════════════════════
+   MATH CONTENT
+═══════════════════════════════════════════════════ */
+
 .math-content {
 	display: block;
 	width: 100%;
@@ -201,6 +205,8 @@ input[type="number"] {
 		line-height: 1.5;
 	}
 }
+
+/* ── Lists ── */
 
 .math-content ol {
 	list-style-type: decimal;
@@ -273,6 +279,19 @@ input[type="number"] {
 	}
 }
 
+/* ═══════════════════════════════════════════════════
+   MJX-CONTAINER
+   
+   Дүрэм:
+   · Ерөнхий                     → inline-block
+   · :has(mjx-mtable) = матриц   → display:block  ← ЗАСВАР
+   · [display="true"]             → display:block
+   
+   !important шаардлагатай — CSS нь JS-н el.style-г
+   дарж байсан асуудлыг энэ тэмдэглэгээгээр шийдэнэ.
+═══════════════════════════════════════════════════ */
+
+/* 1. Ерөнхий — inline math */
 .math-content mjx-container {
 	display: inline-block;
 	max-width: 100%;
@@ -282,6 +301,30 @@ input[type="number"] {
 	white-space: normal;
 }
 
+/* 2. Матриц агуулсан → block */
+.math-content mjx-container:has(mjx-mtable) {
+	display: block !important;
+	overflow-x: auto;
+	overflow-y: visible;
+	max-width: 100%;
+	margin: 6px 0;
+	white-space: normal;
+	-webkit-overflow-scrolling: touch;
+}
+
+/* 3. MathJax display mode */
+.math-content mjx-container[display="true"] {
+	display: block !important;
+	overflow-x: auto;
+	overflow-y: visible;
+	max-width: 100%;
+	box-sizing: border-box;
+	margin: 6px 0;
+	white-space: normal;
+	-webkit-overflow-scrolling: touch;
+}
+
+/* 4. mjx-math */
 .math-content mjx-math {
 	display: inline-block;
 	max-width: 100%;
@@ -289,22 +332,14 @@ input[type="number"] {
 	white-space: normal;
 }
 
+/* 5. SVG */
 .math-content mjx-container svg {
 	max-width: 100%;
 	height: auto;
 	overflow: visible;
 }
 
-.math-content mjx-container[display="true"] {
-	display: block;
-	overflow-x: auto;
-	overflow-y: hidden;
-	max-width: 100%;
-	box-sizing: border-box;
-	white-space: normal;
-	-webkit-overflow-scrolling: touch;
-}
-
+/* 6. Матрицын дотоод элементүүд */
 .math-content mjx-container mjx-mtable {
 	max-width: 100%;
 	overflow: visible;
@@ -321,76 +356,90 @@ input[type="number"] {
 	max-width: 100%;
 }
 
+/* 7. <p> дотор */
 .math-content p mjx-container {
 	display: inline-block;
 	max-width: 100%;
 }
 
+.math-content p mjx-container:has(mjx-mtable),
 .math-content p mjx-container[display="true"] {
-	display: block;
+	display: block !important;
 	max-width: 100%;
+	overflow-x: auto;
 }
 
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE SCALE
+   Матриц агуулсан container-т scale хэрэглэхгүй.
+   Зөвхөн энгийн inline math-д scale хэрэглэнэ.
+═══════════════════════════════════════════════════ */
+
 @media (width >= 1025px) {
-	.math-content mjx-container {
+	.math-content mjx-container:not(:has(mjx-mtable)):not([display="true"]) {
 		transform: scale(0.9);
 		transform-origin: left center;
 	}
 }
 
 @media (width <= 1024px) and (width >= 769px) {
-	.math-content mjx-container {
+	.math-content mjx-container:not(:has(mjx-mtable)):not([display="true"]) {
 		transform: scale(0.75);
 		transform-origin: left center;
 	}
 }
 
 @media (width <= 768px) and (width >= 481px) {
-	.math-content mjx-container {
+	.math-content mjx-container:not(:has(mjx-mtable)):not([display="true"]) {
 		transform: scale(0.6);
 		transform-origin: left center;
 	}
 }
 
 @media (width <= 480px) {
-	.math-content mjx-container {
+	.math-content mjx-container:not(:has(mjx-mtable)):not([display="true"]) {
 		transform: scale(0.5);
 		transform-origin: left center;
 		max-width: calc(100vw - 2rem);
 	}
 
+	/* Матриц — scale-гүй, зөвхөн scroll */
+	.math-content mjx-container:has(mjx-mtable),
 	.math-content mjx-container[display="true"] {
-		transform: scale(0.5);
-		transform-origin: left center;
-		max-width: calc(100vw - 2rem);
 		overflow-x: auto;
 		overflow-y: hidden;
+		max-width: calc(100vw - 2rem);
 		padding-bottom: 0.5rem;
-		background:
-			linear-gradient(90deg, white 0%, transparent 10%) left,
-			linear-gradient(90deg, transparent 90%, white 100%) right;
-		background-size:
-			40px 100%,
-			40px 100%;
-		background-repeat: no-repeat;
-		background-attachment: local, local;
 	}
 
 	.math-content mjx-container svg {
 		max-width: none;
 	}
 
+	/* Scroll gradient — light mode */
+	.math-content mjx-container[display="true"] {
+		background:
+			linear-gradient(90deg, white 0%, transparent 10%) left,
+			linear-gradient(90deg, transparent 90%, white 100%) right;
+		background-size: 40px 100%, 40px 100%;
+		background-repeat: no-repeat;
+		background-attachment: local, local;
+	}
+
+	/* Scroll gradient — dark mode */
 	.dark .math-content mjx-container[display="true"] {
 		background:
 			linear-gradient(90deg, rgb(30 41 59) 0%, transparent 10%) left,
 			linear-gradient(90deg, transparent 90%, rgb(30 41 59) 100%) right;
-		background-size:
-			40px 100%,
-			40px 100%;
+		background-size: 40px 100%, 40px 100%;
 		background-repeat: no-repeat;
 		background-attachment: local, local;
 	}
 }
+
+/* ═══════════════════════════════════════════════════
+   HTML TABLE
+═══════════════════════════════════════════════════ */
 
 .math-content table {
 	width: 100%;
@@ -513,35 +562,39 @@ input[type="number"] {
 	}
 }
 
+/* Хүснэгт дотор байгаа mjx-container */
 .math-content table mjx-container {
 	margin: 0.2em 0;
 }
 
 @media (width <= 768px) {
-	.math-content table mjx-container {
+	.math-content table mjx-container:not(:has(mjx-mtable)) {
 		transform: scale(0.65);
 		transform-origin: left center;
 	}
 }
 
 @media (width <= 480px) {
-	.math-content table mjx-container {
+	.math-content table mjx-container:not(:has(mjx-mtable)) {
 		transform: scale(0.5);
 		transform-origin: left center;
 	}
 }
 
+/* ── GPU acceleration ── */
 .math-content mjx-container,
 .math-content table {
 	will-change: transform;
 	transform: translateZ(0);
 }
 
+/* ── Focus ── */
 .math-content table:focus-within {
 	outline: 2px solid var(--color-ring);
 	outline-offset: 2px;
 }
 
+/* ── Print ── */
 @media print {
 	.math-content table {
 		box-shadow: none;
@@ -549,7 +602,7 @@ input[type="number"] {
 	}
 
 	.math-content mjx-container {
-		transform: none;
+		transform: none !important;
 	}
 
 	.math-content ol,

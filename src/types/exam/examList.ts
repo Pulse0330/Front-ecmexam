@@ -10,7 +10,8 @@ export interface ExamlistsResponseType {
 export interface ExamlistsData {
 	exam_id: number;
 	title: string;
-	ognoo: string; // ISO date string format
+	ognoo: string;
+	enddate: string;
 	exam_minute: number;
 	lesson_name: string;
 	help: string;
