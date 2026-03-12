@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -73,7 +73,7 @@ export function LoginForm() {
 	const searchParams = useSearchParams();
 	const redirectUrl = searchParams.get("redirect") || "/home";
 	const tokenLogin = searchParams.get("token");
-	const [announcementOpen, setAnnouncementOpen] = useState(true);
+	// const [announcementOpen, setAnnouncementOpen] = useState(true);
 	// const uname = searchParams.get("uname");
 	const { setUser, setToken } = useAuthStore();
 	const [open, setOpen] = useState(false);
@@ -235,7 +235,7 @@ export function LoginForm() {
 
 	return (
 		<>
-			<Dialog open={announcementOpen} onOpenChange={setAnnouncementOpen}>
+			{/* <Dialog open={announcementOpen} onOpenChange={setAnnouncementOpen}>
 				<DialogContent className="sm:max-w-md bg-white dark:bg-gray-900 border-0 shadow-2xl p-0 overflow-hidden">
 					<DialogHeader className=" px-6 py-5">
 						<div className="flex items-start gap-3">
@@ -275,7 +275,7 @@ export function LoginForm() {
 						</Button>
 					</div>
 				</DialogContent>
-			</Dialog>
+			</Dialog> */}
 			<Card className="w-full max-w-sm bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50">
 				<CardHeader className="space-y-1">
 					<CardTitle className="text-2xl font-semibold">
