@@ -134,6 +134,9 @@ export default function ExamCard({
 						<p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1">
 							{exam.lesson_name}
 						</p>
+						<p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1">
+							{exam.ognoo}
+						</p>
 					</div>
 
 					{/* Stats Grid */}

@@ -48,6 +48,7 @@ export interface Exam {
 	exam_id: number;
 	title: string;
 	ognoo: string; // Огноо (ISO Date string)
+	enddate: string;
 	exam_minute: number; // Шалгалтын хугацаа (минутаар)
 	lesson_name: string;
 	help: string;

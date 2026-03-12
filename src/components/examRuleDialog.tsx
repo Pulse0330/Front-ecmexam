@@ -5,8 +5,6 @@ import {
 	Ban,
 	Camera,
 	CheckCircle2,
-	ChevronLeft,
-	ChevronRight,
 	Clock,
 	Copy,
 	Eye,
@@ -223,6 +221,30 @@ const EXAM_GUIDELINES: Rule[] = [
 ];
 
 // ============================================
+// SECTION HEADER - for grouping within single step
+// ============================================
+
+interface SectionHeaderProps {
+	icon: LucideIcon;
+	title: string;
+}
+
+const SectionHeader = React.memo<SectionHeaderProps>(function SectionHeader({
+	icon: Icon,
+	title,
+}) {
+	return (
+		<div className="flex items-center gap-1.5 pt-1 pb-0.5">
+			<Icon className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+			<span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+				{title}
+			</span>
+			<div className="flex-1 h-px bg-slate-200 dark:bg-slate-700 ml-1" />
+		</div>
+	);
+});
+
+// ============================================
 // MAIN COMPONENT
 // ============================================
 
@@ -232,97 +254,35 @@ export default function ExamRulesDialog({
 	onConfirm,
 	isMobile = false,
 }: ExamRulesDialogProps) {
-	const [currentStep, setCurrentStep] = useState(0);
-	const [acknowledgments, setAcknowledgments] = useState<
-		Record<string, boolean>
-	>({});
 	const [showMessage, setShowMessage] = useState(false);
 
-	// Memoized categories
-	const categories: RuleCategory[] = useMemo(() => {
-		const monitoringRules = isMobile
-			? MOBILE_MONITORING_RULES
-			: DESKTOP_MONITORING_RULES;
-
-		return [
-			{
-				id: "monitoring",
-				title: isMobile ? "Утасны хяналт" : "Дэлгэцний хяналт",
-				icon: Monitor,
-				rules: monitoringRules,
-				requiresAcknowledgment: true,
-			},
-			{
-				id: "system",
-				title: "Системийн хязгаарлалт",
-				icon: Ban,
-				rules: SYSTEM_RESTRICTIONS,
-				requiresAcknowledgment: true,
-			},
-			{
-				id: "behavioral",
-				title: "Хандлага болон аюулгүй байдал",
-				icon: Users,
-				rules: BEHAVIORAL_RULES,
-				requiresAcknowledgment: true,
-			},
-			{
-				id: "guidelines",
-				title: "Шалгалтын зөвлөмж",
-				icon: CheckCircle2,
-				rules: EXAM_GUIDELINES,
-				requiresAcknowledgment: false,
-			},
-		];
-	}, [isMobile]);
-
-	const currentCategory = useMemo(
-		() => categories[currentStep],
-		[categories, currentStep],
-	);
-	const isLastStep = currentStep === categories.length - 1;
-	const canProceed =
-		!currentCategory.requiresAcknowledgment ||
-		acknowledgments[currentCategory.id];
+	const [acknowledged, setAcknowledged] = useState(false);
 
 	const handleNext = useCallback(() => {
-		if (isLastStep) {
-			setShowMessage(true);
-			setTimeout(() => {
-				onConfirm();
-				onOpenChange(false);
-				setShowMessage(false);
-				setCurrentStep(0);
-				setAcknowledgments({});
-			}, 1800);
-		} else {
-			setCurrentStep((prev) => prev + 1);
-		}
-	}, [isLastStep, onConfirm, onOpenChange]);
-
-	const handlePrevious = useCallback(() => {
-		setCurrentStep((prev) => Math.max(0, prev - 1));
-	}, []);
+		setShowMessage(true);
+		setTimeout(() => {
+			onConfirm();
+			onOpenChange(false);
+			setShowMessage(false);
+			setAcknowledged(false);
+		}, 1800);
+	}, [onConfirm, onOpenChange]);
 
 	const handleCancel = useCallback(() => {
 		onOpenChange(false);
 		setTimeout(() => {
-			setCurrentStep(0);
-			setAcknowledgments({});
+			setAcknowledged(false);
 		}, 300);
 	}, [onOpenChange]);
 
-	const toggleAcknowledgment = useCallback((categoryId: string) => {
-		setAcknowledgments((prev) => ({
-			...prev,
-			[categoryId]: !prev[categoryId],
-		}));
-	}, []);
+	const monitoringRules = isMobile
+		? MOBILE_MONITORING_RULES
+		: DESKTOP_MONITORING_RULES;
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="w-[90vw] max-w-3xl h-[85vh] p-0 flex flex-col overflow-hidden bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
-				{/* Header - Clean gradient */}
+				{/* Header */}
 				<div className="flex-none px-3 pt-3 pb-2 sm:px-4 sm:pt-4 sm:pb-3 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-1.5 text-base sm:text-lg font-bold text-slate-900 dark:text-slate-50">
@@ -333,77 +293,85 @@ export default function ExamRulesDialog({
 						</DialogDescription>
 					</DialogHeader>
 
-					{/* Progress bar - Minimal & elegant */}
-					<div className="mt-2 flex items-center gap-1.5">
-						{categories.map((category, index) => (
-							<div
-								key={category.id}
-								className={`flex-1 h-1 rounded-full transition-all duration-500 ${
-									index <= currentStep
-										? "bg-slate-900 dark:bg-slate-100"
-										: "bg-slate-200 dark:bg-slate-700"
-								}`}
-							/>
-						))}
-					</div>
-
-					<div className="mt-1 text-[10px] sm:text-xs font-medium text-slate-500 dark:text-slate-400">
-						Алхам {currentStep + 1} / {categories.length}
-					</div>
-
-					{/* Alert - High contrast */}
-					{currentStep === 0 && (
-						<Alert className="mt-2 border py-1.5 px-2 border-red-200 dark:border-red-800">
-							<AlertTriangle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
-							<AlertDescription className="font-semibold text-[10px] sm:text-xs text-red-900 dark:text-red-100">
-								⚠️ АНХААРУУЛГА: 3 удаа ноцтой дүрэм зөрчвөл шалгалт автоматаар
-								дуусгана!
-							</AlertDescription>
-						</Alert>
-					)}
+					{/* Alert */}
+					<Alert className="mt-2 border py-1.5 px-2 border-red-200 dark:border-red-800">
+						<AlertTriangle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+						<AlertDescription className="font-semibold text-[10px] sm:text-xs text-red-900 dark:text-red-100">
+							⚠️ АНХААРУУЛГА: Хуулах оролдлого илэрвэл таны оролдлогыг бүртгэж
+							байгааг анхаарна уу.
+						</AlertDescription>
+					</Alert>
 				</div>
 
-				{/* Content - Clean white/dark background */}
-				<div className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-4 py-3 bg-white dark:bg-slate-900 flex flex-col justify-between ">
+				{/* Content */}
+				<div className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-4 py-3 bg-white dark:bg-slate-900 flex flex-col justify-between">
 					<div>
 						<div className="mb-2">
 							<h3 className="text-sm sm:text-base font-bold flex items-center gap-1.5 text-slate-900 dark:text-slate-50">
-								<currentCategory.icon className="w-4 h-4 sm:w-5 sm:h-5" />
-								{currentCategory.title}
+								<Shield className="w-4 h-4 sm:w-5 sm:h-5" />
+								Шалгалтын дүрэм журам
 							</h3>
-						</div>{" "}
-						<div className="space-y-2">
-							{currentCategory.rules.map((rule) => (
-								<RuleItem key={rule.title} {...rule} />
-							))}
 						</div>
-					</div>
-					{/* Acknowledgment */}
-					{currentCategory.requiresAcknowledgment && (
-						<div className="mt-3 p-2 sm:p-2.5 border-2 rounded-lg border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50">
-							<div className="flex flex-row justify-between items-start gap-2">
-								<Checkbox
-									id={`ack-${currentCategory.id}`}
-									checked={acknowledgments[currentCategory.id] || false}
-									onCheckedChange={() =>
-										toggleAcknowledgment(currentCategory.id)
-									}
-									className="mt-0.5 h-4 w-4 border-slate-400 dark:border-slate-500 data-[state=checked]:bg-slate-900 dark:data-[state=checked]:bg-slate-100 data-[state=checked]:text-white dark:data-[state=checked]:text-slate-900"
-								/>
-								<label
-									htmlFor={`ack-${currentCategory.id}`}
-									className="text-[10px] sm:text-xs font-medium leading-snug cursor-pointer text-slate-700 dark:text-slate-300"
-								>
-									Би <strong>{currentCategory.title}</strong> талаарх бүх
-									дүрмийг уншсан бөгөөд эдгээрийг дагаж мөрдөхөө амлаж байна.
-									Дүрэм зөрчвөл шалгалт дуусгагдаж болохыг ойлгож байна.
-								</label>
+
+						<div className="space-y-1">
+							<SectionHeader
+								icon={Monitor}
+								title={isMobile ? "Утасны хяналт" : "Дэлгэцний хяналт"}
+							/>
+							<div className="space-y-2 mb-1">
+								{monitoringRules.map((rule) => (
+									<RuleItem key={rule.title} {...rule} />
+								))}
+							</div>
+
+							<SectionHeader icon={Ban} title="Системийн хязгаарлалт" />
+							<div className="space-y-2 mb-1">
+								{SYSTEM_RESTRICTIONS.map((rule) => (
+									<RuleItem key={rule.title} {...rule} />
+								))}
+							</div>
+
+							<SectionHeader
+								icon={Users}
+								title="Хандлага болон аюулгүй байдал"
+							/>
+							<div className="space-y-2 mb-1">
+								{BEHAVIORAL_RULES.map((rule) => (
+									<RuleItem key={rule.title} {...rule} />
+								))}
+							</div>
+
+							<SectionHeader icon={CheckCircle2} title="Шалгалтын зөвлөмж" />
+							<div className="space-y-2">
+								{EXAM_GUIDELINES.map((rule) => (
+									<RuleItem key={rule.title} {...rule} />
+								))}
 							</div>
 						</div>
-					)}
+					</div>
+
+					{/* Acknowledgment */}
+					<div className="mt-3 p-2 sm:p-2.5 border-2 rounded-lg border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50">
+						<div className="flex flex-row justify-between items-start gap-2">
+							<Checkbox
+								id="ack-all"
+								checked={acknowledged}
+								onCheckedChange={() => setAcknowledged((v) => !v)}
+								className="mt-0.5 h-4 w-4 border-slate-400 dark:border-slate-500 data-[state=checked]:bg-slate-900 dark:data-[state=checked]:bg-slate-100 data-[state=checked]:text-white dark:data-[state=checked]:text-slate-900"
+							/>
+							<label
+								htmlFor="ack-all"
+								className="text-[10px] sm:text-xs font-medium leading-snug cursor-pointer text-slate-700 dark:text-slate-300"
+							>
+								Би <strong>Шалгалтын дүрэм журам</strong> талаарх бүх дүрмийг
+								уншсан бөгөөд эдгээрийг дагаж мөрдөхөө амлаж байна. Дүрэм
+								зөрчвөл шалгалт дуусгагдаж болохыг ойлгож байна.
+							</label>
+						</div>
+					</div>
 				</div>
 
-				{/* Footer - Minimal gradient */}
+				{/* Footer */}
 				<DialogFooter className="flex-none flex flex-row items-center justify-between gap-2 p-2.5 sm:p-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
 					<Button
 						variant="outline"
@@ -415,39 +383,20 @@ export default function ExamRulesDialog({
 						Цуцлах
 					</Button>
 
-					<div className="flex gap-1.5">
-						{currentStep > 0 && (
-							<Button
-								variant="outline"
-								onClick={handlePrevious}
-								disabled={showMessage}
-								className="text-[10px] sm:text-xs font-medium h-8 px-2.5 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
-							>
-								<ChevronLeft className="w-3.5 h-3.5 mr-0.5" />
-								Өмнөх
-							</Button>
+					<Button
+						onClick={handleNext}
+						disabled={!acknowledged || showMessage}
+						className="text-[10px] sm:text-xs font-medium h-8 px-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+					>
+						{showMessage ? (
+							"Бэлдэж байна..."
+						) : (
+							<>
+								<CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+								Шалгалт эхлүүлэх
+							</>
 						)}
-
-						<Button
-							onClick={handleNext}
-							disabled={!canProceed || showMessage}
-							className="text-[10px] sm:text-xs font-medium h-8 px-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-						>
-							{showMessage ? (
-								"Бэлдэж байна..."
-							) : isLastStep ? (
-								<>
-									<CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-									Шалгалт эхлүүлэх
-								</>
-							) : (
-								<>
-									Дараах
-									<ChevronRight className="w-3.5 h-3.5 ml-0.5" />
-								</>
-							)}
-						</Button>
-					</div>
+					</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>
@@ -471,7 +420,6 @@ const RuleItem = React.memo<RuleItemProps>(function RuleItem({
 	description,
 	severity,
 }) {
-	// Severity colors - Clean & accessible
 	const severityConfig = useMemo(() => {
 		switch (severity) {
 			case "high":

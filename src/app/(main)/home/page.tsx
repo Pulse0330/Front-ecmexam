@@ -57,7 +57,7 @@ const HeroSection = memo(({ username }: HeroSectionProps) => (
 			<div className="relative px-5 py-4 sm:px-8 sm:py-5 lg:px-10 lg:py-6 flex flex-col md:flex-row items-center justify-between gap-5 lg:gap-6">
 				<div className="flex-1 space-y-2 sm:space-y-3 text-center md:text-left max-w-xl">
 					<div className="space-y-1">
-						<h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-4xl xl:text-5xl font-light tracking-tight leading-tight">
+						<h1 className="text-2xl sm:text-2xl md:text-2xl lg:text-2xl xl:text-2xl font-light tracking-tight leading-tight">
 							Сайн уу, <span className="font-medium">{username}</span>
 						</h1>
 						<p className="text-xs sm:text-sm lg:text-base font-light leading-relaxed max-w-md mx-auto md:mx-0">

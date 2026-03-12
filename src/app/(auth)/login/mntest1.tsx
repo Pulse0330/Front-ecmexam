@@ -433,7 +433,7 @@ function InfoRow({
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
+export function UserCheckForm1({ onClose }: { onClose?: () => void } = {}) {
 	const router = useRouter();
 
 	const [aimagList, setAimagList] = useState<AimagItem[]>([]);
