@@ -3,6 +3,7 @@ export interface ExamresultListItem {
 	exam_id: number;
 	test_id: number;
 	title: string;
+	enddate: string;
 	test_date: string;
 	test_time: string;
 	exam_type: number;

@@ -29,6 +29,10 @@ interface ExamListItemProps extends ExamresultListCardProps {
 	globalShowScore?: boolean;
 	index?: number;
 }
+const formatDateStr = (dateStr: string) => {
+	const cleaned = dateStr.replace("T", " ").replace("Z", "").split(".")[0];
+	return cleaned.slice(0, 16); // "2026-03-12 17:23"
+};
 
 const getScoreLevel = (score?: number) => {
 	if (!score) return "none";
@@ -257,9 +261,11 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 						</div>
 					) : (
 						<div className="absolute bottom-1.5 left-1.5 right-1.5 sm:bottom-2 sm:left-2 sm:right-2 text-center py-1.5 sm:py-2 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-							<XCircle className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 mx-auto mb-0.5" />
 							<p className="text-[8px] sm:text-[9px] font-semibold text-gray-600">
-								Шалгалтын үр дүн харуулах хугацаа дуусаагүй байна
+								Шалгалтын үр харуулах хугацаа
+							</p>
+							<p className="text-[8px] sm:text-[9px] font-semibold text-gray-600">
+								{formatDateStr(exam.enddate)}
 							</p>
 						</div>
 					)}
