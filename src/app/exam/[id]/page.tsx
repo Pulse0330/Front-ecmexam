@@ -1102,7 +1102,9 @@ export default function ExamPage() {
 														</Button>
 													</div>
 												</div>
-												{renderQuestion(q)}
+												<div className="flex-1 min-w-0 border-l border-gray-200 dark:border-gray-700 pl-6">
+													{renderQuestion(q)}
+												</div>
 											</div>
 										</div>
 									</CardContent>

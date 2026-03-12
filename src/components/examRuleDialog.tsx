@@ -286,10 +286,10 @@ export default function ExamRulesDialog({
 				<div className="flex-none px-3 pt-3 pb-2 sm:px-4 sm:pt-4 sm:pb-3 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-1.5 text-base sm:text-lg font-bold text-slate-900 dark:text-slate-50">
-							Таньд амжилт хүсье! 🎓
+							Амжилт хүсье! 🎓
 						</DialogTitle>
 						<DialogDescription className="text-xs sm:text-sm font-medium mt-0.5 text-slate-600 dark:text-slate-400">
-							Шалгалтын дүрэм журмыг анхааралтай уншаад эхлүүлнэ үү
+							Цахимаар шалгалт өгөх дүрмийг анхааралтай уншиж эхлүүлнэ үү
 						</DialogDescription>
 					</DialogHeader>
 
@@ -297,8 +297,8 @@ export default function ExamRulesDialog({
 					<Alert className="mt-2 border py-1.5 px-2 border-red-200 dark:border-red-800">
 						<AlertTriangle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
 						<AlertDescription className="font-semibold text-[10px] sm:text-xs text-red-900 dark:text-red-100">
-							⚠️ АНХААРУУЛГА: Хуулах оролдлого илэрвэл таны оролдлогыг бүртгэж
-							байгааг анхаарна уу.
+							⚠️ АНХААРУУЛГА: Хуулах аливаа оролдлого бүрийг системд бүртгэж
+							байгааг анхаарна уу !!
 						</AlertDescription>
 					</Alert>
 				</div>
@@ -316,7 +316,7 @@ export default function ExamRulesDialog({
 						<div className="space-y-1">
 							<SectionHeader
 								icon={Monitor}
-								title={isMobile ? "Утасны хяналт" : "Дэлгэцний хяналт"}
+								title={isMobile ? "Утасны хяналт" : "Дэлгэцийн хяналт"}
 							/>
 							<div className="space-y-2 mb-1">
 								{monitoringRules.map((rule) => (
