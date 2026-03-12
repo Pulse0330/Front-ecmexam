@@ -62,7 +62,7 @@ const getFlagConfig = (flag: number) => {
 			};
 		default:
 			return {
-				label: "Хугацаа дууссан",
+				label: "Та энэ шалгалтанд оролцоогүй байна",
 				Icon: Clock,
 				badgeClass: "bg-slate-500/80 text-white",
 				cardBorder:

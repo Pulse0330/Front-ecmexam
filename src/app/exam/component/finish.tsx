@@ -476,7 +476,7 @@ const FinishExamResultDialog = forwardRef<
 						</DialogTitle>
 						<DialogDescription className="text-sm px-2">
 							{isDadlaga
-								? "Дуусгасны дараа шалгалт дууссан тул нүүр хуудас руу шилжих болно."
+								? "Дуусгасны дараа шалгалтын үр дүн харах хуудас руу шилжих болно."
 								: "Дуусгасны дараа хариултуудыг өөрчлөх боломжгүй болно."}
 						</DialogDescription>
 					</DialogHeader>
