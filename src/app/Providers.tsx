@@ -14,25 +14,26 @@ const queryClient = new QueryClient({
 	},
 });
 
+const handler = (event: ErrorEvent) => {
+	if (!event?.message) return;
+	if (
+		event.message.includes("ChunkLoadError") ||
+		/Loading chunk [\d]+ failed/.test(event.message)
+	) {
+		window.location.reload();
+	}
+};
+
 export default function Providers({ children }: { children: React.ReactNode }) {
 	useEffect(() => {
-		const handler = (event: ErrorEvent) => {
-			if (
-				event.message.includes("ChunkLoadError") ||
-				/Loading chunk [\d]+ failed/.test(event.message)
-			) {
-				window.location.reload(); // Хуудсыг автоматаар дахин ачаална
-			}
-		};
-
 		window.addEventListener("error", handler, true);
 		return () => window.removeEventListener("error", handler, true);
 	}, []);
+
 	return (
 		<ThemeProvider attribute="class" defaultTheme="system" enableSystem={false}>
 			<QueryClientProvider client={queryClient}>
 				{children}
-				{/* <SessionCheckerProvider>{children}</SessionCheckerProvider> */}
 				<Toaster position="top-right" richColors />
 			</QueryClientProvider>
 		</ThemeProvider>

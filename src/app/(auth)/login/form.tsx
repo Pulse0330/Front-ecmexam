@@ -365,7 +365,7 @@ export function LoginForm() {
 				</Form>
 
 				<CardFooter className="flex-col gap-3 px-6 pb-6 pt-2">
-					<button
+					{/* <button
 						type="button"
 						onClick={() => setOpen(true)}
 						className="w-full flex items-center justify-between px-7 py-5
@@ -397,7 +397,7 @@ export function LoginForm() {
 								/>
 							</svg>
 						</div>
-					</button>
+					</button> */}
 					<div className="relative w-full">
 						<div className="absolute inset-0 flex items-center">
 							<span className="w-full border-t" />

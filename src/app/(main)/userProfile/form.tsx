@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
 	AlertCircle,
 	Camera,
@@ -14,7 +14,7 @@ import {
 	User2,
 	X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ import {
 import { getUserUpdateProfile } from "@/lib/api";
 import { uploadImage } from "@/utils/upload";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface UserData {
 	lastname: string;
 	firstname: string;
@@ -53,36 +54,16 @@ interface ProfileContentProps {
 interface AimagItem {
 	mAcode: string;
 	mName: string;
-	mid: number;
+	mID: number;
 	sort: number;
 	miid: string;
 	mid1: number;
-}
-
-interface AimagResponse {
-	RetResponse: {
-		ResponseMessage: string;
-		StatusCode: string;
-		ResponseCode: string;
-		ResponseType: boolean;
-	};
-	RetData: AimagItem[];
 }
 
 interface DistrictItem {
 	id: number;
 	name: string;
 	sort: number;
-}
-
-interface DistrictResponse {
-	RetResponse: {
-		ResponseMessage: string;
-		StatusCode: string;
-		ResponseCode: string;
-		ResponseType: boolean;
-	};
-	RetData: DistrictItem[];
 }
 
 interface SchoolItem {
@@ -94,16 +75,6 @@ interface SchoolItem {
 	serverip: string;
 }
 
-interface SchoolResponse {
-	RetResponse: {
-		ResponseMessage: string;
-		StatusCode: string;
-		ResponseCode: string;
-		ResponseType: boolean;
-	};
-	RetData: SchoolItem[];
-}
-
 interface ClassItem {
 	id: number;
 	class_name: string;
@@ -111,83 +82,77 @@ interface ClassItem {
 	sort: number;
 }
 
-interface ClassResponse {
-	RetResponse: {
-		ResponseMessage: string;
-		StatusCode: string;
-		ResponseCode: string;
-		ResponseType: boolean;
-	};
-	RetData: ClassItem[];
-}
-
-async function fetchAimagList(): Promise<AimagResponse> {
-	const response = await fetch("/api/sign/aimag", {
+// ─── API helpers ──────────────────────────────────────────────────────────────
+async function apiFetchAimag(): Promise<AimagItem[]> {
+	const r = await fetch("/api/sign/aimag", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({}),
 	});
-	if (!response.ok) throw new Error("Аймгийн жагсаалт татахад алдаа гарлаа");
-	return response.json();
+	if (!r.ok) throw new Error("Аймгийн жагсаалт татахад алдаа гарлаа");
+	const d = await r.json();
+	return d.RetData ?? [];
 }
 
-async function fetchDistrictList(aimagId: number): Promise<DistrictResponse> {
-	const response = await fetch("/api/sign/district", {
+async function apiFetchDistrict(aimagId: number): Promise<DistrictItem[]> {
+	const r = await fetch("/api/sign/district", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ aimag_id: aimagId }),
 	});
-	if (!response.ok)
-		throw new Error("Дүүрэг/сумын жагсаалт татахад алдаа гарлаа");
-	return response.json();
+	if (!r.ok) throw new Error("Дүүрэг/сумын жагсаалт татахад алдаа гарлаа");
+	const d = await r.json();
+	return d.RetData ?? [];
 }
 
-async function fetchSchoolList(
+async function apiFetchSchool(
 	aimagId: number,
 	districtId: number,
-): Promise<SchoolResponse> {
-	const response = await fetch("/api/sign/surguuli", {
+): Promise<SchoolItem[]> {
+	const r = await fetch("/api/sign/surguuli", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ aimag_id: aimagId, district_id: districtId }),
 	});
-	if (!response.ok) throw new Error("Сургуулийн жагсаалт татахад алдаа гарлаа");
-	return response.json();
+	if (!r.ok) throw new Error("Сургуулийн жагсаалт татахад алдаа гарлаа");
+	const d = await r.json();
+	return d.RetData ?? [];
 }
 
-async function fetchClassList(
+async function apiFetchClass(
 	database: string,
 	serverip: string,
-	accademicId: string = "0",
-	classId: string = "0",
-): Promise<ClassResponse> {
-	const response = await fetch("/api/sign/angi", {
+): Promise<ClassItem[]> {
+	const r = await fetch("/api/sign/angi", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
 			database,
 			serverip,
-			accademic_id: accademicId,
-			class_id: classId,
+			accademic_id: "0",
+			class_id: "0",
 		}),
 	});
-	if (!response.ok) throw new Error("Ангийн жагсаалт татахад алдаа гарлаа");
-	return response.json();
+	if (!r.ok) throw new Error("Ангийн жагсаалт татахад алдаа гарлаа");
+	const d = await r.json();
+	return d.RetData ?? [];
 }
 
+// ─── Component ────────────────────────────────────────────────────────────────
 export function ProfileContent({ user, userId }: ProfileContentProps) {
 	const queryClient = useQueryClient();
-	const [selectedImage, setSelectedImage] = useState<File | null>(null);
-	const [imagePreview, setImagePreview] = useState<string>("");
-	const [selectedAimag, setSelectedAimag] = useState<string>("");
-	const [selectedDistrict, setSelectedDistrict] = useState<string>("");
-	const [selectedSchool, setSelectedSchool] = useState<string>("");
-	const [selectedClass, setSelectedClass] = useState<string>("");
-	const [isUploadingImage, setIsUploadingImage] = useState(false);
-	const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
+
+	// ── UI ────────────────────────────────────────────────────────────────────
 	const [showToast, setShowToast] = useState(false);
 	const [isEditing, setIsEditing] = useState(false);
 
+	// ── Зураг ────────────────────────────────────────────────────────────────
+	const [selectedImage, setSelectedImage] = useState<File | null>(null);
+	const [imagePreview, setImagePreview] = useState<string>("");
+	const [isUploadingImage, setIsUploadingImage] = useState(false);
+	const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
+
+	// ── Form ──────────────────────────────────────────────────────────────────
 	const [editForm, setEditForm] = useState({
 		lastname: user.lastname || "",
 		firstname: user.firstname || "",
@@ -204,102 +169,182 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 		});
 	}, [user.lastname, user.firstname, user.email, user.Phone]);
 
-	const { data: aimagData, isLoading: aimagLoading } = useQuery<AimagResponse>({
-		queryKey: ["aimagList"],
-		queryFn: fetchAimagList,
+	// ── Cascade select — list ─────────────────────────────────────────────────
+	const [aimagList, setAimagList] = useState<AimagItem[]>([]);
+	const [districtList, setDistrictList] = useState<DistrictItem[]>([]);
+	const [schoolList, setSchoolList] = useState<SchoolItem[]>([]);
+	const [classList, setClassList] = useState<ClassItem[]>([]);
+
+	// ── Cascade select — selected objects ─────────────────────────────────────
+	const [selectedAimag, setSelectedAimag] = useState<AimagItem | null>(null);
+	const [selectedDistrict, setSelectedDistrict] = useState<DistrictItem | null>(
+		null,
+	);
+	const [selectedSchool, setSelectedSchool] = useState<SchoolItem | null>(null);
+	const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
+
+	// ── Cascade select — loading ──────────────────────────────────────────────
+	const [aimagLoading, setAimagLoading] = useState(true);
+	const [districtLoading, setDistrictLoading] = useState(false);
+	const [schoolLoading, setSchoolLoading] = useState(false);
+	const [classLoading, setClassLoading] = useState(false);
+
+	// ── user утгыг ref-д capture хийнэ — Biome auto-fix-аас зайлсхийх ────────
+	const initRef = useRef({
+		aimag_id: user.aimag_id,
+		sym_id: user.sym_id,
+		sch_name: user.sch_name,
+		studentgroupname: user.studentgroupname,
 	});
 
+	// ── Mount: нэг удаа cascade initialize ───────────────────────────────────
 	useEffect(() => {
-		if (aimagData?.RetData && user.aimag_id) {
-			const userAimag = aimagData.RetData.find((a) => a.mid === user.aimag_id);
-			if (userAimag) {
-				setSelectedAimag(userAimag.mAcode);
+		const u = initRef.current;
+		(async () => {
+			try {
+				const aimags = await apiFetchAimag();
+				setAimagList(aimags);
+
+				if (!u.aimag_id) return;
+				const userAimag = aimags.find((a) => a.mID === u.aimag_id);
+				if (!userAimag) return;
+				setSelectedAimag(userAimag);
+
+				setDistrictLoading(true);
+				try {
+					const districts = await apiFetchDistrict(userAimag.mID);
+					setDistrictList(districts);
+
+					if (!u.sym_id) return;
+					const userDistrict = districts.find((d) => d.id === u.sym_id);
+					if (!userDistrict) return;
+					setSelectedDistrict(userDistrict);
+
+					setSchoolLoading(true);
+					try {
+						const schools = await apiFetchSchool(
+							userAimag.mID,
+							userDistrict.id,
+						);
+						setSchoolList(schools);
+
+						if (!u.sch_name) return;
+						const userSchool = schools.find((s) => s.sName === u.sch_name);
+						if (!userSchool) return;
+						setSelectedSchool(userSchool);
+
+						setClassLoading(true);
+						try {
+							const classes = await apiFetchClass(
+								userSchool.dbname,
+								userSchool.serverip,
+							);
+							setClassList(classes);
+
+							if (!u.studentgroupname) return;
+							const userClass = classes.find(
+								(c) => c.class_name === u.studentgroupname,
+							);
+							if (userClass) setSelectedClass(userClass);
+						} finally {
+							setClassLoading(false);
+						}
+					} finally {
+						setSchoolLoading(false);
+					}
+				} finally {
+					setDistrictLoading(false);
+				}
+			} catch {
+				setAimagList([]);
+			} finally {
+				setAimagLoading(false);
 			}
-		}
-	}, [aimagData, user.aimag_id]);
+		})();
+	}, []);
 
-	const selectedAimagData = aimagData?.RetData?.find(
-		(a) => a.mAcode === selectedAimag,
-	);
+	// ── Аймаг солих ───────────────────────────────────────────────────────────
+	const handleAimagChange = useCallback(
+		async (mAcode: string) => {
+			const aimag = aimagList.find((a) => a.mAcode === mAcode);
+			if (!aimag) return;
+			setSelectedAimag(aimag);
+			setSelectedDistrict(null);
+			setSelectedSchool(null);
+			setSelectedClass(null);
+			setDistrictList([]);
+			setSchoolList([]);
+			setClassList([]);
 
-	const { data: districtData, isLoading: districtLoading } =
-		useQuery<DistrictResponse>({
-			queryKey: ["districtList", selectedAimagData?.mid],
-			queryFn: () => {
-				if (!selectedAimagData?.mid) throw new Error("Аймаг сонгоогүй байна");
-				return fetchDistrictList(selectedAimagData.mid);
-			},
-			enabled: !!selectedAimagData?.mid,
-		});
-
-	useEffect(() => {
-		if (districtData?.RetData && user.sym_id) {
-			setSelectedDistrict(user.sym_id.toString());
-		}
-	}, [districtData, user.sym_id]);
-
-	const selectedDistrictData = districtData?.RetData?.find(
-		(d) => d.id.toString() === selectedDistrict,
-	);
-
-	const { data: schoolData, isLoading: schoolLoading } =
-		useQuery<SchoolResponse>({
-			queryKey: [
-				"schoolList",
-				selectedAimagData?.mid,
-				selectedDistrictData?.id,
-			],
-			queryFn: () => {
-				if (!selectedAimagData?.mid || !selectedDistrictData?.id)
-					throw new Error("Аймаг эсвэл дүүрэг сонгоогүй байна");
-				return fetchSchoolList(selectedAimagData.mid, selectedDistrictData.id);
-			},
-			enabled: !!selectedAimagData?.mid && !!selectedDistrictData?.id,
-		});
-
-	useEffect(() => {
-		if (schoolData?.RetData && user.sch_name) {
-			setSelectedSchool(user.sch_name);
-		}
-	}, [schoolData, user.sch_name]);
-
-	const selectedSchoolData = schoolData?.RetData?.find(
-		(s) => s.sName === selectedSchool,
-	);
-
-	const { data: classData, isLoading: classLoading } = useQuery<ClassResponse>({
-		queryKey: [
-			"classList",
-			selectedSchoolData?.dbname,
-			selectedSchoolData?.serverip,
-		],
-		queryFn: () => {
-			if (!selectedSchoolData?.dbname || !selectedSchoolData?.serverip)
-				throw new Error("Сургууль сонгоогүй байна");
-			return fetchClassList(
-				selectedSchoolData.dbname,
-				selectedSchoolData.serverip,
-			);
+			setDistrictLoading(true);
+			try {
+				const districts = await apiFetchDistrict(aimag.mID);
+				setDistrictList(districts);
+			} catch {
+				setDistrictList([]);
+			} finally {
+				setDistrictLoading(false);
+			}
 		},
-		enabled: !!selectedSchoolData?.dbname && !!selectedSchoolData?.serverip,
-	});
+		[aimagList],
+	);
 
-	useEffect(() => {
-		if (classData?.RetData && user.studentgroupname) {
-			const userClass = classData.RetData.find(
-				(c) => c.class_name === user.studentgroupname,
-			);
-			if (userClass) {
-				setSelectedClass(userClass.studentgroupid);
+	// ── Дүүрэг солих ─────────────────────────────────────────────────────────
+	const handleDistrictChange = useCallback(
+		async (idStr: string) => {
+			const district = districtList.find((d) => d.id.toString() === idStr);
+			if (!district || !selectedAimag) return;
+			setSelectedDistrict(district);
+			setSelectedSchool(null);
+			setSelectedClass(null);
+			setSchoolList([]);
+			setClassList([]);
+
+			setSchoolLoading(true);
+			try {
+				const schools = await apiFetchSchool(selectedAimag.mID, district.id);
+				setSchoolList(schools);
+			} catch {
+				setSchoolList([]);
+			} finally {
+				setSchoolLoading(false);
 			}
-		}
-	}, [classData, user.studentgroupname]);
+		},
+		[districtList, selectedAimag],
+	);
 
-	const aimagList = aimagData?.RetData || [];
-	const districtList = districtData?.RetData || [];
-	const schoolList = schoolData?.RetData || [];
-	const classList = classData?.RetData || [];
+	// ── Сургууль солих ────────────────────────────────────────────────────────
+	const handleSchoolChange = useCallback(
+		async (sName: string) => {
+			const school = schoolList.find((s) => s.sName === sName);
+			if (!school) return;
+			setSelectedSchool(school);
+			setSelectedClass(null);
+			setClassList([]);
 
+			setClassLoading(true);
+			try {
+				const classes = await apiFetchClass(school.dbname, school.serverip);
+				setClassList(classes);
+			} catch {
+				setClassList([]);
+			} finally {
+				setClassLoading(false);
+			}
+		},
+		[schoolList],
+	);
+
+	// ── Анги солих ────────────────────────────────────────────────────────────
+	const handleClassChange = useCallback(
+		(studentgroupid: string) => {
+			const cls = classList.find((c) => c.studentgroupid === studentgroupid);
+			setSelectedClass(cls ?? null);
+		},
+		[classList],
+	);
+
+	// ── Mutation ──────────────────────────────────────────────────────────────
 	const updateMutation = useMutation({
 		mutationFn: async (data: {
 			firstname: string;
@@ -349,11 +394,12 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 		},
 	});
 
+	// ── Зураг WebP хөрвүүлэлт ────────────────────────────────────────────────
 	const convertToWebP = async (
 		file: File,
-		quality: number = 0.8,
-		maxWidth: number = 1920,
-		maxHeight: number = 1080,
+		quality = 0.85,
+		maxWidth = 1920,
+		maxHeight = 1080,
 	): Promise<Blob> => {
 		return new Promise((resolve, reject) => {
 			const img = new Image();
@@ -361,38 +407,30 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 			const ctx = canvas.getContext("2d");
 
 			img.onload = () => {
-				let width = img.width;
-				let height = img.height;
-
+				let { width, height } = img;
 				if (width > maxWidth || height > maxHeight) {
 					const ratio = Math.min(maxWidth / width, maxHeight / height);
 					width = width * ratio;
 					height = height * ratio;
 				}
-
 				canvas.width = width;
 				canvas.height = height;
-
 				ctx?.drawImage(img, 0, 0, width, height);
-
 				canvas.toBlob(
-					(blob) => {
-						if (blob) {
-							resolve(blob);
-						} else {
-							reject(new Error("WebP хөрвүүлэлт амжилтгүй"));
-						}
-					},
+					(blob) =>
+						blob
+							? resolve(blob)
+							: reject(new Error("WebP хөрвүүлэлт амжилтгүй")),
 					"image/webp",
 					quality,
 				);
 			};
-
 			img.onerror = () => reject(new Error("Зураг уншихад алдаа гарлаа"));
 			img.src = URL.createObjectURL(file);
 		});
 	};
 
+	// ── Зураг upload ──────────────────────────────────────────────────────────
 	const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
@@ -408,36 +446,31 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 
 		try {
 			setIsUploadingImage(true);
-
-			const webpBlob = await convertToWebP(file, 0.85);
-			const previewUrl = URL.createObjectURL(webpBlob);
-			setImagePreview(previewUrl);
+			const webpBlob = await convertToWebP(file);
+			setImagePreview(URL.createObjectURL(webpBlob));
 
 			const formData = new FormData();
-			const webpFileName = file.name.replace(/\.[^/.]+$/, ".webp");
-			formData.append("file", webpBlob, webpFileName);
+			formData.append(
+				"file",
+				webpBlob,
+				file.name.replace(/\.[^/.]+$/, ".webp"),
+			);
 
 			const result = await uploadImage(formData);
-
-			// UploadFileResult shape: { fileStatus: number, message: string, file: { url, ... } }
-			if (result.fileStatus !== 0) {
+			if (result.fileStatus !== 0)
 				throw new Error(result.message || "Upload амжилтгүй боллоо");
-			}
-
 			const imageUrl = result.file?.url;
-			if (!imageUrl) {
-				throw new Error("Upload хариуд URL байхгүй байна");
-			}
+			if (!imageUrl) throw new Error("Upload хариуд URL байхгүй байна");
 
 			setUploadedImageUrl(imageUrl);
 			setSelectedImage(file);
 		} catch (error: unknown) {
 			console.error("❌ Зураг upload хийхэд алдаа:", error);
-			const errorMessage =
+			alert(
 				error instanceof Error
 					? error.message
-					: "Зураг upload хийхэд алдаа гарлаа";
-			alert(errorMessage);
+					: "Зураг upload хийхэд алдаа гарлаа",
+			);
 			setImagePreview("");
 			setSelectedImage(null);
 			setUploadedImageUrl("");
@@ -445,129 +478,47 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 			setIsUploadingImage(false);
 		}
 	};
-	// 	const file = e.target.files?.[0];
-	// 	if (!file) return;
 
-	// 	if (!file.type.startsWith("image/")) {
-	// 		alert("Зөвхөн зураг файл сонгоно уу");
-	// 		return;
-	// 	}
-	// 	if (file.size > 10 * 1024 * 1024) {
-	// 		alert("Зургийн хэмжээ 10MB-аас бага байх ёстой");
-	// 		return;
-	// 	}
-
-	// 	try {
-	// 		setIsUploadingImage(true);
-
-	// 		const webpBlob = await convertToWebP(file, 0.85);
-	// 		const previewUrl = URL.createObjectURL(webpBlob);
-	// 		setImagePreview(previewUrl);
-
-	// 		const formData = new FormData();
-	// 		const webpFileName = file.name.replace(/\.[^/.]+$/, ".webp");
-	// 		formData.append("file", webpBlob, webpFileName);
-
-	// 		const result = await uploadImage(formData);
-
-	// 		let imageUrl = "";
-	// 		if (Array.isArray(result) && result.length > 0) {
-	// 			imageUrl = result[0]?.url || result[0]?.path || result[0];
-	// 		} else if (result?.url) {
-	// 			imageUrl = result.url;
-	// 		} else if (typeof result === "string") {
-	// 			imageUrl = result;
-	// 		}
-
-	// 		if (imageUrl) {
-	// 			setUploadedImageUrl(imageUrl);
-	// 			setSelectedImage(file);
-	// 		} else {
-	// 			throw new Error("Upload хариу буруу байна");
-	// 		}
-	// 	} catch (error: unknown) {
-	// 		console.error("❌ Зураг upload хийхэд алдаа:", error);
-	// 		const errorMessage =
-	// 			error instanceof Error
-	// 				? error.message
-	// 				: "Зураг upload хийхэд алдаа гарлаа";
-	// 		alert(errorMessage);
-	// 		setImagePreview("");
-	// 		setSelectedImage(null);
-	// 		setUploadedImageUrl("");
-	// 	} finally {
-	// 		setIsUploadingImage(false);
-	// 	}
-	// };
-
+	// ── Submit ────────────────────────────────────────────────────────────────
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
 		let finalImageUrl = "";
 		if (uploadedImageUrl) {
-			if (typeof uploadedImageUrl === "string") {
-				finalImageUrl = uploadedImageUrl;
-			} else if (uploadedImageUrl && typeof uploadedImageUrl === "object") {
-				const imgObj = uploadedImageUrl as { FileWebUrl?: string };
-				finalImageUrl = imgObj.FileWebUrl || "";
-			}
+			finalImageUrl =
+				typeof uploadedImageUrl === "string"
+					? uploadedImageUrl
+					: (uploadedImageUrl as { FileWebUrl?: string }).FileWebUrl || "";
 		} else if (user.img_url) {
-			if (typeof user.img_url === "string") {
-				finalImageUrl = user.img_url;
-			} else if (typeof user.img_url === "object" && user.img_url !== null) {
-				const imgObj = user.img_url as { FileWebUrl?: string };
-				finalImageUrl = imgObj.FileWebUrl || "";
-			}
+			finalImageUrl =
+				typeof user.img_url === "string"
+					? user.img_url
+					: (user.img_url as unknown as { FileWebUrl?: string }).FileWebUrl ||
+						"";
 		}
 
-		const profileData = {
+		updateMutation.mutate({
 			firstname: editForm.firstname || user.firstname,
 			lastname: editForm.lastname || user.lastname,
 			phone: editForm.Phone || user.Phone || "",
 			email: editForm.email || user.email,
-			aimag_id: selectedAimagData?.mid || user.aimag_id || 0,
-			aimagname: selectedAimagData?.mName || user.aimag_name || "",
-			sym_id: selectedDistrictData?.id || user.sym_id || 0,
-			symname: selectedDistrictData?.name || user.sym_name || "",
+			aimag_id: selectedAimag?.mID ?? user.aimag_id ?? 0,
+			aimagname: selectedAimag?.mName ?? user.aimag_name ?? "",
+			sym_id: selectedDistrict?.id ?? user.sym_id ?? 0,
+			symname: selectedDistrict?.name ?? user.sym_name ?? "",
 			regnumber: "",
-			schoolname: selectedSchool || user.sch_name || "",
-			schooldb: selectedSchoolData?.dbname || user.schooldb || "EDU_CONFIG",
-			studentgroupid: selectedClass || "",
+			schoolname: selectedSchool?.sName ?? user.sch_name ?? "",
+			schooldb: selectedSchool?.dbname ?? user.schooldb ?? "EDU_CONFIG",
+			studentgroupid: selectedClass?.studentgroupid ?? "",
 			studentgroupname:
-				classList.find((c) => c.studentgroupid === selectedClass)?.class_name ||
-				user.studentgroupname ||
-				"",
+				selectedClass?.class_name ?? user.studentgroupname ?? "",
 			user_id: userId,
 			img_url: String(finalImageUrl),
 			password: "",
-		};
-
-		if (typeof profileData.img_url !== "string") {
-			alert("Техникийн алдаа: Зургийн URL буруу байна");
-			return;
-		}
-
-		updateMutation.mutate(profileData);
+		});
 	};
 
-	const handleAimagChange = (value: string) => {
-		setSelectedAimag(value);
-		setSelectedDistrict("");
-		setSelectedSchool("");
-		setSelectedClass("");
-	};
-
-	const handleDistrictChange = (value: string) => {
-		setSelectedDistrict(value);
-		setSelectedSchool("");
-		setSelectedClass("");
-	};
-
-	const handleSchoolChange = (value: string) => {
-		setSelectedSchool(value);
-		setSelectedClass("");
-	};
-
+	// ── Helper ────────────────────────────────────────────────────────────────
 	const getInitials = (name: string) => {
 		if (!name) return "??";
 		return name
@@ -578,9 +529,10 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 			.slice(0, 2);
 	};
 
+	// ─────────────────────────────────────────────────────────────────────────
 	return (
-		<div className="min-h-screen  p-4 md:p-6 lg:p-8">
-			{/* Toast Notification */}
+		<div className="min-h-screen p-4 md:p-6 lg:p-8">
+			{/* Toast */}
 			{showToast && (
 				<div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-5 fade-in duration-500">
 					<div className="bg-linear-to-r from-emerald-500 to-green-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 min-w-[280px]">
@@ -604,10 +556,9 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 			<div className="max-w-6xl mx-auto">
 				<form onSubmit={handleSubmit}>
 					<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-						{/* Left Column - Profile Card */}
+						{/* ── Left Column ── */}
 						<div className="lg:col-span-1">
 							<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-8 relative overflow-hidden">
-								{/* Gradient Background Accent */}
 								<div className="absolute top-0 left-0 right-0 h-32" />
 
 								<div className="relative space-y-6">
@@ -632,7 +583,6 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 													>
 														<Camera className="w-5 h-5 text-white" />
 													</label>
-
 													{selectedImage && (
 														<button
 															type="button"
@@ -760,15 +710,16 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 							</div>
 						</div>
 
-						{/* Right Column - Combined View/Edit Forms */}
+						{/* ── Right Column ── */}
 						<div className="lg:col-span-2">
-							{/* Edit Mode - 2 Column Layout */}
+							{/* Edit Mode */}
 							{isEditing && (
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 									{/* Personal Info */}
 									<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-6">
 										<div className="space-y-4">
-											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											{/* Овог */}
+											<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 												<div className="flex items-center gap-3 flex-1">
 													<User2 className="w-5 h-5 text-blue-500" />
 													<div className="flex-1">
@@ -791,7 +742,8 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												</div>
 											</div>
 
-											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											{/* Нэр */}
+											<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 												<div className="flex items-center gap-3 flex-1">
 													<User2 className="w-5 h-5 text-indigo-500" />
 													<div className="flex-1">
@@ -814,7 +766,8 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												</div>
 											</div>
 
-											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											{/* Имэйл */}
+											<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 												<div className="flex items-center gap-3 flex-1">
 													<Mail className="w-5 h-5 text-emerald-500" />
 													<div className="flex-1">
@@ -838,7 +791,8 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												</div>
 											</div>
 
-											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											{/* Утас */}
+											<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 												<div className="flex items-center gap-3 flex-1">
 													<Phone className="w-5 h-5 text-cyan-500" />
 													<div className="flex-1">
@@ -866,7 +820,8 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 									{/* Location & School */}
 									<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-6">
 										<div className="space-y-4">
-											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											{/* Аймаг */}
+											<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 												<div className="flex items-center gap-3 flex-1">
 													<MapPin className="w-5 h-5 text-emerald-500" />
 													<div className="flex-1">
@@ -874,11 +829,11 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 															Аймаг/Хот
 														</p>
 														<Select
-															value={selectedAimag}
+															value={selectedAimag?.mAcode ?? ""}
 															onValueChange={handleAimagChange}
 															disabled={aimagLoading}
 														>
-															<SelectTrigger className="h-9 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus:ring-0 focus-visible:ring-0">
+															<SelectTrigger className="h-9 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus:ring-0 focus-visible:ring-0">
 																<SelectValue
 																	placeholder={
 																		aimagLoading
@@ -889,7 +844,7 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 															</SelectTrigger>
 															<SelectContent>
 																{aimagList.map((a) => (
-																	<SelectItem key={a.mid} value={a.mAcode}>
+																	<SelectItem key={a.mAcode} value={a.mAcode}>
 																		{a.mName}
 																	</SelectItem>
 																))}
@@ -899,7 +854,8 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												</div>
 											</div>
 
-											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											{/* Дүүрэг/Сум */}
+											<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 												<div className="flex items-center gap-3 flex-1">
 													<MapPin className="w-5 h-5 text-cyan-500" />
 													<div className="flex-1">
@@ -907,11 +863,11 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 															Дүүрэг/Сум
 														</p>
 														<Select
-															value={selectedDistrict}
+															value={selectedDistrict?.id.toString() ?? ""}
 															onValueChange={handleDistrictChange}
 															disabled={!selectedAimag || districtLoading}
 														>
-															<SelectTrigger className="h-9 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus:ring-0 focus-visible:ring-0">
+															<SelectTrigger className="h-9 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus:ring-0 focus-visible:ring-0">
 																<SelectValue
 																	placeholder={
 																		districtLoading
@@ -937,55 +893,55 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												</div>
 											</div>
 
-											<div className="flex items-start justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											{/* Сургууль */}
+											<div className="flex items-start p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 												<div className="flex items-start gap-3 flex-1 min-w-0">
 													<School className="w-5 h-5 text-indigo-500 mt-1 shrink-0" />
 													<div className="flex-1 min-w-0 w-full">
 														<p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
 															Сургууль
 														</p>
-														<div className="relative">
-															<Select
-																value={selectedSchool}
-																onValueChange={handleSchoolChange}
-																disabled={!selectedDistrict || schoolLoading}
+														<Select
+															value={selectedSchool?.sName ?? ""}
+															onValueChange={handleSchoolChange}
+															disabled={!selectedDistrict || schoolLoading}
+														>
+															<SelectTrigger
+																className="w-full h-auto py-2 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus:ring-0 focus-visible:ring-0"
+																style={{ whiteSpace: "normal" }}
 															>
-																<SelectTrigger
-																	className="w-full h-auto min-h-40px py-2 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus:ring-0 focus-visible:ring-0"
-																	style={{ whiteSpace: "normal" }}
-																>
-																	<div className="text-left w-full pr-4 whitespace-normal wrap-break-words leading-tight">
-																		{selectedSchool || (
-																			<span className="text-slate-500">
-																				{schoolLoading
-																					? "Уншиж байна..."
-																					: !selectedDistrict
-																						? "Дүүрэг сонгоно уу"
-																						: user.sch_name || "Сонгох"}
-																			</span>
-																		)}
-																	</div>
-																</SelectTrigger>
-																<SelectContent className="max-w-[90vw] sm:max-w-md">
-																	{schoolList.map((s, i) => (
-																		<SelectItem
-																			key={`${s.dbname}-${i}`}
-																			value={s.sName}
-																			className="whitespace-normal py-3 text-sm leading-tight min-h-40px"
-																		>
-																			<div className="whitespace-normal wrap-break-words">
-																				{s.sName}
-																			</div>
-																		</SelectItem>
-																	))}
-																</SelectContent>
-															</Select>
-														</div>
+																<div className="text-left w-full pr-4 whitespace-normal leading-tight">
+																	{selectedSchool?.sName || (
+																		<span className="text-slate-500">
+																			{schoolLoading
+																				? "Уншиж байна..."
+																				: !selectedDistrict
+																					? "Дүүрэг сонгоно уу"
+																					: user.sch_name || "Сонгох"}
+																		</span>
+																	)}
+																</div>
+															</SelectTrigger>
+															<SelectContent className="max-w-[90vw] sm:max-w-md">
+																{schoolList.map((s, i) => (
+																	<SelectItem
+																		key={`${s.dbname}-${i}`}
+																		value={s.sName}
+																		className="whitespace-normal py-3 text-sm leading-tight"
+																	>
+																		<div className="whitespace-normal">
+																			{s.sName}
+																		</div>
+																	</SelectItem>
+																))}
+															</SelectContent>
+														</Select>
 													</div>
 												</div>
 											</div>
 
-											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											{/* Анги */}
+											<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 												<div className="flex items-center gap-3 flex-1">
 													<School className="w-5 h-5 text-violet-500" />
 													<div className="flex-1">
@@ -993,11 +949,11 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 															Анги
 														</p>
 														<Select
-															value={selectedClass}
-															onValueChange={setSelectedClass}
+															value={selectedClass?.studentgroupid ?? ""}
+															onValueChange={handleClassChange}
 															disabled={!selectedSchool || classLoading}
 														>
-															<SelectTrigger className="h-9 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus:ring-0 focus-visible:ring-0">
+															<SelectTrigger className="h-9 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus:ring-0 focus-visible:ring-0">
 																<SelectValue
 																	placeholder={
 																		classLoading
@@ -1029,12 +985,12 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 								</div>
 							)}
 
-							{/* Info Display when not editing */}
+							{/* View Mode */}
 							{!isEditing && (
 								<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-6">
 									<div className="space-y-4">
 										{user.aimag_name && (
-											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 												<div className="flex items-center gap-3">
 													<MapPin className="w-5 h-5 text-emerald-500" />
 													<div>
@@ -1050,7 +1006,7 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 										)}
 
 										{user.sym_name && (
-											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 												<div className="flex items-center gap-3">
 													<MapPin className="w-5 h-5 text-cyan-500" />
 													<div>
@@ -1066,14 +1022,14 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 										)}
 
 										{user.sch_name && (
-											<div className="flex items-start justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-start p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 												<div className="flex items-start gap-3">
 													<School className="w-5 h-5 text-indigo-500 mt-0.5 shrink-0" />
 													<div className="flex-1 min-w-0">
 														<p className="text-xs text-slate-500 dark:text-slate-400">
 															Сургууль
 														</p>
-														<p className="text-sm font-semibold text-slate-900 dark:text-white wrap-break-words">
+														<p className="text-sm font-semibold text-slate-900 dark:text-white break-words">
 															{user.sch_name}
 														</p>
 													</div>
@@ -1082,7 +1038,7 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 										)}
 
 										{user.studentgroupname && (
-											<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 												<div className="flex items-center gap-3">
 													<School className="w-5 h-5 text-violet-500" />
 													<div>

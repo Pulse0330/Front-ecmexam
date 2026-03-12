@@ -8,6 +8,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import UseAnimations from "react-useanimations";
 import loading2 from "react-useanimations/lib/loading2";
+import MathContent from "@/app/exam/component/examUtils/MathContent";
 import StyledBackButton from "@/components/backButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -890,7 +891,7 @@ function ExamResultDetailPage() {
 														{question.question_name &&
 															question.question_name.trim() !== "" && (
 																<div className="mb-3">
-																	{safeParse(question.question_name)}
+																	<MathContent html={question.question_name} />
 																</div>
 															)}
 

@@ -127,15 +127,13 @@ const FinishExamResultDialog = forwardRef<
 					}
 
 					if (isAutoSubmitting) {
-						toast.success(" Цаг дууслаа. Шалгалт автоматаар дууслаа!");
+						toast.success("⏰ Цаг дууслаа. Шалгалт автоматаар дууслаа!");
 					} else {
 						toast.success("✅ Шалгалт амжилттай дууслаа");
 					}
 
 					if (testId) {
 						setFinishedTestId(testId);
-
-						// ✅ Цаг дуусахад 5 секундийн дараа автоматаар examList руу шилжих
 						if (isAutoSubmitting) {
 							autoRedirectTimerRef.current = setTimeout(() => {
 								router.push("/Lists/examResult");
@@ -144,11 +142,15 @@ const FinishExamResultDialog = forwardRef<
 					}
 
 					setIsAutoSubmitting(false);
+				} else if (res.RetResponse.ResponseMessage?.includes("илгээгдсэн")) {
+					// Аль хэдийн дуусгасан → шууд redirect
+					toast.info("Шалгалтын дүн аль хэдийн илгээгдсэн байна.");
+					setOpen(false);
+					setIsAutoSubmitting(false);
+					setTimeout(() => {
+						router.push("/Lists/examResult");
+					}, 1500);
 				} else {
-					console.error(
-						"❌ Finish exam failed:",
-						res.RetResponse.ResponseMessage,
-					);
 					toast.error(res.RetResponse.ResponseMessage);
 					setOpen(false);
 					setIsAutoSubmitting(false);

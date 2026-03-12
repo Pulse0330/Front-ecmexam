@@ -33,17 +33,9 @@ function MathContent({ html }: MathContentProps) {
 					containers.forEach((container: Element) => {
 						const el = container as HTMLElement;
 						const hasTable = container.querySelector("mjx-mtable, mtable");
-						if (hasTable) {
-							el.style.display = "block";
-							el.style.maxWidth = "100%";
-							el.style.overflowX = "auto";
-							el.style.overflowY = "hidden";
-						} else {
-							el.style.display = "block";
-							el.style.maxWidth = "100%";
-							el.style.overflow = "visible";
-							el.style.whiteSpace = "normal";
-						}
+						el.style.display = "block";
+						el.style.maxWidth = "100%";
+						el.style.overflow = hasTable ? "auto" : "visible";
 					});
 				} catch (err) {
 					console.error("MathJax rendering error:", err);
@@ -56,24 +48,53 @@ function MathContent({ html }: MathContentProps) {
 		} else {
 			renderMath();
 		}
-	}, []); // ✅ html шууд dependency болгох
-
-	const cleanedHtml = cleanHtml(html); // render дотор тооцно
+	}, []);
 
 	return (
 		<div
 			ref={mathRef}
-			dangerouslySetInnerHTML={{ __html: cleanedHtml }}
+			dangerouslySetInnerHTML={{ __html: cleanHtml(html) }}
 			className="math-content text-gray-900 dark:text-gray-100"
 			style={{
 				maxWidth: "100%",
 				overflow: "visible",
-				wordWrap: "break-word",
 				overflowWrap: "break-word",
-				display: "block",
 			}}
 		/>
 	);
 }
 
+// ✅ Асуулт + Хариулт хажуу тал layout
+interface QuestionRowProps {
+	questionNumber: number;
+	questionHtml: string;
+	solutionHtml?: string;
+}
+
+function QuestionRow({
+	questionNumber,
+	questionHtml,
+	solutionHtml,
+}: QuestionRowProps) {
+	return (
+		<div className="flex flex-row items-start gap-6 w-full py-3">
+			{/* Зүүн тал: дугаар + асуулт */}
+			<div className="flex flex-row items-start gap-2 flex-1 min-w-0">
+				<span className="bg-blue-500 text-white rounded-md px-2 py-0.5 text-sm font-semibold shrink-0 mt-0.5">
+					{questionNumber}
+				</span>
+				<MathContent html={questionHtml} />
+			</div>
+
+			{/* Баруун тал: хариулт */}
+			{solutionHtml && (
+				<div className="flex-1 min-w-0 border-l border-gray-200 dark:border-gray-700 pl-4">
+					<MathContent html={solutionHtml} />
+				</div>
+			)}
+		</div>
+	);
+}
+
+export { MathContent, QuestionRow };
 export default memo(MathContent);
