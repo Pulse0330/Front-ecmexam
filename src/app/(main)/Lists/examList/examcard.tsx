@@ -96,7 +96,7 @@ export default function ExamCard({
 
 	const handleRulesConfirm = () => {
 		if (selectedExamId) {
-			router.push(`/exam/${selectedExamId}`);
+			router.replace(`/exam/${selectedExamId}`);
 		}
 	};
 

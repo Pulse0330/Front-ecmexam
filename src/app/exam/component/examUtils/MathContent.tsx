@@ -8,19 +8,24 @@ interface MathContentProps {
 }
 
 function cleanHtml(raw: string): string {
-	return raw
-		.replace(/&nbsp;/g, " ")
-		.replace(/&amp;/g, "&")
-		.replace(/&lt;/g, "<")
-		.replace(/&gt;/g, ">")
-		.replace(/&quot;/g, '"')
-		.replace(/&#39;/g, "'");
+	return (
+		raw
+			.replace(/&nbsp;/g, " ")
+			.replace(/&amp;/g, "&")
+			.replace(/&lt;/g, "<")
+			.replace(/&gt;/g, ">")
+			.replace(/&quot;/g, '"')
+			.replace(/&#39;/g, "'")
+			// MathML дотор Cyrillic О → Latin O
+			.replace(/(<m[a-z]+[^>]*>)\s*О\s*(<\/m[a-z]+>)/g, "$1O$2")
+	);
 }
 
 // ---- MathContent ----
 function MathContent({ html }: MathContentProps) {
 	const mathRef = useRef<HTMLDivElement>(null);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: html өөрчлөгдөхөд MathJax дахин render хийх шаардлагатай
 	useEffect(() => {
 		const renderMath = async () => {
 			if (!mathRef.current || !window.MathJax) return;
@@ -35,23 +40,24 @@ function MathContent({ html }: MathContentProps) {
 				const containers = mathRef.current.querySelectorAll("mjx-container");
 				containers.forEach((container: Element) => {
 					const el = container as HTMLElement;
+					const hasMatrix = !!container.querySelector("mjx-mtable, mtable");
+					// MathJax 3 CHTML → "true", SVG → "block"
 					const isDisplayMode =
 						el.getAttribute("display") === "true" ||
 						el.getAttribute("display") === "block";
 
-					if (isDisplayMode) {
-						// Тусдаа мөрт орших display math
+					if (hasMatrix || isDisplayMode) {
 						el.style.cssText = "";
 						el.style.display = "block";
-						el.style.overflowX = "auto";
+						el.style.overflowX = "auto"; // scroll зөвхөн матриц дээр
 						el.style.maxWidth = "100%";
 						el.style.margin = "8px 0";
 					} else {
-						// Inline math — matrix ч гэсэн inline байна
 						el.style.cssText = "";
-						el.style.display = "inline-block";
+						el.style.display = "inline-flex";
+						el.style.alignItems = "center";
 						el.style.verticalAlign = "middle";
-						el.style.overflow = "visible";
+						el.style.overflow = "visible"; // inline scroll үүсгэхгүй
 						el.style.maxWidth = "100%";
 					}
 				});
@@ -65,7 +71,7 @@ function MathContent({ html }: MathContentProps) {
 		} else {
 			renderMath();
 		}
-	}, []); // html өөрчлөгдөхөд дахин render
+	}, [html]); // html өөрчлөгдөхөд дахин render
 
 	return (
 		<div

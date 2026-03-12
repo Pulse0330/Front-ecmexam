@@ -47,6 +47,7 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 	const [showToast, setShowToast] = useState(false);
 	const [isEditing, setIsEditing] = useState(false);
 	const [passwordError, setPasswordError] = useState("");
+	const [phoneError, setPhoneError] = useState("");
 	const [selectedImage, setSelectedImage] = useState<File | null>(null);
 	const [imagePreview, setImagePreview] = useState<string>("");
 	const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -199,6 +200,14 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
+		// Утасны дугаар заавал шаардлагатай
+		if (!editForm.Phone || editForm.Phone.trim() === "") {
+			setPhoneError("Утасны дугаар оруулна уу");
+			return;
+		}
+		setPhoneError("");
+
+		// Нууц үг validation
 		if (editForm.password && editForm.password !== editForm.confirmPassword) {
 			setPasswordError("Нууц үг таарахгүй байна");
 			return;
@@ -403,6 +412,7 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												confirmPassword: "",
 											}));
 											setPasswordError("");
+											setPhoneError("");
 										}}
 										className="w-full rounded-xl h-11"
 									>
@@ -439,10 +449,19 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 							{isEditing && (
 								<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-6">
 									<div className="space-y-4">
-										<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+										{/* Утасны дугаар - заавал */}
+										<div
+											className={`flex items-center p-4 rounded-xl ${phoneError ? "bg-red-50 dark:bg-red-950/20" : "bg-slate-50 dark:bg-slate-800"}`}
+										>
 											<div className="flex items-center gap-3 flex-1">
-												<Phone className="w-5 h-5 text-cyan-500" />
+												<Phone
+													className={`w-5 h-5 ${phoneError ? "text-red-500" : "text-cyan-500"}`}
+												/>
 												<div className="flex-1">
+													<p className="text-xs text-slate-500 dark:text-slate-400">
+														Утасны дугаар{" "}
+														<span className="text-red-500">*</span>
+													</p>
 													<p className="text-xs text-slate-500 dark:text-slate-400">
 														Одоо ашиглаж байгаа утасны дугаараа оруулна уу. Энэ
 														дугаараар нууц үг сэргээх боломжтой
@@ -450,18 +469,30 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 													<Input
 														type="tel"
 														value={editForm.Phone}
-														onChange={(e) =>
+														onChange={(e) => {
 															setEditForm({
 																...editForm,
 																Phone: e.target.value,
-															})
-														}
-														className="mt-1 h-8 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus-visible:ring-0"
+															});
+															setPhoneError("");
+														}}
+														className={`mt-1 h-8 bg-transparent border-0 border-b rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus-visible:ring-0 ${
+															phoneError
+																? "border-red-500 focus:border-red-500"
+																: "border-slate-300 dark:border-slate-600 focus:border-blue-500"
+														}`}
 														placeholder="Утасны дугаар"
 													/>
+													{phoneError && (
+														<p className="text-xs text-red-500 mt-1 font-medium">
+															{phoneError}
+														</p>
+													)}
 												</div>
 											</div>
 										</div>
+
+										{/* Нууц үг */}
 										<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 											<div className="flex items-center gap-3 flex-1">
 												<Lock className="w-5 h-5 text-rose-500" />
@@ -486,6 +517,8 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												</div>
 											</div>
 										</div>
+
+										{/* Нууц үг давтах */}
 										<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 											<div className="flex items-center gap-3 flex-1">
 												<Lock className="w-5 h-5 text-rose-400" />

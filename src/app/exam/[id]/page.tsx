@@ -31,7 +31,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { deleteExamAnswer, getExamById, saveExamAnswer } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { AnswerValue } from "@/types/exam/exam";
-// import { AdvancedExamProctor } from "../component/examguard";
+import { AdvancedExamProctor } from "../component/examguard";
 import { ExamHeader } from "../component/examUtils/examInfo";
 import MathContent from "../component/examUtils/MathContent";
 import ExamTimer from "../component/Itime";
@@ -618,6 +618,24 @@ export default function ExamPage() {
 			isAutoSubmitting.current = false;
 		}
 	}, [processPendingAnswers, examData]);
+	useEffect(() => {
+		const url = window.location.href;
+
+		// Stack дүүргэх
+		for (let i = 0; i < 50; i++) {
+			window.history.pushState(null, "", url);
+		}
+
+		function blockBack() {
+			window.history.pushState(null, "", url);
+		}
+
+		window.addEventListener("popstate", blockBack);
+
+		return () => {
+			window.removeEventListener("popstate", blockBack);
+		};
+	}, []);
 
 	useEffect(() => {
 		if (isLoading || !examData?.ChoosedAnswer) return;
@@ -1066,11 +1084,11 @@ export default function ExamPage() {
 									/>
 								</div>
 							)}
-							{/* <AdvancedExamProctor
+							<AdvancedExamProctor
 								maxViolations={1000}
 								strictMode={true}
 								enableFullscreen={true}
-							/> */}
+							/>
 						</div>
 					</aside>
 
