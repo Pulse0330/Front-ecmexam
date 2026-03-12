@@ -9,7 +9,9 @@ import {
 	Edit2,
 	Lock,
 	Mail,
+	MapPin,
 	Phone,
+	School,
 	User2,
 	X,
 } from "lucide-react";
@@ -28,6 +30,10 @@ interface UserData {
 	img_url: string | null;
 	username: string;
 	password: string | null;
+	aimag_name?: string | null;
+	sym_name?: string | null;
+	sch_name?: string | null;
+	studentgroupname?: string | null;
 }
 
 interface ProfileContentProps {
@@ -517,6 +523,7 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 							{!isEditing && (
 								<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-6">
 									<div className="space-y-4">
+										{/* Овог */}
 										<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 											<div className="flex items-center gap-3">
 												<User2 className="w-5 h-5 text-blue-500" />
@@ -530,6 +537,8 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												</div>
 											</div>
 										</div>
+
+										{/* Нэр */}
 										<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 											<div className="flex items-center gap-3">
 												<User2 className="w-5 h-5 text-indigo-500" />
@@ -543,6 +552,8 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												</div>
 											</div>
 										</div>
+
+										{/* Имэйл */}
 										<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 											<div className="flex items-center gap-3">
 												<Mail className="w-5 h-5 text-emerald-500" />
@@ -556,6 +567,8 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												</div>
 											</div>
 										</div>
+
+										{/* Утас */}
 										{user.Phone && (
 											<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 												<div className="flex items-center gap-3">
@@ -571,6 +584,74 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												</div>
 											</div>
 										)}
+
+										{/* Аймаг/Хот */}
+										<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-center gap-3">
+												<MapPin className="w-5 h-5 text-emerald-500" />
+												<div>
+													<p className="text-xs text-slate-500 dark:text-slate-400">
+														Аймаг/Нийслэл
+													</p>
+													<p className="text-sm font-semibold text-slate-900 dark:text-white">
+														{user.aimag_name || (
+															<span className="text-slate-400 font-normal"></span>
+														)}
+													</p>
+												</div>
+											</div>
+										</div>
+
+										{/* Дүүрэг/Сум */}
+										<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-center gap-3">
+												<MapPin className="w-5 h-5 text-cyan-500" />
+												<div>
+													<p className="text-xs text-slate-500 dark:text-slate-400">
+														Сум/Дүүрэг
+													</p>
+													<p className="text-sm font-semibold text-slate-900 dark:text-white">
+														{user.sym_name || (
+															<span className="text-slate-400 font-normal"></span>
+														)}
+													</p>
+												</div>
+											</div>
+										</div>
+
+										{/* Сургууль */}
+										<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-start gap-3">
+												<School className="w-5 h-5 text-indigo-500 mt-0.5 shrink-0" />
+												<div className="flex-1 min-w-0">
+													<p className="text-xs text-slate-500 dark:text-slate-400">
+														Сургууль
+													</p>
+													<p className="text-sm font-semibold text-slate-900 dark:text-white break-words">
+														{user.sch_name || (
+															<span className="text-slate-400 font-normal"></span>
+														)}
+													</p>
+												</div>
+											</div>
+										</div>
+
+										{/* Анги */}
+										<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-center gap-3">
+												<School className="w-5 h-5 text-violet-500" />
+												<div>
+													<p className="text-xs text-slate-500 dark:text-slate-400">
+														Анги
+													</p>
+													<p className="text-sm font-semibold text-slate-900 dark:text-white">
+														{user.studentgroupname || (
+															<span className="text-slate-400 font-normal"></span>
+														)}
+													</p>
+												</div>
+											</div>
+										</div>
 									</div>
 								</div>
 							)}
