@@ -189,7 +189,7 @@ export function SignForm() {
 				values.email,
 				values.firstname,
 				values.lastname,
-				Number(values.phone),
+				values.phone,
 				values.password,
 			);
 
