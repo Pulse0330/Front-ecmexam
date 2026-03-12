@@ -406,7 +406,7 @@ const ExamList = memo(function ExamList({
 		if (!selectedExamId) return;
 		try {
 			setIsNavigating(true);
-			await router.push(`/exam/${selectedExamId}`);
+			await router.replace(`/exam/${selectedExamId}`);
 		} catch {
 			// silent
 		} finally {
