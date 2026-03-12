@@ -5,11 +5,9 @@ import axios from "axios";
 import { AlertCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import LessonFilter from "@/components/LessonFilter";
-
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useServerTime } from "@/hooks/useServerTime";
 import { getexamfiltertlists, getTestFilter } from "@/lib/api";
-
 import { useAuthStore } from "@/stores/useAuthStore";
 import type {
 	ApiExamlistsResponse,
@@ -148,7 +146,7 @@ export default function ExamListPage() {
 					/>
 
 					{/* Exam Cards Grid */}
-					<div className="grid grid-cols-3 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-7 gap-3 sm:gap-4 pb-4 auto-rows-fr">
+					<div className="grid grid-cols-2 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 2xl:grid-cols-6 gap-3 sm:gap-4 pb-4 auto-rows-fr">
 						{isPending
 							? SKELETON_KEYS.map((key) => <SkeletonCard key={key} />)
 							: filteredData.map((exam) => (
@@ -178,7 +176,7 @@ export default function ExamListPage() {
 								Шалгалт олдсонгүй
 							</p>
 							<p className="text-sm text-gray-500 dark:text-gray-400">
-								Өөр хайлт эсвэл шүүлтүүр ашиглан дахин оролдоно уу
+								Хуудсаа ахин ажлуулаад үзээрэй
 							</p>
 						</div>
 					)}

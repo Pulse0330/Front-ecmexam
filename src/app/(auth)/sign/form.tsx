@@ -30,6 +30,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { registerSysUserRequest } from "@/lib/api";
 
 const formSchema = z
 	.object({
@@ -184,21 +185,13 @@ export function SignForm() {
 		setIsPending(true);
 
 		try {
-			const response = await fetch("/api/sign/register", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					email: values.email,
-					firstname: values.firstname,
-					lastname: values.lastname,
-					phone: values.phone,
-					password: values.password,
-				}),
-			});
-
-			const data = await response.json();
+			const data = await registerSysUserRequest(
+				values.email,
+				values.firstname,
+				values.lastname,
+				Number(values.phone),
+				values.password,
+			);
 
 			if (data?.RetResponse?.ResponseType) {
 				toast.success("Амжилттай бүртгэгдлээ! Нэвтрэнэ үү.");

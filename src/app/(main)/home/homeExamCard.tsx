@@ -5,7 +5,6 @@ import axios from "axios";
 import { motion } from "framer-motion";
 import {
 	ArrowRight,
-	Calendar,
 	Clock,
 	CreditCard,
 	FileText,
@@ -101,7 +100,6 @@ const ExamCardItem = memo(
 			[exam],
 		);
 
-		const dt = formatMongolianDateTime(exam.ognoo);
 		const isThisCardLoading = loadingExamId === exam.exam_id;
 
 		const handleClick = useCallback(() => {
@@ -143,7 +141,14 @@ const ExamCardItem = memo(
 							</div>
 						)}
 
-						<div className="absolute inset-0 bg-linear-to-t from-background/85 via-background/50 to-transparent" />
+						<div
+							className={cn(
+								"absolute inset-0 bg-linear-to-t to-transparent",
+								isActive
+									? "from-green-400 via-green-400/50"
+									: "from-background/85 via-background/50",
+							)}
+						/>
 
 						{/* Status badge */}
 						<div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 z-20">
@@ -160,21 +165,16 @@ const ExamCardItem = memo(
 							) : (
 								<Badge
 									variant={isActive ? "default" : "secondary"}
-									className="border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap"
+									className={cn(
+										"border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap",
+										isActive
+											? "bg-green-500 hover:bg-green-600 text-white"
+											: "bg-muted text-muted-foreground",
+									)}
 								>
 									{isActive ? "Идэвхтэй" : "Идэвхгүй"}
 								</Badge>
 							)}
-						</div>
-
-						{/* Date */}
-						<div className="absolute bottom-0 left-0 right-0 p-1 sm:p-1.5 z-10">
-							<div className="flex items-center gap-0.5 sm:gap-1">
-								<Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
-								<span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate">
-									{dt.date}
-								</span>
-							</div>
 						</div>
 					</div>
 
@@ -203,8 +203,27 @@ const ExamCardItem = memo(
 									{exam.lesson_name}
 								</p>
 							)}
+						</div>{" "}
+						<div className="flex flex-col gap-0.5 pt-1 border-t border-border/50">
+							<div className="flex items-center justify-between">
+								<span className="font-medium text-[8px] sm:text-[9px] md:text-xs tabular-nums text-muted-foreground">
+									Эхлэх
+								</span>
+								<span className="font-medium text-[8px] sm:text-[9px] md:text-xs tabular-nums text-muted-foreground">
+									{formatMongolianDateTime(exam.ognoo).date}{" "}
+									{formatMongolianDateTime(exam.ognoo).time}
+								</span>
+							</div>
+							<div className="flex items-center justify-between">
+								<span className="font-medium text-[8px] sm:text-[9px] md:text-xs tabular-nums text-muted-foreground">
+									Дуусах
+								</span>
+								<span className="font-medium text-[8px] sm:text-[9px] md:text-xs tabular-nums text-muted-foreground">
+									{formatMongolianDateTime(exam.enddate).date}{" "}
+									{formatMongolianDateTime(exam.enddate).time}
+								</span>
+							</div>
 						</div>
-
 						{/* Stats */}
 						<div className="flex items-center justify-between gap-1 sm:gap-1.5 pt-1 border-t border-border/50">
 							<div className="flex items-center gap-0.5 sm:gap-1 text-muted-foreground min-w-0">
@@ -220,7 +239,6 @@ const ExamCardItem = memo(
 								</span>
 							</div>
 						</div>
-
 						{/* Pay button */}
 						{isLocked && isActive && (
 							<Button
@@ -240,7 +258,6 @@ const ExamCardItem = memo(
 								)}
 							</Button>
 						)}
-
 						{/* Arrow */}
 						<div
 							className={cn(

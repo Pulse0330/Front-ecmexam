@@ -137,7 +137,7 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 						password: "sql$erver43",
 						database: "ikh_skuul",
 						server: "172.16.1.79",
-						pool: { max: 100, min: 0, idleTimeoutMillis: 30000 },
+
 						options: { encrypt: false, trustServerCertificate: false },
 					},
 				}),

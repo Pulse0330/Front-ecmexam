@@ -7,7 +7,6 @@ import {
 	QrCode,
 	XCircle,
 } from "lucide-react";
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -170,7 +169,8 @@ export default function QPayDialog({
 					</DialogHeader>
 				</div>
 
-				{qpayData ? (
+				{/* biome-ignore lint/correctness/noConstantCondition: TODO invoice re-enable */}
+				{false && qpayData ? (
 					<div className="px-6 py-5 space-y-5">
 						{/* ── Status banners ── */}
 						<AnimatePresence mode="wait">
@@ -247,7 +247,7 @@ export default function QPayDialog({
 								QR код уншуулах
 							</p>
 							<div className="bg-white p-3 rounded-xl shadow-md border border-slate-100 dark:border-slate-700">
-								{qpayData.qr_image ? (
+								{/* {qpayData.qr_image ? (
 									<Image
 										src={`data:image/png;base64,${qpayData.qr_image}`}
 										alt="QPay QR Code"
@@ -260,7 +260,7 @@ export default function QPayDialog({
 									<div className="w-200px h-200px flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
 										<p className="text-xs text-gray-500">QR код байхгүй</p>
 									</div>
-								)}
+								)} */}
 							</div>
 						</div>
 
@@ -297,9 +297,19 @@ export default function QPayDialog({
 						</div>
 					</div>
 				) : (
-					<div className="flex flex-col items-center justify-center py-16 gap-3">
-						<Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
-						<p className="text-sm text-muted-foreground">Уншиж байна...</p>
+					<div className="flex flex-col items-center justify-center py-16 gap-3 px-6">
+						{/* TODO: invoice re-enable хийх үед loader-аар солих */}
+						<div className="flex flex-col items-center gap-3 p-6 bg-amber-50 dark:bg-amber-950/30 rounded-2xl border border-amber-200/70 dark:border-amber-800/50 w-full">
+							<div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center shadow-sm">
+								<AlertCircle className="w-6 h-6 text-white" />
+							</div>
+							<p className="text-sm font-bold text-amber-800 dark:text-amber-200">
+								Төлбөрийн систем түр хаалттай
+							</p>
+							<p className="text-xs text-amber-600 dark:text-amber-400 text-center">
+								Уучлаарай, QPay төлбөр түр зуур ажиллахгүй байна.
+							</p>
+						</div>
 					</div>
 				)}
 			</DialogContent>
