@@ -264,7 +264,7 @@ export function LoginForm() {
 						<p className="text-sm leading-relaxed">
 							Өмнө бүртгүүлсэн сурагчдын{" "}
 							<span className="font-semibold">мэдээлэл болон төлбөрийг</span>{" "}
-							БҮТ-рүү шилжүүлэх болно.
+							Боловсролын үнэлгээний төв рүү шилжүүлсэн болно.
 						</p>
 
 						<Button
