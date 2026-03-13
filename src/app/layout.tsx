@@ -3,9 +3,10 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Suspense } from "react";
+// import { Suspense } from "react";
 import Providers from "@/app/Providers";
-import IdleTimerProvider from "@/components/timeLogOut";
+
+// import IdleTimerProvider from "@/components/timeLogOut";
 
 const inter = Inter({
 	variable: "--font-inter",
@@ -83,9 +84,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
 					id="mathjax-script"
 				/>
 				<Providers>
-					<IdleTimerProvider>
+					{/* <IdleTimerProvider>
 						<Suspense fallback={null}>{children}</Suspense>
-					</IdleTimerProvider>
+					</IdleTimerProvider> */}
+					{children}
 				</Providers>
 			</body>
 		</html>
