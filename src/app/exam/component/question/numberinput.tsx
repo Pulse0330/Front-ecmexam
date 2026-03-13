@@ -34,14 +34,12 @@ const NumberInputQuestion: React.FC<NumberInputQuestionProps> = ({
 
 	const handleChange = useCallback(
 		(answerId: number, val: string) => {
-			if (!/^\d*$/.test(val)) return;
-
+			if (!/^-?\d*\.?\d*$/.test(val)) return;
 			const newValues = { ...values, [answerId]: val };
 			onAnswerChange?.(questionId, newValues);
 		},
 		[questionId, values, onAnswerChange],
 	);
-
 	return (
 		<div className="space-y-3">
 			<div className="flex flex-col gap-2">

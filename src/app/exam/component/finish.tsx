@@ -348,7 +348,7 @@ const FinishExamResultDialog = forwardRef<
 								</DialogTitle>
 								<DialogDescription className="text-base sm:text-lg md:text-xl font-semibold mt-2 px-2">
 									{isExcellent
-										? "🌟 Гайхалтай! Та маш сайн өгүүлэв!"
+										? "🌟 Гайхалтай!"
 										: isPassed
 											? "🎉 Баяр хүргэе! Та шалгалтад тэнцлээ!"
 											: "💪 Дараагийн удаад амжилт хүсье!"}
