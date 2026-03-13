@@ -67,7 +67,9 @@ interface UserData {
 	username: string;
 	password: string | null;
 	aimag_name?: string | null;
+	aimag_id?: string | number | null;
 	sym_name?: string | null;
+	sym_id?: string | number | null;
 	sch_name?: string | null;
 	schooldb?: string | null;
 	studentgroupname?: string | null;
@@ -128,7 +130,6 @@ interface SelectFieldProps {
 	loading?: boolean;
 	icon: React.ReactNode;
 }
-
 function SelectField({
 	label,
 	placeholder,
@@ -150,17 +151,16 @@ function SelectField({
 							<Loader2 className="w-3 h-3 animate-spin text-emerald-500" />
 						)}
 					</p>
-					{disabled ? (
+					{/* disabled=true БА утга хоосон үед л text харуулна */}
+					{disabled && !value ? (
 						<p className="text-sm font-semibold text-slate-900 dark:text-white">
-							{(options.find((o) => o.value === value)?.label ?? value) || (
-								<span className="text-slate-400 font-normal">—</span>
-							)}
+							<span className="text-slate-400 font-normal">—</span>
 						</p>
 					) : (
 						<Select
 							value={value}
 							onValueChange={onValueChange}
-							disabled={loading}
+							disabled={disabled || loading}
 						>
 							<SelectTrigger className="h-8 w-full bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white shadow-none focus:ring-0">
 								<span className="truncate block text-left text-sm">
@@ -206,10 +206,11 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 	const [imagePreview, setImagePreview] = useState<string>("");
 	const [isUploadingImage, setIsUploadingImage] = useState(false);
 	const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
-
+	const [_locationErrorrrrrrrr, setLocationError] = useState("");
 	// ─── Dropdown lists ───────────────────────────────────────────────────────
 	const [aimagList, setAimagList] = useState<AimagItem[]>([]);
 	const aimagListRef = useRef<AimagItem[]>([]);
+	const pendingAimagIdRef = useRef<string>("");
 	const [districtList, setDistrictList] = useState<DistrictItem[]>([]);
 	const [schoolList, setSchoolList] = useState<SchoolItem[]>([]);
 	const [classList, setClassList] = useState<ClassItem[]>([]);
@@ -223,10 +224,19 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 	const [selectedAimag, setSelectedAimag] = useState("");
 	const [selectedDistrict, setSelectedDistrict] = useState("");
 	const [selectedSchool, setSelectedSchool] = useState("");
-	const [selectedSchoolDb, setSelectedSchoolDb] = useState("EDU_CONFIG");
-	// serverip нь render-т нөлөөлөхгүй тул ref ашиглана (lint: noUnusedVariables)
+	const selectedSchoolDbRef = useRef("");
 	const selectedSchoolServerIpRef = useRef("");
 	const [selectedClass, setSelectedClass] = useState("");
+
+	// ─── Pre-fill pending refs ────────────────────────────────────────────────
+	// setDistrictList → useEffect(districtList) → setSelectedDistrict
+	// setSchoolList   → useEffect(schoolList)   → setSelectedSchool
+	// setClassList    → useEffect(classList)    → setSelectedClass
+	const pendingDistrictIdRef = useRef<string>("");
+	const pendingSchoolNameRef = useRef<string>("");
+	const pendingSchoolDbRef = useRef<string>("");
+	const pendingSchoolServerIpRef = useRef<string>("");
+	const pendingClassIdRef = useRef<string>("");
 
 	const [editForm, setEditForm] = useState({
 		lastname: user.lastname || "",
@@ -237,13 +247,58 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 		confirmPassword: "",
 	});
 
-	// user prop-г ref-д хадгална — useEffect deps-д оруулахгүйн тулд
 	const userRef = useRef(user);
 	useEffect(() => {
 		userRef.current = user;
 	}, [user]);
+	useEffect(() => {
+		if (pendingAimagIdRef.current && aimagList.length > 0) {
+			const id = pendingAimagIdRef.current;
+			pendingAimagIdRef.current = "";
+			if (aimagList.some((a) => a.mID.toString() === id)) {
+				setSelectedAimag(id);
+			}
+		}
+	}, [aimagList]);
+	// ─── districtList set хийгдэхэд pending district сонгоно ────────────────
+	useEffect(() => {
+		if (pendingDistrictIdRef.current && districtList.length > 0) {
+			const id = pendingDistrictIdRef.current;
+			pendingDistrictIdRef.current = "";
+			if (districtList.some((d) => d.id.toString() === id)) {
+				setSelectedDistrict(id);
+			}
+		}
+	}, [districtList]);
+	const schoolListLengthRef = useRef(0);
+	useEffect(() => {
+		if (schoolList.length === schoolListLengthRef.current) return;
+		schoolListLengthRef.current = schoolList.length;
+		if (pendingSchoolNameRef.current) {
+			const name = pendingSchoolNameRef.current;
+			const db = pendingSchoolDbRef.current;
+			const ip = pendingSchoolServerIpRef.current;
+			pendingSchoolNameRef.current = "";
+			pendingSchoolDbRef.current = "";
+			pendingSchoolServerIpRef.current = "";
+			setSelectedSchool(name);
+			selectedSchoolDbRef.current = db;
+			selectedSchoolServerIpRef.current = ip;
+		}
+	}, [schoolList]);
 
-	// ─── Edit горим эхлэхэд: бүх жагсаалтыг зэрэг татаж, нэг дор pre-fill ──
+	// ─── classList set хийгдэхэд pending class сонгоно ──────────────────────
+	useEffect(() => {
+		if (pendingClassIdRef.current && classList.length > 0) {
+			const id = pendingClassIdRef.current;
+			pendingClassIdRef.current = "";
+			if (classList.some((c) => c.studentgroupid === id)) {
+				setSelectedClass(id);
+			}
+		}
+	}, [classList]);
+
+	// ─── Edit горим ──────────────────────────────────────────────────────────
 	useEffect(() => {
 		if (!isEditing) {
 			setEditForm((prev) => ({ ...prev, password: "", confirmPassword: "" }));
@@ -251,6 +306,14 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 			setSelectedDistrict("");
 			setSelectedSchool("");
 			setSelectedClass("");
+			selectedSchoolDbRef.current = "";
+			pendingAimagIdRef.current = "";
+			selectedSchoolServerIpRef.current = "";
+			pendingDistrictIdRef.current = "";
+			pendingSchoolNameRef.current = "";
+			pendingSchoolDbRef.current = "";
+			pendingSchoolServerIpRef.current = "";
+			pendingClassIdRef.current = "";
 			setDistrictList([]);
 			setSchoolList([]);
 			setClassList([]);
@@ -259,11 +322,20 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 
 		const u = userRef.current;
 
-		// Аймгийн жагсаалт кэшлэгдсэн бол шууд pre-fill, үгүй бол татна
+		setEditForm({
+			lastname: u.lastname || "",
+			firstname: u.firstname || "",
+			email: u.email || "",
+			Phone: u.Phone || "",
+			password: "",
+			confirmPassword: "",
+		});
+
 		const cachedList = aimagListRef.current;
 		if (cachedList.length > 0) {
-			setAimagList(cachedList); // state sync
+			setAimagList(cachedList);
 		}
+
 		const aimagPromise =
 			cachedList.length > 0
 				? Promise.resolve(cachedList)
@@ -280,6 +352,7 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 
 		aimagPromise.then((list) => {
 			if (!u.aimag_name) return;
+
 			const aimag =
 				list.find((a) => a.mName === u.aimag_name) ??
 				list.find(
@@ -288,34 +361,39 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 				);
 			if (!aimag) return;
 			setSelectedAimag(aimag.mID.toString());
+			pendingAimagIdRef.current = aimag.mID.toString();
 
-			// Дүүрэг + Сургуулийг зэрэг татна (сургуулийг дүүргийн ID хэрэгтэй учир дүүргийг эхэлж татна)
 			setDistrictLoading(true);
-
 			apiDistrict(aimag.mID)
 				.then((dd) => {
 					const dlist: DistrictItem[] = dd.RetData ?? [];
-					setDistrictList(dlist);
-					if (!u.sym_name) return;
-					// Яг таарахгүй бол trim + lowercase-р дахин хайна
+
+					const symIdStr = String(u.sym_id ?? "").trim();
 					const district =
+						(symIdStr
+							? dlist.find((dv) => String(dv.id) === symIdStr)
+							: undefined) ??
 						dlist.find((dv) => dv.name === u.sym_name) ??
 						dlist.find(
 							(dv) =>
 								dv.name.trim().toLowerCase() ===
 								u.sym_name?.trim().toLowerCase(),
 						);
+
+					if (district) {
+						// Pending-д хадгална → setDistrictList хийгдсэний дараа useEffect сонгоно
+						pendingDistrictIdRef.current = district.id.toString();
+					}
+
+					setDistrictList(dlist); // ← useEffect(districtList) гал авна
+
 					if (!district) return;
-					setSelectedDistrict(district.id.toString());
 
 					setSchoolLoading(true);
 					apiSchool(aimag.mID, district.id)
 						.then((sd) => {
 							const slist: SchoolItem[] = sd.RetData ?? [];
-							setSchoolList(slist);
-							if (!u.sch_name) {
-								return;
-							}
+
 							const school =
 								slist.find((s) => s.sName === u.sch_name) ??
 								slist.find(
@@ -323,24 +401,35 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 										s.sName.trim().toLowerCase() ===
 										u.sch_name?.trim().toLowerCase(),
 								);
-							if (!school) {
-								return;
+
+							if (school) {
+								pendingSchoolNameRef.current = school.sName;
+								pendingSchoolDbRef.current = school.dbname;
+								pendingSchoolServerIpRef.current = school.serverip || "";
+							} else if (u.sch_name) {
+								// Жагсаалтад байхгүй ч хэрэглэгчийн утгаар set хийнэ
+								pendingSchoolNameRef.current = u.sch_name;
+								pendingSchoolDbRef.current = u.schooldb ?? "";
+								pendingSchoolServerIpRef.current = "";
 							}
-							setSelectedSchool(school.sName);
-							setSelectedSchoolDb(school.dbname || "EDU_CONFIG");
-							selectedSchoolServerIpRef.current = school.serverip || "";
+
+							setSchoolList(slist); // ← useEffect(schoolList) гал авна
+
+							const targetDb = school?.dbname ?? (u.schooldb || "");
+							const targetIp = school?.serverip ?? "";
+							if (!targetDb) return;
 
 							setClassLoading(true);
-							apiClass(school.dbname, school.serverip)
+							apiClass(targetDb, targetIp)
 								.then((cd) => {
 									const clist = (cd.RetData ?? []).filter(
 										(c: ClassItem) =>
 											c.studentgroupid && c.studentgroupid !== "0",
 									);
-									setClassList(clist);
+
 									const userGroupId = String(u.studentgroupid ?? "").trim();
 									const userGroupName = String(u.studentgroupname ?? "").trim();
-									const matchedClass =
+									const matched =
 										(userGroupId
 											? clist.find(
 													(c: ClassItem) =>
@@ -354,9 +443,12 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 														userGroupName.toLowerCase(),
 												)
 											: undefined);
-									if (matchedClass) {
-										setSelectedClass(matchedClass.studentgroupid);
+
+									if (matched) {
+										pendingClassIdRef.current = matched.studentgroupid;
 									}
+
+									setClassList(clist); // ← useEffect(classList) гал авна
 								})
 								.catch(() => setClassList([]))
 								.finally(() => setClassLoading(false));
@@ -367,14 +459,20 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 				.catch(() => setDistrictList([]))
 				.finally(() => setDistrictLoading(false));
 		});
-	}, [isEditing]); // aimagList-г deps-д оруулахгүй — setAimagList хийхэд re-run болохоос сэргийлнэ
+	}, [isEditing]);
 
+	// ─── Хэрэглэгч өөрчлөхөд ─────────────────────────────────────────────────
 	const onAimag = useCallback(
 		async (val: string) => {
 			setSelectedAimag(val);
 			setSelectedDistrict("");
 			setSelectedSchool("");
 			setSelectedClass("");
+			selectedSchoolDbRef.current = "";
+			selectedSchoolServerIpRef.current = "";
+			pendingDistrictIdRef.current = "";
+			pendingSchoolNameRef.current = "";
+			pendingClassIdRef.current = "";
 			setDistrictList([]);
 			setSchoolList([]);
 			setClassList([]);
@@ -399,6 +497,10 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 			setSelectedDistrict(val);
 			setSelectedSchool("");
 			setSelectedClass("");
+			selectedSchoolDbRef.current = "";
+			selectedSchoolServerIpRef.current = "";
+			pendingSchoolNameRef.current = "";
+			pendingClassIdRef.current = "";
 			setSchoolList([]);
 			setClassList([]);
 			if (!val) return;
@@ -424,10 +526,16 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 			setSelectedSchool(val);
 			setSelectedClass("");
 			setClassList([]);
+			selectedSchoolDbRef.current = "";
+			selectedSchoolServerIpRef.current = "";
+			pendingClassIdRef.current = "";
+
 			const schoolData = schoolList.find((s) => s.sName === val);
 			if (!schoolData) return;
-			setSelectedSchoolDb(schoolData.dbname || "EDU_CONFIG");
+
+			selectedSchoolDbRef.current = schoolData.dbname;
 			selectedSchoolServerIpRef.current = schoolData.serverip || "";
+
 			setClassLoading(true);
 			try {
 				const d = await apiClass(schoolData.dbname, schoolData.serverip);
@@ -445,6 +553,7 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 		[schoolList],
 	);
 
+	// ─── Mutation ─────────────────────────────────────────────────────────────
 	const updateMutation = useMutation({
 		mutationFn: async (data: {
 			firstname: string;
@@ -603,46 +712,66 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 						"";
 		}
 
+		// ── Байршил шалгалт — fallback хасав, заавал сонгосон байх ёстой ──
 		const selectedAimagItem = aimagList.find(
 			(a) => a.mID.toString() === selectedAimag,
 		);
-		const aimagName = selectedAimagItem?.mName ?? user.aimag_name ?? "";
+		const aimagName = selectedAimagItem?.mName ?? "";
 		const aimagId = selectedAimagItem?.mID ?? 0;
+		if (!aimagName || aimagId === 0) {
+			setLocationError("Аймаг / Нийслэл сонгоно уу");
+			return;
+		}
 
 		const selectedDistrictItem = districtList.find(
 			(d) => d.id.toString() === selectedDistrict,
 		);
-		const symName = selectedDistrictItem?.name ?? user.sym_name ?? "";
+		const symName = selectedDistrictItem?.name ?? "";
 		const symId = selectedDistrictItem?.id ?? 0;
+		if (!symName || symId === 0) {
+			setLocationError("Сум / Дүүрэг сонгоно уу");
+			return;
+		}
 
-		const schoolName = selectedSchool || user.sch_name || "";
-		const schoolDb = selectedSchool
-			? selectedSchoolDb
-			: (user.schooldb ?? "EDU_CONFIG");
+		if (!selectedSchool) {
+			setLocationError("Сургууль сонгоно уу");
+			return;
+		}
+		const schoolDb = selectedSchoolDbRef.current;
+		if (!schoolDb) {
+			alert("Сургуулийн мэдээлэл алдаатай байна. Дахин сонгоно уу");
+			return;
+		}
 
+		if (!selectedClass) {
+			setLocationError("Сургуулийн мэдээлэл алдаатай байна. Дахин сонгоно уу");
+			return;
+		}
 		const selectedClassItem = classList.find(
 			(c) => c.studentgroupid === selectedClass,
 		);
-		const studentgroupname =
-			selectedClassItem?.class_name ?? user.studentgroupname ?? "";
-		const studentgroupid = selectedClass || user.studentgroupid || "";
-
+		const studentgroupname = selectedClassItem?.class_name ?? "";
+		if (!studentgroupname) {
+			setLocationError("Анги / Бүлэг сонгоно уу");
+			return;
+		}
+		setLocationError("");
 		updateMutation.mutate({
 			firstname: editForm.firstname || user.firstname,
 			lastname: editForm.lastname || user.lastname,
-			phone: editForm.Phone || user.Phone || "",
+			phone: editForm.Phone,
 			email: editForm.email || user.email,
 			aimag_id: aimagId,
 			aimagname: aimagName,
 			sym_id: symId,
 			symname: symName,
 			regnumber: "",
-			schoolname: schoolName,
+			schoolname: selectedSchool,
 			schooldb: schoolDb,
-			studentgroupid: studentgroupid,
-			studentgroupname: studentgroupname,
+			studentgroupid: selectedClass,
+			studentgroupname,
 			user_id: userId,
-			img_url: String(finalImageUrl),
+			img_url: finalImageUrl,
 			password: editForm.password || undefined,
 		});
 	};
@@ -687,7 +816,6 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 							<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-8 relative overflow-hidden">
 								<div className="absolute top-0 left-0 right-0 h-32" />
 								<div className="relative space-y-6">
-									{/* Avatar */}
 									<div className="flex flex-col items-center">
 										<div className="relative group">
 											<Avatar className="w-32 h-32 border-4 border-white dark:border-slate-800 shadow-xl">
@@ -742,7 +870,6 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 										)}
 									</div>
 
-									{/* Profile Info */}
 									<div className="text-center border-t border-slate-200 dark:border-slate-700 pt-6">
 										<h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
 											{user.username}
@@ -752,7 +879,6 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 										</p>
 									</div>
 
-									{/* Info Items */}
 									<div className="space-y-3">
 										<div className="flex items-start gap-3 text-sm">
 											<div className="w-5 h-5 mt-0.5 text-slate-400">
@@ -801,11 +927,6 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 										type="button"
 										onClick={() => {
 											setIsEditing(!isEditing);
-											setEditForm((prev) => ({
-												...prev,
-												password: "",
-												confirmPassword: "",
-											}));
 											setPasswordError("");
 											setPhoneError("");
 										}}
@@ -840,13 +961,11 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 
 						{/* ── Right Column ── */}
 						<div className="lg:col-span-2">
-							{/* Edit Mode */}
 							{isEditing && (
 								<div className="space-y-4">
-									{/* ── Card 1: Утас + Нууц үг ── */}
+									{/* Card 1: Утас + Нууц үг */}
 									<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-6">
 										<div className="space-y-4">
-											{/* Утасны дугаар */}
 											<div
 												className={`flex items-center p-4 rounded-xl ${phoneError ? "bg-red-50 dark:bg-red-950/20" : "bg-slate-50 dark:bg-slate-800"}`}
 											>
@@ -889,7 +1008,6 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												</div>
 											</div>
 
-											{/* Нууц үг */}
 											<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 												<div className="flex items-center gap-3 flex-1">
 													<Lock className="w-5 h-5 text-rose-500" />
@@ -915,7 +1033,6 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												</div>
 											</div>
 
-											{/* Нууц үг давтах */}
 											<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
 												<div className="flex items-center gap-3 flex-1">
 													<Lock className="w-5 h-5 text-rose-400" />
@@ -948,8 +1065,15 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 										</div>
 									</div>
 
-									{/* ── Card 2: Аймаг / Сум / Сургууль / Анги ── */}
+									{/* Card 2: Байршил мэдээлэл */}
 									<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-6">
+										<div className="flex items-start gap-3 mb-5 p-3  rounded-xl">
+											<p className="text-xs  leading-relaxed">
+												Та өөрийн мэдээлэлээ үнэн зөв оруулсан үед таны шалгалт
+												идэвхтэй харагдах тул{" "}
+												<span className="font-bold">заавал оруулна уу</span>
+											</p>
+										</div>
 										<p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
 											Байршил мэдээлэл
 										</p>
@@ -1006,7 +1130,7 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 															: "— Сургууль сонгох —"
 												}
 												options={schoolList
-													.filter((s) => s.sName)
+													.filter((s) => s.sName && s.sName !== "Сонгоно уу")
 													.map((s) => ({ value: s.sName, label: s.sName }))}
 												value={selectedSchool}
 												onValueChange={onSchool}
