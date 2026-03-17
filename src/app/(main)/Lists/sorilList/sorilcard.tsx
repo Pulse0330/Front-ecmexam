@@ -47,7 +47,7 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 	};
 
 	const isCompleted = exam.isguitset === 1;
-	const isPaid = exam.isopensoril === 0 || exam.ispay === 0;
+	const isPaid = exam.isopensoril === 1 || exam.ispay === 1;
 
 	return (
 		<motion.div

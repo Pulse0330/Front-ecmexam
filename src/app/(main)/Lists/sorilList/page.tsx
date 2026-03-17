@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import LessonFilter from "@/components/LessonFilter";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +23,7 @@ import type {
 } from "@/types/soril/sorilLists";
 import { SorilCard } from "./sorilcard";
 
-type SorilCategory = "all" | "completed" | "notstarted";
+type Tab = "all" | "open";
 
 interface Lesson {
 	lesson_id: number;
@@ -44,10 +44,8 @@ interface TestFilterResponse {
 export default function Sorillists() {
 	const { userId } = useAuthStore();
 	const router = useRouter();
-	const [searchTerm, _setSearchTerm] = useState("");
-	const [selectedCategory, _setSelectedCategory] =
-		useState<SorilCategory>("all");
-	const [selectedLessonId, setSelectedLessonId] = useState<number>(0); // 0 = Бүгд
+	const [activeTab, setActiveTab] = useState<Tab>("all");
+	const [selectedLessonId, setSelectedLessonId] = useState<number>(0);
 	const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 	const [selectedSoril, setSelectedSoril] = useState<SorillistsData | null>(
 		null,
@@ -55,14 +53,12 @@ export default function Sorillists() {
 
 	const SKELETON_KEYS = Array.from({ length: 8 }, (_, i) => `skeleton-${i}`);
 
-	// Lesson filter API - хичээлийн жагсаалт
 	const { data: lessonData } = useQuery<TestFilterResponse>({
 		queryKey: ["testFilter", userId],
 		queryFn: () => getTestFilter(userId || 0),
 		enabled: !!userId,
 	});
 
-	// Soril list API - сонгосон хичээлээр шүүсэн сорилууд
 	const { data: queryData, isPending } = useQuery<ApiSorillistsResponse>({
 		queryKey: ["sorillists", userId, selectedLessonId],
 		queryFn: () => getSorilFilteredlists(userId || 0, selectedLessonId),
@@ -72,51 +68,19 @@ export default function Sorillists() {
 	const data = useMemo(() => queryData?.RetData || [], [queryData]);
 	const lessons = useMemo(() => lessonData?.RetData || [], [lessonData]);
 
-	const categorizedData = useMemo(() => {
-		return {
-			completed: data.filter((e) => e.isguitset === 1),
-			notstarted: data.filter((e) => e.isguitset === 0),
-		};
-	}, [data]);
+	const openSorils = useMemo(
+		() => data.filter((e) => e.isopensoril === 1),
+		[data],
+	);
 
-	// Filter логик: Category + Search (Lesson нь API-аас шууд ирнэ)
+	// ✅ Tab-д тохируулж харуулах өгөгдөл
 	const filteredData = useMemo(() => {
-		let sorils = data;
-
-		// 1. Сонгосон категорийн дагуу шүүх
-		switch (selectedCategory) {
-			case "all":
-				sorils = data;
-				break;
-			case "completed":
-				sorils = categorizedData.completed;
-				break;
-			case "notstarted":
-				sorils = categorizedData.notstarted;
-				break;
-			default:
-				sorils = data;
-		}
-
-		// 2. Хайлтын шүүлтүүр
-		if (searchTerm.trim()) {
-			sorils = sorils.filter(
-				(soril) =>
-					soril.soril_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-					(soril.plan_name || "")
-						.toLowerCase()
-						.includes(searchTerm.toLowerCase()),
-			);
-		}
-
-		return sorils;
-	}, [data, categorizedData, selectedCategory, searchTerm]);
+		return activeTab === "open" ? openSorils : data;
+	}, [activeTab, data, openSorils]);
 
 	const handleSorilClick = useCallback(
 		(soril: SorillistsData) => {
-			const isAccessible = soril.isopensoril === 1 || soril.ispay === 0;
-
-			if (!isAccessible) {
+			if (soril.isopensoril !== 1) {
 				setSelectedSoril(soril);
 				setShowPaymentDialog(true);
 				return;
@@ -126,13 +90,11 @@ export default function Sorillists() {
 		[router],
 	);
 
-	// Handle payment confirmation
 	const handlePaymentConfirm = useCallback(() => {
 		setShowPaymentDialog(false);
 		router.push("/Lists/paymentCoureList");
 	}, [router]);
 
-	// Handle payment dialog close
 	const handlePaymentCancel = useCallback(() => {
 		setShowPaymentDialog(false);
 		setSelectedSoril(null);
@@ -140,46 +102,81 @@ export default function Sorillists() {
 
 	return (
 		<div className="w-full">
-			<div className=" mx-auto  flex flex-col px-3 sm:px-8 lg:px-8 py-4 sm:py-8 lg:py-8">
+			<div className="mx-auto flex flex-col px-3 sm:px-8 lg:px-8 py-4 sm:py-8 lg:py-8">
 				{/* Header */}
 				<header className="mb-4 sm:mb-6">
-					<h3 className="text-lg sm:text-2xl font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent ">
+					<h3 className="text-lg sm:text-2xl font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent">
 						Сорилын жагсаалт
 					</h3>
 				</header>
 
-				{selectedLessonId !== null && (
-					<LessonFilter
-						lessons={lessons}
-						selectedLessonId={selectedLessonId}
-						onLessonSelect={setSelectedLessonId}
-					/>
-				)}
+				{/* ✅ Tab switch */}
+				<div className="flex gap-1 p-1 bg-muted rounded-xl w-fit mb-4">
+					<button
+						type="button"
+						onClick={() => setActiveTab("all")}
+						className={cn(
+							"px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200",
+							activeTab === "all"
+								? "bg-background text-foreground shadow-sm"
+								: "text-muted-foreground hover:text-foreground",
+						)}
+					>
+						Бүгд
+						<span
+							className={cn(
+								"ml-2 px-2 py-0.5 rounded-full text-xs font-bold",
+								activeTab === "all"
+									? "bg-primary/10 text-primary"
+									: "bg-muted-foreground/20 text-muted-foreground",
+							)}
+						>
+							{data.length}
+						</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveTab("open")}
+						className={cn(
+							"px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200",
+							activeTab === "open"
+								? "bg-background text-foreground shadow-sm"
+								: "text-muted-foreground hover:text-foreground",
+						)}
+					>
+						Нээлттэй
+						<span
+							className={cn(
+								"ml-2 px-2 py-0.5 rounded-full text-xs font-bold",
+								activeTab === "open"
+									? "bg-green-500/10 text-green-600"
+									: "bg-muted-foreground/20 text-muted-foreground",
+							)}
+						>
+							{openSorils.length}
+						</span>
+					</button>
+				</div>
+
+				<LessonFilter
+					lessons={lessons}
+					selectedLessonId={selectedLessonId}
+					onLessonSelect={setSelectedLessonId}
+				/>
 
 				{/* Results Info */}
-				{(searchTerm || selectedLessonId !== 0) && (
+				{selectedLessonId !== 0 && (
 					<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
 						<AlertCircle size={16} />
 						<span>
-							<strong>{filteredData.length}</strong> сорил олдлоо
-							{searchTerm && (
-								<>
-									{" "}
-									&ldquo;<strong>{searchTerm}</strong>&rdquo; гэсэн хайлтаар
-								</>
-							)}
-							{selectedLessonId !== 0 && (
-								<>
-									{" "}
-									<strong>
-										{
-											lessons.find((l) => l.lesson_id === selectedLessonId)
-												?.lesson_name
-										}
-									</strong>{" "}
-									хичээлд
-								</>
-							)}
+							<strong>{filteredData.length}</strong> сорил —{" "}
+							<strong>
+								{
+									lessons.find((l) => l.lesson_id === selectedLessonId)
+										?.lesson_name
+								}
+							</strong>{" "}
+							хичээлд
 						</span>
 					</div>
 				)}
@@ -208,11 +205,11 @@ export default function Sorillists() {
 							Сорил олдсонгүй
 						</p>
 						<p className="text-sm text-gray-500 dark:text-gray-400">
-							{searchTerm
-								? `"${searchTerm}" хайлтад тохирох сорил олдсонгүй.`
-								: selectedLessonId === 0
-									? "Танд одоогоор сорил байхгүй байна."
-									: `${lessons.find((l) => l.lesson_id === selectedLessonId)?.lesson_name || "Энэ хичээл"}-д сорил байхгүй байна.`}
+							{activeTab === "open"
+								? selectedLessonId === 0
+									? "Одоогоор нээлттэй сорил байхгүй байна."
+									: `${lessons.find((l) => l.lesson_id === selectedLessonId)?.lesson_name || "Энэ хичээл"}-д нээлттэй сорил байхгүй байна.`
+								: "Танд одоогоор сорил байхгүй байна."}
 						</p>
 					</div>
 				)}
@@ -225,7 +222,6 @@ export default function Sorillists() {
 						<DialogTitle>Төлбөртэй сорил</DialogTitle>
 						<DialogDescription className="pt-4 space-y-2">
 							{selectedSoril?.soril_name}
-
 							<p>
 								Энэхүү сорил төлбөртэй юм. Үргэлжлүүлэхийн тулд төлбөр төлөх
 								шаардлагатай.
@@ -255,7 +251,6 @@ export default function Sorillists() {
 	);
 }
 
-// Skeleton Card Component
 const SkeletonCard = () => (
 	<div className="h-full w-full flex flex-col overflow-hidden rounded-lg sm:rounded-xl border border-border/40 bg-card/50 backdrop-blur-md animate-pulse">
 		<div className="w-full aspect-5/2 bg-slate-200 dark:bg-slate-800 relative">
@@ -280,61 +275,4 @@ const SkeletonCard = () => (
 			</div>
 		</div>
 	</div>
-);
-
-// Category Badge Component
-interface CategoryBadgeProps {
-	active: boolean;
-	onClick: () => void;
-	count: number;
-	label: string;
-	variant: SorilCategory;
-	icon?: React.ReactNode;
-}
-
-const _CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(
-	function CategoryBadge({ active, onClick, count, label, variant, icon }) {
-		const getStyle = () => {
-			if (!active)
-				return "bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700";
-
-			switch (variant) {
-				case "all":
-					return "";
-				case "notstarted":
-					return "";
-				case "completed":
-					return "";
-				default:
-					return "";
-			}
-		};
-
-		return (
-			<Button
-				type="button"
-				onClick={onClick}
-				className={cn(
-					"inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200",
-					getStyle(),
-					active ? "scale-105" : "hover:scale-102",
-				)}
-				aria-label={`${label} категори сонгох`}
-				aria-pressed={active}
-			>
-				{icon && <span className="shrink-0">{icon}</span>}
-				<span>{label}</span>
-				<span
-					className={cn(
-						"ml-1 px-2 py-0.5 rounded-full text-xs font-bold",
-						active
-							? "bg-white/30 text-white"
-							: "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300",
-					)}
-				>
-					{count}
-				</span>
-			</Button>
-		);
-	},
 );

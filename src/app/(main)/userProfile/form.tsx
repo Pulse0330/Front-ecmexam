@@ -422,27 +422,19 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 							setClassLoading(true);
 							apiClass(targetDb, targetIp)
 								.then((cd) => {
+									console.log("Бүх анги:", cd.RetData);
 									const clist = (cd.RetData ?? []).filter(
 										(c: ClassItem) =>
 											c.studentgroupid && c.studentgroupid !== "0",
 									);
 
 									const userGroupId = String(u.studentgroupid ?? "").trim();
-									const userGroupName = String(u.studentgroupname ?? "").trim();
-									const matched =
-										(userGroupId
-											? clist.find(
-													(c: ClassItem) =>
-														String(c.studentgroupid).trim() === userGroupId,
-												)
-											: undefined) ??
-										(userGroupName
-											? clist.find(
-													(c: ClassItem) =>
-														c.class_name.trim().toLowerCase() ===
-														userGroupName.toLowerCase(),
-												)
-											: undefined);
+
+									const matched = clist.find(
+										(c: ClassItem) =>
+											userGroupId &&
+											String(c.studentgroupid).trim() === userGroupId,
+									);
 
 									if (matched) {
 										pendingClassIdRef.current = matched.studentgroupid;
