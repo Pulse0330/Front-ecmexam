@@ -1,14 +1,187 @@
 "use client";
 
 import parse from "html-react-parser";
-import { HelpCircle, X } from "lucide-react";
+import {
+	HelpCircle,
+	Maximize,
+	Minimize,
+	RotateCw,
+	X,
+	ZoomIn,
+	ZoomOut,
+} from "lucide-react";
+import Image from "next/image";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Xarrow, { useXarrow, Xwrapper } from "react-xarrows";
-import QuestionImage from "@/app/exam/component/question/questionImage";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+
+function MatchingZoomImage({
+	src,
+	alt = "Зураг",
+}: {
+	src: string;
+	alt?: string;
+}) {
+	const [isOpen, setIsOpen] = useState(false);
+	const [zoom, setZoom] = useState(1);
+	const [rotation, setRotation] = useState(0);
+	const [position, setPosition] = useState({ x: 0, y: 0 });
+	const [isDragging, setIsDragging] = useState(false);
+	const dragStart = useRef({ x: 0, y: 0 });
+
+	const close = () => {
+		setIsOpen(false);
+		setTimeout(() => {
+			setZoom(1);
+			setRotation(0);
+			setPosition({ x: 0, y: 0 });
+		}, 200);
+	};
+
+	return (
+		<>
+			<div className="relative w-full h-32 group">
+				<Image
+					src={src}
+					alt={alt}
+					fill
+					sizes="280px"
+					quality={85}
+					style={{ objectFit: "contain" }}
+					className="rounded-lg pointer-events-none"
+					loading="lazy"
+				/>
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation();
+						setIsOpen(true);
+					}}
+					className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-1.5 shadow hover:bg-white z-10"
+					title="Томруулах"
+				>
+					<Maximize size={14} className="text-gray-700" />
+				</button>
+			</div>
+
+			<Dialog open={isOpen} onOpenChange={close}>
+				<DialogContent
+					className="w-[95vw] max-w-5xl h-[90vh] p-4 flex flex-col"
+					onClick={(e) => e.stopPropagation()}
+				>
+					<DialogTitle className="text-sm truncate">{alt}</DialogTitle>
+					<div
+						role="application"
+						aria-label="Зургийг чирж томруулах"
+						className="relative flex-1 flex items-center justify-center overflow-hidden rounded-lg bg-gray-50 dark:bg-gray-900"
+						onMouseDown={(e) => {
+							if (zoom <= 1) return;
+							setIsDragging(true);
+							dragStart.current = {
+								x: e.clientX - position.x,
+								y: e.clientY - position.y,
+							};
+						}}
+						onMouseMove={(e) => {
+							if (!isDragging) return;
+							setPosition({
+								x: e.clientX - dragStart.current.x,
+								y: e.clientY - dragStart.current.y,
+							});
+						}}
+						onMouseUp={() => setIsDragging(false)}
+						onMouseLeave={() => setIsDragging(false)}
+						style={{
+							cursor: zoom > 1 ? (isDragging ? "grabbing" : "grab") : "default",
+						}}
+					>
+						<div
+							style={{
+								transform: `translate(${position.x}px, ${position.y}px) scale(${zoom}) rotate(${rotation}deg)`,
+								transition: isDragging ? "none" : "transform 0.2s",
+								width: "100%",
+								height: "100%",
+								position: "relative",
+							}}
+						>
+							<Image
+								src={src}
+								alt={alt}
+								fill
+								sizes="90vw"
+								quality={100}
+								priority
+								style={{ objectFit: "contain" }}
+								className="rounded-lg pointer-events-none"
+								draggable={false}
+							/>
+						</div>
+
+						<div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl px-3 py-2 shadow-lg">
+							<Button
+								size="icon"
+								variant="ghost"
+								onClick={() => setZoom((z) => Math.min(z + 0.25, 3))}
+								disabled={zoom >= 3}
+							>
+								<ZoomIn size={18} />
+							</Button>
+							<span className="text-xs font-medium w-12 text-center">
+								{Math.round(zoom * 100)}%
+							</span>
+							<Button
+								size="icon"
+								variant="ghost"
+								onClick={() =>
+									setZoom((z) => {
+										const n = Math.max(z - 0.25, 0.5);
+										if (n <= 1) setPosition({ x: 0, y: 0 });
+										return n;
+									})
+								}
+								disabled={zoom <= 0.5}
+							>
+								<ZoomOut size={18} />
+							</Button>
+							<div className="w-px h-5 bg-gray-300" />
+							<Button
+								size="icon"
+								variant="ghost"
+								onClick={() => setRotation((r) => (r + 90) % 360)}
+							>
+								<RotateCw size={18} />
+							</Button>
+							<Button
+								size="sm"
+								variant="ghost"
+								className="text-xs px-2"
+								onClick={() => {
+									setZoom(1);
+									setRotation(0);
+									setPosition({ x: 0, y: 0 });
+								}}
+							>
+								Reset
+							</Button>
+						</div>
+
+						<Button
+							size="icon"
+							variant="secondary"
+							className="absolute top-2 right-2 shadow"
+							onClick={close}
+						>
+							<Minimize size={18} />
+						</Button>
+					</div>
+				</DialogContent>
+			</Dialog>
+		</>
+	);
+}
 
 // VisuallyHidden component for accessibility
 const _VisuallyHidden = ({ children }: { children: React.ReactNode }) => (
@@ -270,9 +443,9 @@ export default function MatchingByLine({
 			<div className="w-full">
 				{item.answer_img && (
 					<div className="mb-2">
-						<QuestionImage
+						<MatchingZoomImage
 							src={item.answer_img}
-							alt={item.answer_name_html || "Answer image"}
+							alt={item.answer_name_html || "Зураг"}
 						/>
 					</div>
 				)}

@@ -861,7 +861,7 @@ export default function ExamPage() {
 						{q.question_img && (
 							<QuestionImage src={q.question_img} alt="Асуултын зураг" />
 						)}
-						{(q.source_name || q.source_img) && (
+						{(q.source_name || q.source_img || q.src_audio) && (
 							<div className="mt-3 p-3 border rounded-lg">
 								{q.source_img && (
 									<img
@@ -870,9 +870,19 @@ export default function ExamPage() {
 										className="w-14 h-14 object-cover rounded-md mb-2"
 									/>
 								)}
+								{q.src_audio && (
+									<audio
+										controls
+										controlsList="nodownload"
+										className="w-full h-10"
+										src={q.src_audio}
+									>
+										<track kind="captions" />
+									</audio>
+								)}
 								{q.source_name && (
 									<div className="text-sm text-gray-700 leading-relaxed">
-										<span className="font-semibold">Эх сурвалж:</span>
+										<span className="font-semibold">{q.source_title}</span>
 										<MathContent html={q.source_name} />
 									</div>
 								)}
