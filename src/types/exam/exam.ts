@@ -17,6 +17,8 @@ export interface Question {
 	question_name: string;
 	ismaths: number;
 	is_src: number;
+	src_audio: string | null;
+	source_title: string | null;
 	source_name: string | null;
 	source_img: string | null;
 	is_shinjilgee: number;
