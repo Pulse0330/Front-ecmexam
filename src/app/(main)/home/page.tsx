@@ -103,7 +103,7 @@ interface ExamCardProps {
 }
 
 function getExamLockStatus(exam: PastExam) {
-	return exam.ispay === 1 && exam.isopensoril === 1;
+	return exam.ispay === 0 && exam.isopensoril === 0;
 }
 
 const ExamCard = memo(
@@ -466,7 +466,7 @@ export default function HomePage() {
 									href="/Lists/examList"
 								/>
 								<div className="animate-in fade-in-0 duration-700 delay-300">
-									<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3 px-2">
+									<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 px-2">
 										<ExamLists exams={homeData.RetDataThirt} />
 									</div>
 								</div>
