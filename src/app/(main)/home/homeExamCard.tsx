@@ -228,10 +228,10 @@ const ExamCardItem = memo(
 								<TooltipTrigger asChild>
 									<h3
 										className={cn(
-											"text-[10px] sm:text-xs md:text-sm font-semibold line-clamp-1 leading-tight transition-colors duration-300",
+											"text-xs sm:text-sm font-semibold text-foreground break-words whitespace-normal leading-tight transition-colors duration-300",
 											isLocked
-												? "text-foreground group-hover:text-amber-500"
-												: `text-foreground ${flagConfig.titleHover}`,
+												? "group-hover:text-amber-500"
+												: flagConfig.titleHover,
 										)}
 									>
 										{exam.title}

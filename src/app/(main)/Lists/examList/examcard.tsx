@@ -181,7 +181,7 @@ export default function ExamCard({
 							<TooltipTrigger asChild>
 								<h3
 									className={cn(
-										"text-xs sm:text-sm font-semibold text-foreground line-clamp-2 leading-tight transition-colors duration-300",
+										"text-xs sm:text-sm font-semibold text-foreground break-words whitespace-normal leading-tight transition-colors duration-300",
 										isLocked
 											? "group-hover:text-amber-500"
 											: flagConfig.titleHover,

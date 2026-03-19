@@ -146,7 +146,7 @@ export default function ExamListPage() {
 					/>
 
 					{/* Exam Cards Grid */}
-					<div className="grid grid-cols-2 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 2xl:grid-cols-6 gap-3 sm:gap-4 pb-4 auto-rows-fr">
+					<div className="grid grid-cols-2 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-5 gap-3 sm:gap-4 pb-4 auto-rows-fr">
 						{isPending
 							? SKELETON_KEYS.map((key) => <SkeletonCard key={key} />)
 							: filteredData.map((exam) => (
