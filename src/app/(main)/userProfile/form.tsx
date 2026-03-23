@@ -672,112 +672,99 @@ const isTeacher = user.ugroup === 3 || user.ugroup === 4;
 		}
 	};
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
+const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-		if (!editForm.Phone || editForm.Phone.trim() === "") {
-			setPhoneError("Утасны дугаар оруулна уу");
-			return;
-		}
-		setPhoneError("");
-
-		if (editForm.password && editForm.password !== editForm.confirmPassword) {
-			setPasswordError("Нууц үг таарахгүй байна");
-			return;
-		}
-		if (editForm.password && editForm.password.length < 6) {
-			setPasswordError("Нууц үг хамгийн багадаа 6 тэмдэгт байх ёстой");
-			return;
-		}
-		setPasswordError("");
-
-		let finalImageUrl = "";
-		if (uploadedImageUrl) {
-			finalImageUrl =
-				typeof uploadedImageUrl === "string"
-					? uploadedImageUrl
-					: (uploadedImageUrl as { FileWebUrl?: string }).FileWebUrl || "";
-		} else if (user.img_url) {
-			finalImageUrl =
-				typeof user.img_url === "string"
-					? user.img_url
-					: (user.img_url as unknown as { FileWebUrl?: string }).FileWebUrl ||
-						"";
-		}
-
-		// ── Байршил шалгалт — fallback хасав, заавал сонгосон байх ёстой ──
-		const selectedAimagItem = aimagList.find(
-			(a) => a.mID.toString() === selectedAimag,
-		);
-		const aimagName = selectedAimagItem?.mName ?? "";
-		const aimagId = selectedAimagItem?.mID ?? 0;
-		if (!aimagName || aimagId === 0) {
-			setLocationError("Аймаг / Нийслэл сонгоно уу");
-			return;
-		}
-
-		const selectedDistrictItem = districtList.find(
-			(d) => d.id.toString() === selectedDistrict,
-		);
-		const symName = selectedDistrictItem?.name ?? "";
-		const symId = selectedDistrictItem?.id ?? 0;
-		if (!symName || symId === 0) {
-			setLocationError("Сум / Дүүрэг сонгоно уу");
-			return;
-		}
-
-		if (!selectedSchool) {
-			setLocationError("Сургууль сонгоно уу");
-			return;
-		}
-		const schoolDb = selectedSchoolDbRef.current;
-		if (!schoolDb) {
-			alert("Сургуулийн мэдээлэл алдаатай байна. Дахин сонгоно уу");
-			return;
-		}
-
-	if (!isTeacher) {
-    if (!selectedClass) {
-        setLocationError("Анги / Бүлэг сонгоно уу");
+    if (!editForm.Phone || editForm.Phone.trim() === "") {
+        setPhoneError("Утасны дугаар оруулна уу");
         return;
     }
-    const selectedClassItem = classList.find(
-        (c) => c.studentgroupid === selectedClass,
+    setPhoneError("");
+
+    if (editForm.password && editForm.password !== editForm.confirmPassword) {
+        setPasswordError("Нууц үг таарахгүй байна");
+        return;
+    }
+    if (editForm.password && editForm.password.length < 6) {
+        setPasswordError("Нууц үг хамгийн багадаа 6 тэмдэгт байх ёстой");
+        return;
+    }
+    setPasswordError("");
+
+    let finalImageUrl = "";
+    if (uploadedImageUrl) {
+        finalImageUrl =
+            typeof uploadedImageUrl === "string"
+                ? uploadedImageUrl
+                : (uploadedImageUrl as { FileWebUrl?: string }).FileWebUrl || "";
+    } else if (user.img_url) {
+        finalImageUrl =
+            typeof user.img_url === "string"
+                ? user.img_url
+                : (user.img_url as unknown as { FileWebUrl?: string }).FileWebUrl || "";
+    }
+
+    const selectedAimagItem = aimagList.find(
+        (a) => a.mID.toString() === selectedAimag,
     );
+    const aimagName = selectedAimagItem?.mName ?? "";
+    const aimagId = selectedAimagItem?.mID ?? 0;
+    if (!aimagName || aimagId === 0) {
+        setLocationError("Аймаг / Нийслэл сонгоно уу");
+        return;
+    }
+
+    const selectedDistrictItem = districtList.find(
+        (d) => d.id.toString() === selectedDistrict,
+    );
+    const symName = selectedDistrictItem?.name ?? "";
+    const symId = selectedDistrictItem?.id ?? 0;
+    if (!symName || symId === 0) {
+        setLocationError("Сум / Дүүрэг сонгоно уу");
+        return;
+    }
+
+    if (!selectedSchool) {
+        setLocationError("Сургууль сонгоно уу");
+        return;
+    }
+    const schoolDb = selectedSchoolDbRef.current;
+    if (!schoolDb) {
+        alert("Сургуулийн мэдээлэл алдаатай байна. Дахин сонгоно уу");
+        return;
+    }
+
+    // ✅ Нэг блок болгон нэгтгэсэн, isTeacher шалгалт зөв
+    const selectedClassItem = isTeacher
+        ? undefined
+        : classList.find((c) => c.studentgroupid === selectedClass);
     const studentgroupname = selectedClassItem?.class_name ?? "";
-    if (!studentgroupname) {
+
+    if (!isTeacher && !studentgroupname) {
         setLocationError("Анги / Бүлэг сонгоно уу");
         return;
     }
-}
-const selectedClassItem = isTeacher ? undefined : classList.find(
-    (c) => c.studentgroupid === selectedClass,
-);
-const studentgroupname = selectedClassItem?.class_name ?? "";
-		if (!studentgroupname) {
-			setLocationError("Анги / Бүлэг сонгоно уу");
-			return;
-		}
-		setLocationError("");
-		updateMutation.mutate({
-			firstname: editForm.firstname || user.firstname,
-			lastname: editForm.lastname || user.lastname,
-			phone: editForm.Phone,
-			email: editForm.email || user.email,
-			aimag_id: aimagId,
-			aimagname: aimagName,
-			sym_id: symId,
-			symname: symName,
-			regnumber: "",
-			schoolname: selectedSchool,
-			schooldb: schoolDb,
-			studentgroupid: selectedClass,
-			studentgroupname,
-			user_id: userId,
-			img_url: finalImageUrl,
-			password: editForm.password || undefined,
-		});
-	};
+
+    setLocationError("");
+    updateMutation.mutate({
+        firstname: editForm.firstname || user.firstname,
+        lastname: editForm.lastname || user.lastname,
+        phone: editForm.Phone,
+        email: editForm.email || user.email,
+        aimag_id: aimagId,
+        aimagname: aimagName,
+        sym_id: symId,
+        symname: symName,
+        regnumber: "",
+        schoolname: selectedSchool,
+        schooldb: schoolDb,
+        studentgroupid: isTeacher ? "" : selectedClass,
+        studentgroupname,
+        user_id: userId,
+        img_url: finalImageUrl,
+        password: editForm.password || undefined,
+    });
+};
 
 	const getInitials = (name: string) => {
 		if (!name) return "??";
