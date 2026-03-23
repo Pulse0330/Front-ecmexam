@@ -64,11 +64,11 @@ const EXAM_LINKS: Array<{ href: string; label: string; icon: LucideIcon }> = [
 		label: "Шалгалтын жагсаалт",
 		icon: FileText,
 	},
-	{
-		href: "/Lists/examResult",
-		label: "Шалгалтын үр дүн",
-		icon: BarChart3,
-	},
+	// {
+	// 	href: "/Lists/examResult",
+	// 	label: "Шалгалтын үр дүн",
+	// 	icon: BarChart3,
+	// },
 ];
 
 const SORIL_LINKS: Array<{ href: string; label: string; icon: LucideIcon }> = [
