@@ -74,11 +74,11 @@ export function SignForm() {
 
 	// OTP States
 	const [isWaitingForSMS, setIsWaitingForSMS] = useState(false);
-	const [isVerified, setIsVerified] = useState(false);
+	const [isVerified, setIsVerified] = useState(true);
 	const [isChecking, setIsChecking] = useState(false);
 	const [verificationCode, setVerificationCode] = useState("");
 	const [timeLeft, setTimeLeft] = useState(0);
-
+const [isTeacher, setIsTeacher] = useState(false);
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -191,6 +191,7 @@ export function SignForm() {
 				values.lastname,
 				values.phone,
 				values.password,
+				isTeacher ? "4" : "0",
 			);
 
 			if (data?.RetResponse?.ResponseType) {
@@ -237,7 +238,7 @@ export function SignForm() {
 											placeholder="88888888"
 											type="tel"
 											{...field}
-											disabled={isPending || isVerified}
+											 disabled={isPending || isVerified}
 											maxLength={8}
 											className="text-lg"
 										/>
@@ -398,7 +399,22 @@ export function SignForm() {
 										</FormItem>
 									)}
 								/>
-
+<div className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+    <input
+        type="checkbox"
+        id="isTeacher"
+        checked={isTeacher}
+        onChange={(e) => setIsTeacher(e.target.checked)}
+        disabled={isPending}
+        className="h-4 w-4 rounded border-gray-300 accent-blue-600 cursor-pointer"
+    />
+    <label
+        htmlFor="isTeacher"
+        className="text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none"
+    >
+        Багшаар бүртгүүлэх
+    </label>
+</div>
 								<FormField
 									control={form.control}
 									name="password"

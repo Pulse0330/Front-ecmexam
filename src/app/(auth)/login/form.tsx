@@ -100,6 +100,7 @@ export function LoginForm() {
 				values.password,
 				"",
 				"",
+				1
 			);
 
 			if (!loginRes?.RetResponse?.ResponseType) {
@@ -136,7 +137,7 @@ export function LoginForm() {
 			const group = Number(userData.ugroup);
 
 			if (group === 3 || group === 4) {
-				router.push("/room");
+				router.push("/userProfile");
 			} else {
 				if (userData.is_enabled === 0) {
 					toast.info("Профайл мэдээллээ бөглөнө үү", {
@@ -194,22 +195,37 @@ export function LoginForm() {
 			for (const [key, val] of cookies) {
 				setCookie(key, val, 7);
 			}
-			const group = Number(userData.ugroup);
+			// const group = Number(userData.ugroup);
 
-			if (group === 3 || group === 4) {
-				router.push("/room");
-			} else {
-				if (userData.is_enabled === 0) {
-					toast.info("Профайл мэдээллээ бөглөнө үү", {
-						description:
-							"Та профайл мэдээллээ бүрэн бөглөсний дараа үндсэн хуудас болон шалгалт , шалгалтын  жагсаалт хуудас руу орж шалгалтаа өгөх боломжтой .",
-						duration: 5000,
-					});
-					router.push("/userProfile");
-				} else {
-					router.push(redirectUrl);
-				}
-			}
+			// if (group === 3 || group === 4) {
+			// 	router.push("/userProfile");
+			// } else {
+			// 	if (userData.is_enabled === 0) {
+			// 		toast.info("Профайл мэдээллээ бөглөнө үү", {
+			// 			description:
+			// 				"Та профайл мэдээллээ бүрэн бөглөсний дараа үндсэн хуудас болон шалгалт , шалгалтын  жагсаалт хуудас руу орж шалгалтаа өгөх боломжтой .",
+			// 			duration: 5000,
+			// 		});
+			// 		router.push("/userProfile");
+			// 	} else {
+			// 		router.push(redirectUrl);
+			// 	}
+			// }
+			const group = Number(userData.ugroup);
+const isProfileIncomplete = userData.is_enabled === 0;
+
+if (isProfileIncomplete || group === 5 || group === 4) {
+    if (isProfileIncomplete) {
+        toast.info("Профайл мэдээллээ бөглөнө үү", {
+            description:
+                "Та профайл мэдээллээ бүрэн бөглөсний дараа үндсэн хуудас болон шалгалт , шалгалтын  жагсаалт хуудас руу орж шалгалтаа өгөх боломжтой .",
+            duration: 5000,
+        });
+    }
+    router.push("/userProfile");
+} else {
+    router.push(redirectUrl);
+}
 		},
 		onError: (error: Error) => {
 			form.setError("root", {

@@ -58,7 +58,8 @@ const NAV_LINKS = [
 ];
 
 const EXAM_LINKS: Array<{ href: string; label: string; icon: LucideIcon }> = [
-	{
+ 
+	 {
 		href: "/Lists/examList",
 		label: "Шалгалтын жагсаалт",
 		icon: FileText,

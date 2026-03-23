@@ -22,7 +22,7 @@ interface Violation {
 export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 	onSubmit,
 	onLogout,
-	maxViolations = 3,
+	maxViolations = 1000,
 	strictMode = true,
 	enableFullscreen = true,
 }) => {

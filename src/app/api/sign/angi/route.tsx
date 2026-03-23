@@ -20,11 +20,7 @@ interface ConnectionConfig {
 	password: string;
 	database: string;
 	server: string;
-	pool: {
-		max: number;
-		min: number;
-		idleTimeoutMillis: number;
-	};
+	
 	options: {
 		encrypt: boolean;
 		trustServerCertificate: boolean;
@@ -59,11 +55,7 @@ export async function POST(request: NextRequest) {
 			password: "sql$erver43",
 			database: database,
 			server: serverip,
-			pool: {
-				max: 100,
-				min: 0,
-				idleTimeoutMillis: 30000,
-			},
+	
 			options: {
 				encrypt: false,
 				trustServerCertificate: false,

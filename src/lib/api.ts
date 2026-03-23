@@ -65,12 +65,15 @@ export const loginTokenRequest = async (
 	password: string,
 	deviceid: string,
 	devicemodel: string,
+	isweb:Number,
+	
 ): Promise<LoginTokenResponse<User>> => {
 	const { data } = await api.post<LoginTokenResponse<User>>("/weblogin", {
 		username,
 		password,
 		deviceid,
 		devicemodel,
+		isweb,
 	});
 
 	return data;
@@ -124,6 +127,7 @@ export const registerSysUserRequest = async (
 	lastname: string,
 	phone: string,
 	password: string,
+	ugroup:string,
 ): Promise<RegisterSysUserResponse> => {
 	const { data } = await api.post<RegisterSysUserResponse>(
 		"/register_sysuser",
@@ -133,6 +137,7 @@ export const registerSysUserRequest = async (
 			lastname: lastname,
 			phone: phone,
 			password: password,
+			ugroup:ugroup,
 		},
 	);
 
@@ -185,11 +190,6 @@ export const getUserUpdateProfile = async (
 	user_id: number,
 	img_url: string | null,
 ): Promise<userUpdateResponse> => {
-	// 👇 ЭНЭ ХЭСГИЙГ НЭМНЭ ҮҮ
-	console.log("🔍 getUserUpdateProfile RECEIVED:");
-	console.log("password parameter:", currentpassword);
-	console.log("password type:", typeof currentpassword);
-
 	const requestBody = {
 		firstname,
 		lastname,

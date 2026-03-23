@@ -65,6 +65,7 @@ interface UserData {
 	Phone: string | null;
 	img_url: string | null;
 	username: string;
+	ugroup:number;
 	password: string | null;
 	aimag_name?: string | null;
 	aimag_id?: string | number | null;
@@ -197,7 +198,7 @@ function SelectField({
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function ProfileContent({ user, userId }: ProfileContentProps) {
 	const queryClient = useQueryClient();
-
+const isTeacher = user.ugroup === 3 || user.ugroup === 4;
 	const [showToast, setShowToast] = useState(false);
 	const [isEditing, setIsEditing] = useState(false);
 	const [passwordError, setPasswordError] = useState("");
@@ -735,14 +736,24 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 			return;
 		}
 
-		if (!selectedClass) {
-			setLocationError("Сургуулийн мэдээлэл алдаатай байна. Дахин сонгоно уу");
-			return;
-		}
-		const selectedClassItem = classList.find(
-			(c) => c.studentgroupid === selectedClass,
-		);
-		const studentgroupname = selectedClassItem?.class_name ?? "";
+	if (!isTeacher) {
+    if (!selectedClass) {
+        setLocationError("Анги / Бүлэг сонгоно уу");
+        return;
+    }
+    const selectedClassItem = classList.find(
+        (c) => c.studentgroupid === selectedClass,
+    );
+    const studentgroupname = selectedClassItem?.class_name ?? "";
+    if (!studentgroupname) {
+        setLocationError("Анги / Бүлэг сонгоно уу");
+        return;
+    }
+}
+const selectedClassItem = isTeacher ? undefined : classList.find(
+    (c) => c.studentgroupid === selectedClass,
+);
+const studentgroupname = selectedClassItem?.class_name ?? "";
 		if (!studentgroupname) {
 			setLocationError("Анги / Бүлэг сонгоно уу");
 			return;
@@ -1132,27 +1143,29 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 													<School className="w-full h-full text-indigo-500" />
 												}
 											/>
-											<SelectField
-												label="Анги / Бүлэг"
-												placeholder={
-													classLoading
-														? "Уншиж байна..."
-														: !selectedSchool
-															? "Эхлээд сургууль сонгоно уу"
-															: "— Анги сонгох —"
-												}
-												options={classList.map((c) => ({
-													value: c.studentgroupid,
-													label: c.class_name,
-												}))}
-												value={selectedClass}
-												onValueChange={setSelectedClass}
-												disabled={!selectedSchool}
-												loading={classLoading}
-												icon={
-													<School className="w-full h-full text-violet-500" />
-												}
-											/>
+											{!isTeacher && (
+    <SelectField
+        label="Анги / Бүлэг"
+        placeholder={
+            classLoading
+                ? "Уншиж байна..."
+                : !selectedSchool
+                    ? "Эхлээд сургууль сонгоно уу"
+                    : "— Анги сонгох —"
+        }
+        options={classList.map((c) => ({
+            value: c.studentgroupid,
+            label: c.class_name,
+        }))}
+        value={selectedClass}
+        onValueChange={setSelectedClass}
+        disabled={!selectedSchool}
+        loading={classLoading}
+        icon={
+            <School className="w-full h-full text-violet-500" />
+        }
+    />
+)}
 										</div>
 									</div>
 								</div>
@@ -1267,23 +1280,23 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												</div>
 											</div>
 										</div>
-										<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-											<div className="flex items-center gap-3">
-												<School className="w-5 h-5 text-violet-500" />
-												<div>
-													<p className="text-xs text-slate-500 dark:text-slate-400">
-														Анги
-													</p>
-													<p className="text-sm font-semibold text-slate-900 dark:text-white">
-														{user.studentgroupname || (
-															<span className="text-slate-400 font-normal">
-																—
-															</span>
-														)}
-													</p>
-												</div>
-											</div>
-										</div>
+										{!isTeacher && (
+    <div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+        <div className="flex items-center gap-3">
+            <School className="w-5 h-5 text-violet-500" />
+            <div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Анги
+                </p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                    {user.studentgroupname || (
+                        <span className="text-slate-400 font-normal">—</span>
+                    )}
+                </p>
+            </div>
+        </div>
+    </div>
+)}
 									</div>
 								</div>
 							)}
