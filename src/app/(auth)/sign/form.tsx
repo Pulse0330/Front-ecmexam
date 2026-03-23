@@ -74,7 +74,7 @@ export function SignForm() {
 
 	// OTP States
 	const [isWaitingForSMS, setIsWaitingForSMS] = useState(false);
-	const [isVerified, setIsVerified] = useState(true);
+	const [isVerified, setIsVerified] = useState(false);
 	const [isChecking, setIsChecking] = useState(false);
 	const [verificationCode, setVerificationCode] = useState("");
 	const [timeLeft, setTimeLeft] = useState(0);
