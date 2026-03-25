@@ -47,7 +47,12 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 	};
 
 	const isCompleted = exam.isguitset === 1;
-	const isPaid = exam.isopensoril === 1 || exam.ispay === 1;
+	const isLocked =
+		!isCompleted &&
+		exam.ispay === 1 &&
+		exam.paid === 0 &&
+		exam.isopensoril === 0;
+	const isPaidAndUnlocked = exam.ispay === 1 && exam.paid === 1;
 
 	return (
 		<motion.div
@@ -59,9 +64,9 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 			<button
 				type="button"
 				onClick={onClick}
-				aria-label={`${exam.soril_name} сорил ${!isPaid ? "(Төлбөр шаардлагатай)" : "нээх"}`}
+				aria-label={`${exam.soril_name} сорил ${isLocked ? "(Төлбөр шаардлагатай)" : "нээх"}`}
 				className={`group h-full w-full relative flex flex-col backdrop-blur-md cursor-pointer transition-all duration-500 ease-out rounded-lg sm:rounded-xl overflow-hidden text-left ${
-					!isPaid
+					isLocked
 						? "border border-amber-500/40 bg-card/30 hover:shadow-lg hover:shadow-amber-500/20 hover:border-amber-500/60"
 						: "border border-border/40 bg-card/50 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20"
 				}`}
@@ -72,7 +77,7 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 							src={exam.filename}
 							alt={exam.soril_name}
 							fill
-							className={`object-cover transition-all duration-700 ${!isPaid ? "brightness-75 group-hover:brightness-90" : ""}`}
+							className={`object-cover transition-all duration-700 ${isLocked ? "brightness-75 group-hover:brightness-90" : ""}`}
 							sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
 							quality={90}
 						/>
@@ -83,7 +88,7 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 					)}
 
 					{/* Lock Overlay for Unpaid Exams */}
-					{!isPaid && (
+					{isLocked && (
 						<div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-10">
 							<div className="">
 								<Lock className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
@@ -96,7 +101,7 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 
 					{/* Status Badge on image - Responsive */}
 					<div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 z-20">
-						{!isPaid ? (
+						{isLocked ? (
 							<Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
 								<Lock className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
 								Төлбөртэй
@@ -105,6 +110,15 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 							<Badge className="bg-green-500/90 text-white border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
 								<ClipboardCheck className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
 								Гүйцэтгэсэн
+							</Badge>
+						) : isPaidAndUnlocked ? (
+							<Badge className="bg-blue-500/90 hover:bg-blue-600 text-white border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
+								<ClipboardCheck className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
+								Төлсөн
+							</Badge>
+						) : exam.isopensoril === 1 ? (
+							<Badge className="bg-green-500/90 text-white hover:bg-green-600 border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
+								Нээлттэй
 							</Badge>
 						) : (
 							<motion.div
@@ -152,7 +166,7 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 							<TooltipTrigger asChild>
 								<h3
 									className={`text-[10px] sm:text-xs md:text-sm font-semibold line-clamp-1 leading-tight transition-colors duration-300 ${
-										!isPaid
+										isLocked
 											? "text-foreground group-hover:text-amber-500"
 											: "text-foreground group-hover:text-primary"
 									}`}
@@ -162,7 +176,7 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 							</TooltipTrigger>
 							<TooltipContent className="max-w-xs">
 								<p>{exam.soril_name}</p>
-								{!isPaid && (
+								{isLocked && (
 									<p className="text-amber-500 mt-1">
 										Төлбөр төлөх шаардлагатай
 									</p>
@@ -209,12 +223,12 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 					{/* Action Button - багасгасан */}
 					<div
 						className={`absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 md:bottom-2.5 md:right-2.5 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center transition-all duration-300 ${
-							!isPaid
+							isLocked
 								? "bg-amber-500/20 group-hover:bg-amber-500 group-hover:scale-110"
 								: "bg-muted/50 group-hover:bg-foreground group-hover:scale-110"
 						}`}
 					>
-						{!isPaid ? (
+						{isLocked ? (
 							<Lock className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 text-amber-600 group-hover:text-white transition-all" />
 						) : (
 							<ArrowRight className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 text-muted-foreground group-hover:text-background group-hover:translate-x-0.5 transition-all" />

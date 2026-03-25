@@ -2,7 +2,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import Cookies from "js-cookie";
 import {
-	BarChart3,
 	ChevronDown,
 	ChevronUp,
 	ClipboardList,
@@ -58,8 +57,7 @@ const NAV_LINKS = [
 ];
 
 const EXAM_LINKS: Array<{ href: string; label: string; icon: LucideIcon }> = [
- 
-	 {
+	{
 		href: "/Lists/examList",
 		label: "Шалгалтын жагсаалт",
 		icon: FileText,

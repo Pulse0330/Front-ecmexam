@@ -103,7 +103,7 @@ interface ExamCardProps {
 }
 
 function getExamLockStatus(exam: PastExam) {
-	return exam.ispay === 0 && exam.isopensoril === 0;
+	return exam.ispay === 1 && exam.paid === 0 && exam.isopensoril === 0;
 }
 
 const ExamCard = memo(
@@ -111,6 +111,7 @@ const ExamCard = memo(
 		const router = useRouter();
 		const isCompleted = isSorilCompleted(exam.isguitset);
 		const isLocked = getExamLockStatus(exam);
+		const isPaidAndUnlocked = exam.ispay === 1 && exam.paid === 1;
 
 		const handleClick = useCallback(() => {
 			router.push(
@@ -170,14 +171,19 @@ const ExamCard = memo(
 											<Lock className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
 											Төлбөртэй
 										</Badge>
-									) : exam.isopensoril === 1 ? (
-										<Badge className="bg-green-500/90 text-white hover:bg-green-600 border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
-											Нээлттэй
-										</Badge>
 									) : isCompleted ? (
 										<Badge className="bg-green-500/90 text-white border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
 											<ClipboardCheck className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
 											Гүйцэтгэсэн
+										</Badge>
+									) : isPaidAndUnlocked ? (
+										<Badge className="bg-blue-500/90 hover:bg-blue-600 text-white border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
+											<ClipboardCheck className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
+											Төлсөн
+										</Badge>
+									) : exam.isopensoril === 1 ? (
+										<Badge className="bg-green-500/90 text-white hover:bg-green-600 border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
+											Нээлттэй
 										</Badge>
 									) : (
 										<Badge className="border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">

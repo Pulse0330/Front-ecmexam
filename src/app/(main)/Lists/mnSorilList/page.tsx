@@ -223,14 +223,15 @@ export default function MnSorilLits() {
 				<DialogContent className="sm:max-w-md">
 					<DialogHeader>
 						<DialogTitle>Төлбөртэй сорил</DialogTitle>
-						<DialogDescription className="pt-4 space-y-2">
-							<p className="font-medium text-foreground">
-								{selectedSoril?.soril_name}
-							</p>
-							<p>
+						{/* asChild нэмснээр DialogDescription нь доорх <div>-ээр солигдоно */}
+						<DialogDescription asChild className="pt-4 space-y-2">
+							<div className="text-muted-foreground text-sm">
+								<div className="font-semibold text-foreground">
+									{selectedSoril?.soril_name}
+								</div>
 								Энэхүү сорил төлбөртэй юм. Үргэлжлүүлэхийн тулд төлбөр төлөх
 								шаардлагатай.
-							</p>
+							</div>
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter className="flex-row gap-2 sm:gap-0">

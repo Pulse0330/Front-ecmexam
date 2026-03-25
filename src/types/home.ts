@@ -60,6 +60,7 @@ export interface Exam {
 	ispaydescr: string;
 	amount: number;
 	ispay: 0 | 1;
+	ispaid: 0 | 1;
 	ispurchased: 0 | 1;
 	ispurchaseddescr: string;
 	bill_type: number;
@@ -76,6 +77,7 @@ export interface PastExam {
 	test_resid: number; // Тестийн үр дүнгийн ID
 	filename: string; // Зургийн URL
 	ispay: number;
+	paid: number;
 	isopensoril: number;
 }
 

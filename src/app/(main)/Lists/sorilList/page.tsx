@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import LessonFilter from "@/components/LessonFilter";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,18 +41,25 @@ interface TestFilterResponse {
 	RetData: Lesson[];
 }
 
+// ✅ Нэг хуудсанд харуулах тоо
+const ITEMS_PER_PAGE = 14;
+
 export default function Sorillists() {
 	const { userId } = useAuthStore();
 	const router = useRouter();
+
+	// States
 	const [activeTab, setActiveTab] = useState<Tab>("all");
 	const [selectedLessonId, setSelectedLessonId] = useState<number>(0);
 	const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 	const [selectedSoril, setSelectedSoril] = useState<SorillistsData | null>(
 		null,
 	);
+	const [currentPage, setCurrentPage] = useState(1);
 
 	const SKELETON_KEYS = Array.from({ length: 8 }, (_, i) => `skeleton-${i}`);
 
+	// Queries
 	const { data: lessonData } = useQuery<TestFilterResponse>({
 		queryKey: ["testFilter", userId],
 		queryFn: () => getTestFilter(userId || 0),
@@ -65,19 +72,34 @@ export default function Sorillists() {
 		enabled: !!userId,
 	});
 
+	// Memos
 	const data = useMemo(() => queryData?.RetData || [], [queryData]);
 	const lessons = useMemo(() => lessonData?.RetData || [], [lessonData]);
 
 	const openSorils = useMemo(
-		() => data.filter((e) => e.isopensoril === 1),
+		// Зөвхөн isopensoril биш, төлбөр нь төлөгдсөн (ispay) сорилуудыг нээлттэй гэж үзнэ
+		() => data.filter((e) => e.isopensoril === 1 || e.ispay === 1),
 		[data],
 	);
 
-	// ✅ Tab-д тохируулж харуулах өгөгдөл
+	// ✅ Tab-аар шүүгдсэн өгөгдөл
 	const filteredData = useMemo(() => {
 		return activeTab === "open" ? openSorils : data;
 	}, [activeTab, data, openSorils]);
 
+	// ✅ Одоогийн хуудсанд харагдах өгөгдлийг таслаж авах (Pagination Logic)
+	const paginatedData = useMemo(() => {
+		const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+		return filteredData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+	}, [filteredData, currentPage]);
+
+	const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+
+	// ✅ Шүүлтүүр өөрчлөгдөхөд хуудсыг 1 рүү буцаах
+	useEffect(() => {
+		setCurrentPage(1);
+	}, []);
+	// Handlers
 	const handleSorilClick = useCallback(
 		(soril: SorillistsData) => {
 			if (soril.isopensoril !== 1) {
@@ -110,7 +132,7 @@ export default function Sorillists() {
 					</h3>
 				</header>
 
-				{/* ✅ Tab switch */}
+				{/* Tab switch */}
 				<div className="flex gap-1 p-1 bg-muted rounded-xl w-fit mb-4">
 					<button
 						type="button"
@@ -181,11 +203,11 @@ export default function Sorillists() {
 					</div>
 				)}
 
-				{/* Soril Grid */}
-				<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2 sm:gap-3 md:gap-4 pb-4">
+				{/* Soril Grid - paginatedData ашиглав */}
+				<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2 sm:gap-3 md:gap-4 pb-4 content-start">
 					{isPending
 						? SKELETON_KEYS.map((key) => <SkeletonCard key={key} />)
-						: filteredData.map((soril) => (
+						: paginatedData.map((soril) => (
 								<SorilCard
 									key={soril.exam_id}
 									exam={soril}
@@ -193,6 +215,50 @@ export default function Sorillists() {
 								/>
 							))}
 				</div>
+
+				{/* ✅ Pagination UI */}
+				{!isPending && totalPages > 1 && (
+					<div className="flex items-center justify-center gap-2 mt-8 mb-10">
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+							disabled={currentPage === 1}
+							className="rounded-full"
+						>
+							<ChevronLeft size={18} />
+						</Button>
+
+						<div className="flex items-center gap-1">
+							{Array.from({ length: totalPages }, (_, i) => i + 1).map(
+								(page) => (
+									<Button
+										key={page}
+										variant={currentPage === page ? "default" : "ghost"}
+										size="sm"
+										onClick={() => setCurrentPage(page)}
+										className={cn(
+											"w-9 h-9 rounded-full",
+											currentPage === page && "shadow-md",
+										)}
+									>
+										{page}
+									</Button>
+								),
+							)}
+						</div>
+
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+							disabled={currentPage === totalPages}
+							className="rounded-full"
+						>
+							<ChevronRight size={18} />
+						</Button>
+					</div>
+				)}
 
 				{/* Empty State */}
 				{!isPending && filteredData.length === 0 && (
@@ -203,13 +269,6 @@ export default function Sorillists() {
 						/>
 						<p className="text-lg font-medium text-gray-700 dark:text-gray-300">
 							Сорил олдсонгүй
-						</p>
-						<p className="text-sm text-gray-500 dark:text-gray-400">
-							{activeTab === "open"
-								? selectedLessonId === 0
-									? "Одоогоор нээлттэй сорил байхгүй байна."
-									: `${lessons.find((l) => l.lesson_id === selectedLessonId)?.lesson_name || "Энэ хичээл"}-д нээлттэй сорил байхгүй байна.`
-								: "Танд одоогоор сорил байхгүй байна."}
 						</p>
 					</div>
 				)}
@@ -253,26 +312,10 @@ export default function Sorillists() {
 
 const SkeletonCard = () => (
 	<div className="h-full w-full flex flex-col overflow-hidden rounded-lg sm:rounded-xl border border-border/40 bg-card/50 backdrop-blur-md animate-pulse">
-		<div className="w-full aspect-5/2 bg-slate-200 dark:bg-slate-800 relative">
-			<div className="absolute top-2 left-2 flex flex-col gap-2">
-				<div className="h-5 w-16 bg-slate-300 dark:bg-slate-700 rounded-full" />
-			</div>
-			<div className="absolute bottom-2 left-2">
-				<div className="h-4 w-20 bg-slate-300 dark:bg-slate-700 rounded" />
-			</div>
-		</div>
-		<div className="flex flex-col grow p-2 gap-2">
-			<div className="space-y-2">
-				<div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded" />
-				<div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-800 rounded" />
-			</div>
-			<div className="mt-auto pt-2 border-t border-border/50 flex items-center justify-between">
-				<div className="flex gap-2">
-					<div className="h-3 w-10 bg-slate-200 dark:bg-slate-800 rounded" />
-					<div className="h-3 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
-				</div>
-				<div className="h-6 w-6 rounded-full bg-slate-200 dark:bg-slate-800" />
-			</div>
+		<div className="w-full aspect-5/2 bg-slate-200 dark:bg-slate-800" />
+		<div className="p-2 space-y-2">
+			<div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded" />
+			<div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-800 rounded" />
 		</div>
 	</div>
 );
