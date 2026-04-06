@@ -31,9 +31,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { deleteExamAnswer, getExamById, saveExamAnswer } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { AnswerValue } from "@/types/exam/exam";
-import { AdvancedExamProctor } from "../component/examguard";
 import { ExamHeader } from "../component/examUtils/examInfo";
 import MathContent from "../component/examUtils/MathContent";
+import { SourceBlock } from "../component/examUtils/sourceCard";
 import ExamTimer from "../component/Itime";
 import QuestionImage from "../component/question/questionImage";
 
@@ -855,39 +855,24 @@ export default function ExamPage() {
 
 	const renderQuestion = useCallback(
 		(q: (typeof allQuestions)[0]) => {
+			const header = (
+				<>
+					{q.question_img && (
+						<QuestionImage src={q.question_img} alt="Асуултын зураг" />
+					)}
+					<SourceBlock
+						sourceName={q.source_name}
+						sourceTitle={q.source_title}
+						sourceImg={q.source_img}
+						srcAudio={q.src_audio}
+					/>
+				</>
+			);
+
 			if (q.que_type_id === 1) {
 				return (
 					<>
-						{q.question_img && (
-							<QuestionImage src={q.question_img} alt="Асуултын зураг" />
-						)}
-						{(q.source_name || q.source_img || q.src_audio) && (
-							<div className="mt-3 p-3 border rounded-lg">
-								{q.source_img && (
-									<img
-										src={q.source_img}
-										alt="source"
-										className="w-14 h-14 object-cover rounded-md mb-2"
-									/>
-								)}
-								{q.src_audio && (
-									<audio
-										controls
-										controlsList="nodownload"
-										className="w-full h-10"
-										src={q.src_audio}
-									>
-										<track kind="captions" />
-									</audio>
-								)}
-								{q.source_name && (
-									<div className="text-sm text-gray-700 leading-relaxed">
-										<span className="font-semibold">{q.source_title}</span>
-										<MathContent html={q.source_name} />
-									</div>
-								)}
-							</div>
-						)}
+						{header}
 						<SingleSelectQuestion
 							questionId={q.question_id}
 							questionText={q.question_name}
@@ -902,9 +887,7 @@ export default function ExamPage() {
 			if ([2, 3, 4, 6].includes(q.que_type_id)) {
 				return (
 					<>
-						{q.question_img && (
-							<QuestionImage src={q.question_img} alt="Асуултын зураг" />
-						)}
+						{header}
 						{q.que_type_id === 2 && (
 							<MultiSelectQuestion
 								questionId={q.question_id}
@@ -968,9 +951,7 @@ export default function ExamPage() {
 			if (q.que_type_id === 5) {
 				return (
 					<>
-						{q.question_img && (
-							<QuestionImage src={q.question_img} alt="Асуултын зураг" />
-						)}
+						{header}
 						<DragAndDropQuestion
 							questionId={q.question_id}
 							examId={examData?.ExamInfo?.[0]?.id}
@@ -1094,11 +1075,11 @@ export default function ExamPage() {
 									/>
 								</div>
 							)}
-							<AdvancedExamProctor
+							{/* <AdvancedExamProctor
 								maxViolations={1000}
 								strictMode={true}
 								enableFullscreen={true}
-							/>
+							/> */}
 						</div>
 					</aside>
 
