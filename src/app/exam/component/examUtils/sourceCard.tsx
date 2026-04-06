@@ -10,25 +10,29 @@ interface SourceBlockProps {
 	lineLimit?: number;
 }
 
-const SOURCE_LINE_LIMIT = 6;
+const SOURCE_CHAR_LIMIT = 400;
 
 export function SourceBlock({
 	sourceName,
 	sourceTitle,
 	sourceImg,
 	srcAudio,
-	lineLimit = SOURCE_LINE_LIMIT,
 }: SourceBlockProps) {
 	const [expanded, setExpanded] = useState(false);
 
 	if (!sourceName && !sourceImg && !srcAudio) return null;
 
-	const plainText = sourceName?.replace(/<[^>]+>/g, " ").trim() ?? "";
-	const sentences = plainText.split(/(?<=[.!?…])\s+/);
-	const needsTruncate = sentences.length > lineLimit;
-	const previewHtml = needsTruncate
-		? `${sentences.slice(0, lineLimit).join(" ")}`
-		: sourceName;
+	const plainText =
+		sourceName
+			?.replace(/<[^>]+>/g, "")
+			.replace(/&[^;]+;/g, " ")
+			.trim() ?? "";
+	const needsTruncate = plainText.length > SOURCE_CHAR_LIMIT;
+
+	// HTML биш plainText-ийг slice хийж preview үүсгэх
+	const previewText = needsTruncate
+		? `${plainText.slice(0, SOURCE_CHAR_LIMIT)}`
+		: plainText;
 
 	return (
 		<div className="mt-3 p-3 border rounded-lg">
@@ -71,10 +75,7 @@ export function SourceBlock({
 						</>
 					) : (
 						<span>
-							<span
-								dangerouslySetInnerHTML={{ __html: previewHtml! }}
-								className="inline"
-							/>
+							{previewText}
 							<Button
 								type="button"
 								variant="link"
