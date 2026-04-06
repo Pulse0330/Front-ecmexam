@@ -100,7 +100,7 @@ export function LoginForm() {
 				values.password,
 				"",
 				"",
-				1
+				1,
 			);
 
 			if (!loginRes?.RetResponse?.ResponseType) {
@@ -212,20 +212,20 @@ export function LoginForm() {
 			// 	}
 			// }
 			const group = Number(userData.ugroup);
-const isProfileIncomplete = userData.is_enabled === 0;
+			const isProfileIncomplete = userData.is_enabled === 0;
 
-if (isProfileIncomplete || group === 5 || group === 4) {
-    if (isProfileIncomplete) {
-        toast.info("Профайл мэдээллээ бөглөнө үү", {
-            description:
-                "Та профайл мэдээллээ бүрэн бөглөсний дараа үндсэн хуудас болон шалгалт , шалгалтын  жагсаалт хуудас руу орж шалгалтаа өгөх боломжтой .",
-            duration: 5000,
-        });
-    }
-    router.push("/userProfile");
-} else {
-    router.push(redirectUrl);
-}
+			if (isProfileIncomplete || group === 5 || group === 4) {
+				if (isProfileIncomplete) {
+					toast.info("Профайл мэдээллээ бөглөнө үү", {
+						description:
+							"Та профайл мэдээллээ бүрэн бөглөсний дараа үндсэн хуудас болон шалгалт , шалгалтын  жагсаалт хуудас руу орж шалгалтаа өгөх боломжтой .",
+						duration: 5000,
+					});
+				}
+				router.push("/userProfile");
+			} else {
+				router.push(redirectUrl);
+			}
 		},
 		onError: (error: Error) => {
 			form.setError("root", {
