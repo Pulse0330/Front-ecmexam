@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import MathContent from "./MathContent";
 
 interface SourceBlockProps {
@@ -26,7 +27,7 @@ export function SourceBlock({
 	const sentences = plainText.split(/(?<=[.!?…])\s+/);
 	const needsTruncate = sentences.length > lineLimit;
 	const previewHtml = needsTruncate
-		? `${sentences.slice(0, lineLimit).join(" ")}…`
+		? `${sentences.slice(0, lineLimit).join(" ")}`
 		: sourceName;
 
 	return (
@@ -57,13 +58,15 @@ export function SourceBlock({
 						<>
 							<MathContent html={sourceName} />
 							{needsTruncate && (
-								<button
+								<Button
 									type="button"
+									variant="link"
+									size="sm"
 									onClick={() => setExpanded(false)}
-									className="text-gray-500 font-semibold hover:underline"
+									className="h-auto p-0 ml-1 text-blue-600 font-semibold"
 								>
 									Хураах
-								</button>
+								</Button>
 							)}
 						</>
 					) : (
@@ -72,13 +75,15 @@ export function SourceBlock({
 								dangerouslySetInnerHTML={{ __html: previewHtml! }}
 								className="inline"
 							/>
-							<button
+							<Button
 								type="button"
+								variant="link"
+								size="sm"
 								onClick={() => setExpanded(true)}
-								className="text-gray-500 font-semibold hover:underline inline"
+								className="h-auto p-0 ml-1 text-blue-600 font-semibold"
 							>
-								дэлгэрэнгүй
-							</button>
+								...дэлгэрэнгүй
+							</Button>
 						</span>
 					)}
 				</div>
