@@ -42,7 +42,7 @@ interface TestFilterResponse {
 }
 
 // ✅ Нэг хуудсанд харуулах тоо
-const ITEMS_PER_PAGE = 14;
+const ITEMS_PER_PAGE = 18;
 
 export default function Sorillists() {
 	const { userId } = useAuthStore();
@@ -204,7 +204,7 @@ export default function Sorillists() {
 				)}
 
 				{/* Soril Grid - paginatedData ашиглав */}
-				<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2 sm:gap-3 md:gap-4 pb-4 content-start">
+				<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4 pb-4 content-start">
 					{isPending
 						? SKELETON_KEYS.map((key) => <SkeletonCard key={key} />)
 						: paginatedData.map((soril) => (

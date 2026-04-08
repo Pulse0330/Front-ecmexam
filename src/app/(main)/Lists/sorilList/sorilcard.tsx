@@ -52,7 +52,7 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 		exam.ispay === 1 &&
 		exam.paid === 0 &&
 		exam.isopensoril === 0;
-	const isPaidAndUnlocked = exam.ispay === 1 && exam.paid === 1;
+	const _isPaidAndUnlocked = exam.ispay === 1 && exam.paid === 1;
 
 	return (
 		<motion.div
@@ -101,35 +101,11 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 
 					{/* Status Badge on image - Responsive */}
 					<div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 z-20">
-						{isLocked ? (
+						{isLocked && (
 							<Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
 								<Lock className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
 								Төлбөртэй
 							</Badge>
-						) : isCompleted ? (
-							<Badge className="bg-green-500/90 text-white border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
-								<ClipboardCheck className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
-								Гүйцэтгэсэн
-							</Badge>
-						) : isPaidAndUnlocked ? (
-							<Badge className="bg-blue-500/90 hover:bg-blue-600 text-white border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
-								<ClipboardCheck className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
-								Төлсөн
-							</Badge>
-						) : exam.isopensoril === 1 ? (
-							<Badge className="bg-green-500/90 text-white hover:bg-green-600 border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
-								Нээлттэй
-							</Badge>
-						) : (
-							<motion.div
-								initial={{ scale: 0 }}
-								animate={{ scale: 1 }}
-								transition={{ delay: 0.2 }}
-							>
-								<Badge className="border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
-									Гүйцэтгээгүй
-								</Badge>
-							</motion.div>
 						)}
 					</div>
 
@@ -151,7 +127,6 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 					</div>
 				</div>
 
-				{/* Content Section - багасгасан padding */}
 				<div className="p-1.5 sm:p-2 md:p-2.5 pb-7 sm:pb-8 md:pb-9 flex flex-col flex-1 space-y-1 sm:space-y-1.5">
 					{/* Plan Name - Optional */}
 					{exam.plan_name && (
@@ -165,7 +140,7 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<h3
-									className={`text-[10px] sm:text-xs md:text-sm font-semibold line-clamp-1 leading-tight transition-colors duration-300 ${
+									className={`text-[8px] sm:text-xs md:text-sm font-semibold leading-tight whitespace-normal words transition-colors duration-300 ${
 										isLocked
 											? "text-foreground group-hover:text-amber-500"
 											: "text-foreground group-hover:text-primary"

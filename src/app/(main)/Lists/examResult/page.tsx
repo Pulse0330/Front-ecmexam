@@ -325,7 +325,7 @@ export default function ExamResultList() {
 						<CardContent className="p-6 space-y-5">
 							{/* Exam Grid or Empty State */}
 							{exams.length > 0 ? (
-								<div className="grid grid-cols-2 xs:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-7 gap-3 sm:gap-4 pb-4 auto-rows-fr">
+								<div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-5 gap-3 sm:gap-4 pb-4 auto-rows-fr">
 									{exams.map((exam) => (
 										<div
 											key={exam.exam_id}

@@ -169,7 +169,7 @@ export const ExamListItem: React.FC<ExamListItemProps> = ({
 				<div className="p-1.5 sm:p-2 md:p-2.5 pb-16 sm:pb-18 md:pb-20 flex flex-col flex-1 space-y-1 sm:space-y-1.5">
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<h3 className="text-[10px] sm:text-xs md:text-sm font-semibold text-foreground line-clamp-1 leading-tight group-hover:text-primary transition-colors duration-300">
+							<h3 className="text-[8px] sm:text-xs md:text-sm font-semibold text-foreground leading-tight group-hover:text-primary transition-colors duration-300 break-words">
 								{exam.title}
 							</h3>
 						</TooltipTrigger>

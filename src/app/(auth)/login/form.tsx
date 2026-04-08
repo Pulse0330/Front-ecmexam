@@ -75,9 +75,10 @@ export function LoginForm() {
 	const tokenLogin = searchParams.get("token");
 	// const [announcementOpen, setAnnouncementOpen] = useState(true);
 	// const uname = searchParams.get("uname");
+
 	const { setUser, setToken } = useAuthStore();
 	const [open, setOpen] = useState(false);
-
+	const [guideOpen, setGuideOpen] = useState(false);
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
 		defaultValues: { username: "", password: "" },
@@ -381,7 +382,7 @@ export function LoginForm() {
 				</Form>
 
 				<CardFooter className="flex-col gap-3 px-6 pb-6 pt-2">
-					<button
+					{/* <button
 						type="button"
 						onClick={() => setOpen(true)}
 						className="w-full flex items-center justify-between px-7 py-5
@@ -413,7 +414,7 @@ export function LoginForm() {
 								/>
 							</svg>
 						</div>
-					</button>
+					</button> */}
 					<div className="relative w-full">
 						<div className="absolute inset-0 flex items-center">
 							<span className="w-full border-t" />
@@ -429,6 +430,14 @@ export function LoginForm() {
 							<Link href="/sign">Бүртгүүлэх</Link>
 						</Button>
 					</p>
+					<Button
+						type="button"
+						variant="outline"
+						className="w-full text-sm"
+						onClick={() => setGuideOpen(true)}
+					>
+						Заавар үзэх
+					</Button>
 				</CardFooter>
 			</Card>
 			<Dialog open={open} onOpenChange={setOpen}>
@@ -444,6 +453,42 @@ export function LoginForm() {
 					<div className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-4">
 						<UserCheckForm onClose={() => setOpen(false)} />
 					</div>
+				</DialogContent>
+			</Dialog>
+			<Dialog open={guideOpen} onOpenChange={setGuideOpen}>
+				<DialogContent
+					aria-describedby={undefined}
+					className="sm:max-w-3xl max-h-[90vh] p-0 overflow-hidden"
+				>
+					<DialogHeader className="px-6 pt-4 pb-2 border-b flex flex-row items-center justify-between">
+						<DialogTitle>Шалгалт өгөх заавар</DialogTitle>
+						<button
+							type="button"
+							onClick={() => window.open("/guide.pdf", "_blank")}
+							className="text-xs text-blue-600 underline mr-8"
+						>
+							Шинэ табд нээх ↗
+						</button>
+					</DialogHeader>
+
+					<object
+						data="/guide.pdf"
+						type="application/pdf"
+						className="w-full h-[75vh]"
+					>
+						<div className="flex flex-col items-center justify-center h-[75vh] gap-4 text-sm text-slate-500">
+							<p>PDF харуулах боломжгүй байна.</p>
+
+							<a
+								href="/guide.pdf"
+								target="_blank"
+								rel="noreferrer"
+								className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm"
+							>
+								PDF нээх
+							</a>
+						</div>
+					</object>
 				</DialogContent>
 			</Dialog>
 		</>

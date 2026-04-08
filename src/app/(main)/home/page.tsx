@@ -109,9 +109,9 @@ function getExamLockStatus(exam: PastExam) {
 const ExamCard = memo(
 	({ exam, index }: ExamCardProps) => {
 		const router = useRouter();
-		const isCompleted = isSorilCompleted(exam.isguitset);
+		const _isCompleted = isSorilCompleted(exam.isguitset);
 		const isLocked = getExamLockStatus(exam);
-		const isPaidAndUnlocked = exam.ispay === 1 && exam.paid === 1;
+		const _isPaidAndUnlocked = exam.ispay === 1 && exam.paid === 1;
 
 		const handleClick = useCallback(() => {
 			router.push(
@@ -166,28 +166,10 @@ const ExamCard = memo(
 
 								{/* Status badge */}
 								<div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 z-20">
-									{isLocked ? (
+									{isLocked && (
 										<Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
 											<Lock className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
 											Төлбөртэй
-										</Badge>
-									) : isCompleted ? (
-										<Badge className="bg-green-500/90 text-white border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
-											<ClipboardCheck className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
-											Гүйцэтгэсэн
-										</Badge>
-									) : isPaidAndUnlocked ? (
-										<Badge className="bg-blue-500/90 hover:bg-blue-600 text-white border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
-											<ClipboardCheck className="w-2 h-2 sm:w-2.5 sm:h-2.5 mr-0.5" />
-											Төлсөн
-										</Badge>
-									) : exam.isopensoril === 1 ? (
-										<Badge className="bg-green-500/90 text-white hover:bg-green-600 border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
-											Нээлттэй
-										</Badge>
-									) : (
-										<Badge className="border-0 px-1 sm:px-1.5 md:px-2 py-0 text-[7px] sm:text-[8px] md:text-[9px] shadow-lg whitespace-nowrap">
-											Гүйцэтгээгүй
 										</Badge>
 									)}
 								</div>
@@ -207,7 +189,7 @@ const ExamCard = memo(
 							<div className="p-1.5 sm:p-2 md:p-2.5 pb-7 sm:pb-8 md:pb-9 flex flex-col flex-1 space-y-1 sm:space-y-1.5">
 								<div className="space-y-0.5 flex-1 min-h-0">
 									<h3
-										className={`text-[10px] sm:text-xs md:text-sm font-semibold line-clamp-1 leading-tight transition-colors duration-300 ${
+										className={`text-[8px] sm:text-xs md:text-sm font-semibold leading-tight whitespace-normal words transition-colors duration-300 ${
 											isLocked
 												? "text-foreground group-hover:text-amber-500"
 												: "text-foreground group-hover:text-primary"
@@ -287,7 +269,7 @@ const SorilLists = memo(({ pastExams }: SorilListsProps) => {
 
 	return (
 		<div className="px-2">
-			<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3 px-2">
+			<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 px-2">
 				{pastExams.map((exam, index) => (
 					<ExamCard key={exam.exam_id} exam={exam} index={index} />
 				))}
