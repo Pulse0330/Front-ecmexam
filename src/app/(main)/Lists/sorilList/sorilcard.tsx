@@ -115,9 +115,9 @@ export const SorilCard: React.FC<SorilCardProps> = ({ exam, onClick }) => {
 							<TooltipTrigger asChild>
 								<div className="flex items-center gap-0.5 sm:gap-1">
 									<Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3  shrink-0" />
-									<span className="font-medium text-[8px] sm:text-[9px] md:text-xs  truncate">
+									{/* <span className="font-medium text-[8px] sm:text-[9px] md:text-xs  truncate">
 										{formatDate(exam.sorildate)}
-									</span>
+									</span> */}
 								</div>
 							</TooltipTrigger>
 							<TooltipContent>

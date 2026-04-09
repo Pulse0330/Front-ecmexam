@@ -33,7 +33,6 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { useUserStore } from "@/stores/useUserStore";
 import type { Exam1111 } from "@/types/dashboard/exam.types";
 import {
-	formatSorilDate,
 	type HomeResponseType,
 	isSorilCompleted,
 	type PastExam,
@@ -178,9 +177,9 @@ const ExamCard = memo(
 								<div className="absolute bottom-0 left-0 right-0 p-1 sm:p-1.5 z-10">
 									<div className="flex items-center gap-0.5 sm:gap-1">
 										<Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
-										<span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate">
+										{/* <span className="font-medium text-[8px] sm:text-[9px] md:text-xs truncate">
 											{formatSorilDate(exam.sorildate)}
-										</span>
+										</span> */}
 									</div>
 								</div>
 							</div>
