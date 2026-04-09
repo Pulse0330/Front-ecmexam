@@ -18,6 +18,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ExamHeader } from "@/app/exam/component/examUtils/examInfo";
 import MathContent from "@/app/exam/component/examUtils/MathContent";
+import { SourceBlock } from "@/app/exam/component/examUtils/sourceCard";
 import ExamMinimap from "@/app/exam/component/minimap";
 import FillInTheBlankQuestion from "@/app/exam/component/question/fillblank";
 import MatchingByLine from "@/app/exam/component/question/matching";
@@ -830,143 +831,126 @@ export default function SorilPage() {
 		[selectedAnswers, bookmarkedQuestions, typingQuestions],
 	);
 
-	const renderQuestion = (q: (typeof allQuestions)[0]) => {
-		if (q.que_type_id === 1) {
-			return (
+	const renderQuestion = useCallback(
+		(q: (typeof allQuestions)[0]) => {
+			const header = (
 				<>
 					{q.question_img && (
 						<QuestionImage src={q.question_img} alt="Асуултын зураг" />
 					)}
-					{(q.source_name || q.source_img) && (
-						<div className="mt-3 p-3 border rounded-lg ">
-							{/* Эх сурвалж зураг */}
-							{q.source_img && (
-								<img
-									src={q.source_img}
-									alt="source"
-									className="w-14 h-14 object-cover rounded-md mb-2"
-								/>
-							)}
-
-							{/* Эх сурвалж name (HTML-тэй учраас parse ашиглана) */}
-							{q.source_name && (
-								<div className="text-sm text-gray-700 leading-relaxed">
-									{" "}
-									<span className="font-semibold">Эх сурвалж:</span>{" "}
-									<div className="mt-1">
-										{" "}
-										<MathContent html={q.source_name} />
-									</div>
-								</div>
-							)}
-						</div>
-					)}
-
-					<SingleSelectQuestion
-						questionId={q.question_id}
-						questionText={q.question_name}
-						answers={q.answers}
-						selectedAnswer={selectedAnswers[q.question_id] as number | null}
-						onAnswerChange={handleAnswerChange}
+					<SourceBlock
+						sourceName={q.source_name}
+						sourceTitle={q.source_title}
+						sourceImg={q.source_img}
+						srcAudio={q.src_audio}
 					/>
 				</>
 			);
-		}
 
-		if (
-			q.que_type_id === 2 ||
-			q.que_type_id === 3 ||
-			q.que_type_id === 4 ||
-			q.que_type_id === 6
-		) {
-			return (
-				<>
-					{q.question_img && (
-						<QuestionImage src={q.question_img} alt="Асуултын зураг" />
-					)}
-					{q.que_type_id === 2 && (
-						<MultiSelectQuestion
+			if (q.que_type_id === 1) {
+				return (
+					<>
+						{header}
+						<SingleSelectQuestion
 							questionId={q.question_id}
 							questionText={q.question_name}
 							answers={q.answers}
-							mode="exam"
-							selectedAnswers={
-								(selectedAnswers[q.question_id] as number[]) || []
-							}
+							selectedAnswer={selectedAnswers[q.question_id] as number | null}
 							onAnswerChange={handleAnswerChange}
 						/>
-					)}
-					{q.que_type_id === 3 && (
-						<NumberInputQuestion
+					</>
+				);
+			}
+
+			if ([2, 3, 4, 6].includes(q.que_type_id)) {
+				return (
+					<>
+						{header}
+						{q.que_type_id === 2 && (
+							<MultiSelectQuestion
+								questionId={q.question_id}
+								questionText={q.question_name}
+								answers={q.answers}
+								mode="exam"
+								selectedAnswers={
+									(selectedAnswers[q.question_id] as number[]) || []
+								}
+								onAnswerChange={handleAnswerChange}
+							/>
+						)}
+						{q.que_type_id === 3 && (
+							<NumberInputQuestion
+								questionId={q.question_id}
+								questionText={q.question_name}
+								answers={q.answers}
+								selectedValues={
+									selectedAnswers[q.question_id] as Record<number, string>
+								}
+								onAnswerChange={(qId, values) =>
+									handleAnswerChange(qId, values as AnswerValue)
+								}
+							/>
+						)}
+						{q.que_type_id === 4 && (
+							<FillInTheBlankQuestion
+								questionId={q.question_id}
+								questionText={q.question_name}
+								value={(selectedAnswers[q.question_id] as string) || ""}
+								onAnswerChange={handleAnswerChange}
+							/>
+						)}
+						{q.que_type_id === 6 && (
+							<MatchingByLine
+								answers={q.answers.map((a) => ({
+									refid: a.refid,
+									answer_id: a.answer_id,
+									question_id: a.question_id,
+									answer_name_html: a.answer_name_html,
+									answer_descr: a.answer_descr,
+									answer_img: a.answer_img || null,
+									ref_child_id: a.ref_child_id,
+									is_true: a.is_true,
+								}))}
+								onMatchChange={(matches) =>
+									handleAnswerChange(q.question_id, matches)
+								}
+								userAnswers={
+									(selectedAnswers[q.question_id] as Record<
+										number,
+										number[]
+									>) || {}
+								}
+							/>
+						)}
+					</>
+				);
+			}
+
+			if (q.que_type_id === 5) {
+				return (
+					<>
+						{header}
+						<DragAndDropQuestion
 							questionId={q.question_id}
-							questionText={q.question_name}
-							answers={q.answers}
-							selectedValues={
-								selectedAnswers[q.question_id] as Record<number, string>
-							}
-							onAnswerChange={(qId, values) =>
-								handleAnswerChange(qId, values as AnswerValue)
-							}
-						/>
-					)}
-					{q.que_type_id === 4 && (
-						<FillInTheBlankQuestion
-							questionId={q.question_id}
-							questionText={q.question_name}
-							value={(selectedAnswers[q.question_id] as string) || ""}
-							onAnswerChange={handleAnswerChange}
-						/>
-					)}
-					{q.que_type_id === 6 && (
-						<MatchingByLine
+							examId={examData?.ExamInfo?.[0]?.id}
+							userId={userId || 0}
 							answers={q.answers.map((a) => ({
-								refid: a.refid,
 								answer_id: a.answer_id,
-								question_id: a.question_id,
-								answer_name_html: a.answer_name_html,
-								answer_descr: a.answer_descr,
-								answer_img: a.answer_img || null,
-								ref_child_id: a.ref_child_id,
-								is_true: a.is_true,
+								answer_name_html: a.answer_name_html || a.answer_name || "",
 							}))}
-							onMatchChange={(matches) =>
-								handleAnswerChange(q.question_id, matches)
-							}
-							userAnswers={
-								(selectedAnswers[q.question_id] as Record<number, number[]>) ||
-								{}
+							userAnswers={(selectedAnswers[q.question_id] as number[]) || []}
+							onOrderChange={(orderedIds) =>
+								handleAnswerChange(q.question_id, orderedIds)
 							}
 						/>
-					)}
-				</>
-			);
-		}
+					</>
+				);
+			}
 
-		if (q.que_type_id === 5) {
-			return (
-				<>
-					{q.question_img && (
-						<QuestionImage src={q.question_img} alt="Асуултын зураг" />
-					)}
-					<DragAndDropQuestion
-						questionId={q.question_id}
-						examId={examData?.ExamInfo?.[0]?.id}
-						userId={userId || 0}
-						answers={q.answers.map((a) => ({
-							answer_id: a.answer_id,
-							answer_name_html: a.answer_name_html || a.answer_name || "",
-						}))}
-						userAnswers={(selectedAnswers[q.question_id] as number[]) || []}
-						onOrderChange={(orderedIds) =>
-							handleAnswerChange(q.question_id, orderedIds)
-						}
-					/>
-				</>
-			);
-		}
-
-		return null;
-	};
+			return null;
+		},
+		[selectedAnswers, handleAnswerChange, examData, userId],
+	);
 
 	if (isLoading) {
 		return (
