@@ -258,9 +258,7 @@ export default function ExercisePage() {
 							{index + 1}
 						</div>
 						<div className="flex-1 min-w-0">
-							<div className="text-base sm:text-lg md:text-xl text-gray-900 dark:text-white font-semibold mb-3">
-								{parse(question.question_name)}
-							</div>
+							<div className="text-base ">{parse(question.question_name)}</div>
 							{question.question_img && (
 								<div className="mt-4 mb-6 relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50">
 									<img

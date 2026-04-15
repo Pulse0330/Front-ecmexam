@@ -107,7 +107,7 @@ const DragAndDrop: React.FC<DragAndDropProps> = ({
 											style={{ ...providedDraggable.draggableProps.style }}
 										>
 											<div className="flex items-center gap-3 w-full">
-												<span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-bold">
+												<span className="shrink-0 w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-bold">
 													{index + 1}
 												</span>
 												<div className="flex-1 text-sm text-gray-900 dark:text-gray-100">
@@ -116,7 +116,7 @@ const DragAndDrop: React.FC<DragAndDropProps> = ({
 														: ""}
 												</div>
 												{showCorrect && (
-													<span className="flex-shrink-0">
+													<span className="shrink-0">
 														{isCorrect ? (
 															<CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
 														) : (
