@@ -58,7 +58,6 @@ export default function MatchingByLine({
 	const containerRef = useRef<HTMLDivElement>(null);
 	const updateXarrow = useXarrow();
 	const lastNotifiedRef = useRef<string>("");
-	// Bug 2 fix: track when we're restoring to prevent notify → restore → notify loop
 	const isRestoringRef = useRef(false);
 	const onMatchChangeRef = useRef(onMatchChange);
 
@@ -99,7 +98,7 @@ export default function MatchingByLine({
 		onMatchChangeRef.current = onMatchChange;
 	}, [onMatchChange]);
 
-	// Notify parent when connections change — skip during restore to prevent infinite loop
+	// Notify parent when connections change
 	useEffect(() => {
 		if (isRestoringRef.current) return;
 		if (!onMatchChangeRef.current) return;
@@ -136,7 +135,6 @@ export default function MatchingByLine({
 		return () => window.removeEventListener("resize", updateXarrow);
 	}, [updateXarrow]);
 
-	// Bug 1 fix: userAnswers keys are answer_id (not refid) — match accordingly
 	useEffect(() => {
 		if (Object.keys(userAnswers).length === 0) return;
 
@@ -144,7 +142,6 @@ export default function MatchingByLine({
 		Object.entries(userAnswers).forEach(([qAnswerIdStr, answerIdOrIds]) => {
 			const qAnswerId = Number(qAnswerIdStr);
 
-			// FIX: was `a.refid === qRefId` — keys from parent are answer_id, not refid
 			const question = answers.find(
 				(a) =>
 					a.answer_id === qAnswerId &&
@@ -169,10 +166,8 @@ export default function MatchingByLine({
 			}
 		});
 
-		// FIX: set flag before updating connections so the notify effect is skipped
 		isRestoringRef.current = true;
 		setConnections(restored);
-		// Reset flag after the state update is flushed (next microtask)
 		Promise.resolve().then(() => {
 			isRestoringRef.current = false;
 		});
@@ -190,7 +185,6 @@ export default function MatchingByLine({
 			if (!activeStart) return;
 
 			setConnections((prev) => {
-				// Хэрэв яг энэ холболт аль хэдийн байвал устгана (Toggle)
 				const alreadyConnected = prev.find(
 					(c) => c.start === activeStart && c.end === id,
 				);
@@ -199,20 +193,12 @@ export default function MatchingByLine({
 					return prev.filter((c) => !(c.start === activeStart && c.end === id));
 				}
 
-				// Өмнө нь id-аар шүүж (filter) байсныг болиулснаар
-				// нэг хариулт олон асуулттай холбогдох боломжтой болно.
 				const color = getUniqueColor(prev);
 				return [...prev, { start: activeStart, end: id, color }];
 			});
 		},
 		[getUniqueColor, showResults, activeStart],
 	);
-
-	const _getAnswerColor = (id: string): string | undefined =>
-		connections.find((c) => c.end === id)?.color;
-
-	const _isAnswerConnected = (id: string) =>
-		connections.some((c) => c.end === id);
 
 	const getConnectionCorrectness = (connection: Connection) => {
 		const startId = parseInt(connection.start.replace("q-", ""), 10);
@@ -224,7 +210,6 @@ export default function MatchingByLine({
 
 	const handleCheckAnswers = () => setShowResults(true);
 
-	// Bug 3 fix: clear lastNotifiedRef on reset so re-connections trigger notify again
 	const handleReset = () => {
 		setShowResults(false);
 		setConnections([]);
@@ -232,8 +217,9 @@ export default function MatchingByLine({
 		lastNotifiedRef.current = "";
 	};
 
+	// ✅ FIX 1: renderContent — grid class буруу орсныг засав, анхны байдалд буцаав
 	const renderContent = (item: QuestionItem) => (
-		<div className="w-full flex flex-col gap-2">
+		<div className="flex flex-col gap-2">
 			{item.answer_img && (
 				<div className="relative group/img w-full aspect-video sm:aspect-square max-h-40 bg-slate-50 dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-100 dark:border-slate-700">
 					<Image
@@ -278,9 +264,11 @@ export default function MatchingByLine({
 				{/* Header Section */}
 				<div className="text-center mb-8 space-y-3">
 					<h2 className="text-xl font-bold text-slate-900 dark:text-white">
-						{isMobile
-							? "Тохирохыг сонгоно уу"
-							: "Асуулт ба хариултыг холбоно уу"}
+						{/* ✅ FIX 2: isMobile state-ийн оронд CSS class ашиглав */}
+						<span className="md:hidden">Тохирохыг сонгоно уу</span>
+						<span className="hidden md:inline">
+							Асуулт ба хариултыг холбоно уу
+						</span>
 					</h2>
 					{!showResults && (
 						<div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-full text-sm font-medium">
@@ -333,20 +321,14 @@ export default function MatchingByLine({
 					)}
 				</div>
 
-				{/* Main Content */}
-				<div
-					className={cn(
-						"grid gap-6 relative",
-						isMobile ? "grid-cols-1" : "grid-cols-2 gap-x-32",
-					)}
-				>
+				{/* ✅ FIX 3: Main Content — isMobile state-ийн оронд Tailwind responsive class */}
+				<div className="grid gap-6 relative grid-cols-1 md:grid-cols-2 md:gap-x-32">
 					{/* Questions Column */}
-					<div className="grid gap-4" style={{ gridAutoRows: "1fr" }}>
-						{!isMobile && (
-							<h3 className="text-center font-bold text-slate-400 text-xs uppercase tracking-widest mb-2">
-								Асуултууд
-							</h3>
-						)}
+					<div className="grid gap-4 items-start">
+						{/* ✅ FIX 4: {!isMobile && ...} оронд hidden md:block */}
+						<h3 className="hidden md:block text-center font-bold text-slate-400 text-xs uppercase tracking-widest mb-2">
+							Асуултууд
+						</h3>
 						{questionsOnly.map((q) => {
 							const id = `q-${q.answer_id}`;
 							const isActive = activeStart === id;
@@ -374,24 +356,23 @@ export default function MatchingByLine({
 								>
 									<div className="flex items-center gap-4">
 										<div className="flex-1">{renderContent(q)}</div>
-										{!isMobile && (
-											<div
-												className={cn(
-													"min-w-[1rem] h-4 rounded-full border-2 border-white shadow-sm shrink-0 flex items-center justify-center text-[10px] font-bold text-white transition-all",
-													count > 0 ? "px-1" : "w-4 bg-slate-200",
-												)}
-												style={
-													count > 0
-														? {
-																backgroundColor: dotColor,
-																borderColor: dotColor,
-															}
-														: {}
-												}
-											>
-												{count > 1 ? count : ""}
-											</div>
-										)}
+										{/* ✅ FIX 5: hidden md:flex */}
+										<div
+											className={cn(
+												"hidden md:flex min-w-[1rem] h-4 rounded-full border-2 border-white shadow-sm shrink-0 items-center justify-center text-[10px] font-bold text-white transition-all",
+												count > 0 ? "px-1" : "w-4 bg-slate-200",
+											)}
+											style={
+												count > 0
+													? {
+															backgroundColor: dotColor,
+															borderColor: dotColor,
+														}
+													: {}
+											}
+										>
+											{count > 1 ? count : ""}
+										</div>
 									</div>
 								</button>
 							);
@@ -399,19 +380,16 @@ export default function MatchingByLine({
 					</div>
 
 					{/* Answers Column */}
-					<div className="space-y-4">
-						{!isMobile && (
-							<h3 className="text-center font-bold text-slate-400 text-xs uppercase tracking-widest mb-2">
-								Хариултууд
-							</h3>
-						)}
+					<div className="grid gap-4 items-start">
+						{/* ✅ FIX 6: hidden md:block */}
+						<h3 className="hidden md:block text-center font-bold text-slate-400 text-xs uppercase tracking-widest mb-2">
+							Хариултууд
+						</h3>
 						{answersOnly.map((a) => {
 							const id = `a-${a.answer_id}`;
-							// Энэ хариултанд холбогдсон бүх холболтууд
 							const aConnections = connections.filter((c) => c.end === id);
 							const count = aConnections.length;
 							const connected = count > 0;
-							// Хамгийн сүүлд холбосон асуултын өнгийг хүрээний өнгө болгож ашиглах
 							const lastColor = aConnections[count - 1]?.color;
 
 							return (
@@ -431,25 +409,23 @@ export default function MatchingByLine({
 									}
 								>
 									<div className="flex items-center gap-4">
-										{!isMobile && (
-											<div
-												className={cn(
-													"min-w-[1rem] h-4 rounded-full border-2 border-white shadow-sm shrink-0 flex items-center justify-center text-[10px] font-bold text-white transition-all",
-													count > 0 ? "px-1" : "w-4 bg-slate-200",
-												)}
-												style={
-													count > 0
-														? {
-																backgroundColor: lastColor,
-																borderColor: lastColor,
-															}
-														: {}
-												}
-											>
-												{/* Хэрэв нэг хариулт олон асуулттай холбогдвол тоог нь харуулна */}
-												{count > 1 ? count : ""}
-											</div>
-										)}
+										{/* ✅ FIX 7: hidden md:flex */}
+										<div
+											className={cn(
+												"hidden md:flex min-w-[1rem] h-4 rounded-full border-2 border-white shadow-sm shrink-0 items-center justify-center text-[10px] font-bold text-white transition-all",
+												count > 0 ? "px-1" : "w-4 bg-slate-200",
+											)}
+											style={
+												count > 0
+													? {
+															backgroundColor: lastColor,
+															borderColor: lastColor,
+														}
+													: {}
+											}
+										>
+											{count > 1 ? count : ""}
+										</div>
 										<div className="flex-1">{renderContent(a)}</div>
 									</div>
 								</button>
@@ -457,7 +433,7 @@ export default function MatchingByLine({
 						})}
 					</div>
 
-					{/* Desktop Arrows */}
+					{/* Desktop Arrows — Xarrow CSS media query мэдэхгүй тул isMobile state хэвээр */}
 					{!isMobile &&
 						connections.map((c) => (
 							<Xarrow
