@@ -34,9 +34,9 @@ interface QuestionItem {
 
 interface MatchingByLineProps {
 	answers: QuestionItem[];
-	onMatchChange?: (matches: Record<number, number | string>) => void;
+	onMatchChange?: (matches: Record<number, number[]>) => void;
 	readonly?: boolean;
-	userAnswers?: Record<number, number | string>;
+	userAnswers?: Record<number, number | number[]>;
 }
 
 interface Connection {
@@ -57,18 +57,20 @@ export default function MatchingByLine({
 	const [showResults, setShowResults] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const updateXarrow = useXarrow();
-	const _lastNotifiedRef = useRef<string>("");
+	const lastNotifiedRef = useRef<string>("");
+	// Bug 2 fix: track when we're restoring to prevent notify → restore → notify loop
+	const isRestoringRef = useRef(false);
 	const onMatchChangeRef = useRef(onMatchChange);
 
 	const colorPalette = useRef<string[]>([
-		"#6366f1", // Indigo
-		"#8b5cf6", // Violet
-		"#d946ef", // Fuchsia
-		"#ec4899", // Pink
-		"#06b6d4", // Cyan
-		"#3b82f6", // Blue
-		"#64748b", // Slate
-		"#a855f7", // Purple
+		"#6366f1",
+		"#8b5cf6",
+		"#d946ef",
+		"#ec4899",
+		"#06b6d4",
+		"#3b82f6",
+		"#64748b",
+		"#a855f7",
 	]);
 
 	const getUniqueColor = useCallback(
@@ -97,6 +99,25 @@ export default function MatchingByLine({
 		onMatchChangeRef.current = onMatchChange;
 	}, [onMatchChange]);
 
+	// Notify parent when connections change — skip during restore to prevent infinite loop
+	useEffect(() => {
+		if (isRestoringRef.current) return;
+		if (!onMatchChangeRef.current) return;
+
+		const matches: Record<number, number[]> = {};
+		for (const c of connections) {
+			const qId = parseInt(c.start.replace("q-", ""), 10);
+			const aId = parseInt(c.end.replace("a-", ""), 10);
+			if (!matches[qId]) matches[qId] = [];
+			matches[qId].push(aId);
+		}
+
+		const key = JSON.stringify(matches);
+		if (lastNotifiedRef.current === key) return;
+		lastNotifiedRef.current = key;
+		onMatchChangeRef.current(matches);
+	}, [connections]);
+
 	useEffect(() => {
 		const checkMobile = () => setIsMobile(window.innerWidth < 768);
 		checkMobile();
@@ -115,61 +136,83 @@ export default function MatchingByLine({
 		return () => window.removeEventListener("resize", updateXarrow);
 	}, [updateXarrow]);
 
+	// Bug 1 fix: userAnswers keys are answer_id (not refid) — match accordingly
 	useEffect(() => {
 		if (Object.keys(userAnswers).length === 0) return;
+
 		const restored: Connection[] = [];
-		Object.entries(userAnswers).forEach(([qRefIdStr, answerId]) => {
-			const qRefId = Number(qRefIdStr);
+		Object.entries(userAnswers).forEach(([qAnswerIdStr, answerIdOrIds]) => {
+			const qAnswerId = Number(qAnswerIdStr);
+
+			// FIX: was `a.refid === qRefId` — keys from parent are answer_id, not refid
 			const question = answers.find(
 				(a) =>
-					a.refid === qRefId && a.ref_child_id !== null && a.ref_child_id >= 1,
+					a.answer_id === qAnswerId &&
+					a.ref_child_id !== null &&
+					a.ref_child_id >= 1,
 			);
-			const answer = answers.find((a) => a.answer_id === answerId);
-			if (question && answer) {
-				restored.push({
-					start: `q-${question.answer_id}`,
-					end: `a-${answer.answer_id}`,
-					color: getUniqueColor(restored),
-				});
+			if (!question) return;
+
+			const answerIds = Array.isArray(answerIdOrIds)
+				? answerIdOrIds
+				: [answerIdOrIds];
+
+			for (const answerId of answerIds) {
+				const answer = answers.find((a) => a.answer_id === answerId);
+				if (answer) {
+					restored.push({
+						start: `q-${question.answer_id}`,
+						end: `a-${answer.answer_id}`,
+						color: getUniqueColor(restored),
+					});
+				}
 			}
 		});
+
+		// FIX: set flag before updating connections so the notify effect is skipped
+		isRestoringRef.current = true;
 		setConnections(restored);
+		// Reset flag after the state update is flushed (next microtask)
+		Promise.resolve().then(() => {
+			isRestoringRef.current = false;
+		});
 	}, [userAnswers, answers, getUniqueColor]);
 
 	const handleItemClick = useCallback(
 		(id: string, isQuestion: boolean) => {
 			if (showResults) return;
 
-			setConnections((prev) => {
-				const existing = prev.find((c) => c.start === id || c.end === id);
-				if (existing) {
-					setActiveStart("");
-					return prev.filter((c) => c !== existing);
-				}
-				return prev;
-			});
-
 			if (isQuestion) {
-				setActiveStart(id);
-			} else if (activeStart) {
-				setConnections((prev) => {
-					const color = getUniqueColor(prev);
-					return [
-						...prev.filter((c) => c.start !== activeStart),
-						{ start: activeStart, end: id, color },
-					];
-				});
-				setActiveStart("");
+				setActiveStart((prev) => (prev === id ? "" : id));
+				return;
 			}
+
+			if (!activeStart) return;
+
+			setConnections((prev) => {
+				// Хэрэв яг энэ холболт аль хэдийн байвал устгана (Toggle)
+				const alreadyConnected = prev.find(
+					(c) => c.start === activeStart && c.end === id,
+				);
+
+				if (alreadyConnected) {
+					return prev.filter((c) => !(c.start === activeStart && c.end === id));
+				}
+
+				// Өмнө нь id-аар шүүж (filter) байсныг болиулснаар
+				// нэг хариулт олон асуулттай холбогдох боломжтой болно.
+				const color = getUniqueColor(prev);
+				return [...prev, { start: activeStart, end: id, color }];
+			});
 		},
 		[getUniqueColor, showResults, activeStart],
 	);
 
-	const getConnectionColor = (id: string) =>
-		connections.find((c) => c.start === id || c.end === id)?.color;
+	const _getAnswerColor = (id: string): string | undefined =>
+		connections.find((c) => c.end === id)?.color;
 
-	const isConnected = (id: string) =>
-		connections.some((c) => c.start === id || c.end === id);
+	const _isAnswerConnected = (id: string) =>
+		connections.some((c) => c.end === id);
 
 	const getConnectionCorrectness = (connection: Connection) => {
 		const startId = parseInt(connection.start.replace("q-", ""), 10);
@@ -180,10 +223,13 @@ export default function MatchingByLine({
 	};
 
 	const handleCheckAnswers = () => setShowResults(true);
+
+	// Bug 3 fix: clear lastNotifiedRef on reset so re-connections trigger notify again
 	const handleReset = () => {
 		setShowResults(false);
 		setConnections([]);
 		setActiveStart("");
+		lastNotifiedRef.current = "";
 	};
 
 	const renderContent = (item: QuestionItem) => (
@@ -295,10 +341,7 @@ export default function MatchingByLine({
 					)}
 				>
 					{/* Questions Column */}
-					<div
-						className="grid grid-rows-[auto] gap-4"
-						style={{ gridAutoRows: "1fr" }}
-					>
+					<div className="grid gap-4" style={{ gridAutoRows: "1fr" }}>
 						{!isMobile && (
 							<h3 className="text-center font-bold text-slate-400 text-xs uppercase tracking-widest mb-2">
 								Асуултууд
@@ -306,7 +349,11 @@ export default function MatchingByLine({
 						)}
 						{questionsOnly.map((q) => {
 							const id = `q-${q.answer_id}`;
-							const color = getConnectionColor(id);
+							const isActive = activeStart === id;
+							const qConnections = connections.filter((c) => c.start === id);
+							const count = qConnections.length;
+							const dotColor = qConnections[0]?.color;
+
 							return (
 								<button
 									key={id}
@@ -315,13 +362,13 @@ export default function MatchingByLine({
 									onClick={() => handleItemClick(id, true)}
 									className={cn(
 										"w-full p-5 rounded-2xl border-2 text-left transition-all relative bg-white dark:bg-slate-900 shadow-sm hover:shadow-md",
-										activeStart === id
-											? "border-indigo-500 ring-4 ring-indigo-50"
+										isActive
+											? "border-indigo-500 ring-4 ring-indigo-50 dark:ring-indigo-900/30"
 											: "border-slate-100 dark:border-slate-800",
 									)}
 									style={
-										!showResults && !activeStart && color
-											? { borderColor: color }
+										!showResults && !isActive && dotColor
+											? { borderColor: dotColor }
 											: {}
 									}
 								>
@@ -330,11 +377,20 @@ export default function MatchingByLine({
 										{!isMobile && (
 											<div
 												className={cn(
-													"w-4 h-4 rounded-full border-2 border-white shadow-sm shrink-0",
-													isConnected(id) ? "bg-current" : "bg-slate-200",
+													"min-w-[1rem] h-4 rounded-full border-2 border-white shadow-sm shrink-0 flex items-center justify-center text-[10px] font-bold text-white transition-all",
+													count > 0 ? "px-1" : "w-4 bg-slate-200",
 												)}
-												style={isConnected(id) ? { color } : {}}
-											/>
+												style={
+													count > 0
+														? {
+																backgroundColor: dotColor,
+																borderColor: dotColor,
+															}
+														: {}
+												}
+											>
+												{count > 1 ? count : ""}
+											</div>
 										)}
 									</div>
 								</button>
@@ -351,7 +407,13 @@ export default function MatchingByLine({
 						)}
 						{answersOnly.map((a) => {
 							const id = `a-${a.answer_id}`;
-							const color = getConnectionColor(id);
+							// Энэ хариултанд холбогдсон бүх холболтууд
+							const aConnections = connections.filter((c) => c.end === id);
+							const count = aConnections.length;
+							const connected = count > 0;
+							// Хамгийн сүүлд холбосон асуултын өнгийг хүрээний өнгө болгож ашиглах
+							const lastColor = aConnections[count - 1]?.color;
+
 							return (
 								<button
 									key={id}
@@ -360,21 +422,33 @@ export default function MatchingByLine({
 									onClick={() => handleItemClick(id, false)}
 									className={cn(
 										"w-full p-5 rounded-2xl border-2 text-left transition-all bg-white dark:bg-slate-900 shadow-sm hover:shadow-md",
-										activeStart
+										activeStart && !connected
 											? "border-dashed border-indigo-300 animate-pulse"
 											: "border-slate-100 dark:border-slate-800",
 									)}
-									style={!showResults && color ? { borderColor: color } : {}}
+									style={
+										!showResults && lastColor ? { borderColor: lastColor } : {}
+									}
 								>
 									<div className="flex items-center gap-4">
 										{!isMobile && (
 											<div
 												className={cn(
-													"w-4 h-4 rounded-full border-2 border-white shadow-sm shrink-0",
-													isConnected(id) ? "bg-current" : "bg-slate-200",
+													"min-w-[1rem] h-4 rounded-full border-2 border-white shadow-sm shrink-0 flex items-center justify-center text-[10px] font-bold text-white transition-all",
+													count > 0 ? "px-1" : "w-4 bg-slate-200",
 												)}
-												style={isConnected(id) ? { color } : {}}
-											/>
+												style={
+													count > 0
+														? {
+																backgroundColor: lastColor,
+																borderColor: lastColor,
+															}
+														: {}
+												}
+											>
+												{/* Хэрэв нэг хариулт олон асуулттай холбогдвол тоог нь харуулна */}
+												{count > 1 ? count : ""}
+											</div>
 										)}
 										<div className="flex-1">{renderContent(a)}</div>
 									</div>
