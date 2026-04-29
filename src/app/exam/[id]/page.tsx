@@ -12,9 +12,8 @@ import {
 	Menu,
 	Save,
 } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
 import FinishExamResultDialog, {
 	type FinishExamDialogHandle,
 } from "@/app/exam/component/finish";
@@ -26,6 +25,16 @@ import NumberInputQuestion from "@/app/exam/component/question/numberinput";
 import DragAndDropQuestion from "@/app/exam/component/question/order";
 import SingleSelectQuestion from "@/app/exam/component/question/singleSelect";
 import FixedScrollButton from "@/components/FixedScrollButton";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { deleteExamAnswer, getExamById, saveExamAnswer } from "@/lib/api";
@@ -154,7 +163,7 @@ export default function ExamPage() {
 	const [isTimeUp, setIsTimeUp] = useState(false);
 	const [showMobileMinimapOverlay, setShowMobileMinimapOverlay] =
 		useState(false);
-
+	const router = useRouter();
 	const savingQuestions = useRef<Set<number>>(new Set());
 	const finishDialogRef = useRef<FinishExamDialogHandle>(null);
 	const hasAutoFinished = useRef(false);
@@ -164,7 +173,7 @@ export default function ExamPage() {
 	const saveTimer = useRef<NodeJS.Timeout | null>(null);
 	const lastSavedAnswers = useRef<Map<number, AnswerValue>>(new Map());
 	const isSavingRef = useRef(false);
-
+	const [showExitConfirm, setShowExitConfirm] = useState(false);
 	const {
 		data: examData,
 		isLoading,
@@ -1051,6 +1060,7 @@ export default function ExamPage() {
 				{examData?.ExamInfo?.[0] && (
 					<ExamHeader examInfo={examData.ExamInfo[0]} />
 				)}
+
 				<div className="grid grid-cols-6 gap-6 max-w-[1800px] mx-auto p-6 xl:p-8">
 					<aside className="col-span-1">
 						<div className="sticky top-6 space-y-4">
@@ -1064,7 +1074,7 @@ export default function ExamPage() {
 								bookmarkedQuestions={bookmarkedQuestions}
 							/>
 							{examData?.ExamInfo?.[0] && !isTimeUp && (
-								<div className="pt-6 flex justify-center">
+								<div className="pt-6 flex flex-col items-center gap-2">
 									<FinishExamResultDialog
 										ref={finishDialogRef}
 										examId={examData.ExamInfo[0].id}
@@ -1076,8 +1086,36 @@ export default function ExamPage() {
 									/>
 								</div>
 							)}
+							<Button
+								variant="outline"
+								onClick={() => setShowExitConfirm(true)}
+								className="w-full font-semibold bg-black text-white"
+							>
+								Шалгалтаас гарах
+							</Button>
+							<AlertDialog
+								open={showExitConfirm}
+								onOpenChange={setShowExitConfirm}
+							>
+								<AlertDialogContent>
+									<AlertDialogHeader>
+										<AlertDialogTitle>Шалгалтаас гарах уу?</AlertDialogTitle>
+										<AlertDialogDescription>
+											Хадгалаагүй хариултууд алдагдаж болзошгүй.
+										</AlertDialogDescription>
+									</AlertDialogHeader>
+									<AlertDialogFooter>
+										<AlertDialogCancel>Болих</AlertDialogCancel>
+										<AlertDialogAction
+											onClick={() => router.push("/Lists/examList")}
+										>
+											Тийм, гарах
+										</AlertDialogAction>
+									</AlertDialogFooter>
+								</AlertDialogContent>
+							</AlertDialog>
 							<AdvancedExamProctor
-								maxViolations={1000}
+								maxViolations={10000}
 								strictMode={true}
 								enableFullscreen={true}
 							/>
@@ -1152,6 +1190,7 @@ export default function ExamPage() {
 						{examData?.ExamInfo?.[0] && (
 							<ExamHeader examInfo={examData.ExamInfo[0]} />
 						)}
+
 						{examData?.ExamInfo?.[0] && (
 							<div className="flex items-center justify-between mb-2">
 								<div className="flex items-center gap-2">
