@@ -78,7 +78,7 @@ export function SignForm() {
 	const [isChecking, setIsChecking] = useState(false);
 	const [verificationCode, setVerificationCode] = useState("");
 	const [timeLeft, setTimeLeft] = useState(0);
-const [isTeacher, setIsTeacher] = useState(false);
+	const [isTeacher, setIsTeacher] = useState(false);
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -238,7 +238,7 @@ const [isTeacher, setIsTeacher] = useState(false);
 											placeholder="88888888"
 											type="tel"
 											{...field}
-											 disabled={isPending || isVerified}
+											disabled={isPending || isVerified}
 											maxLength={8}
 											className="text-lg"
 										/>
@@ -399,22 +399,22 @@ const [isTeacher, setIsTeacher] = useState(false);
 										</FormItem>
 									)}
 								/>
-<div className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-    <input
-        type="checkbox"
-        id="isTeacher"
-        checked={isTeacher}
-        onChange={(e) => setIsTeacher(e.target.checked)}
-        disabled={isPending}
-        className="h-4 w-4 rounded border-gray-300 accent-blue-600 cursor-pointer"
-    />
-    <label
-        htmlFor="isTeacher"
-        className="text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none"
-    >
-        Багшаар бүртгүүлэх
-    </label>
-</div>
+								<div className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+									<input
+										type="checkbox"
+										id="isTeacher"
+										checked={isTeacher}
+										onChange={(e) => setIsTeacher(e.target.checked)}
+										disabled={isPending}
+										className="h-4 w-4 rounded border-gray-300 accent-blue-600 cursor-pointer"
+									/>
+									<label
+										htmlFor="isTeacher"
+										className="text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none"
+									>
+										Багшаар бүртгүүлэх
+									</label>
+								</div>
 								<FormField
 									control={form.control}
 									name="password"

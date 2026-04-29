@@ -244,7 +244,13 @@ const FinishExamResultDialog = forwardRef<
 							<Send className="w-4 h-4 sm:w-5 sm:h-5" />
 						</Button>
 					</DialogTrigger>
-
+					<Button
+						variant="outline"
+						onClick={() => router.push("/Lists/examList")}
+						className="w-full sm:w-auto font-semibold border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/20"
+					>
+						Шалгалтаас гарах
+					</Button>
 					<DialogContent className="w-[95vw] max-w-[450px] sm:max-w-[550px] border-t-4 border-t-red-500 p-4 sm:p-6">
 						<div className="flex flex-col justify-center items-center py-8 space-y-4">
 							<Loader2 className="w-12 h-12 sm:w-16 sm:h-16 animate-spin text-red-600" />
@@ -268,7 +274,6 @@ const FinishExamResultDialog = forwardRef<
 							<Send className="w-4 h-4 sm:w-5 sm:h-5" />
 						</Button>
 					</DialogTrigger>
-
 					<DialogContent className="w-[95vw] max-w-[450px] sm:max-w-[550px] border-t-4 border-t-blue-500 p-4 sm:p-6">
 						<div className="flex flex-col justify-center items-center py-8 space-y-4">
 							<Loader2 className="w-12 h-12 sm:w-16 sm:h-16 animate-spin text-blue-600" />
@@ -280,7 +285,13 @@ const FinishExamResultDialog = forwardRef<
 				</Dialog>
 			);
 		}
-
+		<Button
+			variant="outline"
+			onClick={() => router.push("/Lists/examList")}
+			className="w-full sm:w-auto font-semibold border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/20"
+		>
+			Шалгалтаас гарах
+		</Button>;
 		// Result Dialog - No Data
 		if (finishedTestId && !isDadlaga && !isLoadingResults && !resultInfo) {
 			return (
