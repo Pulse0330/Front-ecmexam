@@ -468,7 +468,10 @@ const FinishExamResultDialog = forwardRef<
 		return (
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogTrigger asChild>
-					<Button className="w-full sm:w-auto px-4 sm:px-6 py-3 sm:py-4 font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all flex justify-center items-center gap-2">
+					<Button
+  variant="outline"
+  className="w-full sm:w-auto px-4 sm:px-6 py-3 sm:py-4 font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all flex justify-center items-center gap-2 border-green-500 text-green-600 hover:bg-green-50 dark:border-green-500 dark:text-green-400 dark:hover:bg-green-950/20"
+>
 						<span className="hidden sm:inline">
 							{isDadlaga ? "Шалгалт дуусгах" : "Шалгалт дуусгах"}
 						</span>

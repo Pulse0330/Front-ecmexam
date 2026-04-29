@@ -9,6 +9,7 @@ import {
 	ChevronRight,
 	Clock,
 	Loader2,
+	LogOut,
 	Menu,
 	Save,
 } from "lucide-react";
@@ -40,7 +41,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { deleteExamAnswer, getExamById, saveExamAnswer } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { AnswerValue } from "@/types/exam/exam";
-import { AdvancedExamProctor } from "../component/examguard";
 import { ExamHeader } from "../component/examUtils/examInfo";
 import MathContent from "../component/examUtils/MathContent";
 import { SourceBlock } from "../component/examUtils/sourceCard";
@@ -1086,39 +1086,12 @@ export default function ExamPage() {
 									/>
 								</div>
 							)}
-							<Button
-								variant="outline"
-								onClick={() => setShowExitConfirm(true)}
-								className="w-full font-semibold bg-black text-white"
-							>
-								Шалгалтаас гарах
-							</Button>
-							<AlertDialog
-								open={showExitConfirm}
-								onOpenChange={setShowExitConfirm}
-							>
-								<AlertDialogContent>
-									<AlertDialogHeader>
-										<AlertDialogTitle>Шалгалтаас гарах уу?</AlertDialogTitle>
-										<AlertDialogDescription>
-											Хадгалаагүй хариултууд алдагдаж болзошгүй.
-										</AlertDialogDescription>
-									</AlertDialogHeader>
-									<AlertDialogFooter>
-										<AlertDialogCancel>Болих</AlertDialogCancel>
-										<AlertDialogAction
-											onClick={() => router.push("/Lists/examList")}
-										>
-											Тийм, гарах
-										</AlertDialogAction>
-									</AlertDialogFooter>
-								</AlertDialogContent>
-							</AlertDialog>
-							<AdvancedExamProctor
+
+							{/* <AdvancedExamProctor
 								maxViolations={10000}
 								strictMode={true}
 								enableFullscreen={true}
-							/>
+							/> */}
 						</div>
 					</aside>
 
@@ -1179,6 +1152,43 @@ export default function ExamPage() {
 									onAutoFinish={handleAutoSubmit}
 								/>
 							)}
+						</div>
+						<div className="sticky top-40">
+							<Button
+								variant="outline"
+								onClick={() => setShowExitConfirm(true)}
+								className="w-full font-semibold border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/20"
+							>
+								<LogOut className="w-4 h-4 mr-2" />
+								Шалгалтаас гарах
+							</Button>
+							<AlertDialog
+								open={showExitConfirm}
+								onOpenChange={setShowExitConfirm}
+							>
+								<AlertDialogContent>
+									<AlertDialogHeader>
+										<AlertDialogTitle>Шалгалтаас гарах уу?</AlertDialogTitle>
+										<AlertDialogDescription>
+											<span className="block mb-2">
+												Та шалгалтаас гарахдаа итгэлтэй байна уу?
+											</span>
+
+											<span className="text-red-500 font-bold">
+												Шалгалтыг нэг эхлүүлсэн тохиолдолд системийн хугацаа үргэлжлэн тоологдох бөгөөд шалгалтаас гарах эсвэл цонх хаасан ч хугацаа зогсохгүйг анхаарна уу.
+											</span>
+										</AlertDialogDescription>
+									</AlertDialogHeader>
+									<AlertDialogFooter>
+										<AlertDialogCancel>Болих</AlertDialogCancel>
+										<AlertDialogAction
+											onClick={() => router.push("/Lists/examList")}
+										>
+											Тийм, гарах
+										</AlertDialogAction>
+									</AlertDialogFooter>
+								</AlertDialogContent>
+							</AlertDialog>
 						</div>
 					</aside>
 				</div>
