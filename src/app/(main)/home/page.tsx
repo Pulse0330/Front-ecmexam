@@ -40,7 +40,6 @@ import {
 	type PastExam,
 } from "@/types/home";
 import type { UserProfileResponseType } from "@/types/user";
-import { AdDialog } from "./adDialog";
 import { FloatingAds } from "./floatingAds";
 import ExamLists from "./homeExamCard";
 import { ReklamCarousel } from "./reklamCarousel";
@@ -331,9 +330,7 @@ export default function HomePage() {
 
 	// Зарын дараалал: splash → popup dialog → булангийн зарууд
 	const [splashDone, setSplashDone] = useState(false);
-	const [dialogDone, setDialogDone] = useState(false);
 	const handleSplashFinished = useCallback(() => setSplashDone(true), []);
-	const handleDialogFinished = useCallback(() => setDialogDone(true), []);
 
 	const { data: profileData, isLoading: isProfileLoading } =
 		useQuery<UserProfileResponseType>({
@@ -420,16 +417,12 @@ export default function HomePage() {
 
 	return (
 		<TooltipProvider>
-			{/* Зар: splash → home (dialog) → popup (санамсаргүй булангууд) */}
 			<SplashAd
 				ad={isReklamPending ? undefined : ads.splash}
 				onFinished={handleSplashFinished}
 			/>
-			<AdDialog
-				ad={splashDone ? ads.dialog : undefined}
-				onFinished={handleDialogFinished}
-			/>
-			{dialogDone && ads.floating.length > 0 && (
+			{/* Нэг удаад нэг зар: эхлээд splash, хаагдсаны дараа булангийн зарууд ээлжилнэ */}
+			{splashDone && ads.floating.length > 0 && (
 				<FloatingAds ads={ads.floating} delay={1500} />
 			)}
 
@@ -440,7 +433,7 @@ export default function HomePage() {
 					<HeroSection username={username} />
 					{ads.carousel.length > 0 && (
 						<div className="pt-4">
-							<ReklamCarousel ads={ads.carousel} />
+							<ReklamCarousel ads={ads.carousel} paused={!splashDone} />
 						</div>
 					)}
 					<div className="pt-2 flex flex-row gap-4 items-start">

@@ -19,7 +19,13 @@ const SWIPE_OFFSET = 60;
 const SWIPE_VELOCITY = 500;
 
 // Нүүр хуудасны дотор байрлах зарын carousel — бүх зар ээлжлэн харагдана
-export function ReklamCarousel({ ads }: { ads: FloatingAd[] }) {
+export function ReklamCarousel({
+	ads,
+	paused: externalPaused = false,
+}: {
+	ads: FloatingAd[];
+	paused?: boolean; // splash зэрэг өөр зар дэлгэцийг хааж байх үед true
+}) {
 	const count = ads.length;
 	const [[index, direction], setSlide] = useState<[number, number]>([0, 0]);
 	const [hovered, setHovered] = useState(false);
@@ -32,7 +38,7 @@ export function ReklamCarousel({ ads }: { ads: FloatingAd[] }) {
 	const active = count ? index % count : 0;
 	const ad = ads[active];
 	const duration = ((ad?.durationSec ?? 0) > 0 ? (ad?.durationSec ?? DEFAULT_SEC) : DEFAULT_SEC) * 1000;
-	const paused = hovered || !inView;
+	const paused = hovered || !inView || externalPaused;
 
 	const resetTimer = useCallback(() => {
 		elapsed.current = 0;
@@ -69,13 +75,13 @@ export function ReklamCarousel({ ads }: { ads: FloatingAd[] }) {
 
 	// Үзсэн гэж тоолох: зураг 1с, видео 2с харагдсаны дараа
 	useEffect(() => {
-		if (!ad || !inView) return;
+		if (!ad || !inView || externalPaused) return;
 		const t = setTimeout(
 			() => trackReklamView(ad.reklamId),
 			ad.mediaType === "video" ? 2000 : 1000,
 		);
 		return () => clearTimeout(t);
-	}, [ad, inView]);
+	}, [ad, inView, externalPaused]);
 
 	// Автоматаар солих — hover, focus, дэлгэцээс гарсан үед зогсоно
 	useEffect(() => {
@@ -156,7 +162,9 @@ export function ReklamCarousel({ ads }: { ads: FloatingAd[] }) {
 
 					<div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4 pb-7 sm:p-5 sm:pb-8">
 						<div className="min-w-0 text-white">
-					
+							<span className="mb-1.5 inline-block rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider backdrop-blur-sm">
+								Сурталчилгаа
+							</span>
 							<p className="truncate text-sm font-semibold sm:text-base">{ad.title}</p>
 							{ad.description && (
 								<p className="hidden truncate text-xs text-white/75 sm:block">{ad.description}</p>
