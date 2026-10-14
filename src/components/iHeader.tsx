@@ -22,6 +22,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import * as React from "react";
+import { LetterInbox } from "@/components/letters/letterInbox";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -607,7 +608,10 @@ export const Navbar01: React.FC = () => {
 					</div>
 
 					{/* Right Actions - Pushed Right */}
-					<div className="flex items-center gap-3 shrink-0">
+					<div className="flex items-center gap-1 sm:gap-3 shrink-0">
+						{/* Захидал — уншаагүй тоо, жагсаалт */}
+						<LetterInbox />
+
 						{/* Mobile Menu Button */}
 						<button
 							type="button"

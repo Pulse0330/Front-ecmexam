@@ -13,7 +13,8 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { memo, useCallback, useEffect } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +27,7 @@ import {
 	getHomeScreen,
 	getMNPrint,
 	getmnExamUserCheck,
+	getReklam,
 	getUserProfile,
 } from "@/lib/api";
 import { getExamTime } from "@/lib/dash.api";
@@ -38,7 +40,12 @@ import {
 	type PastExam,
 } from "@/types/home";
 import type { UserProfileResponseType } from "@/types/user";
+import { AdDialog } from "./adDialog";
+import { FloatingAds } from "./floatingAds";
 import ExamLists from "./homeExamCard";
+import { ReklamCarousel } from "./reklamCarousel";
+import { mapReklam } from "./reklamMapper";
+import { SplashAd } from "./splashAd";
 
 const ANIMATION_STAGGER = 0.04;
 
@@ -322,6 +329,12 @@ export default function HomePage() {
 	const { userId, user } = useAuthStore();
 	const { setProfile } = useUserStore();
 
+	// Зарын дараалал: splash → popup dialog → булангийн зарууд
+	const [splashDone, setSplashDone] = useState(false);
+	const [dialogDone, setDialogDone] = useState(false);
+	const handleSplashFinished = useCallback(() => setSplashDone(true), []);
+	const handleDialogFinished = useCallback(() => setDialogDone(true), []);
+
 	const { data: profileData, isLoading: isProfileLoading } =
 		useQuery<UserProfileResponseType>({
 			queryKey: ["userProfile", userId],
@@ -341,6 +354,18 @@ export default function HomePage() {
 			staleTime: 5 * 60 * 1000,
 			refetchOnWindowFocus: false,
 		});
+
+	// Зар сурталчилгаа (splash, home, popup)
+	const { data: reklamData, isPending: isReklamPending } = useQuery({
+		queryKey: ["reklam", userId],
+		queryFn: () => getReklam(Number(userId)),
+		enabled: !!userId,
+		retry: 1,
+		staleTime: 10 * 60 * 1000,
+		refetchOnWindowFocus: false,
+		select: (res) => res.RetData,
+	});
+	const ads = useMemo(() => mapReklam(reklamData), [reklamData]);
 
 	void useQuery({
 		queryKey: ["get_exam_v2", userId],
@@ -395,11 +420,29 @@ export default function HomePage() {
 
 	return (
 		<TooltipProvider>
+			{/* Зар: splash → home (dialog) → popup (санамсаргүй булангууд) */}
+			<SplashAd
+				ad={isReklamPending ? undefined : ads.splash}
+				onFinished={handleSplashFinished}
+			/>
+			<AdDialog
+				ad={splashDone ? ads.dialog : undefined}
+				onFinished={handleDialogFinished}
+			/>
+			{dialogDone && ads.floating.length > 0 && (
+				<FloatingAds ads={ads.floating} delay={1500} />
+			)}
+
 			{/* Print хэсэг */}
 			{/* <MnExamPrint printList={printData ?? []} /> */}
 			<div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8 relative z-10">
 				<div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700">
 					<HeroSection username={username} />
+					{ads.carousel.length > 0 && (
+						<div className="pt-4">
+							<ReklamCarousel ads={ads.carousel} />
+						</div>
+					)}
 					<div className="pt-2 flex flex-row gap-4 items-start">
 						{/* <div>
 							{myExamInfo && myExamInfo.length > 0 ? (

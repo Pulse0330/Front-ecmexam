@@ -57,6 +57,7 @@ import type { SorilresultListResponseType } from "@/types/soril/sorilResultLists
 import type { UserProfileResponseType } from "@/types/user";
 import type { userUpdateResponse } from "@/types/userUpdate";
 import api1 from "./axios1";
+import type { ReklamResponse } from "@/types/reklam/type";
 //-------------------------------Auth---------------------------------//
 
 // ===== LoginToken request =====
@@ -724,5 +725,19 @@ export const getMNuserCheck = async (
 	const { data } = await api1.post<MNUserCheckResponse>("/myexaminees", {
 		regnumber,
 	});
+	return data;
+};
+
+export const getReklam = async (userId: number): Promise<ReklamResponse> => {
+	const { data } = await api.post<ReklamResponse>(
+		"/getreklam",
+		{ user_id: String(userId), platform: "1" },
+		{ silent: true },
+	);
+	return data;
+};
+
+export const sendReklamHit = async (id: number, kind: number) => {
+	const { data } = await api.post("/reklamhit", { id, kind }, { silent: true });
 	return data;
 };
