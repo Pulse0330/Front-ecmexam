@@ -1,4 +1,4 @@
-import { Inter, Roboto } from "next/font/google";
+import { Inter } from "next/font/google"; // ✅ Roboto устгах
 import type { ReactNode } from "react";
 import "./globals.css";
 import type { Metadata } from "next";
@@ -11,12 +11,7 @@ const inter = Inter({
 	variable: "--font-inter",
 	subsets: ["latin", "cyrillic"],
 });
-const _lobster = Roboto({
-	weight: "400",
-	subsets: ["latin"],
-	variable: "--font-roboto",
-	display: "swap",
-});
+
 interface RootLayoutProps {
 	children: ReactNode;
 }
@@ -27,59 +22,46 @@ export const metadata: Metadata = {
 		icon: "/image/logoLogin.png",
 		apple: "/image/logoLogin.png",
 	},
-	description:
-		"Онлайн сургалтын платформ | Онлайн сургалт | Сургалтын платформ | Сургалтын систем | Сургалтын портал | Сургалтын үйлчилгээ | Сургалтын шийдэл | Сургалтын програм | Сургалтын апп | Сургалтын платформ Монголд",
+	description: "Онлайн сургалтын платформ | Онлайн сургалт | ...",
 };
 
 export default function RootLayout({ children }: RootLayoutProps) {
 	return (
 		<html lang="mn" suppressHydrationWarning>
-			<body className={`${inter.variable} `} suppressHydrationWarning>
+			<body className={inter.variable} suppressHydrationWarning>
+				{/* ✅ MathJax config — afterInteractive болгох */}
 				<Script
 					id="mathjax-config"
-					strategy="beforeInteractive"
+					strategy="afterInteractive"
 					dangerouslySetInnerHTML={{
 						__html: `
-							window.MathJax = {
-								tex: {
-									inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
-									displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']],
-									processEscapes: true
-								},
-								mml: {
-									parseNodes: true,
-								},
-								startup: {
-									typeset: false
-								},
-								options: {
-									skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
-									ignoreHtmlClass: 'tex2jax_ignore',
-									processHtmlClass: 'math-content'
-								},
-								chtml: {
-									scale: 1,
-									matchFontHeight: true,
-									mtextInheritFont: true,
-									merrorInheritFont: true,
-									displayAlign: 'left',
-									displayIndent: '0',
-								},
-								svg: {
-									scale: 1,
-									matchFontHeight: true,
-									mtextInheritFont: true,
-									merrorInheritFont: true,
-									displayAlign: 'left',
-									displayIndent: '0',
-								}
-							};
-						`,
+              window.MathJax = {
+                tex: {
+                  inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
+                  displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']],
+                  processEscapes: true
+                },
+                startup: { typeset: false },
+                options: {
+                  skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+                  ignoreHtmlClass: 'tex2jax_ignore',
+                  processHtmlClass: 'math-content'
+                },
+                chtml: {
+                  scale: 1,
+                  matchFontHeight: true,
+                  mtextInheritFont: true,
+                  displayAlign: 'left',
+                  displayIndent: '0',
+                },
+              };
+            `,
 					}}
 				/>
+				{/* ✅ MathJax script — afterInteractive, config дараа ачаалагдана */}
 				<Script
 					src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
-					strategy="beforeInteractive"
+					strategy="afterInteractive"
 					id="mathjax-script"
 				/>
 				<Providers>

@@ -86,7 +86,7 @@ export default function RoomPage({ params }: RoomPageProps) {
 	// }, [roomDetail, setSizeMultiplier]);
 
 	// Өмнөх олон useEffect-үүдээ устгаад зөвхөн үүнийг үлдээ:
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+	// biome-ignore lint/correctness/useExhaustiveDependencies: tables and applyLayout intentionally excluded to prevent infinite loop
 	useEffect(() => {
 		if (isDataLoading || isRoomDetailLoading || !roomDetail) return;
 		if (roomDetail.roomsize) {
@@ -105,7 +105,6 @@ export default function RoomPage({ params }: RoomPageProps) {
 				exam_seat_id: pc.exam_seat_id,
 			}));
 
-			// ✅ num_of_pc > RetData.length бол хоосон байршлаас шинэ PC нэмнэ
 			const { allTables, newTables } = addExtraTables(
 				mappedTables,
 				totalPcCount,
@@ -119,7 +118,7 @@ export default function RoomPage({ params }: RoomPageProps) {
 				applyLayout(currentLayout, totalPcCount);
 			}
 		}
-		// biome-ignore lint/correctness/useExhaustiveDependencies: tables intentionally excluded
+		// 122-р мөрийн biome-ignore comment-г УСТГА
 	}, [isDataLoading, isRoomDetailLoading, remoteData, roomDetail]);
 
 	// Mouse handlers (MouseDown, MouseMove, MouseUp хэвээрээ...)

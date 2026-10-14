@@ -2,6 +2,7 @@
 
 import DOMPurify from "dompurify";
 import { FileText, PlayCircle } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -10,9 +11,9 @@ interface SafeHtmlContentProps {
 	contentType: number;
 }
 
-export function SafeHtmlContent({ html, contentType }: SafeHtmlContentProps) {
+export function SafeHtmlContent({ html }: SafeHtmlContentProps) {
 	const contentRef = useRef<HTMLDivElement>(null);
-	const [_isFullscreen, _setIsFullscreenn] = useState(false);
+	const [imgError, setImgError] = useState(false);
 
 	useEffect(() => {
 		if (contentRef.current && typeof window !== "undefined") {
@@ -100,14 +101,17 @@ export function SafeHtmlContent({ html, contentType }: SafeHtmlContentProps) {
 		) {
 			return (
 				<div className="space-y-2">
-					<img
-						src={trimmedHtml}
-						alt="Хичээлийн зураг"
-						className="w-full h-auto rounded-lg border max-h-[350px] object-contain"
-						onError={(e) => {
-							e.currentTarget.src = "/placeholder-image.png";
-						}}
-					/>
+					<div className="relative w-full max-h-[350px] overflow-hidden rounded-lg border">
+						<Image
+							src={imgError ? "/placeholder-image.png" : trimmedHtml}
+							alt="Хичээлийн зураг"
+							width={800}
+							height={350}
+							className="w-full h-auto object-contain max-h-[350px]"
+							onError={() => setImgError(true)}
+							unoptimized
+						/>
+					</div>
 				</div>
 			);
 		}

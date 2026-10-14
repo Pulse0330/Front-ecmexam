@@ -20,7 +20,7 @@ interface ConnectionConfig {
 	password: string;
 	database: string;
 	server: string;
-	
+
 	options: {
 		encrypt: boolean;
 		trustServerCertificate: boolean;
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 			password: "sql$erver43",
 			database: database,
 			server: serverip,
-	
+
 			options: {
 				encrypt: false,
 				trustServerCertificate: false,

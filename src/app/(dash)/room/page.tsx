@@ -11,7 +11,6 @@ import {
 	Monitor,
 	MoreVertical,
 	Plus,
-	Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";

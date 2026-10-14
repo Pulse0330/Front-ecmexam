@@ -57,6 +57,7 @@ import type { SorilresultListResponseType } from "@/types/soril/sorilResultLists
 import type { UserProfileResponseType } from "@/types/user";
 import type { userUpdateResponse } from "@/types/userUpdate";
 import api1 from "./axios1";
+import type { ReklamResponse } from "@/types/reklam/type";
 //-------------------------------Auth---------------------------------//
 
 // ===== LoginToken request =====
@@ -65,8 +66,7 @@ export const loginTokenRequest = async (
 	password: string,
 	deviceid: string,
 	devicemodel: string,
-	isweb:Number,
-	
+	isweb: number,
 ): Promise<LoginTokenResponse<User>> => {
 	const { data } = await api.post<LoginTokenResponse<User>>("/weblogin", {
 		username,
@@ -127,7 +127,7 @@ export const registerSysUserRequest = async (
 	lastname: string,
 	phone: string,
 	password: string,
-	ugroup:string,
+	ugroup: string,
 ): Promise<RegisterSysUserResponse> => {
 	const { data } = await api.post<RegisterSysUserResponse>(
 		"/register_sysuser",
@@ -137,7 +137,7 @@ export const registerSysUserRequest = async (
 			lastname: lastname,
 			phone: phone,
 			password: password,
-			ugroup:ugroup,
+			ugroup: ugroup,
 		},
 	);
 
@@ -725,5 +725,19 @@ export const getMNuserCheck = async (
 	const { data } = await api1.post<MNUserCheckResponse>("/myexaminees", {
 		regnumber,
 	});
+	return data;
+};
+
+export const getReklam = async (userId: number): Promise<ReklamResponse> => {
+	const { data } = await api.post<ReklamResponse>(
+		"/getreklam",
+		{ user_id: String(userId), platform: "1" },
+		{ silent: true },
+	);
+	return data;
+};
+
+export const sendReklamHit = async (id: number, kind: number) => {
+	const { data } = await api.post("/reklamhit", { id, kind }, { silent: true });
 	return data;
 };

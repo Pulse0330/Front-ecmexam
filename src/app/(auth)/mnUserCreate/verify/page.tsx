@@ -24,4 +24,3 @@ export default function VerifyPage() {
 
 	return <VerifyForm data={data} />;
 }
-

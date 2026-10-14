@@ -1,12 +1,13 @@
 import { MapPin, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { mnExamUserCheckType } from "@/types/mnExam/mnExamUserCheck";
+import type { ExamPrintItem } from "@/types/mnExam/mnPrint";
 import MnExamPrint from "./mnPrint";
 
 interface ExamInfoCardProps {
 	exam: mnExamUserCheckType | null | undefined;
-	printData?: any[];
-	isSuccess?: boolean; // ← амжилттай эсэх
+	printData?: ExamPrintItem[];
+	isSuccess?: boolean;
 }
 
 export function ExamInfoCard({

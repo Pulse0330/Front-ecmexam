@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronUp, FileText } from "lucide-react";
+import Image from "next/image";
 import { memo, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import HtmlContent from "../examUtils/htmlContent";
@@ -55,7 +56,8 @@ function deduplicateSources(sources: ExamSourceRaw[]): DeduplicatedSource[] {
 				: `idx:${src.questionIndex}`;
 
 		if (map.has(key)) {
-			const existing = map.get(key)!;
+			const existing = map.get(key);
+			if (!existing) continue;
 			const rowNum = Number(src.rowNum);
 			if (!existing.rowNums.includes(rowNum)) {
 				existing.rowNums.push(rowNum);
@@ -172,10 +174,13 @@ const SourceBlock = memo(function SourceBlock({
 			{expanded && (
 				<div className="px-4 pb-4 space-y-3">
 					{source.sourceImg && (
-						<img
+						<Image
 							src={source.sourceImg}
 							alt="Эхийн зураг"
+							width={800}
+							height={256}
 							className="w-full rounded-md object-cover max-h-64"
+							unoptimized
 						/>
 					)}
 					{source.sourceName && (

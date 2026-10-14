@@ -44,7 +44,7 @@ import {
 } from "@/lib/dash.api";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/useAuthStore";
-import type { ExamInfoItem, StudentSeat } from "@/types/dashboard/exam.types";
+import type { StudentSeat } from "@/types/dashboard/exam.types";
 import type { UploadFileResult } from "@/utils/upload";
 
 interface ExamRoom {

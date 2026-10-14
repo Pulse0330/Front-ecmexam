@@ -8,7 +8,7 @@ interface QPayURL {
 	link: string;
 }
 
-interface QPayInvoiceResponse {
+export interface QPayInvoiceResponse {
 	invoice_id: string;
 	qr_text: string;
 	qr_image: string;
@@ -16,24 +16,16 @@ interface QPayInvoiceResponse {
 	urls: QPayURL[];
 }
 
-// ── Server-side config (клиентэд хэзээ ч бүү илгээ) ──────────────────────────
-const _DB_CONN = {
-	user: "edusr",
-	password: "sql$erver43",
-	database: "ikh_skuul",
-	server: "172.16.1.79",
-
-	options: { encrypt: false, trustServerCertificate: false },
-};
-
-const _BACKEND_URL = "https://ottapp.ecm.mn/api/get_qpayinvoice";
+// ── Server-side config ────────────────────────────────────────────────────────
+const BACKEND_URL =
+	process.env.QPAY_BACKEND_URL ?? "https://ottapp.ecm.mn/api/get_qpayinvoice";
 
 // ── POST — Invoice үүсгэх ─────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
 	try {
 		const body = await req.json();
 
-		const res = await fetch("https://ottapp.ecm.mn/api/get_qpayinvoice", {
+		const res = await fetch(BACKEND_URL, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(body),
@@ -47,7 +39,7 @@ export async function POST(req: NextRequest) {
 			);
 		}
 
-		const data = await res.json();
+		const data: QPayInvoiceResponse = await res.json();
 		return NextResponse.json(data);
 	} catch (err) {
 		return NextResponse.json(

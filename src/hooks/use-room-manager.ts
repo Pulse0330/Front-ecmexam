@@ -140,7 +140,9 @@ export const useRoomManager = (TABLE_UNITS: number) => {
 					: 0;
 			const maxSeatNum =
 				existingTables.length > 0
-					? Math.max(...existingTables.map((t) => parseInt(t.seat_number) || 0))
+					? Math.max(
+							...existingTables.map((t) => parseInt(t.seat_number, 10) || 0),
+						)
 					: 0;
 
 			const addedTables: Table[] = [];
@@ -233,7 +235,7 @@ export const useRoomManager = (TABLE_UNITS: number) => {
 
 			const maxSeatNum =
 				prev.length > 0
-					? Math.max(...prev.map((t) => parseInt(t.seat_number) || 0))
+					? Math.max(...prev.map((t) => parseInt(t.seat_number, 10) || 0))
 					: 0;
 			const newSeatNumber = (maxSeatNum + 1).toString();
 

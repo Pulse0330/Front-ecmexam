@@ -7,6 +7,7 @@ import {
 	RotateCcw,
 	XCircle,
 } from "lucide-react";
+import Image from "next/image";
 import { useCallback, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -145,10 +146,14 @@ export function UserCheckForm({ onClose }: { onClose?: () => void } = {}) {
 							{/* Нэр + зураг */}
 							<div className="flex items-center gap-3">
 								{result.profile ? (
-									<img
+									<Image
 										src={result.profile}
 										alt="profile"
-										className="w-12 h-12 rounded-full object-cover border-2 border-emerald-300 shrink-0"
+										width={48}
+										height={48}
+										className="rounded-full object-cover border-2 border-emerald-300 shrink-0"
+										style={{ width: "48px", height: "48px" }}
+										unoptimized // ✅ гадаад URL тул
 									/>
 								) : (
 									<div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/40 border-2 border-emerald-300 flex items-center justify-center shrink-0">

@@ -65,7 +65,7 @@ interface UserData {
 	Phone: string | null;
 	img_url: string | null;
 	username: string;
-	ugroup:number;
+	ugroup: number;
 	password: string | null;
 	aimag_name?: string | null;
 	aimag_id?: string | number | null;
@@ -152,7 +152,6 @@ function SelectField({
 							<Loader2 className="w-3 h-3 animate-spin text-emerald-500" />
 						)}
 					</p>
-					{/* disabled=true БА утга хоосон үед л text харуулна */}
 					{disabled && !value ? (
 						<p className="text-sm font-semibold text-slate-900 dark:text-white">
 							<span className="text-slate-400 font-normal">—</span>
@@ -198,7 +197,7 @@ function SelectField({
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function ProfileContent({ user, userId }: ProfileContentProps) {
 	const queryClient = useQueryClient();
-const isTeacher = user.ugroup === 3 || user.ugroup === 4;
+	const isTeacher = user.ugroup === 3 || user.ugroup === 4;
 	const [showToast, setShowToast] = useState(false);
 	const [isEditing, setIsEditing] = useState(false);
 	const [passwordError, setPasswordError] = useState("");
@@ -207,7 +206,8 @@ const isTeacher = user.ugroup === 3 || user.ugroup === 4;
 	const [imagePreview, setImagePreview] = useState<string>("");
 	const [isUploadingImage, setIsUploadingImage] = useState(false);
 	const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
-	const [_locationErrorrrrrrrr, setLocationError] = useState("");
+	const [locationError, setLocationError] = useState("");
+
 	// ─── Dropdown lists ───────────────────────────────────────────────────────
 	const [aimagList, setAimagList] = useState<AimagItem[]>([]);
 	const aimagListRef = useRef<AimagItem[]>([]);
@@ -229,10 +229,6 @@ const isTeacher = user.ugroup === 3 || user.ugroup === 4;
 	const selectedSchoolServerIpRef = useRef("");
 	const [selectedClass, setSelectedClass] = useState("");
 
-	// ─── Pre-fill pending refs ────────────────────────────────────────────────
-	// setDistrictList → useEffect(districtList) → setSelectedDistrict
-	// setSchoolList   → useEffect(schoolList)   → setSelectedSchool
-	// setClassList    → useEffect(classList)    → setSelectedClass
 	const pendingDistrictIdRef = useRef<string>("");
 	const pendingSchoolNameRef = useRef<string>("");
 	const pendingSchoolDbRef = useRef<string>("");
@@ -252,6 +248,7 @@ const isTeacher = user.ugroup === 3 || user.ugroup === 4;
 	useEffect(() => {
 		userRef.current = user;
 	}, [user]);
+
 	useEffect(() => {
 		if (pendingAimagIdRef.current && aimagList.length > 0) {
 			const id = pendingAimagIdRef.current;
@@ -261,7 +258,7 @@ const isTeacher = user.ugroup === 3 || user.ugroup === 4;
 			}
 		}
 	}, [aimagList]);
-	// ─── districtList set хийгдэхэд pending district сонгоно ────────────────
+
 	useEffect(() => {
 		if (pendingDistrictIdRef.current && districtList.length > 0) {
 			const id = pendingDistrictIdRef.current;
@@ -271,6 +268,7 @@ const isTeacher = user.ugroup === 3 || user.ugroup === 4;
 			}
 		}
 	}, [districtList]);
+
 	const schoolListLengthRef = useRef(0);
 	useEffect(() => {
 		if (schoolList.length === schoolListLengthRef.current) return;
@@ -288,7 +286,6 @@ const isTeacher = user.ugroup === 3 || user.ugroup === 4;
 		}
 	}, [schoolList]);
 
-	// ─── classList set хийгдэхэд pending class сонгоно ──────────────────────
 	useEffect(() => {
 		if (pendingClassIdRef.current && classList.length > 0) {
 			const id = pendingClassIdRef.current;
@@ -337,19 +334,24 @@ const isTeacher = user.ugroup === 3 || user.ugroup === 4;
 			setAimagList(cachedList);
 		}
 
-		const aimagPromise =
+		// ── comma operator-г async IIFE-ээр орлуулав ──────────────────────────
+		const aimagPromise: Promise<AimagItem[]> =
 			cachedList.length > 0
 				? Promise.resolve(cachedList)
-				: (setAimagLoading(true),
-					apiAimag()
-						.then((d) => {
+				: (async () => {
+						setAimagLoading(true);
+						try {
+							const d = await apiAimag();
 							const list: AimagItem[] = d.RetData ?? [];
 							setAimagList(list);
 							aimagListRef.current = list;
 							return list;
-						})
-						.catch(() => [] as AimagItem[])
-						.finally(() => setAimagLoading(false)));
+						} catch {
+							return [] as AimagItem[];
+						} finally {
+							setAimagLoading(false);
+						}
+					})();
 
 		aimagPromise.then((list) => {
 			if (!u.aimag_name) return;
@@ -382,11 +384,10 @@ const isTeacher = user.ugroup === 3 || user.ugroup === 4;
 						);
 
 					if (district) {
-						// Pending-д хадгална → setDistrictList хийгдсэний дараа useEffect сонгоно
 						pendingDistrictIdRef.current = district.id.toString();
 					}
 
-					setDistrictList(dlist); // ← useEffect(districtList) гал авна
+					setDistrictList(dlist);
 
 					if (!district) return;
 
@@ -408,13 +409,12 @@ const isTeacher = user.ugroup === 3 || user.ugroup === 4;
 								pendingSchoolDbRef.current = school.dbname;
 								pendingSchoolServerIpRef.current = school.serverip || "";
 							} else if (u.sch_name) {
-								// Жагсаалтад байхгүй ч хэрэглэгчийн утгаар set хийнэ
 								pendingSchoolNameRef.current = u.sch_name;
 								pendingSchoolDbRef.current = u.schooldb ?? "";
 								pendingSchoolServerIpRef.current = "";
 							}
 
-							setSchoolList(slist); // ← useEffect(schoolList) гал авна
+							setSchoolList(slist);
 
 							const targetDb = school?.dbname ?? (u.schooldb || "");
 							const targetIp = school?.serverip ?? "";
@@ -430,7 +430,6 @@ const isTeacher = user.ugroup === 3 || user.ugroup === 4;
 									);
 
 									const userGroupId = String(u.studentgroupid ?? "").trim();
-
 									const matched = clist.find(
 										(c: ClassItem) =>
 											userGroupId &&
@@ -441,7 +440,7 @@ const isTeacher = user.ugroup === 3 || user.ugroup === 4;
 										pendingClassIdRef.current = matched.studentgroupid;
 									}
 
-									setClassList(clist); // ← useEffect(classList) гал авна
+									setClassList(clist);
 								})
 								.catch(() => setClassList([]))
 								.finally(() => setClassLoading(false));
@@ -596,175 +595,181 @@ const isTeacher = user.ugroup === 3 || user.ugroup === 4;
 		},
 	});
 
-	const convertToWebP = async (
-		file: File,
-		quality = 0.85,
-		maxWidth = 1920,
-		maxHeight = 1080,
-	): Promise<Blob> => {
-		return new Promise((resolve, reject) => {
-			const img = new Image();
-			const canvas = document.createElement("canvas");
-			const ctx = canvas.getContext("2d");
-			img.onload = () => {
-				let { width, height } = img;
-				if (width > maxWidth || height > maxHeight) {
-					const ratio = Math.min(maxWidth / width, maxHeight / height);
-					width = width * ratio;
-					height = height * ratio;
-				}
-				canvas.width = width;
-				canvas.height = height;
-				ctx?.drawImage(img, 0, 0, width, height);
-				canvas.toBlob(
-					(blob) =>
-						blob
-							? resolve(blob)
-							: reject(new Error("WebP хөрвүүлэлт амжилтгүй")),
-					"image/webp",
-					quality,
+	const convertToWebP = useCallback(
+		async (
+			file: File,
+			quality = 0.85,
+			maxWidth = 1920,
+			maxHeight = 1080,
+		): Promise<Blob> => {
+			return new Promise((resolve, reject) => {
+				const img = new Image();
+				const canvas = document.createElement("canvas");
+				const ctx = canvas.getContext("2d");
+				img.onload = () => {
+					let { width, height } = img;
+					if (width > maxWidth || height > maxHeight) {
+						const ratio = Math.min(maxWidth / width, maxHeight / height);
+						width = width * ratio;
+						height = height * ratio;
+					}
+					canvas.width = width;
+					canvas.height = height;
+					ctx?.drawImage(img, 0, 0, width, height);
+					canvas.toBlob(
+						(blob) =>
+							blob
+								? resolve(blob)
+								: reject(new Error("WebP хөрвүүлэлт амжилтгүй")),
+						"image/webp",
+						quality,
+					);
+				};
+				img.onerror = () => reject(new Error("Зураг уншихад алдаа гарлаа"));
+				img.src = URL.createObjectURL(file);
+			});
+		},
+		[],
+	);
+
+	const handleImageChange = useCallback(
+		async (e: React.ChangeEvent<HTMLInputElement>) => {
+			const file = e.target.files?.[0];
+			if (!file) return;
+			if (!file.type.startsWith("image/")) {
+				alert("Зөвхөн зураг файл сонгоно уу");
+				return;
+			}
+			if (file.size > 10 * 1024 * 1024) {
+				alert("Зургийн хэмжээ 10MB-аас бага байх ёстой");
+				return;
+			}
+			try {
+				setIsUploadingImage(true);
+				const webpBlob = await convertToWebP(file);
+				setImagePreview(URL.createObjectURL(webpBlob));
+				const formData = new FormData();
+				formData.append(
+					"file",
+					webpBlob,
+					file.name.replace(/\.[^/.]+$/, ".webp"),
 				);
-			};
-			img.onerror = () => reject(new Error("Зураг уншихад алдаа гарлаа"));
-			img.src = URL.createObjectURL(file);
+				const result = await uploadImage(formData);
+				if (result.fileStatus !== 0)
+					throw new Error(result.message || "Upload амжилтгүй боллоо");
+				const imageUrl = result.file?.url;
+				if (!imageUrl) throw new Error("Upload хариуд URL байхгүй байна");
+				setUploadedImageUrl(imageUrl);
+				setSelectedImage(file);
+			} catch (error: unknown) {
+				alert(
+					error instanceof Error
+						? error.message
+						: "Зураг upload хийхэд алдаа гарлаа",
+				);
+				setImagePreview("");
+				setSelectedImage(null);
+				setUploadedImageUrl("");
+			} finally {
+				setIsUploadingImage(false);
+			}
+		},
+		[convertToWebP],
+	);
+
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+
+		if (!editForm.Phone || editForm.Phone.trim() === "") {
+			setPhoneError("Утасны дугаар оруулна уу");
+			return;
+		}
+		setPhoneError("");
+
+		if (editForm.password && editForm.password !== editForm.confirmPassword) {
+			setPasswordError("Нууц үг таарахгүй байна");
+			return;
+		}
+		if (editForm.password && editForm.password.length < 6) {
+			setPasswordError("Нууц үг хамгийн багадаа 6 тэмдэгт байх ёстой");
+			return;
+		}
+		setPasswordError("");
+
+		let finalImageUrl = "";
+		if (uploadedImageUrl) {
+			finalImageUrl =
+				typeof uploadedImageUrl === "string"
+					? uploadedImageUrl
+					: (uploadedImageUrl as { FileWebUrl?: string }).FileWebUrl || "";
+		} else if (user.img_url) {
+			finalImageUrl =
+				typeof user.img_url === "string"
+					? user.img_url
+					: (user.img_url as unknown as { FileWebUrl?: string }).FileWebUrl ||
+						"";
+		}
+
+		const selectedAimagItem = aimagList.find(
+			(a) => a.mID.toString() === selectedAimag,
+		);
+		const aimagName = selectedAimagItem?.mName ?? "";
+		const aimagId = selectedAimagItem?.mID ?? 0;
+		if (!aimagName || aimagId === 0) {
+			setLocationError("Аймаг / Нийслэл сонгоно уу");
+			return;
+		}
+
+		const selectedDistrictItem = districtList.find(
+			(d) => d.id.toString() === selectedDistrict,
+		);
+		const symName = selectedDistrictItem?.name ?? "";
+		const symId = selectedDistrictItem?.id ?? 0;
+		if (!symName || symId === 0) {
+			setLocationError("Сум / Дүүрэг сонгоно уу");
+			return;
+		}
+
+		if (!selectedSchool) {
+			setLocationError("Сургууль сонгоно уу");
+			return;
+		}
+		const schoolDb = selectedSchoolDbRef.current;
+		if (!schoolDb) {
+			alert("Сургуулийн мэдээлэл алдаатай байна. Дахин сонгоно уу");
+			return;
+		}
+
+		const selectedClassItem = isTeacher
+			? undefined
+			: classList.find((c) => c.studentgroupid === selectedClass);
+		const studentgroupname = selectedClassItem?.class_name ?? "";
+
+		if (!isTeacher && !studentgroupname) {
+			setLocationError("Анги / Бүлэг сонгоно уу");
+			return;
+		}
+
+		setLocationError("");
+		updateMutation.mutate({
+			firstname: editForm.firstname || user.firstname,
+			lastname: editForm.lastname || user.lastname,
+			phone: editForm.Phone,
+			email: editForm.email || user.email,
+			aimag_id: aimagId,
+			aimagname: aimagName,
+			sym_id: symId,
+			symname: symName,
+			regnumber: "",
+			schoolname: selectedSchool,
+			schooldb: schoolDb,
+			studentgroupid: isTeacher ? "" : selectedClass,
+			studentgroupname,
+			user_id: userId,
+			img_url: finalImageUrl,
+			password: editForm.password || undefined,
 		});
 	};
-
-	const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (!file) return;
-		if (!file.type.startsWith("image/")) {
-			alert("Зөвхөн зураг файл сонгоно уу");
-			return;
-		}
-		if (file.size > 10 * 1024 * 1024) {
-			alert("Зургийн хэмжээ 10MB-аас бага байх ёстой");
-			return;
-		}
-		try {
-			setIsUploadingImage(true);
-			const webpBlob = await convertToWebP(file);
-			setImagePreview(URL.createObjectURL(webpBlob));
-			const formData = new FormData();
-			formData.append(
-				"file",
-				webpBlob,
-				file.name.replace(/\.[^/.]+$/, ".webp"),
-			);
-			const result = await uploadImage(formData);
-			if (result.fileStatus !== 0)
-				throw new Error(result.message || "Upload амжилтгүй боллоо");
-			const imageUrl = result.file?.url;
-			if (!imageUrl) throw new Error("Upload хариуд URL байхгүй байна");
-			setUploadedImageUrl(imageUrl);
-			setSelectedImage(file);
-		} catch (error: unknown) {
-			alert(
-				error instanceof Error
-					? error.message
-					: "Зураг upload хийхэд алдаа гарлаа",
-			);
-			setImagePreview("");
-			setSelectedImage(null);
-			setUploadedImageUrl("");
-		} finally {
-			setIsUploadingImage(false);
-		}
-	};
-
-const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!editForm.Phone || editForm.Phone.trim() === "") {
-        setPhoneError("Утасны дугаар оруулна уу");
-        return;
-    }
-    setPhoneError("");
-
-    if (editForm.password && editForm.password !== editForm.confirmPassword) {
-        setPasswordError("Нууц үг таарахгүй байна");
-        return;
-    }
-    if (editForm.password && editForm.password.length < 6) {
-        setPasswordError("Нууц үг хамгийн багадаа 6 тэмдэгт байх ёстой");
-        return;
-    }
-    setPasswordError("");
-
-    let finalImageUrl = "";
-    if (uploadedImageUrl) {
-        finalImageUrl =
-            typeof uploadedImageUrl === "string"
-                ? uploadedImageUrl
-                : (uploadedImageUrl as { FileWebUrl?: string }).FileWebUrl || "";
-    } else if (user.img_url) {
-        finalImageUrl =
-            typeof user.img_url === "string"
-                ? user.img_url
-                : (user.img_url as unknown as { FileWebUrl?: string }).FileWebUrl || "";
-    }
-
-    const selectedAimagItem = aimagList.find(
-        (a) => a.mID.toString() === selectedAimag,
-    );
-    const aimagName = selectedAimagItem?.mName ?? "";
-    const aimagId = selectedAimagItem?.mID ?? 0;
-    if (!aimagName || aimagId === 0) {
-        setLocationError("Аймаг / Нийслэл сонгоно уу");
-        return;
-    }
-
-    const selectedDistrictItem = districtList.find(
-        (d) => d.id.toString() === selectedDistrict,
-    );
-    const symName = selectedDistrictItem?.name ?? "";
-    const symId = selectedDistrictItem?.id ?? 0;
-    if (!symName || symId === 0) {
-        setLocationError("Сум / Дүүрэг сонгоно уу");
-        return;
-    }
-
-    if (!selectedSchool) {
-        setLocationError("Сургууль сонгоно уу");
-        return;
-    }
-    const schoolDb = selectedSchoolDbRef.current;
-    if (!schoolDb) {
-        alert("Сургуулийн мэдээлэл алдаатай байна. Дахин сонгоно уу");
-        return;
-    }
-
-    // ✅ Нэг блок болгон нэгтгэсэн, isTeacher шалгалт зөв
-    const selectedClassItem = isTeacher
-        ? undefined
-        : classList.find((c) => c.studentgroupid === selectedClass);
-    const studentgroupname = selectedClassItem?.class_name ?? "";
-
-    if (!isTeacher && !studentgroupname) {
-        setLocationError("Анги / Бүлэг сонгоно уу");
-        return;
-    }
-
-    setLocationError("");
-    updateMutation.mutate({
-        firstname: editForm.firstname || user.firstname,
-        lastname: editForm.lastname || user.lastname,
-        phone: editForm.Phone,
-        email: editForm.email || user.email,
-        aimag_id: aimagId,
-        aimagname: aimagName,
-        sym_id: symId,
-        symname: symName,
-        regnumber: "",
-        schoolname: selectedSchool,
-        schooldb: schoolDb,
-        studentgroupid: isTeacher ? "" : selectedClass,
-        studentgroupname,
-        user_id: userId,
-        img_url: finalImageUrl,
-        password: editForm.password || undefined,
-    });
-};
 
 	const getInitials = (name: string) => {
 		if (!name) return "??";
@@ -1057,8 +1062,8 @@ const handleSubmit = async (e: React.FormEvent) => {
 
 									{/* Card 2: Байршил мэдээлэл */}
 									<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-6">
-										<div className="flex items-start gap-3 mb-5 p-3  rounded-xl">
-											<p className="text-xs  leading-relaxed">
+										<div className="flex items-start gap-3 mb-5 p-3 rounded-xl">
+											<p className="text-xs leading-relaxed">
 												Та өөрийн мэдээлэлээ үнэн зөв оруулсан үед таны шалгалт
 												идэвхтэй харагдах тул{" "}
 												<span className="font-bold">заавал оруулна уу</span>
@@ -1067,6 +1072,15 @@ const handleSubmit = async (e: React.FormEvent) => {
 										<p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
 											Байршил мэдээлэл
 										</p>
+
+										{/* locationError харуулах */}
+										{locationError && (
+											<div className="mb-3 flex items-center gap-2 text-xs text-red-500 font-medium">
+												<AlertCircle className="w-4 h-4 shrink-0" />
+												{locationError}
+											</div>
+										)}
+
 										<div className="space-y-4">
 											<SelectField
 												label="Аймаг / Нийслэл"
@@ -1131,28 +1145,28 @@ const handleSubmit = async (e: React.FormEvent) => {
 												}
 											/>
 											{!isTeacher && (
-    <SelectField
-        label="Анги / Бүлэг"
-        placeholder={
-            classLoading
-                ? "Уншиж байна..."
-                : !selectedSchool
-                    ? "Эхлээд сургууль сонгоно уу"
-                    : "— Анги сонгох —"
-        }
-        options={classList.map((c) => ({
-            value: c.studentgroupid,
-            label: c.class_name,
-        }))}
-        value={selectedClass}
-        onValueChange={setSelectedClass}
-        disabled={!selectedSchool}
-        loading={classLoading}
-        icon={
-            <School className="w-full h-full text-violet-500" />
-        }
-    />
-)}
+												<SelectField
+													label="Анги / Бүлэг"
+													placeholder={
+														classLoading
+															? "Уншиж байна..."
+															: !selectedSchool
+																? "Эхлээд сургууль сонгоно уу"
+																: "— Анги сонгох —"
+													}
+													options={classList.map((c) => ({
+														value: c.studentgroupid,
+														label: c.class_name,
+													}))}
+													value={selectedClass}
+													onValueChange={setSelectedClass}
+													disabled={!selectedSchool}
+													loading={classLoading}
+													icon={
+														<School className="w-full h-full text-violet-500" />
+													}
+												/>
+											)}
 										</div>
 									</div>
 								</div>
@@ -1268,22 +1282,24 @@ const handleSubmit = async (e: React.FormEvent) => {
 											</div>
 										</div>
 										{!isTeacher && (
-    <div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-        <div className="flex items-center gap-3">
-            <School className="w-5 h-5 text-violet-500" />
-            <div>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Анги
-                </p>
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                    {user.studentgroupname || (
-                        <span className="text-slate-400 font-normal">—</span>
-                    )}
-                </p>
-            </div>
-        </div>
-    </div>
-)}
+											<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+												<div className="flex items-center gap-3">
+													<School className="w-5 h-5 text-violet-500" />
+													<div>
+														<p className="text-xs text-slate-500 dark:text-slate-400">
+															Анги
+														</p>
+														<p className="text-sm font-semibold text-slate-900 dark:text-white">
+															{user.studentgroupname || (
+																<span className="text-slate-400 font-normal">
+																	—
+																</span>
+															)}
+														</p>
+													</div>
+												</div>
+											</div>
+										)}
 									</div>
 								</div>
 							)}

@@ -274,6 +274,7 @@ export function StepPaid({
 				{/* HEADER */}
 				<div className="cert-header-bar">
 					<div className="cert-logo-box">
+						{/* biome-ignore lint/performance/noImgElement: print certificate requires native img */}
 						<img
 							src="/image/logoLogin.png"
 							alt="Skuul.mn лого"
@@ -308,6 +309,7 @@ export function StepPaid({
 					<div className="cert-info-wrap">
 						<div className="cert-photo">
 							{d.img_url ? (
+								// biome-ignore lint/performance/noImgElement: print certificate requires native img
 								<img src={d.img_url} alt="Зураг" />
 							) : (
 								<span style={{ padding: 8 }}>

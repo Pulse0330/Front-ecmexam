@@ -1,7 +1,5 @@
 "use client";
-
 import { useQuery } from "@tanstack/react-query";
-
 import {
 	ArrowLeft,
 	Bookmark,
@@ -10,6 +8,8 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	Clock,
+	LayoutGrid,
+	List,
 	Loader2,
 	Menu,
 	Save,
@@ -71,6 +71,7 @@ export default function SorilPage() {
 	const pendingAnswers = useRef<Map<number, PendingAnswer>>(new Map());
 	const saveTimer = useRef<NodeJS.Timeout | null>(null);
 	const lastSavedAnswers = useRef<Map<number, AnswerValue>>(new Map());
+	const [viewMode, setViewMode] = useState<"scroll" | "card">("scroll");
 	const [elapsedExamTime, setElapsedExamTime] = useState(0);
 	const isSavingRef = useRef(false);
 	const router = useRouter();
@@ -1018,6 +1019,38 @@ export default function SorilPage() {
 				<div className="grid grid-cols-6 gap-6 max-w-[1800px] mx-auto p-6 xl:p-8">
 					<aside className="col-span-1">
 						<div className="sticky top-6 space-y-4">
+							{/* Горим сэлгэгч */}
+							<div className="flex justify-end">
+								<div className="flex border border-border rounded-lg overflow-hidden">
+									<button
+										type="button"
+										onClick={() => setViewMode("scroll")}
+										className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+											viewMode === "scroll"
+												? "bg-primary text-primary-foreground"
+												: "bg-background text-muted-foreground hover:bg-accent"
+										}`}
+									>
+										<List className="w-4 h-4" />
+										Жагсаалт
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											setViewMode("card");
+											window.scrollTo({ top: 0, behavior: "smooth" });
+										}}
+										className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+											viewMode === "card"
+												? "bg-primary text-primary-foreground"
+												: "bg-background text-muted-foreground hover:bg-accent"
+										}`}
+									>
+										<LayoutGrid className="w-4 h-4" />
+										Карт
+									</button>
+								</div>
+							</div>
 							<ExamMinimap
 								totalCount={totalCount}
 								answeredCount={answeredCount}
@@ -1045,32 +1078,83 @@ export default function SorilPage() {
 					</aside>
 
 					<main className="col-span-4 space-y-5">
-						{allQuestions.map((q, index) => (
-							<div key={q.question_id} id={`question-${index}`}>
-								<Card className={getCardBorderClass(q.question_id)}>
+						{viewMode === "scroll" ? (
+							// Жагсаалт горим — одоогийн код ямаршгүй
+							allQuestions.map((q, index) => (
+								<div key={q.question_id} id={`question-${index}`}>
+									<Card className={getCardBorderClass(q.question_id)}>
+										<CardContent className="p-6">
+											<div className="flex gap-4">
+												<div className="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center font-semibold">
+													{index + 1}
+												</div>
+												<div className="flex-1 min-w-0">
+													<div className="flex items-start justify-between gap-2 mb-4">
+														<div className="font-semibold text-lg flex-1 leading-relaxed prose prose-sm max-w-none">
+															<MathContent html={q.question_name} />
+														</div>
+														<div className="flex items-center gap-2 shrink-0">
+															<Button
+																variant="ghost"
+																size="icon"
+																onClick={() => toggleBookmark(q.question_id)}
+																className="hover:bg-gray-100"
+																title={
+																	bookmarkedQuestions.has(q.question_id)
+																		? "Тэмдэглэгээ хасах"
+																		: "Тэмдэглэх"
+																}
+															>
+																{bookmarkedQuestions.has(q.question_id) ? (
+																	<BookmarkCheck className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+																) : (
+																	<Bookmark className="w-5 h-5 text-gray-400" />
+																)}
+															</Button>
+														</div>
+													</div>
+													{renderQuestion(q)}
+												</div>
+											</div>
+										</CardContent>
+									</Card>
+								</div>
+							))
+						) : (
+							// Карт горим — нэг нэгээр
+							<div className="space-y-4">
+								<Card
+									className={getCardBorderClass(currentQuestion.question_id)}
+								>
 									<CardContent className="p-6">
 										<div className="flex gap-4">
 											<div className="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center font-semibold">
-												{index + 1}
+												{currentQuestionIndex + 1}
 											</div>
 											<div className="flex-1 min-w-0">
 												<div className="flex items-start justify-between gap-2 mb-4">
 													<div className="font-semibold text-lg flex-1 leading-relaxed prose prose-sm max-w-none">
-														<MathContent html={q.question_name} />
+														<MathContent html={currentQuestion.question_name} />
 													</div>
 													<div className="flex items-center gap-2 shrink-0">
 														<Button
 															variant="ghost"
 															size="icon"
-															onClick={() => toggleBookmark(q.question_id)}
+															onClick={() =>
+																toggleBookmark(currentQuestion.question_id)
+															}
 															className="hover:bg-gray-100"
 															title={
-																bookmarkedQuestions.has(q.question_id)
+																bookmarkedQuestions.has(
+																	currentQuestion.question_id,
+																)
 																	? "Тэмдэглэгээ хасах"
 																	: "Тэмдэглэх"
 															}
 														>
-															{bookmarkedQuestions.has(q.question_id) ? (
+															{bookmarkedQuestions.has(
+																currentQuestion.question_id,
+															) ? (
 																<BookmarkCheck className="w-5 h-5 text-yellow-500 fill-yellow-500" />
 															) : (
 																<Bookmark className="w-5 h-5 text-gray-400" />
@@ -1078,13 +1162,35 @@ export default function SorilPage() {
 														</Button>
 													</div>
 												</div>
-												{renderQuestion(q)}
+												{renderQuestion(currentQuestion)}
 											</div>
 										</div>
 									</CardContent>
 								</Card>
+
+								<div className="sticky bottom-4 flex items-center justify-between bg-background/95 backdrop-blur border border-border rounded-xl p-3 shadow-lg">
+									<Button
+										variant="outline"
+										onClick={goToPreviousQuestion}
+										disabled={currentQuestionIndex === 0}
+									>
+										<ChevronLeft className="w-4 h-4 mr-1" />
+										Өмнөх
+									</Button>
+									<span className="text-sm text-muted-foreground font-medium">
+										{currentQuestionIndex + 1} / {totalCount}
+									</span>
+									<Button
+										variant="outline"
+										onClick={goToNextQuestion}
+										disabled={currentQuestionIndex === totalCount - 1}
+									>
+										Дараах
+										<ChevronRight className="w-4 h-4 ml-1" />
+									</Button>
+								</div>
 							</div>
-						))}
+						)}
 					</main>
 					<aside className="col-span-1">
 						<div className="sticky top-6 space-y-4">

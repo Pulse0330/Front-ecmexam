@@ -9,6 +9,7 @@ import { useState } from "react";
 import UseAnimations from "react-useanimations";
 import loading2 from "react-useanimations/lib/loading2";
 import MathContent from "@/app/exam/component/examUtils/MathContent";
+import { SourceBlock } from "@/app/exam/component/examUtils/sourceCard";
 import StyledBackButton from "@/components/backButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -917,6 +918,14 @@ function ExamResultDetailPage() {
 																	<MathContent html={question.question_name} />
 																</div>
 															)}
+
+														{/* 2. source_name - Эх бичвэр */}
+														{(question.source_name || question.source_img) && (
+															<SourceBlock
+																sourceName={question.source_name}
+																sourceImg={question.source_img}
+															/>
+														)}
 
 														{/* 2. Асуултын зураг */}
 														{question.question_img &&

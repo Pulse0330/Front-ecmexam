@@ -202,6 +202,8 @@ export function IDashboardHeader() {
 												alt="Logo"
 												width={32}
 												height={32}
+												priority
+												style={{ height: "auto" }}
 											/>
 											ECM System
 										</SheetTitle>

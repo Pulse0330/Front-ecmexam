@@ -93,7 +93,7 @@ function PrintCard({
 						}}
 					>
 						{imgSrc ? (
-							// eslint-disable-next-line @next/next/no-img-element
+							// biome-ignore lint/performance/noImgElement: PDF canvas rendering requires native img
 							<img
 								src={imgSrc}
 								alt="profile"

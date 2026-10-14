@@ -1,5 +1,5 @@
 "use client";
-
+import Image from "next/image";
 import { memo, useEffect, useRef } from "react";
 
 // ---- Helpers ----
@@ -157,11 +157,14 @@ function QuestionRow({
 					<MathContent html={questionHtml} />
 
 					{questionImageUrl && (
-						<img
+						<Image
 							src={questionImageUrl}
 							alt={`Бодлого ${questionNumber}`}
+							width={800}
+							height={320}
 							className="mt-2 max-w-full h-auto rounded-md border border-border"
 							style={{ maxHeight: 320 }}
+							unoptimized
 						/>
 					)}
 				</div>

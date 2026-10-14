@@ -7,6 +7,7 @@ import {
 	Loader2,
 	User,
 } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,10 +48,13 @@ export function StepPreview({
 			<CardHeader className="pb-3 pt-5 px-5">
 				<div className="flex items-center gap-3">
 					{d.img_url ? (
-						<img
+						<Image
 							src={d.img_url}
 							alt="profile"
+							width={56}
+							height={56}
 							className="w-14 h-14 rounded-full object-cover border-2 border-primary/20"
+							unoptimized
 						/>
 					) : (
 						<div className="w-14 h-14 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center shrink-0">

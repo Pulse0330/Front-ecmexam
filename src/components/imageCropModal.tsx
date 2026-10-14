@@ -13,13 +13,6 @@ import {
 // 3:4 харьцаа (өргөн:өндөр)
 const ASPECT_RATIO = 3 / 4;
 
-interface CropArea {
-	x: number;
-	y: number;
-	width: number;
-	height: number;
-}
-
 interface ImageCropModalProps {
 	open: boolean;
 	imageSrc: string | null;

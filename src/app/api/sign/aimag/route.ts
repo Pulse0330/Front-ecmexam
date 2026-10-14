@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 				password: process.env.DB_CONFIG_PASSWORD || "sql$erver43",
 				database: process.env.DB_CONFIG_NAME || "EDU_CONFIG",
 				server: process.env.DB_CONFIG_SERVER || "172.16.1.151",
-		
+
 				options: {
 					encrypt: false,
 					trustServerCertificate: false,

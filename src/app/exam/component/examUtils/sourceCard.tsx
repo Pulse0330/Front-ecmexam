@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import MathContent from "./MathContent";
@@ -37,10 +38,13 @@ export function SourceBlock({
 	return (
 		<div className="mt-3 p-3 border rounded-lg">
 			{sourceImg && (
-				<img
+				<Image
 					src={sourceImg}
 					alt="source"
+					width={56}
+					height={56}
 					className="w-14 h-14 object-cover rounded-md mb-2"
+					unoptimized
 				/>
 			)}
 			{srcAudio && (

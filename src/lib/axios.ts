@@ -1,7 +1,11 @@
 // src/lib/axios.ts
 import axios from "axios";
 import { toast } from "sonner";
-
+declare module "axios" {
+	interface AxiosRequestConfig {
+		silent?: boolean; 
+	}
+}
 const api = axios.create({
 	baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api",
 	headers: {
@@ -58,7 +62,7 @@ api.interceptors.response.use(
 		return response;
 	},
 	(error) => {
-		if (!error.response) {
+		if (!error.response && !error.config?.silent) {
 			toast.warning("Таны интернэт холболт салсан байна.", {
 				description: "Та системээс гараад дахин нэвтэрнэ үү ",
 			});

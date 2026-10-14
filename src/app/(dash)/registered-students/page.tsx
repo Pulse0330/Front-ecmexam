@@ -9,23 +9,16 @@ import {
 	Eye,
 	EyeOff,
 	Filter,
-	GraduationCap,
 	Hash,
 	Loader2,
 	MoreVertical,
 	Search,
-	UserCheck,
 	Users,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -41,7 +34,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
 	TableBody,
@@ -112,7 +104,7 @@ export default function RegisteredStudentsPage() {
 	}, [students, searchQuery, selectedGroupId]);
 
 	// Дата ачаалагдахад бүх группыг нээлттэй болгох
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+	// biome-ignore lint/correctness/useExhaustiveDependencies: groupedData keys used as trigger, students.length guards initial load only
 	useEffect(() => {
 		if (Object.keys(groupedData).length > 0) {
 			const allExpanded = Object.keys(groupedData).reduce(

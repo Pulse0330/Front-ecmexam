@@ -88,9 +88,9 @@ export default function LoginAnimation() {
 						alt="ECM Logo"
 						width={88}
 						height={88}
-						className="object-contain"
 						priority
 						unoptimized
+						style={{ width: "88px", height: "88px", objectFit: "contain" }}
 					/>
 				</div>
 

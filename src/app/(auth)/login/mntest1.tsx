@@ -8,6 +8,7 @@ import {
 	Pencil,
 	RotateCcw,
 } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -238,8 +239,11 @@ async function apiGetExamineeList(
 }
 
 // ─── RetData normalize ────────────────────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function normalizeRetData(retData: any): any | null {
+type RetDataItem = Record<string, unknown>;
+
+function normalizeRetData(
+	retData: RetDataItem | RetDataItem[] | null | undefined,
+): RetDataItem | null {
 	if (!retData) return null;
 	if (Array.isArray(retData)) return retData[0] ?? null;
 	return retData;
@@ -335,10 +339,13 @@ function ExamineeInfoCard({
 
 			{info.profile && (
 				<div className="flex justify-center">
-					<img
+					<Image
 						src={info.profile}
 						alt="profile"
-						className="w-14 h-14 rounded-full object-cover border-2 border-blue-300"
+						width={56}
+						height={56}
+						className="rounded-full object-cover border-2 border-blue-300"
+						unoptimized
 					/>
 				</div>
 			)}
@@ -549,7 +556,7 @@ export function UserCheckForm1({ onClose }: { onClose?: () => void } = {}) {
 		[checkState, clearReg],
 	);
 
-	// ─── checkUser: шинэ EEC → Skuul → examinees/info → examinee_list → Exam API ─
+	// ─── checkUser: EEC → Skuul → examinees/info → examinee_list → Exam API ──
 	const checkUser = useCallback(async () => {
 		if (reg.length < 8 || !schoolData) return;
 		setCheckState("loading");
@@ -580,49 +587,68 @@ export function UserCheckForm1({ onClose }: { onClose?: () => void } = {}) {
 					const item = normalizeRetData(eecData?.RetData);
 
 					if (item?.register_number) {
-						const mhb2025: string = item.mhb2025 ?? "";
+						const mhb2025 = String(item.mhb2025 ?? "");
 						console.log("[EEC] mhb2025:", mhb2025);
 
 						const student: StudentExamData = {
-							login_name: item.register_number,
-							firstname: item.first_name ?? item.firstname ?? "",
-							lastname: item.last_name ?? item.lastname ?? "",
-							reg_number: item.register_number,
+							login_name: String(item.register_number ?? ""),
+							firstname: String(item.first_name ?? item.firstname ?? ""),
+							lastname: String(item.last_name ?? item.lastname ?? ""),
+							reg_number: String(item.register_number ?? ""),
 							gender: item.gender === "M" || item.gender === 1 ? 1 : 0,
 							gender_code: item.gender === "M" || item.gender === 1 ? "M" : "F",
-							phone: item.phone ?? null,
-							email: item.mail ?? item.email ?? "",
-							aimag_id: item.aimag_id ?? "",
-							sym_id: item.sym_id ?? "",
+							phone: item.phone != null ? String(item.phone) : null,
+							email: String(item.mail ?? item.email ?? ""),
+							aimag_id: String(item.aimag_id ?? ""),
+							sym_id: String(item.sym_id ?? ""),
 							class_id: Number(item.academic_level ?? 0),
 							group_id: Number(item.student_group_id ?? 0),
-							img_url: item.profile ?? item.img_url ?? null,
+							img_url:
+								item.profile != null
+									? String(item.profile)
+									: item.img_url != null
+										? String(item.img_url)
+										: null,
 							descr: "",
 							regdate: "",
-							dateofbirth: item.dateofbirth ?? "",
-							personId:
+							dateofbirth: String(item.dateofbirth ?? ""),
+							personId: String(
 								item.personid ?? item.personId ?? item.examinee_number ?? "",
-							schooldb: item.schooldb ?? "",
-							schoolname: item.schoolname ?? "",
-							studentgroupid: item.student_group_id ?? "",
-							studentgroupname: item.studentgroupname ?? "",
-							aimag_name: item.aimag_name ?? "",
-							sym_name: item.sym_name ?? "",
-							institutionid: item.school_esis_id ?? item.institutionid ?? "",
+							),
+							schooldb: String(item.schooldb ?? ""),
+							schoolname: String(item.schoolname ?? ""),
+							studentgroupid: String(item.student_group_id ?? ""),
+							studentgroupname: String(item.studentgroupname ?? ""),
+							aimag_name: String(item.aimag_name ?? ""),
+							sym_name: String(item.sym_name ?? ""),
+							institutionid: String(
+								item.school_esis_id ?? item.institutionid ?? "",
+							),
 							academic_level: Number(item.academic_level ?? 0),
-							nationality: item.nationality ?? "",
-							exam_number: item.exam_number,
-							exam_name: item.exam_name,
-							start_date: item.start_date,
-							end_date: item.end_date,
-							duration: item.duration,
-							room_number: item.room_number,
-							roomname: item.roomname,
-							seatnumber: item.seatnumber ?? null,
-							seatposition: item.seatposition ?? null,
-							status_code: item.status_code,
-							status_text: item.status_text,
-							age: item.age,
+							nationality: String(item.nationality ?? ""),
+							exam_number:
+								item.exam_number != null ? String(item.exam_number) : undefined,
+							exam_name:
+								item.exam_name != null ? String(item.exam_name) : undefined,
+							start_date:
+								item.start_date != null ? String(item.start_date) : undefined,
+							end_date:
+								item.end_date != null ? String(item.end_date) : undefined,
+							duration:
+								item.duration != null ? Number(item.duration) : undefined,
+							room_number:
+								item.room_number != null ? String(item.room_number) : undefined,
+							roomname:
+								item.roomname != null ? String(item.roomname) : undefined,
+							seatnumber:
+								item.seatnumber != null ? Number(item.seatnumber) : null,
+							seatposition:
+								item.seatposition != null ? String(item.seatposition) : null,
+							status_code:
+								item.status_code != null ? Number(item.status_code) : undefined,
+							status_text:
+								item.status_text != null ? String(item.status_text) : undefined,
+							age: item.age != null ? Number(item.age) : undefined,
 							_source: "eec",
 						};
 
@@ -638,7 +664,6 @@ export function UserCheckForm1({ onClose }: { onClose?: () => void } = {}) {
 							return;
 						}
 
-						// not_passed болон бусад → дараагийн API руу үргэлжилнэ
 						console.log(`⚠️ [EEC] mhb2025="${mhb2025}" → Skuul шалгаж байна...`);
 					}
 				}
@@ -663,9 +688,8 @@ export function UserCheckForm1({ onClose }: { onClose?: () => void } = {}) {
 
 				if (skuulOk) {
 					const skuulItem = normalizeRetData(skuulData?.RetData);
-					const examineeNumber: string = skuulItem?.examinee_number ?? "";
+					const examineeNumber = String(skuulItem?.examinee_number ?? "");
 
-					// examinee_number байвал → info API → examinee_list fallback
 					if (examineeNumber) {
 						console.log("✅ [Skuul GET] examinee_number:", examineeNumber);
 						setSkuulExamineeNumber(examineeNumber);
@@ -688,16 +712,18 @@ export function UserCheckForm1({ onClose }: { onClose?: () => void } = {}) {
 								JSON.stringify(infoData),
 							);
 
-							const infoItem = normalizeRetData(infoData?.RetData) ?? infoData;
+							const infoItem =
+								normalizeRetData(infoData?.RetData) ??
+								(infoData as RetDataItem);
 
 							if (infoItem?.register_number || infoItem?.examinee_number) {
 								console.log("✅ [examinees/info] олдлоо");
 
 								const student: StudentExamData = {
-									login_name: infoItem.register_number ?? "",
-									firstname: infoItem.first_name ?? "",
-									lastname: infoItem.last_name ?? "",
-									reg_number: infoItem.register_number ?? "",
+									login_name: String(infoItem.register_number ?? ""),
+									firstname: String(infoItem.first_name ?? ""),
+									lastname: String(infoItem.last_name ?? ""),
+									reg_number: String(infoItem.register_number ?? ""),
 									gender:
 										infoItem.gender === "M" || infoItem.gender === "1" ? 1 : 0,
 									gender_code:
@@ -705,36 +731,67 @@ export function UserCheckForm1({ onClose }: { onClose?: () => void } = {}) {
 											? "M"
 											: "F",
 									phone: null,
-									email: infoItem.mail ?? "",
+									email: String(infoItem.mail ?? ""),
 									aimag_id: "",
 									sym_id: "",
 									class_id: 0,
 									group_id: 0,
-									img_url: infoItem.profile ?? null,
+									img_url:
+										infoItem.profile != null ? String(infoItem.profile) : null,
 									descr: "",
 									regdate: "",
 									dateofbirth: "",
-									personId: infoItem.examinee_number ?? "",
+									personId: String(infoItem.examinee_number ?? ""),
 									schooldb: "",
-									schoolname: infoItem.schoolname ?? "",
+									schoolname: String(infoItem.schoolname ?? ""),
 									studentgroupid: "",
-									studentgroupname: infoItem.studentgroupname ?? "",
-									aimag_name: infoItem.aimag_name ?? "",
-									sym_name: infoItem.sym_name ?? "",
+									studentgroupname: String(infoItem.studentgroupname ?? ""),
+									aimag_name: String(infoItem.aimag_name ?? ""),
+									sym_name: String(infoItem.sym_name ?? ""),
 									institutionid: "",
 									academic_level: 0,
 									nationality: "",
-									exam_name: infoItem.exam_name ?? undefined,
-									start_date: infoItem.start_date ?? undefined,
-									end_date: infoItem.end_date ?? undefined,
-									duration: infoItem.duration ?? undefined,
-									room_number: infoItem.room_number ?? undefined,
-									roomname: infoItem.roomname ?? undefined,
-									seatnumber: infoItem.seatnumber ?? null,
-									seatposition: infoItem.seatposition ?? null,
-									status_code: infoItem.status_code ?? undefined,
-									status_text: infoItem.status_text ?? undefined,
-									age: infoItem.age ?? undefined,
+									exam_name:
+										infoItem.exam_name != null
+											? String(infoItem.exam_name)
+											: undefined,
+									start_date:
+										infoItem.start_date != null
+											? String(infoItem.start_date)
+											: undefined,
+									end_date:
+										infoItem.end_date != null
+											? String(infoItem.end_date)
+											: undefined,
+									duration:
+										infoItem.duration != null
+											? Number(infoItem.duration)
+											: undefined,
+									room_number:
+										infoItem.room_number != null
+											? String(infoItem.room_number)
+											: undefined,
+									roomname:
+										infoItem.roomname != null
+											? String(infoItem.roomname)
+											: undefined,
+									seatnumber:
+										infoItem.seatnumber != null
+											? Number(infoItem.seatnumber)
+											: null,
+									seatposition:
+										infoItem.seatposition != null
+											? String(infoItem.seatposition)
+											: null,
+									status_code:
+										infoItem.status_code != null
+											? Number(infoItem.status_code)
+											: undefined,
+									status_text:
+										infoItem.status_text != null
+											? String(infoItem.status_text)
+											: undefined,
+									age: infoItem.age != null ? Number(infoItem.age) : undefined,
 									_source: "skuul",
 								};
 
@@ -749,7 +806,9 @@ export function UserCheckForm1({ onClose }: { onClose?: () => void } = {}) {
 						console.log(
 							"⚠️ examinees/info хоосон → examinee_list шалгаж байна...",
 						);
-						const personId = skuulItem?.personid ?? skuulItem?.personId ?? "";
+						const personId = String(
+							skuulItem?.personid ?? skuulItem?.personId ?? "",
+						);
 						const listStudent = await apiGetExamineeList(personId);
 
 						if (listStudent) {
@@ -759,8 +818,6 @@ export function UserCheckForm1({ onClose }: { onClose?: () => void } = {}) {
 							return;
 						}
 
-						// ── examinee_number байгаа ч studentExam олдсонгүй ──────────
-						// Хуучин logic: "Бүртгэл үүслээ" мессеж харуулна (studentExam=null)
 						console.log(
 							"⚠️ examinee_list ч олдсонгүй → бүртгэл үүссэн мессеж харуулна",
 						);
@@ -919,7 +976,7 @@ export function UserCheckForm1({ onClose }: { onClose?: () => void } = {}) {
 						</Alert>
 					)}
 
-					{/* ── Skuul-д examinee_number байгаа ч studentExam олдсонгүй (хуучин logic) ── */}
+					{/* ── Skuul-д examinee_number байгаа ч studentExam олдсонгүй ── */}
 					{checkState === "found" && isSkuulFound && !studentExam && (
 						<Alert className="border-blue-200 bg-blue-50/50 dark:bg-blue-900/10 dark:border-blue-800">
 							<CheckCircle2 className="h-4 w-4 text-blue-500" />
@@ -949,10 +1006,13 @@ export function UserCheckForm1({ onClose }: { onClose?: () => void } = {}) {
 								<div className="flex flex-col gap-3">
 									<div className="flex items-center gap-3">
 										{studentExam.img_url && (
-											<img
+											<Image
 												src={studentExam.img_url}
 												alt="profile"
-												className="w-12 h-12 rounded-full object-cover border-2 border-emerald-300"
+												width={48}
+												height={48}
+												className="rounded-full object-cover border-2 border-emerald-300"
+												unoptimized
 											/>
 										)}
 										<div>

@@ -26,11 +26,11 @@ interface DataTableProps<TData, TValue> {
 	expandKey?: string; // Энд string байхаар авбал илүү уян хатан
 }
 
-export function ITable<TData extends Record<string, any>, TValue>({
+export function ITable<TData extends Record<string, unknown>, TValue>({
 	columns,
 	data,
 	className,
-	expandKey = "items", // Чиний дата дээр 'items' байгаа тул default-ыг нь сольчихлоо
+	expandKey = "items",
 }: DataTableProps<TData, TValue>) {
 	const [expanded, setExpanded] = React.useState({});
 
@@ -39,8 +39,7 @@ export function ITable<TData extends Record<string, any>, TValue>({
 		columns,
 		state: { expanded },
 		onExpandedChange: setExpanded,
-		// expandKey-г ашиглан child өгөгдлийг унших
-		getSubRows: (row) => row[expandKey],
+		getSubRows: (row) => row[expandKey] as TData[] | undefined,
 		getCoreRowModel: getCoreRowModel(),
 		getExpandedRowModel: getExpandedRowModel(),
 	});

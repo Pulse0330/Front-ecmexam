@@ -4,7 +4,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
 	BookOpen,
 	CheckCircle2,
-	Download,
 	Grid2X2Plus,
 	Loader2,
 	School,

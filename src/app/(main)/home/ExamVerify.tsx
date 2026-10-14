@@ -213,7 +213,6 @@ import type { SelectedExam } from "./StudentExamSelect";
 export function ExamVerifyDialog({
 	isFetched,
 	examList,
-	isLoading,
 }: {
 	examList: Exam1111[];
 	isLoading: boolean;
