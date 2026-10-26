@@ -20,8 +20,16 @@ export async function proxy(request: NextRequest) {
 	const isPublicRoute = publicRoutes.some((r) => pathname.startsWith(r));
 	const isAlwaysAllow = alwaysAllowRoutes.some((r) => pathname.startsWith(r));
 
+	// Гадны системээс URL-аар орж ирсэн шалгалт (dbname, userid) — token шаардахгүй
+	const { searchParams } = request.nextUrl;
+	const isIntegrationExam =
+		pathname.startsWith("/exam/") &&
+		!!searchParams.get("dbname") &&
+		!!searchParams.get("userid");
+	const isIntegrationFinished = pathname === "/exam/finished";
+
 	// Үргэлж зөвшөөрөх — token шаардахгүй
-	if (isAlwaysAllow) {
+	if (isAlwaysAllow || isIntegrationExam || isIntegrationFinished) {
 		return NextResponse.next();
 	}
 

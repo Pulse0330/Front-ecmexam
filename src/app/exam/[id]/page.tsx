@@ -25,6 +25,7 @@ import MultiSelectQuestion from "@/app/exam/component/question/multiselect";
 import NumberInputQuestion from "@/app/exam/component/question/numberinput";
 import DragAndDropQuestion from "@/app/exam/component/question/order";
 import SingleSelectQuestion from "@/app/exam/component/question/singleSelect";
+import ExamRulesDialog from "@/components/examRuleDialog";
 import FixedScrollButton from "@/components/FixedScrollButton";
 import {
 	AlertDialog,
@@ -38,11 +39,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { deleteExamAnswer, getExamById, saveExamAnswer } from "@/lib/api";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { AnswerValue } from "@/types/exam/exam";
 import { AdvancedExamProctor } from "../component/examguard";
 import { ExamHeader } from "../component/examUtils/examInfo";
+import {
+	getExamApi,
+	leaveIntegrationExam,
+	useExamIntegration,
+} from "../component/examUtils/integration";
 import MathContent from "../component/examUtils/MathContent";
 import { SourceBlock } from "../component/examUtils/sourceCard";
 import ExamTimer from "../component/Itime";
@@ -146,7 +152,19 @@ const areAnswersEqual = (
 };
 
 export default function ExamPage() {
-	const { userId } = useAuthStore();
+	const { userId: authUserId } = useAuthStore();
+	// URL-аар (dbname, userid) орж ирсэн бол integration API ашиглана
+	const integration = useExamIntegration();
+	const userId = integration?.userId ?? authUserId;
+	const { getExamById, saveExamAnswer, deleteExamAnswer } = useMemo(
+		() => getExamApi(integration?.dbname),
+		[integration?.dbname],
+	);
+	// Integration үед шалгалтын дүрмийг зөвшөөрсний дараа шалгалт ачаална
+	const isMobile = useIsMobile();
+	const [rulesAccepted, setRulesAccepted] = useState(false);
+	const rulesConfirmedRef = useRef(false);
+	const needsRules = !!integration && !rulesAccepted;
 	const { id } = useParams();
 
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -180,9 +198,9 @@ export default function ExamPage() {
 		isLoading,
 		error,
 	} = useQuery({
-		queryKey: ["exam", userId, id],
+		queryKey: ["exam", integration?.dbname, userId, id],
 		queryFn: () => getExamById(userId || 0, Number(id)),
-		enabled: !!userId && !!id,
+		enabled: !!userId && !!id && !needsRules,
 	});
 
 	const saveQuestion = useCallback(
@@ -481,7 +499,7 @@ export default function ExamPage() {
 				savingQuestions.current.delete(questionId);
 			}
 		},
-		[userId, examData],
+		[userId, examData, saveExamAnswer, deleteExamAnswer],
 	);
 
 	const processPendingAnswers = useCallback(async () => {
@@ -1006,6 +1024,27 @@ export default function ExamPage() {
 		};
 	}, [processPendingAnswers]);
 
+	if (needsRules && integration) {
+		return (
+			<div className="min-h-screen">
+				<ExamRulesDialog
+					open
+					onOpenChange={(open) => {
+						// Цуцалбал гадны систем рүү буцна (зөвшөөрсөн үед биш)
+						if (!open && !rulesConfirmedRef.current) {
+							leaveIntegrationExam(integration);
+						}
+					}}
+					onConfirm={() => {
+						rulesConfirmedRef.current = true;
+						setRulesAccepted(true);
+					}}
+					isMobile={isMobile}
+				/>
+			</div>
+		);
+	}
+
 	if (isLoading) {
 		return (
 			<div className="flex justify-center items-center h-screen">
@@ -1185,7 +1224,11 @@ export default function ExamPage() {
 									<AlertDialogFooter>
 										<AlertDialogCancel>Болих</AlertDialogCancel>
 										<AlertDialogAction
-											onClick={() => router.push("/Lists/examList")}
+											onClick={() =>
+												integration
+													? leaveIntegrationExam(integration)
+													: router.push("/Lists/examList")
+											}
 										>
 											Тийм, гарах
 										</AlertDialogAction>

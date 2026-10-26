@@ -330,6 +330,8 @@ export default function HomePage() {
 
 	// Зарын дараалал: splash → popup dialog → булангийн зарууд
 	const [splashDone, setSplashDone] = useState(false);
+	// Carousel-д одоо харагдаж буй зар — булангийн зар түүнийг давхардуулахгүй
+	const [carouselAdId, setCarouselAdId] = useState<string | number | null>(null);
 	const handleSplashFinished = useCallback(() => setSplashDone(true), []);
 
 	const { data: profileData, isLoading: isProfileLoading } =
@@ -423,7 +425,7 @@ export default function HomePage() {
 			/>
 			{/* Нэг удаад нэг зар: эхлээд splash, хаагдсаны дараа булангийн зарууд ээлжилнэ */}
 			{splashDone && ads.floating.length > 0 && (
-				<FloatingAds ads={ads.floating} delay={1500} />
+				<FloatingAds ads={ads.floating} delay={1500} excludeId={carouselAdId} />
 			)}
 
 			{/* Print хэсэг */}
@@ -433,7 +435,11 @@ export default function HomePage() {
 					<HeroSection username={username} />
 					{ads.carousel.length > 0 && (
 						<div className="pt-4">
-							<ReklamCarousel ads={ads.carousel} paused={!splashDone} />
+							<ReklamCarousel
+								ads={ads.carousel}
+								paused={!splashDone}
+								onActiveChange={setCarouselAdId}
+							/>
 						</div>
 					)}
 					<div className="pt-2 flex flex-row gap-4 items-start">

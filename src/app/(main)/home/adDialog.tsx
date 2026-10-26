@@ -10,6 +10,7 @@ import {
 	DialogDescription,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { AdLikeButton } from "./adLike";
 import { AdLink, AdMedia, type AdMediaType } from "./adShared";
 import { trackReklamClick, trackReklamView } from "./reklamtracker";
 
@@ -185,8 +186,9 @@ export function AdDialog({ ad, delay = 600, onFinished }: AdDialogProps) {
 					</div>
 
 					<div className="flex flex-col gap-2">
-						{ad.href && (
-							<Button asChild className="w-full h-11 rounded-xl text-sm sm:text-base">
+						<div className="flex gap-2">
+							{ad.href && (
+								<Button asChild className="h-11 flex-1 rounded-xl text-sm sm:text-base">
 								<AdLink
 									href={ad.href}
 									onClick={() => {
@@ -198,7 +200,12 @@ export function AdDialog({ ad, delay = 600, onFinished }: AdDialogProps) {
 									<ArrowRight className="w-4 h-4" />
 								</AdLink>
 							</Button>
-						)}
+							)}
+							<AdLikeButton
+								reklamId={reklamId}
+								className={ad.href ? undefined : "flex-1"}
+							/>
+						</div>
 						<Button
 							type="button"
 							variant="ghost"

@@ -22,9 +22,11 @@ const SWIPE_VELOCITY = 500;
 export function ReklamCarousel({
 	ads,
 	paused: externalPaused = false,
+	onActiveChange,
 }: {
 	ads: FloatingAd[];
 	paused?: boolean; // splash зэрэг өөр зар дэлгэцийг хааж байх үед true
+	onActiveChange?: (id: FloatingAd["id"]) => void; // одоо харагдаж буй зар
 }) {
 	const count = ads.length;
 	const [[index, direction], setSlide] = useState<[number, number]>([0, 0]);
@@ -61,6 +63,12 @@ export function ReklamCarousel({
 		},
 		[resetTimer],
 	);
+
+	// Одоо харагдаж буй зарыг мэдэгдэнэ — булангийн зар түүнийг давхардуулахгүй
+	const activeId = ad?.id;
+	useEffect(() => {
+		if (activeId !== undefined) onActiveChange?.(activeId);
+	}, [activeId, onActiveChange]);
 
 	// Дэлгэцэнд 50%-аас дээш харагдаж байгаа эсэх (зарын хэмжилтийн стандарт)
 	useEffect(() => {
