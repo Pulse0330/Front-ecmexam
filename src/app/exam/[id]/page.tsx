@@ -11,7 +11,6 @@ import {
 	Loader2,
 	LogOut,
 	Menu,
-	Save,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -38,12 +37,17 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { deleteExamAnswer, getExamById, saveExamAnswer } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { AnswerValue } from "@/types/exam/exam";
 import { AdvancedExamProctor } from "../component/examguard";
 import { ExamHeader } from "../component/examUtils/examInfo";
+import {
+	getExamApi,
+	leaveIntegrationExam,
+	useExamIntegration,
+} from "../component/examUtils/integration";
 import MathContent from "../component/examUtils/MathContent";
+import SavingDots from "../component/examUtils/savingDots";
 import { SourceBlock } from "../component/examUtils/sourceCard";
 import ExamTimer from "../component/Itime";
 import QuestionImage from "../component/question/questionImage";
@@ -54,9 +58,11 @@ const SAVE_DELAYS = {
 	TYPE_4_FILL: 1500,
 	TYPE_5_ORDER: 2000,
 	TYPE_6_MATCH: 3000,
+	RETRY: 5000,
 } as const;
 
 const BATCH_SIZE = 5;
+const MAX_SAVE_RETRIES = 12; // RETRY 5с × 12 = 1 минут
 const TYPING_INDICATOR_DELAY = 1500;
 interface PendingAnswer {
 	questionId: number;
@@ -146,7 +152,14 @@ const areAnswersEqual = (
 };
 
 export default function ExamPage() {
-	const { userId } = useAuthStore();
+	const { userId: authUserId } = useAuthStore();
+	// URL-аар (dbname, userid) орж ирсэн бол integration API ашиглана
+	const integration = useExamIntegration();
+	const userId = integration?.userId ?? authUserId;
+	const { getExamById, saveExamAnswer, deleteExamAnswer } = useMemo(
+		() => getExamApi(integration?.dbname),
+		[integration?.dbname],
+	);
 	const { id } = useParams();
 
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -174,13 +187,16 @@ export default function ExamPage() {
 	const saveTimer = useRef<NodeJS.Timeout | null>(null);
 	const lastSavedAnswers = useRef<Map<number, AnswerValue>>(new Map());
 	const isSavingRef = useRef(false);
+	// Амжилтгүй хадгалалтыг дахин оролдох — callback өөрийгөө шууд дуудахгүйн тулд ref
+	const retrySaveRef = useRef<() => void>(() => {});
+	const retryCountRef = useRef(0);
 	const [showExitConfirm, setShowExitConfirm] = useState(false);
 	const {
 		data: examData,
 		isLoading,
 		error,
 	} = useQuery({
-		queryKey: ["exam", userId, id],
+		queryKey: ["exam", integration?.dbname, userId, id],
 		queryFn: () => getExamById(userId || 0, Number(id)),
 		enabled: !!userId && !!id,
 	});
@@ -481,7 +497,7 @@ export default function ExamPage() {
 				savingQuestions.current.delete(questionId);
 			}
 		},
-		[userId, examData],
+		[userId, examData, saveExamAnswer, deleteExamAnswer],
 	);
 
 	const processPendingAnswers = useCallback(async () => {
@@ -520,7 +536,22 @@ export default function ExamPage() {
 
 		isSavingRef.current = false;
 		setIsSaving(false);
+
+		// Гар "Хадгалах" товч байхгүй тул амжилтгүй болсныг автоматаар дахин оролдоно.
+		// Хязгаартай — сервер байнга татгалзвал хүсэлт тасралтгүй явуулахгүй
+		// (дараагийн хариулт өөрчлөх / шалгалт дуусгах үед дахин хадгалагдана).
+		if (failedSaves.length === 0) {
+			retryCountRef.current = 0;
+		} else if (retryCountRef.current < MAX_SAVE_RETRIES) {
+			retryCountRef.current += 1;
+			if (saveTimer.current) clearTimeout(saveTimer.current);
+			saveTimer.current = setTimeout(
+				() => retrySaveRef.current(),
+				SAVE_DELAYS.RETRY,
+			);
+		}
 	}, [examData, saveQuestion]);
+	retrySaveRef.current = processPendingAnswers;
 
 	const scheduleAutoSave = useCallback(
 		(delay: number = SAVE_DELAYS.DEFAULT) => {
@@ -589,11 +620,6 @@ export default function ExamPage() {
 		},
 		[examData, scheduleAutoSave],
 	);
-
-	const handleManualSave = useCallback(() => {
-		if (saveTimer.current) clearTimeout(saveTimer.current);
-		processPendingAnswers();
-	}, [processPendingAnswers]);
 
 	const handleAutoSubmit = useCallback(async () => {
 		if (hasAutoFinished.current || isAutoSubmitting.current) {
@@ -854,12 +880,15 @@ export default function ExamPage() {
 			const isBookmarked = bookmarkedQuestions.has(questionId);
 			const isTypingNow = typingQuestions.has(questionId);
 
-			if (isTypingNow) return "border-2 border-blue-400 shadow-lg";
+			// border-2 биш ring ашиглана — хариулахад карт "үсрэхгүй"
+			if (isTypingNow)
+				return "border-blue-400 ring-2 ring-blue-400/40 shadow-md";
 			if (isAnswered && isBookmarked)
-				return "border-2 border-amber-500 shadow-sm";
-			if (isAnswered) return "border-2 border-blue-600 shadow-sm";
-			if (isBookmarked) return "border-2 border-amber-400 shadow-sm";
-			return "border border-gray-200";
+				return "border-amber-400 ring-1 ring-amber-400 shadow-sm";
+			if (isAnswered)
+				return "border-blue-500/70 ring-1 ring-blue-500/70 shadow-sm";
+			if (isBookmarked) return "border-amber-300 ring-1 ring-amber-300";
+			return "border-slate-200 dark:border-slate-700";
 		},
 		[selectedAnswers, bookmarkedQuestions, typingQuestions],
 	);
@@ -1057,13 +1086,16 @@ export default function ExamPage() {
 				</div>
 			)}
 			{/* Desktop Layout */}
-			<div className="hidden lg:block">
+			<div className="hidden lg:block min-h-screen bg-slate-50 dark:bg-slate-950">
 				{examData?.ExamInfo?.[0] && (
-					<ExamHeader examInfo={examData.ExamInfo[0]} />
+					<div className="max-w-[1440px] mx-auto pt-4 px-2">
+						<ExamHeader examInfo={examData.ExamInfo[0]} />
+					</div>
 				)}
 
-				<div className="grid grid-cols-6 gap-6 max-w-[1800px] mx-auto p-6 xl:p-8">
-					<aside className="col-span-1">
+				{/* Голын багана уншихад тохиромжтой өргөнтэй — хажуугийн самбар тогтмол */}
+				<div className="grid grid-cols-[200px_minmax(0,1fr)_200px] xl:grid-cols-[260px_minmax(0,1fr)_260px] gap-6 xl:gap-8 max-w-[1440px] mx-auto px-6 py-6">
+					<aside>
 						<div className="sticky top-6 space-y-4">
 							<ExamMinimap
 								totalCount={totalCount}
@@ -1096,53 +1128,64 @@ export default function ExamPage() {
 						</div>
 					</aside>
 
-					<main className="col-span-4 space-y-5">
+					<main className="min-w-0 max-w-3xl w-full mx-auto space-y-6">
 						{allQuestions.map((q, index) => (
 							<div key={q.question_id} id={`question-${index}`}>
-								<Card className={getCardBorderClass(q.question_id)}>
-									<CardContent className="p-6">
-										<div className="flex gap-4">
-											<div className="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center font-semibold">
+								<Card
+									className={`${getCardBorderClass(q.question_id)} gap-0 py-0 rounded-2xl overflow-hidden transition-shadow`}
+								>
+									{/* Толгой: дугаар, оноо, тэмдэглэх */}
+									<div className="flex items-center justify-between gap-3 px-6 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60">
+										<div className="flex items-center gap-3 min-w-0">
+											<span className="shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center">
 												{index + 1}
-											</div>
-											<div className="flex-1 min-w-0">
-												<div className="flex items-start justify-between gap-2 mb-4">
-													<div className="font-semibold text-lg flex-1 leading-relaxed prose prose-sm max-w-none">
-														<MathContent html={q.question_name} />
-													</div>
-													<div className="flex items-center gap-2 shrink-0">
-														<Button
-															variant="ghost"
-															size="icon"
-															onClick={() => toggleBookmark(q.question_id)}
-															className="hover:bg-gray-100"
-															title={
-																bookmarkedQuestions.has(q.question_id)
-																	? "Тэмдэглэгээ хасах"
-																	: "Тэмдэглэх"
-															}
-														>
-															{bookmarkedQuestions.has(q.question_id) ? (
-																<BookmarkCheck className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-															) : (
-																<Bookmark className="w-5 h-5 text-gray-400" />
-															)}
-														</Button>
-													</div>
-												</div>
-												<div className="flex-1 min-w-0 border-l border-gray-200 dark:border-gray-700 pl-6">
-													{renderQuestion(q)}
-												</div>
-											</div>
+											</span>
+											<span className="text-sm text-slate-500 dark:text-slate-400">
+												Асуулт {index + 1} / {totalCount}
+											</span>
+											{q.que_onoo > 0 && (
+												<span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+													{q.que_onoo} оноо
+												</span>
+											)}
 										</div>
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => toggleBookmark(q.question_id)}
+											className="shrink-0 gap-1.5 text-slate-500 hover:text-slate-700 dark:hover:text-slate-200"
+											title={
+												bookmarkedQuestions.has(q.question_id)
+													? "Тэмдэглэгээ хасах"
+													: "Дараа эргэж харахаар тэмдэглэх"
+											}
+										>
+											{bookmarkedQuestions.has(q.question_id) ? (
+												<BookmarkCheck className="w-4 h-4 text-amber-500 fill-amber-500" />
+											) : (
+												<Bookmark className="w-4 h-4" />
+											)}
+											<span className="text-xs">
+												{bookmarkedQuestions.has(q.question_id)
+													? "Тэмдэглэсэн"
+													: "Тэмдэглэх"}
+											</span>
+										</Button>
+									</div>
+
+									<CardContent className="px-6 py-6 space-y-6">
+										<div className="text-[17px] leading-8 text-slate-900 dark:text-slate-100 max-w-none">
+											<MathContent html={q.question_name} />
+										</div>
+										<div className="min-w-0">{renderQuestion(q)}</div>
 									</CardContent>
 								</Card>
 							</div>
 						))}
 					</main>
 
-					<aside className="col-span-1">
-						<div className="sticky top-6">
+					<aside>
+						<div className="sticky top-6 space-y-4">
 							{examData?.ExamInfo?.[0] && (
 								<ExamTimer
 									examStartTime={examData.ExamInfo[0].ognoo}
@@ -1153,8 +1196,6 @@ export default function ExamPage() {
 									onAutoFinish={handleAutoSubmit}
 								/>
 							)}
-						</div>
-						<div className="sticky top-40">
 							<Button
 								variant="outline"
 								onClick={() => setShowExitConfirm(true)}
@@ -1185,7 +1226,11 @@ export default function ExamPage() {
 									<AlertDialogFooter>
 										<AlertDialogCancel>Болих</AlertDialogCancel>
 										<AlertDialogAction
-											onClick={() => router.push("/Lists/examList")}
+											onClick={() =>
+												integration
+													? leaveIntegrationExam(integration)
+													: router.push("/Lists/examList")
+											}
 										>
 											Тийм, гарах
 										</AlertDialogAction>
@@ -1197,7 +1242,7 @@ export default function ExamPage() {
 				</div>
 			</div>
 			{/* Mobile Layout */}
-			<div className="lg:hidden min-h-screen flex flex-col">
+			<div className="lg:hidden min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950">
 				<div className="sticky top-0 z-20 bg-white dark:bg-slate-900 shadow-sm border-b border-slate-200 dark:border-slate-700">
 					<div className="px-3 py-2">
 						{examData?.ExamInfo?.[0] && (
@@ -1257,54 +1302,49 @@ export default function ExamPage() {
 				<div className="flex-1 overflow-y-auto px-3 py-3">
 					{currentQuestion && (
 						<Card
-							className={`${getCardBorderClass(currentQuestion.question_id)} shadow-sm`}
+							className={`${getCardBorderClass(currentQuestion.question_id)} gap-0 py-0 rounded-2xl overflow-hidden`}
 						>
-							<CardContent className="p-4">
-								<div className="flex items-start gap-3 mb-4">
-									<div className="shrink-0 w-9 h-9 rounded-lg bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-md">
+							<div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60">
+								<div className="flex items-center gap-2 min-w-0">
+									<span className="shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">
 										{currentQuestionIndex + 1}
-									</div>
-									<div className="flex-1 min-w-0">
-										<div className="font-semibold leading-relaxed prose prose-sm max-w-none text-sm">
-											<MathContent html={currentQuestion.question_name} />
-										</div>
-									</div>
-									<div className="flex items-center gap-2 shrink-0">
-										{typingQuestions.has(currentQuestion.question_id) && (
-											<div className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/40 rounded-md">
-												<div className="flex gap-0.5">
-													<span
-														className="w-1.5 h-1.5 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce"
-														style={{ animationDelay: "0ms" }}
-													/>
-													<span
-														className="w-1.5 h-1.5 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce"
-														style={{ animationDelay: "150ms" }}
-													/>
-													<span
-														className="w-1.5 h-1.5 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce"
-														style={{ animationDelay: "300ms" }}
-													/>
-												</div>
-											</div>
-										)}
-										<Button
-											variant="ghost"
-											size="icon"
-											onClick={() =>
-												toggleBookmark(currentQuestion.question_id)
-											}
-											className="shrink-0 h-9 w-9"
-										>
-											{bookmarkedQuestions.has(currentQuestion.question_id) ? (
-												<BookmarkCheck className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-											) : (
-												<Bookmark className="w-5 h-5 text-slate-400" />
-											)}
-										</Button>
-									</div>
+									</span>
+									<span className="text-xs text-slate-500 dark:text-slate-400">
+										Асуулт {currentQuestionIndex + 1} / {totalCount}
+									</span>
+									{currentQuestion.que_onoo > 0 && (
+										<span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+											{currentQuestion.que_onoo} оноо
+										</span>
+									)}
 								</div>
-								<div className="mt-4">{renderQuestion(currentQuestion)}</div>
+								<div className="flex items-center gap-1 shrink-0">
+									{/* Бичиж байгаа / хадгалж байгаа — нэг индикатор */}
+									{(typingQuestions.has(currentQuestion.question_id) ||
+										pendingAnswers.current.size > 0 ||
+										isSaving) &&
+										!isTimeUp && (
+											<SavingDots className="h-7 px-2.5 shadow-none" />
+										)}
+									<Button
+										variant="ghost"
+										size="icon"
+										onClick={() => toggleBookmark(currentQuestion.question_id)}
+										className="shrink-0 h-9 w-9"
+									>
+										{bookmarkedQuestions.has(currentQuestion.question_id) ? (
+											<BookmarkCheck className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+										) : (
+											<Bookmark className="w-5 h-5 text-slate-400" />
+										)}
+									</Button>
+								</div>
+							</div>
+							<CardContent className="px-4 py-5 space-y-5">
+								<div className="text-base leading-7 text-slate-900 dark:text-slate-100">
+									<MathContent html={currentQuestion.question_name} />
+								</div>
+								<div className="min-w-0">{renderQuestion(currentQuestion)}</div>
 							</CardContent>
 						</Card>
 					)}
@@ -1334,26 +1374,6 @@ export default function ExamPage() {
 						</div>
 
 						<div className="flex gap-2">
-							{pendingAnswers.current.size > 0 && !isTimeUp && (
-								<Button
-									onClick={handleManualSave}
-									disabled={isSaving}
-									variant="default"
-									className="flex-1 h-10 bg-green-600 hover:bg-green-700 text-sm font-semibold"
-								>
-									{isSaving ? (
-										<>
-											<Loader2 className="w-4 h-4 mr-2 animate-spin" />
-											Хадгалж байна
-										</>
-									) : (
-										<>
-											<Save className="w-4 h-4 mr-2" />
-											Хадгалах ({pendingAnswers.current.size})
-										</>
-									)}
-								</Button>
-							)}
 							{examData?.ExamInfo?.[0] && !isTimeUp && (
 								<FinishExamResultDialog
 									ref={finishDialogRef}
@@ -1391,27 +1411,10 @@ export default function ExamPage() {
 					/>
 				)}
 			</div>
-			{/* Save button - Desktop */}
-			{pendingAnswers.current.size > 0 && !isTimeUp && (
+			{/* Хадгалж байгаа индикатор - Desktop */}
+			{(pendingAnswers.current.size > 0 || isSaving) && !isTimeUp && (
 				<div className="fixed bottom-6 right-6 z-50 lg:block hidden">
-					<Button
-						onClick={handleManualSave}
-						disabled={isSaving}
-						className="shadow-lg"
-						size="lg"
-					>
-						{isSaving ? (
-							<>
-								<Loader2 className="w-4 h-4 mr-2 animate-spin" />
-								Хадгалж байна...
-							</>
-						) : (
-							<>
-								<Save className="w-4 h-4 mr-2" />
-								Хадгалах ({pendingAnswers.current.size})
-							</>
-						)}
-					</Button>
+					<SavingDots className="h-11 shadow-lg" />
 				</div>
 			)}
 			<FixedScrollButton />

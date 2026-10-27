@@ -371,7 +371,9 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 	useEffect(() => {
 		if (!strictMode) return;
 
-		let isUserInteracting = false;
+		// Хуудас ачаалахад "focus" event гардаггүй (ялангуяа утсан дээр) тул
+		// эхний төлөвийг hasFocus()-оос авна — эс бөгөөс эхний апп солилт илрэхгүй
+		let isUserInteracting = document.hasFocus();
 		let lastFocusTime = Date.now();
 
 		const handleFocus = () => {
@@ -388,8 +390,10 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 			}
 			isUserInteracting = false;
 		};
+		// document.hidden — апп/tab сольсон нь тодорхой тул нөхцөлгүй бүртгэнэ.
+		// blur-тай давхар ирвэл logViolation-ий lock нэгийг нь л бүртгэнэ.
 		const handleVisibilityChange = () => {
-			if (document.hidden && isUserInteracting) {
+			if (document.hidden) {
 				logViolation(
 					"TAB_HIDDEN",
 					"high",
@@ -408,6 +412,166 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
 		};
 	}, [logViolation, strictMode, isMobile]);
+
+	// ========================
+	// Screen Wake Lock — дэлгэц автоматаар унтарч түгжигдэхэд
+	// "апп сольсон" гэж буруу бүртгэгдэхээс сэргийлнэ
+	// ========================
+	useEffect(() => {
+		if (!strictMode || !("wakeLock" in navigator)) return;
+
+		let sentinel: WakeLockSentinel | null = null;
+		let disposed = false;
+
+		const requestWakeLock = async () => {
+			if (document.hidden || sentinel) return;
+			try {
+				const lock = await navigator.wakeLock.request("screen");
+				if (disposed) {
+					lock.release().catch(() => {});
+					return;
+				}
+				sentinel = lock;
+				lock.addEventListener("release", () => {
+					sentinel = null;
+				});
+			} catch {}
+		};
+
+		// Нуугдахад browser өөрөө суллана — буцаж ирэхэд дахин авна
+		const handleVisibility = () => {
+			if (!document.hidden) requestWakeLock();
+		};
+
+		requestWakeLock();
+		document.addEventListener("visibilitychange", handleVisibility);
+
+		return () => {
+			disposed = true;
+			document.removeEventListener("visibilitychange", handleVisibility);
+			sentinel?.release().catch(() => {});
+			sentinel = null;
+		};
+	}, [strictMode]);
+
+	// ========================
+	// Privacy screen (утас, tablet) — цонх идэвхгүй болмогц асуултыг нууна.
+	// Апп солих үеийн preview, AI-ийн "дэлгэцийн талаар асуух" overlay,
+	// хуваасан дэлгэц зэрэгт асуулт биш хар дэлгэц харагдана.
+	// React state биш DOM-оор шууд — дараагийн frame-д л амжиж нуугдана.
+	// ========================
+	useEffect(() => {
+		if (!strictMode) return;
+		if (!window.matchMedia("(pointer: coarse)").matches) return;
+
+		const cover = document.createElement("div");
+		cover.setAttribute("aria-hidden", "true");
+		cover.textContent =
+			"🔒 Шалгалтын агуулга нуугдсан. Үргэлжлүүлэх бол дэлгэц дээр дарна уу.";
+		Object.assign(cover.style, {
+			position: "fixed",
+			top: "0",
+			left: "0",
+			right: "0",
+			bottom: "0",
+			// Зөрчлийн overlay (2147483647)-оос доор
+			zIndex: "2147483646",
+			background: "#0f172a",
+			color: "#e2e8f0",
+			display: "none",
+			alignItems: "center",
+			justifyContent: "center",
+			textAlign: "center",
+			padding: "1.5rem",
+			fontSize: "1rem",
+			fontWeight: "600",
+		});
+		document.body.appendChild(cover);
+
+		const hide = () => {
+			cover.style.display = "flex";
+		};
+		const show = () => {
+			cover.style.display = "none";
+		};
+		const handleVisibility = () => {
+			if (document.hidden) hide();
+		};
+		// focus event ирэхгүй үлдэх тохиолдолд — дарахад нээгдэнэ
+		cover.addEventListener("click", show);
+
+		window.addEventListener("blur", hide);
+		window.addEventListener("focus", show);
+		window.addEventListener("pagehide", hide);
+		document.addEventListener("visibilitychange", handleVisibility);
+
+		return () => {
+			cover.removeEventListener("click", show);
+			window.removeEventListener("blur", hide);
+			window.removeEventListener("focus", show);
+			window.removeEventListener("pagehide", hide);
+			document.removeEventListener("visibilitychange", handleVisibility);
+			cover.remove();
+		};
+	}, [strictMode]);
+
+	// ========================
+	// Split screen / Slide Over илрүүлэх (утас, tablet)
+	// ========================
+	useEffect(() => {
+		if (!strictMode) return;
+		// Зөвхөн мэдрэгчтэй төхөөрөмж — desktop цонхны хэмжээ өөрчлөхийг тооцохгүй
+		if (!window.matchMedia("(pointer: coarse)").matches) return;
+
+		// Бүтэн дэлгэцтэй browser-т хуудас дэлгэцийн ~75-90%-ийг эзэлдэг,
+		// хуваасан үед ~50% ба түүнээс бага болно
+		const MIN_AREA_RATIO = 0.65;
+
+		const isEditing = () => {
+			const el = document.activeElement as HTMLElement | null;
+			if (!el) return false;
+			return (
+				el.tagName === "INPUT" ||
+				el.tagName === "TEXTAREA" ||
+				el.isContentEditable
+			);
+		};
+
+		const checkSplitScreen = () => {
+			if (document.hidden) return;
+			// Гар (keyboard) нээгдэхэд хуудас багасдаг — бичиж байх үед шалгахгүй
+			if (isEditing()) return;
+			const screenArea = window.screen.width * window.screen.height;
+			if (!screenArea) return;
+			const viewportArea =
+				document.documentElement.clientWidth *
+				document.documentElement.clientHeight;
+			if (viewportArea / screenArea < MIN_AREA_RATIO) {
+				logViolation(
+					"SPLIT_SCREEN",
+					"high",
+					"⚠️ Дэлгэц хуваах эсвэл өөр апп зэрэг нээх хориотой! Шалгалтыг бүтэн дэлгэцээр үргэлжлүүлнэ үү.",
+				);
+			}
+		};
+
+		let resizeTimer: ReturnType<typeof setTimeout> | undefined;
+		const handleResize = () => {
+			clearTimeout(resizeTimer);
+			// Эргүүлэх, toolbar нуугдах үеийн түр хэмжээг алгасна
+			resizeTimer = setTimeout(checkSplitScreen, 700);
+		};
+
+		window.addEventListener("resize", handleResize);
+		// Хуваасан горимд үлдвэл давтан анхааруулна (эхнээсээ хуваасан байсан ч илэрнэ)
+		const interval = setInterval(checkSplitScreen, 3000);
+
+		return () => {
+			window.removeEventListener("resize", handleResize);
+			clearTimeout(resizeTimer);
+			clearInterval(interval);
+		};
+	}, [logViolation, strictMode]);
 
 	// ========================
 	// Mouse Leave Detection

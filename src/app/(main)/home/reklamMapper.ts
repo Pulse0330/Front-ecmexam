@@ -1,5 +1,4 @@
 import type { ReklamData, ReklamItem } from "@/types/reklam/type";
-import type { DialogAd } from "./adDialog";
 import type { AdMediaType } from "./adShared";
 import type { FloatingAd } from "./floatingAds";
 import { getReklamSeenMap } from "./reklamtracker";
@@ -66,9 +65,8 @@ const toFloating = (r: ReklamItem): FloatingAd => ({
 
 export interface MappedAds {
 	splash: SplashAdData | null; // бүтэн дэлгэцийн зар
-	dialog: DialogAd | null; // нүүр хуудас нээгдэх үеийн dialog
-	floating: FloatingAd[]; // булангуудад байрлах зарууд (хараагүй нь эхэнд)
-	carousel: FloatingAd[]; // нүүр хуудсан дахь carousel — home + popup бүгд
+	floating: FloatingAd[]; // popup → булангийн зар, нэг удаад нэг (хараагүй нь эхэнд)
+	carousel: FloatingAd[]; // home → нүүр хуудсан дахь carousel (home хоосон бол popup)
 }
 
 export function mapReklam(
@@ -76,7 +74,7 @@ export function mapReklam(
 	now: number = Date.now(),
 ): MappedAds {
 	const [splash] = prepare(data?.splash, now);
-	const [home] = prepare(data?.home, now);
+	const homes = prepare(data?.home, now);
 	const popups = prepare(data?.popup, now);
 
 	return {
@@ -93,28 +91,11 @@ export function mapReklam(
 				}
 			: null,
 
-		dialog: home
-			? {
-					id: `reklam-${home.id}`,
-					reklamId: home.id,
-					title: home.title,
-					description: home.descr || undefined,
-					image: home.file_url,
-					mediaType: getMediaType(home),
-					href: home.url || undefined,
-					ctaLabel: "Дэлгэрэнгүй",
-				}
-			: null,
-
+		// popup зарууд үргэлж буланд нэг нэгээрээ ээлжилнэ
 		floating: popups.map(toFloating),
 
-		// Бүх зар нэг дор — давхардсан id-г хасаад хараагүйг нь түрүүлнэ
-		carousel: freshnessOrder(
-			Array.from(
-				new Map(
-					[...prepare(data?.home, now), ...popups].map((r) => [r.id, r]),
-				).values(),
-			),
-		).map(toFloating),
+		// Carousel байнга харагдана: home зар, байхгүй бол popup зар.
+		// Тэр үед булангийн зар carousel-д яг одоо харагдаж буй зарыг алгасна
+		carousel: (homes.length > 0 ? homes : popups).map(toFloating),
 	};
 }

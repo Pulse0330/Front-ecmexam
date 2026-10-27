@@ -8,14 +8,30 @@ interface MathContentProps {
 
 function cleanHtml(raw: string): string {
 	if (!raw) return "";
-	return raw
-		.replace(/&nbsp;/g, " ")
-		.replace(/&amp;/g, "&")
-		.replace(/&lt;/g, "<")
-		.replace(/&gt;/g, ">")
-		.replace(/&quot;/g, '"')
-		.replace(/&#39;/g, "'")
-		.replace(/(<m[a-z]+[^>]*>)\s*О\s*(<\/m[a-z]+>)/g, "$1O$2");
+	return (
+		raw
+			// MathML доторх <mo>&nbsp;</mo> → MathJax хоосон зайг тайрдаг тул үгс наалддаг.
+			// Зөвхөн зай агуулсан токеныг жинхэнэ зай (mspace) болгоно.
+			.replace(
+				/<(mo|mi|mn|mtext)(\s[^>]*)?>(?:\s|&nbsp;|&#160;)+<\/\1>/g,
+				'<mspace width="0.3em"></mspace>',
+			)
+			.replace(/&nbsp;/g, " ")
+			.replace(/&amp;/g, "&")
+			.replace(/&lt;/g, "<")
+			.replace(/&gt;/g, ">")
+			.replace(/&quot;/g, '"')
+			.replace(/&#39;/g, "'")
+			.replace(/(<m[a-z]+[^>]*>)\s*О\s*(<\/m[a-z]+>)/g, "$1O$2")
+			// Кирилл үсэгтэй <mi> → <mtext>: MathJax тэдгээрийг жижиг налуу serif-ээр
+			// зурдаг байсан. mtextInheritFont-оор хуудасны фонтоор, хэвийн хэмжээтэй гарна.
+			.replace(
+				/<mi(?:\s[^>]*)?>([^<]*[А-Яа-яЁёӨөҮү][^<]*)<\/mi>/g,
+				"<mtext>$1</mtext>",
+			)
+			// Зэрэгцээ үсгүүдийг нэг үг болгоно
+			.replace(/<\/mtext><mtext>/g, "")
+	);
 }
 
 const MathContentComponent = ({ html }: MathContentProps) => {

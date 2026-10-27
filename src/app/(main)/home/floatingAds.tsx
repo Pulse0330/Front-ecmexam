@@ -7,7 +7,7 @@ import {
 	useReducedMotion,
 } from "framer-motion";
 import { ArrowRight, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AdLikeButton } from "./adLike";
 import { AdLink, AdMedia, type AdMediaType } from "./adShared";
@@ -23,39 +23,33 @@ export interface FloatingAd {
 	mediaType?: AdMediaType;
 	ctaLabel?: string;
 	badge?: string;
-	durationSec?: number; // өгвөл interval-ийн оронд энэ хугацаагаар солигдоно
+	durationSec?: number; // өгвөл interval-ийн оронд энэ хугацаагаар харагдана
 	canSkip?: boolean; // false бол хаах товч гарахгүй
 }
 
 type Corner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
-type EnterFrom = "left" | "right" | "bottom";
 type Variant = "card" | "compact";
 
 const CORNERS: Corner[] = ["top-left", "top-right", "bottom-left", "bottom-right"];
 
-// Desktop (md+): дээд булангууд header-ийн доор (5rem) гарна — header өндрөөсөө хамаарч тохируулаарай
+// Desktop: 4 булангийн аль нэг. Дээд булангууд header-ийн доор (5rem)
 const DESKTOP_POSITION: Record<Corner, string> = {
 	"top-left": "fixed z-40 w-64 left-6 top-[calc(5rem+env(safe-area-inset-top))]",
 	"top-right": "fixed z-40 w-64 right-6 top-[calc(5rem+env(safe-area-inset-top))]",
-	"bottom-left":
-		"fixed z-40 w-64 left-6 bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
-	"bottom-right":
-		"fixed z-40 w-64 right-6 bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
+	"bottom-left": "fixed z-40 w-64 left-6 bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
+	"bottom-right": "fixed z-40 w-64 right-6 bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
 };
 
-// Утсан дээр ганц slot, доод талд нимгэн хэвтээ карт (~88px) — дэлгэцийн 30%-иас бага эзэлнэ
+// Утсан дээр доод талд нимгэн хэвтээ карт
 const MOBILE_POSITION =
 	"fixed z-40 left-4 right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))]";
 
-const STORAGE_PREFIX = "floating-ad-closed:";
+const CLOSED_KEY = "floating-ad-closed";
 
-function shuffle<T>(list: T[]): T[] {
-	const a = [...list];
-	for (let i = a.length - 1; i > 0; i--) {
-		const j = Math.floor(Math.random() * (i + 1));
-		[a[i], a[j]] = [a[j], a[i]];
-	}
-	return a;
+// Өмнөхөөс өөр булан санамсаргүй сонгоно — зар бүр өөр газар гарна
+function pickCorner(prev?: Corner): Corner {
+	const options = CORNERS.filter((c) => c !== prev);
+	return options[Math.floor(Math.random() * options.length)];
 }
 
 function useIsDesktop() {
@@ -70,55 +64,82 @@ function useIsDesktop() {
 	return isDesktop;
 }
 
-interface AdSlotProps {
+interface FloatingAdsProps {
 	ads: FloatingAd[];
-	position: string;
-	enterFrom: EnterFrom;
-	variant: Variant;
-	delay: number;
-	interval: number;
+	delay?: number; // ms — эхний зар гарч ирэх хүртэлх хугацаа
+	interval?: number; // ms — durationSec байхгүй үед нэг зар харагдах хугацаа
+	gap?: number; // ms — нэг зар алга болоод дараагийнх гарах хүртэлх зай
+	excludeId?: FloatingAd["id"] | null; // carousel-д яг одоо харагдаж буй зар — алгасна
 }
 
-function AdSlot({
+/**
+ * Булангийн зар — НЭГ УДААД НЭГ Л ЗАР.
+ * Зар бүр хугацаагаараа харагдаад алга болж, түр завсарласны дараа
+ * дараагийн зар өөр буланд гарч ирнэ. X дарвал энэ session-д бүрмөсөн зогсоно.
+ */
+export function FloatingAds({
 	ads,
-	position,
-	enterFrom,
-	variant,
-	delay,
-	interval,
-}: AdSlotProps) {
-	const [visible, setVisible] = useState(false);
-	const [index, setIndex] = useState(0);
-	const [paused, setPaused] = useState(false);
+	delay = 2500,
+	interval = 8000,
+	gap = 1500,
+	excludeId = null,
+}: FloatingAdsProps) {
+	const isDesktop = useIsDesktop();
 	const reduceMotion = useReducedMotion();
+	const count = ads.length;
+
+	const [started, setStarted] = useState(false);
+	const [visible, setVisible] = useState(false);
+	const [stopped, setStopped] = useState(false);
+	const [index, setIndex] = useState(0);
+	const [corner, setCorner] = useState<Corner>("bottom-right");
+	const [paused, setPaused] = useState(false);
+
 	const progress = useMotionValue(0);
 	const elapsed = useRef(0);
 
-	const count = ads.length;
+	// Carousel-д харагдаж буйгаас өөр дараагийн зарыг олно
+	const excludeRef = useRef(excludeId);
+	excludeRef.current = excludeId;
+	const nextIndex = useCallback(
+		(from: number) => {
+			for (let step = 1; step <= count; step++) {
+				const i = (from + step) % count;
+				if (ads[i]?.id !== excludeRef.current) return i;
+			}
+			return (from + 1) % count;
+		},
+		[ads, count],
+	);
+	// Ганц зар байгаа бөгөөд тэр нь carousel-д харагдаж байвал буланд гаргахгүй
+	const onlyDuplicate = count === 1 && ads[0]?.id === excludeId;
+
 	const ad = count ? ads[index % count] : undefined;
-	const reklamId = ad?.reklamId;
 	const duration =
 		ad?.durationSec && ad.durationSec > 0 ? ad.durationSec * 1000 : interval;
-	const storageKey = `${STORAGE_PREFIX}${ads.map((a) => a.id).join("|")}`;
 
-	// Хойшлуулж гаргана. Хаасан бол энэ session-д дахин гаргахгүй
+	// Эхлэх — хаасан бол энэ session-д дахин гарахгүй
+	const ready = isDesktop !== null;
 	useEffect(() => {
-		if (!count) return;
+		if (!count || !ready) return;
 		try {
-			if (sessionStorage.getItem(storageKey) === "1") return;
+			if (sessionStorage.getItem(CLOSED_KEY) === "1") {
+				setStopped(true);
+				return;
+			}
 		} catch {
-			/* storage хаалттай бол үргэлж харуулна */
+			/* storage хаалттай */
 		}
-		const t = setTimeout(() => setVisible(true), delay);
+		const t = setTimeout(() => {
+			if (ads[0]?.id === excludeRef.current && count > 1) setIndex(nextIndex(0));
+			setCorner(pickCorner());
+			setStarted(true);
+			setVisible(true);
+		}, delay);
 		return () => clearTimeout(t);
-	}, [count, delay, storageKey]);
+	}, [count, ready, delay, ads, nextIndex]);
 
-	// Харагдсан зар бүрийг backend руу илгээнэ (session-д нэг удаа)
-	useEffect(() => {
-		if (visible) trackReklamView(reklamId);
-	}, [visible, reklamId]);
-
-	// Зар солих — hover/focus үед зогсоно. reduce motion үед ч солигдоно (зөвхөн хөдөлгөөн багасна)
+	// Харагдах хугацаа — hover/focus үед зогсоно. Дуусахад алга болно
 	useEffect(() => {
 		if (!visible || paused || count <= 1) return;
 		let raf = 0;
@@ -127,41 +148,67 @@ function AdSlot({
 			elapsed.current += now - last;
 			last = now;
 			if (elapsed.current >= duration) {
-				elapsed.current = 0;
-				progress.set(0);
-				setIndex((i) => (i + 1) % count);
-			} else {
-				progress.set(elapsed.current / duration);
+				setVisible(false);
+				return;
 			}
+			progress.set(elapsed.current / duration);
 			raf = requestAnimationFrame(tick);
 		};
 		raf = requestAnimationFrame(tick);
 		return () => cancelAnimationFrame(raf);
 	}, [visible, paused, count, duration, progress]);
 
-	const close = () => {
+	// Завсарласны дараа дараагийн зар өөр буланд
+	useEffect(() => {
+		if (!started || visible || stopped || count <= 1) return;
+		const t = setTimeout(() => {
+			elapsed.current = 0;
+			progress.set(0);
+			setIndex((i) => nextIndex(i));
+			setCorner((c) => pickCorner(c));
+			setVisible(true);
+		}, gap);
+		return () => clearTimeout(t);
+	}, [started, visible, stopped, count, gap, progress, nextIndex]);
+
+	// Үзсэн гэж тоолох: зураг 1с, видео 2с харагдсаны дараа
+	const reklamId = ad?.reklamId;
+	const isVideo = ad?.mediaType === "video";
+	useEffect(() => {
+		if (!visible || !reklamId) return;
+		const t = setTimeout(() => trackReklamView(reklamId), isVideo ? 2000 : 1000);
+		return () => clearTimeout(t);
+	}, [visible, reklamId, isVideo]);
+
+	const close = useCallback(() => {
+		setStopped(true);
 		setVisible(false);
 		try {
-			sessionStorage.setItem(storageKey, "1");
+			sessionStorage.setItem(CLOSED_KEY, "1");
 		} catch {
 			/* noop */
 		}
-	};
+	}, []);
 
-	const canClose = ad?.canSkip !== false;
+	if (!ready || !ad || onlyDuplicate) return null;
+
+	const canClose = ad.canSkip !== false;
+	const variant: Variant = isDesktop ? "card" : "compact";
+	const position = isDesktop ? DESKTOP_POSITION[corner] : MOBILE_POSITION;
 	const offscreen = reduceMotion
 		? {}
-		: enterFrom === "left"
-			? { x: "-120%" }
-			: enterFrom === "right"
-				? { x: "120%" }
-				: { y: "120%" };
+		: !isDesktop
+			? { y: "120%" }
+			: corner.endsWith("left")
+				? { x: "-120%" }
+				: { x: "120%" };
 
-	return (
+	// Portal: эцэг элементийн transform (animate-in гэх мэт) fixed байрлалыг эвдэхгүй
+	return createPortal(
 		<AnimatePresence>
-			{visible && ad && (
+			{visible && (
 				<motion.aside
-					key="slot"
+					key={`${ad.id}-${index}`}
 					aria-label="Сурталчилгаа"
 					initial={{ ...offscreen, opacity: 0 }}
 					animate={{ x: 0, y: 0, opacity: 1 }}
@@ -190,19 +237,8 @@ function AdSlot({
 							</button>
 						)}
 
-						<AnimatePresence mode="wait" initial={false}>
-							<motion.div
-								key={ad.id}
-								initial={{ opacity: 0, y: reduceMotion ? 0 : 8 }}
-								animate={{ opacity: 1, y: 0 }}
-								exit={{ opacity: 0, y: reduceMotion ? 0 : -8 }}
-								transition={{ duration: 0.25 }}
-							>
-								<CardAd ad={ad} variant={variant} />
-							</motion.div>
-						</AnimatePresence>
+						<CardAd ad={ad} variant={variant} />
 
-						{/* Холбоосны гадна байрлуулсан тул дарахад зар руу шилжихгүй */}
 						<AdLikeButton
 							key={ad.id}
 							reklamId={ad.reklamId}
@@ -220,7 +256,8 @@ function AdSlot({
 					</div>
 				</motion.aside>
 			)}
-		</AnimatePresence>
+		</AnimatePresence>,
+		document.body,
 	);
 }
 
@@ -309,72 +346,5 @@ function CardAd({ ad, variant }: { ad: FloatingAd; variant: Variant }) {
 				)}
 			</div>
 		</AdLink>
-	);
-}
-
-interface FloatingAdsProps {
-	ads: FloatingAd[];
-	delay?: number; // ms — эхний зар гарч ирэх хүртэлх хугацаа
-	stagger?: number; // ms — дараагийн булангийн зар гарах хүртэлх зай
-	maxVisible?: number; // desktop дээр зэрэг харагдах дээд тоо (үлдсэн нь ээлжилнэ)
-	interval?: number; // ms — durationSec байхгүй үед нэг зар харагдах хугацаа
-}
-
-export function FloatingAds({
-	ads,
-	delay = 2500,
-	stagger = 4000,
-	maxVisible = 2,
-	interval = 8000,
-}: FloatingAdsProps) {
-	const isDesktop = useIsDesktop();
-
-	// Desktop: санамсаргүй сонгосон maxVisible булангуудад тарна. Үлдсэн зарууд тэдгээр дотроо ээлжилнэ
-	const slots = useMemo(() => {
-		if (isDesktop === null || ads.length === 0) return [];
-		if (!isDesktop) {
-			return [
-				{
-					key: "mobile",
-					ads,
-					position: MOBILE_POSITION,
-					enterFrom: "bottom" as EnterFrom,
-					variant: "compact" as Variant,
-				},
-			];
-		}
-		const corners = shuffle(CORNERS);
-		const n = Math.max(1, Math.min(maxVisible, CORNERS.length, ads.length));
-		const groups: FloatingAd[][] = Array.from({ length: n }, () => []);
-		ads.forEach((ad, i) => {
-			groups[i % n].push(ad);
-		});
-		return groups.map((group, i) => ({
-			key: corners[i],
-			ads: group,
-			position: DESKTOP_POSITION[corners[i]],
-			enterFrom: (corners[i].endsWith("left") ? "left" : "right") as EnterFrom,
-			variant: "card" as Variant,
-		}));
-	}, [ads, isDesktop, maxVisible]);
-
-	if (isDesktop === null) return null;
-
-	// Portal: эцэг элементийн transform (animate-in гэх мэт) fixed байрлалыг эвдэхгүй
-	return createPortal(
-		<>
-			{slots.map((slot, i) => (
-				<AdSlot
-					key={slot.key}
-					ads={slot.ads}
-					position={slot.position}
-					enterFrom={slot.enterFrom}
-					variant={slot.variant}
-					delay={delay + i * stagger}
-					interval={interval}
-				/>
-			))}
-		</>,
-		document.body,
 	);
 }

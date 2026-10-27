@@ -181,6 +181,7 @@ export function SplashAd({ ad, onFinished }: SplashAdProps) {
 				// ===== Бүдэг дэвсгэр — алгасах боломжтой үед дарж хаана =====
 				<motion.div
 					key="splash"
+					data-splash-ad=""
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					exit={{ opacity: 0 }}

@@ -8,8 +8,15 @@ interface MathContentProps {
 }
 
 function cleanHtml(raw: string): string {
+	if (!raw) return "";
 	return (
 		raw
+			// MathML доторх <mo>&nbsp;</mo> → MathJax хоосон зайг тайрдаг тул үгс наалддаг.
+			// Зөвхөн зай агуулсан токеныг жинхэнэ зай (mspace) болгоно.
+			.replace(
+				/<(mo|mi|mn|mtext)(\s[^>]*)?>(?:\s|&nbsp;|&#160;)+<\/\1>/g,
+				'<mspace width="0.3em"></mspace>',
+			)
 			.replace(/&nbsp;/g, " ")
 			.replace(/&amp;/g, "&")
 			.replace(/&lt;/g, "<")
@@ -18,6 +25,14 @@ function cleanHtml(raw: string): string {
 			.replace(/&#39;/g, "'")
 			// MathML дотор Cyrillic О → Latin O
 			.replace(/(<m[a-z]+[^>]*>)\s*О\s*(<\/m[a-z]+>)/g, "$1O$2")
+			// Кирилл үсэгтэй <mi> → <mtext>: MathJax тэдгээрийг жижиг налуу serif-ээр
+			// зурдаг байсан. mtextInheritFont-оор хуудасны фонтоор, хэвийн хэмжээтэй гарна.
+			.replace(
+				/<mi(?:\s[^>]*)?>([^<]*[А-Яа-яЁёӨөҮү][^<]*)<\/mi>/g,
+				"<mtext>$1</mtext>",
+			)
+			// Зэрэгцээ үсгүүдийг нэг үг болгоно
+			.replace(/<\/mtext><mtext>/g, "")
 	);
 }
 
@@ -45,6 +60,9 @@ function MathContent({ html }: MathContentProps) {
 					const isDisplayMode =
 						el.getAttribute("display") === "true" ||
 						el.getAttribute("display") === "block";
+					// matchFontHeight-ийн томруулалт (font-size)-ыг хадгална —
+					// арилгавал MathJax-ийн текст энгийн текстээс жижиг харагддаг
+					const mathJaxFontSize = el.style.fontSize;
 
 					if (hasMatrix || isDisplayMode) {
 						el.style.cssText = "";
@@ -60,17 +78,39 @@ function MathContent({ html }: MathContentProps) {
 						el.style.overflow = "visible"; // inline scroll үүсгэхгүй
 						el.style.maxWidth = "100%";
 					}
+					if (mathJaxFontSize) el.style.fontSize = mathJaxFontSize;
 				});
 			} catch (err) {
 				console.error("MathJax rendering error:", err);
 			}
 		};
 
-		if (window.MathJax?.startup?.promise) {
-			window.MathJax.startup.promise.then(renderMath);
-		} else {
-			renderMath();
+		// MathJax script (afterInteractive) энэ компонентоос хойно ачаалагдаж болно —
+		// тэр үед startup.promise байхгүй тул бэлэн болтол хүлээнэ.
+		// Эс бөгөөс (ялангуяа утсан дээр) томьёо огт render хийгдэхгүй үлддэг байсан.
+		let cancelled = false;
+		let waitTimer: ReturnType<typeof setInterval> | undefined;
+		const startWhenReady = () => {
+			const promise = window.MathJax?.startup?.promise;
+			if (!promise) return false;
+			promise.then(() => {
+				if (!cancelled) renderMath();
+			});
+			return true;
+		};
+		if (!startWhenReady()) {
+			let tries = 0;
+			waitTimer = setInterval(() => {
+				tries += 1;
+				// 30 секунд хүлээгээд зогсооно
+				if (startWhenReady() || tries > 300) clearInterval(waitTimer);
+			}, 100);
 		}
+
+		return () => {
+			cancelled = true;
+			clearInterval(waitTimer);
+		};
 	}, [html]); // html өөрчлөгдөхөд дахин render
 
 	return (

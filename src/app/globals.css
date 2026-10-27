@@ -185,24 +185,21 @@ input[type="number"] {
 	font-size: 1rem;
 }
 
-@media (width <= 1024px) and (width >= 769px) {
+/* MathJax mtext-ийн өргөнийг px-ээр тогтоодог. Бодит фонт арай өргөн үед үг
+   дотроо шинэ мөрөнд таслагдаж, line-height: 0 тул эхэн дээрээ давхцаж зурагддаг.
+   Үгийг таслахгүй, өргөнийг браузер өөрөө тооцно. */
+.math-content mjx-mtext > mjx-utext {
+	/* biome-ignore lint/complexity/noImportantStyles: MathJax inline style="width:…px"-ийг дарахад шаардлагатай */
+	width: auto !important;
+	white-space: nowrap;
+	word-break: normal;
+	overflow-wrap: normal;
+}
+
+/* Утас/tablet дээр фонтыг жижигрүүлэхгүй — 12-14px уншихад хэцүү байсан */
+@media (width <= 1024px) {
 	.math-content {
-		font-size: 0.9375rem;
 		line-height: 1.7;
-	}
-}
-
-@media (width <= 768px) and (width >= 481px) {
-	.math-content {
-		font-size: 0.875rem;
-		line-height: 1.6;
-	}
-}
-
-@media (width <= 480px) {
-	.math-content {
-		font-size: 0.75rem;
-		line-height: 1.5;
 	}
 }
 
@@ -261,7 +258,6 @@ input[type="number"] {
 	.math-content ul li {
 		line-height: 1.6;
 		margin-bottom: 0.4rem;
-		font-size: 0.875rem;
 	}
 }
 
@@ -275,7 +271,6 @@ input[type="number"] {
 	.math-content ul li {
 		line-height: 1.5;
 		margin-bottom: 0.3rem;
-		font-size: 0.75rem;
 	}
 }
 
@@ -382,24 +377,11 @@ input[type="number"] {
 	}
 }
 
-@media (width <= 1024px) and (width >= 769px) {
-	.math-content mjx-container:not(:has(mjx-mtable)):not([display="true"]) {
-		transform: scale(0.75);
-		transform-origin: left center;
-	}
-}
-
-@media (width <= 768px) and (width >= 481px) {
-	.math-content mjx-container:not(:has(mjx-mtable)):not([display="true"]) {
-		transform: scale(0.6);
-		transform-origin: left center;
-	}
-}
+/* Утас/tablet дээр scale хийхгүй — transform нь зөвхөн дүрсийг жижигрүүлж
+   (0.5 хүртэл) зайг нь хэвээр үлдээдэг тул текст уншигдахгүй жижиг байсан */
 
 @media (width <= 480px) {
 	.math-content mjx-container:not(:has(mjx-mtable)):not([display="true"]) {
-		transform: scale(0.5);
-		transform-origin: left center;
 		max-width: calc(100vw - 2rem);
 	}
 
@@ -524,7 +506,7 @@ input[type="number"] {
 
 @media (width <= 768px) {
 	.math-content table {
-		font-size: 0.6875rem;
+		font-size: 0.875rem;
 		transform: scale(0.85);
 		transform-origin: left top;
 	}
@@ -533,7 +515,7 @@ input[type="number"] {
 	.math-content td {
 		padding: 0.375rem 0.5rem;
 		white-space: normal;
-		font-size: 0.6875rem;
+		font-size: 0.875rem;
 		min-width: 45px;
 		max-width: 150px;
 	}
@@ -546,7 +528,7 @@ input[type="number"] {
 
 @media (width <= 480px) {
 	.math-content table {
-		font-size: 0.625rem;
+		font-size: 0.875rem;
 		transform: scale(0.7);
 		transform-origin: left top;
 	}
@@ -556,7 +538,7 @@ input[type="number"] {
 		padding: 0.25rem 0.375rem;
 		min-width: 35px;
 		max-width: 100px;
-		font-size: 0.625rem;
+		font-size: 0.875rem;
 		line-height: 1.4;
 	}
 
@@ -569,20 +551,6 @@ input[type="number"] {
 /* Хүснэгт дотор байгаа mjx-container */
 .math-content table mjx-container {
 	margin: 0.2em 0;
-}
-
-@media (width <= 768px) {
-	.math-content table mjx-container:not(:has(mjx-mtable)) {
-		transform: scale(0.65);
-		transform-origin: left center;
-	}
-}
-
-@media (width <= 480px) {
-	.math-content table mjx-container:not(:has(mjx-mtable)) {
-		transform: scale(0.5);
-		transform-origin: left center;
-	}
 }
 
 /* ── GPU acceleration ── */

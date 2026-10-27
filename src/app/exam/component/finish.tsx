@@ -15,7 +15,13 @@ import {
 	Zap,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { forwardRef, useImperativeHandle, useRef, useState } from "react";
+import {
+	forwardRef,
+	useImperativeHandle,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,8 +34,13 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { finishExam, getExamResults } from "@/lib/api";
+import { getExamResults } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
+import {
+	getExamApi,
+	leaveIntegrationExam,
+	useExamIntegration,
+} from "./examUtils/integration";
 
 interface FinishExamRequest {
 	exam_id: number;
@@ -95,7 +106,14 @@ const FinishExamResultDialog = forwardRef<
 		{ examId, examType, startEid, examTime, answeredCount, totalCount },
 		ref,
 	) => {
-		const { userId } = useAuthStore();
+		const { userId: authUserId } = useAuthStore();
+		// URL-аар (dbname, userid) орж ирсэн бол integration API ашиглана
+		const integration = useExamIntegration();
+		const userId = integration?.userId ?? authUserId;
+		const { finishExam } = useMemo(
+			() => getExamApi(integration?.dbname),
+			[integration?.dbname],
+		);
 		const router = useRouter();
 		const [open, setOpen] = useState(false);
 		const [finishedTestId, setFinishedTestId] = useState<number | null>(null);
@@ -114,6 +132,25 @@ const FinishExamResultDialog = forwardRef<
 				return finishExam(payload);
 			},
 			onSuccess: (res) => {
+				// Integration: үр дүн харуулахгүй, гадны систем рүү буцна
+				if (integration) {
+					const isSent =
+						res.RetResponse.ResponseCode === "10" ||
+						res.RetResponse.ResponseMessage?.includes("илгээгдсэн");
+					if (isSent) {
+						toast.success("✅ Шалгалт амжилттай дууслаа");
+						leaveIntegrationExam(integration);
+					} else {
+						toast.error(
+							res.RetResponse.ResponseMessage ||
+								"Шалгалт дуусгах үед алдаа гарлаа",
+						);
+						setOpen(false);
+					}
+					setIsAutoSubmitting(false);
+					return;
+				}
+
 				if (res.RetResponse.ResponseCode === "10") {
 					const testId = res.RetData;
 
@@ -163,6 +200,11 @@ const FinishExamResultDialog = forwardRef<
 						: "Шалгалт дуусгах үед алдаа гарлаа",
 				);
 				setOpen(false);
+				// Integration: шалгалтын хуудсанд үлдэж дахин илгээх боломжтой
+				if (integration) {
+					setIsAutoSubmitting(false);
+					return;
+				}
 				router.push("/Lists/examResult");
 			},
 		});
@@ -246,7 +288,11 @@ const FinishExamResultDialog = forwardRef<
 					</DialogTrigger>
 					<Button
 						variant="outline"
-						onClick={() => router.push("/Lists/examList")}
+						onClick={() =>
+							integration
+								? leaveIntegrationExam(integration)
+								: router.push("/Lists/examList")
+						}
 						className="w-full sm:w-auto font-semibold border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/20"
 					>
 						Шалгалтаас гарах
