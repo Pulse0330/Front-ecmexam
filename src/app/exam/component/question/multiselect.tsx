@@ -199,8 +199,10 @@ export default function MultiSelectQuestion({
 		<div className="space-y-4">
 			{renderQuestionContent()}
 
-			<div className="space-y-3">
-				<p>Олон хариулт сонгох боломжтой</p>
+			<div className="space-y-2.5 sm:space-y-3">
+				<p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+					Олон хариулт сонгох боломжтой
+				</p>
 				{answers.map((option) => {
 					const selected = isSelected(option.answer_id);
 					const hasImage = isValidImageUrl(option.answer_img);
@@ -211,16 +213,18 @@ export default function MultiSelectQuestion({
 							onClick={(e) => handleToggle(option.answer_id, e)}
 							variant="outline"
 							disabled={isReviewMode}
-							className={`flex items-center gap-3 w-full justify-start text-left p-3 border rounded-md transition-colors ${
-								hasImage ? "h-auto min-h-[100px]" : "min-h-[50px]"
-							} ${selected ? "border-primary bg-primary/10" : "border-border"} ${
-								isReviewMode ? "cursor-default opacity-70" : ""
-							}`}
+							className={`flex items-center gap-3 sm:gap-4 w-full justify-start text-left px-3 py-3 sm:px-4 sm:py-3.5 h-auto whitespace-normal font-normal rounded-xl transition-all duration-150 ${
+								hasImage ? "min-h-[100px]" : "min-h-[52px]"
+							} ${
+								selected
+									? "border-primary ring-1 ring-primary bg-primary/5 hover:bg-primary/5 dark:border-primary dark:bg-primary/10 dark:hover:bg-primary/10"
+									: "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+							} ${isReviewMode ? "cursor-default opacity-70" : ""}`}
 						>
 							<span
-								className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+								className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
 									hasImage ? "self-start mt-2" : ""
-								} ${selected ? "border-primary bg-primary" : "border-border bg-background"}`}
+								} ${selected ? "border-primary bg-primary" : "border-slate-300 dark:border-slate-600 bg-background"}`}
 							>
 								{selected && (
 									<svg

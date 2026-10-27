@@ -4,6 +4,8 @@ import { memo, useCallback, useRef } from "react";
 import MathContent from "../examUtils/MathContent";
 import QuestionImage from "./questionImage";
 
+const OPTION_LABELS = ["A", "B", "C", "D", "E", "F", "G", "H"];
+
 interface AnswerData {
 	answer_id: number;
 	answer_name?: string;
@@ -52,48 +54,47 @@ function SingleSelectQuestion({
 					</div>
 				</div>
 			)}
-			<div className="space-y-2 sm:space-y-3">
-				<p className="text-sm text-gray-600 dark:text-gray-400">
-					Нэг хариулт сонгох боломжтой
+			<div className="space-y-2.5 sm:space-y-3">
+				<p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+					Нэг хариулт сонгоно уу
 				</p>
-				{answers.map((option) => {
+				{answers.map((option, idx) => {
 					const isSelected = selectedAnswer === option.answer_id;
 					const hasContent = option.answer_name_html || option.answer_name;
 					const hasImage = option.answer_img || option.source_img;
 					const imageUrl = option.answer_img || option.source_img;
+					const label = OPTION_LABELS[idx] ?? String(idx + 1);
 
 					return (
 						<div
 							key={option.answer_id}
-							className={`relative w-full rounded-lg border-2 transition-all duration-200 overflow-hidden ${
+							className={`relative w-full rounded-xl border transition-all duration-150 overflow-hidden ${
 								isSelected
-									? "border-primary bg-primary/10"
-									: "border-border bg-background hover:bg-gray-50 dark:hover:bg-gray-800/50"
+									? "border-primary ring-1 ring-primary bg-primary/5"
+									: "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 hover:bg-slate-50 dark:hover:border-slate-600 dark:hover:bg-slate-800/50"
 							}`}
 						>
 							<button
 								type="button"
 								onClick={() => handleSelect(option.answer_id)}
-								className="w-full text-left p-3 sm:p-4 flex items-start gap-2 sm:gap-3 bg-transparent border-0 cursor-pointer"
+								className="w-full text-left px-3 py-3 sm:px-4 sm:py-3.5 flex items-start gap-3 sm:gap-4 bg-transparent border-0 cursor-pointer"
 								// ✅ Давхар дарахаас хамгаалах
 								aria-pressed={isSelected}
 							>
 								<span
-									className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 transition-all ${
+									className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 text-sm font-semibold transition-colors ${
 										isSelected
-											? "border-primary bg-primary"
-											: "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
+											? "border-primary bg-primary text-primary-foreground"
+											: "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
 									}`}
 								>
-									{isSelected && (
-										<span className="w-2.5 h-2.5 bg-white rounded-full" />
-									)}
+									{label}
 								</span>
-								<div className="flex-1 min-w-0 flex flex-col gap-3 overflow-hidden">
+								<div className="flex-1 min-w-0 flex flex-col gap-3 overflow-hidden self-center">
 									{hasContent && (
 										<div
-											className="text-left text-sm sm:text-base w-full"
-											style={{ lineHeight: "1.8" }}
+											className="text-left text-[15px] sm:text-base w-full text-slate-800 dark:text-slate-100"
+											style={{ lineHeight: "1.7" }}
 										>
 											{option.answer_name_html ? (
 												<MathContent html={option.answer_name_html} />
