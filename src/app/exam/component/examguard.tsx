@@ -19,10 +19,24 @@ interface Violation {
 	severity: "low" | "medium" | "high";
 }
 
+// Утас/tablet дээр зөвхөн системээс гарах (апп/таб солих, буцах) болон
+// screenshot-ыг зөрчил гэж тооцно. Бусад үйлдлийг (гүйлгэх, дарах, эргүүлэх...)
+// анхааруулгагүйгээр чимээгүй хориглоно.
+const TOUCH_VIOLATION_TYPES = new Set([
+	"TAB_SWITCH",
+	"TAB_HIDDEN",
+	"BACK_BUTTON",
+	"SCREENSHOT_ATTEMPT",
+]);
+
+const isTouchDevice = () =>
+	typeof window !== "undefined" &&
+	window.matchMedia("(pointer: coarse)").matches;
+
 export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 	onSubmit,
 	onLogout,
-	maxViolations = 3,
+	maxViolations = 10000,
 	strictMode = true,
 	enableFullscreen = true,
 }) => {
@@ -65,6 +79,7 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 	// ========================
 	const logViolation = useCallback(
 		(type: string, severity: "low" | "medium" | "high", message: string) => {
+			if (isTouchDevice() && !TOUCH_VIOLATION_TYPES.has(type)) return;
 			// Аль хэдийн lock горимд байвал шинэ зөрчил бүртгэхгүй
 			if (violationLockRef.current) return;
 			violationLockRef.current = true;
@@ -138,25 +153,10 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 	useEffect(() => {
 		if (!strictMode) return;
 
+		// Олон хуруугаар (pinch) — зөрчилгүйгээр чимээгүй хориглоно
 		const handleTouchStart = (e: TouchEvent) => {
-			if (e.touches.length > 1) {
-				e.preventDefault();
-				logViolation(
-					"MULTI_TOUCH",
-					"medium",
-					"⚠️ Олон хуруу хэрэглэх хориотой!",
-				);
-			}
+			if (e.touches.length > 1) e.preventDefault();
 		};
-
-		let touchTimer: NodeJS.Timeout;
-		const handleTouchStartTimer = (e: TouchEvent) => {
-			touchTimer = setTimeout(() => {
-				e.preventDefault();
-				logViolation("LONG_PRESS", "medium", "⚠️ Удаан дарах хориотой!");
-			}, 500);
-		};
-		const handleTouchEnd = () => clearTimeout(touchTimer);
 
 		const handleCopy = (e: ClipboardEvent) => {
 			e.preventDefault();
@@ -177,16 +177,6 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 			logViolation("DRAG_ATTEMPT", "low", "⚠️ Drag хийх хориотой!");
 		};
 
-		const handleOrientationChange = () => {
-			if (isMobile) {
-				logViolation(
-					"ORIENTATION_CHANGE",
-					"medium",
-					"⚠️ Утасны чиглэл өөрчлөгдсөн!",
-				);
-			}
-		};
-
 		const handleBeforePrint = (e: Event) => {
 			e.preventDefault();
 			logViolation("PRINT_ATTEMPT", "high", "⚠️ Хэвлэх хориотой!");
@@ -205,15 +195,12 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 		document.addEventListener("touchstart", handleTouchStart, {
 			passive: false,
 		});
-		document.addEventListener("touchstart", handleTouchStartTimer);
-		document.addEventListener("touchend", handleTouchEnd);
 		document.addEventListener("copy", handleCopy);
 		document.addEventListener("cut", handleCut);
 		document.addEventListener("paste", handlePaste);
 		document.addEventListener("selectstart", handleSelectStart);
 		document.addEventListener("dragstart", handleDragStart);
 		document.addEventListener("keyup", handleKeyUp);
-		window.addEventListener("orientationchange", handleOrientationChange);
 		window.addEventListener("beforeprint", handleBeforePrint);
 
 		const bodyStyle = document.body.style as CSSStyleDeclaration & {
@@ -228,17 +215,20 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 		bodyStyle.mozUserSelect = "none";
 		bodyStyle.msUserSelect = "none";
 
+		// Дээд хэсэгт доош татахад хуудас дахин ачаалагдах (pull-to-refresh)-ыг хаана
+		const htmlStyle = document.documentElement.style;
+		const prevOverscroll = htmlStyle.overscrollBehaviorY;
+		htmlStyle.overscrollBehaviorY = "none";
+
 		return () => {
+			htmlStyle.overscrollBehaviorY = prevOverscroll;
 			document.removeEventListener("touchstart", handleTouchStart);
-			document.removeEventListener("touchstart", handleTouchStartTimer);
-			document.removeEventListener("touchend", handleTouchEnd);
 			document.removeEventListener("copy", handleCopy);
 			document.removeEventListener("cut", handleCut);
 			document.removeEventListener("paste", handlePaste);
 			document.removeEventListener("selectstart", handleSelectStart);
 			document.removeEventListener("dragstart", handleDragStart);
 			document.removeEventListener("keyup", handleKeyUp);
-			window.removeEventListener("orientationchange", handleOrientationChange);
 			window.removeEventListener("beforeprint", handleBeforePrint);
 			bodyStyle.userSelect = "";
 			bodyStyle.webkitUserSelect = "";
@@ -246,7 +236,7 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 			bodyStyle.mozUserSelect = "";
 			bodyStyle.msUserSelect = "";
 		};
-	}, [logViolation, strictMode, isMobile]);
+	}, [logViolation, strictMode]);
 
 	// ========================
 	// DevTools Blocker
@@ -514,64 +504,6 @@ export const AdvancedExamProctor: React.FC<ExamProctorProps> = ({
 			cover.remove();
 		};
 	}, [strictMode]);
-
-	// ========================
-	// Split screen / Slide Over илрүүлэх (утас, tablet)
-	// ========================
-	useEffect(() => {
-		if (!strictMode) return;
-		// Зөвхөн мэдрэгчтэй төхөөрөмж — desktop цонхны хэмжээ өөрчлөхийг тооцохгүй
-		if (!window.matchMedia("(pointer: coarse)").matches) return;
-
-		// Бүтэн дэлгэцтэй browser-т хуудас дэлгэцийн ~75-90%-ийг эзэлдэг,
-		// хуваасан үед ~50% ба түүнээс бага болно
-		const MIN_AREA_RATIO = 0.65;
-
-		const isEditing = () => {
-			const el = document.activeElement as HTMLElement | null;
-			if (!el) return false;
-			return (
-				el.tagName === "INPUT" ||
-				el.tagName === "TEXTAREA" ||
-				el.isContentEditable
-			);
-		};
-
-		const checkSplitScreen = () => {
-			if (document.hidden) return;
-			// Гар (keyboard) нээгдэхэд хуудас багасдаг — бичиж байх үед шалгахгүй
-			if (isEditing()) return;
-			const screenArea = window.screen.width * window.screen.height;
-			if (!screenArea) return;
-			const viewportArea =
-				document.documentElement.clientWidth *
-				document.documentElement.clientHeight;
-			if (viewportArea / screenArea < MIN_AREA_RATIO) {
-				logViolation(
-					"SPLIT_SCREEN",
-					"high",
-					"⚠️ Дэлгэц хуваах эсвэл өөр апп зэрэг нээх хориотой! Шалгалтыг бүтэн дэлгэцээр үргэлжлүүлнэ үү.",
-				);
-			}
-		};
-
-		let resizeTimer: ReturnType<typeof setTimeout> | undefined;
-		const handleResize = () => {
-			clearTimeout(resizeTimer);
-			// Эргүүлэх, toolbar нуугдах үеийн түр хэмжээг алгасна
-			resizeTimer = setTimeout(checkSplitScreen, 700);
-		};
-
-		window.addEventListener("resize", handleResize);
-		// Хуваасан горимд үлдвэл давтан анхааруулна (эхнээсээ хуваасан байсан ч илэрнэ)
-		const interval = setInterval(checkSplitScreen, 3000);
-
-		return () => {
-			window.removeEventListener("resize", handleResize);
-			clearTimeout(resizeTimer);
-			clearInterval(interval);
-		};
-	}, [logViolation, strictMode]);
 
 	// ========================
 	// Mouse Leave Detection
