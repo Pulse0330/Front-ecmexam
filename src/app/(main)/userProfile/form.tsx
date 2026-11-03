@@ -14,9 +14,11 @@ import {
 	Phone,
 	School,
 	User2,
+	UserCircle,
 	X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { PageHeader } from "@/components/page/pageHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -142,19 +144,19 @@ function SelectField({
 	icon,
 }: SelectFieldProps) {
 	return (
-		<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+		<div className="flex items-center p-4 bg-muted/50 rounded-xl">
 			<div className="flex items-start gap-3 flex-1">
 				<div className="w-5 h-5 mt-0.5 shrink-0">{icon}</div>
 				<div className="flex-1">
-					<p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mb-1">
+					<p className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-1">
 						{label}
 						{loading && (
-							<Loader2 className="w-3 h-3 animate-spin text-emerald-500" />
+							<Loader2 className="w-3 h-3 animate-spin text-primary" />
 						)}
 					</p>
 					{disabled && !value ? (
-						<p className="text-sm font-semibold text-slate-900 dark:text-white">
-							<span className="text-slate-400 font-normal">—</span>
+						<p className="text-sm font-semibold text-foreground">
+							<span className="text-muted-foreground font-normal">—</span>
 						</p>
 					) : (
 						<Select
@@ -162,10 +164,10 @@ function SelectField({
 							onValueChange={onValueChange}
 							disabled={disabled || loading}
 						>
-							<SelectTrigger className="h-8 w-full bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white shadow-none focus:ring-0">
+							<SelectTrigger className="h-10 w-full bg-background text-sm font-medium">
 								<span className="truncate block text-left text-sm">
 									{value && options.length === 0 ? (
-										<Loader2 className="w-3 h-3 animate-spin text-emerald-500 inline" />
+										<Loader2 className="w-3 h-3 animate-spin text-primary inline" />
 									) : value ? (
 										(options.find((o) => o.value === value)?.label ?? value)
 									) : (
@@ -782,38 +784,47 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 	};
 
 	return (
-		<div className="min-h-screen p-4 md:p-6 lg:p-8">
+		<div className="w-full px-4 pb-8 sm:px-6 lg:px-8">
 			{showToast && (
-				<div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-5 fade-in duration-500">
-					<div className="bg-linear-to-r from-emerald-500 to-green-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 min-w-[280px]">
-						<CheckCircle2 className="w-5 h-5" strokeWidth={2.5} />
-						<div>
-							<p className="font-bold text-sm">Амжилттай!</p>
-							<p className="text-xs opacity-90">Мэдээлэл шинэчлэгдлээ</p>
+				<output className="fixed inset-x-4 top-4 z-50 animate-in slide-in-from-top-5 fade-in duration-500 sm:inset-x-auto sm:right-6 sm:top-6">
+					<div className="flex items-center gap-3 rounded-2xl bg-green-600 px-4 py-3 text-white shadow-lg sm:min-w-[280px]">
+						<CheckCircle2 className="w-5 h-5 shrink-0" />
+						<div className="flex-1">
+							<p className="text-sm font-semibold">Амжилттай хадгаллаа</p>
+							<p className="text-sm opacity-90">Мэдээлэл шинэчлэгдлээ</p>
 						</div>
 						<Button
 							onClick={() => setShowToast(false)}
 							variant="ghost"
 							size="icon"
-							className="w-7 h-7 hover:bg-white/20"
+							aria-label="Хаах"
+							className="size-10 text-white hover:bg-white/20 hover:text-white"
 						>
 							<X className="w-4 h-4" />
 						</Button>
 					</div>
-				</div>
+				</output>
 			)}
 
 			<div className="max-w-6xl mx-auto">
+				<PageHeader
+					title="Миний профайл"
+					description={
+						isEditing
+							? "Мэдээллээ засаад «Хадгалах» товчийг дарна уу"
+							: "Хувийн болон сургуулийн мэдээлэл"
+					}
+					icon={UserCircle}
+				/>
 				<form onSubmit={handleSubmit}>
 					<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 						{/* ── Left Column ── */}
 						<div className="lg:col-span-1">
-							<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-8 relative overflow-hidden">
-								<div className="absolute top-0 left-0 right-0 h-32" />
+							<div className="rounded-2xl border bg-card p-6 shadow-sm relative overflow-hidden">
 								<div className="relative space-y-6">
 									<div className="flex flex-col items-center">
 										<div className="relative group">
-											<Avatar className="w-32 h-32 border-4 border-white dark:border-slate-800 shadow-xl">
+											<Avatar className="w-28 h-28 border-4 border-card shadow-md sm:w-32 sm:h-32">
 												<AvatarImage
 													src={imagePreview || user.img_url || undefined}
 													className="object-cover"
@@ -826,9 +837,11 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												<>
 													<label
 														htmlFor="image-upload"
-														className="absolute bottom-1 right-1 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-all shadow-lg border-3 border-white dark:border-slate-800 bg-blue-500"
+														aria-label="Зураг солих"
+														title="Зураг солих"
+														className="absolute bottom-1 right-1 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-colors shadow-md border-3 border-card bg-primary hover:bg-primary/90"
 													>
-														<Camera className="w-5 h-5 text-white" />
+														<Camera className="w-5 h-5 text-primary-foreground" />
 													</label>
 													{selectedImage && (
 														<button
@@ -838,7 +851,9 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 																setImagePreview(user.img_url || "");
 																setUploadedImageUrl("");
 															}}
-															className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center hover:scale-110 transition-all shadow-lg"
+															aria-label="Сонгосон зургийг болих"
+															title="Сонгосон зургийг болих"
+															className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center transition-colors hover:bg-red-700 shadow-md"
 														>
 															<X className="w-4 h-4" />
 														</button>
@@ -857,60 +872,55 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 													disabled={isUploadingImage}
 												/>
 												{isUploadingImage && (
-													<p className="text-xs mt-2 animate-pulse">
-														Уншиж байна...
+													<p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
+														<Loader2 className="size-4 animate-spin text-primary" />
+														Зураг хуулж байна...
 													</p>
 												)}
 											</>
 										)}
 									</div>
 
-									<div className="text-center border-t border-slate-200 dark:border-slate-700 pt-6">
-										<h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
+									<div className="text-center border-t border-border pt-6">
+										<h2 className="text-xl font-bold text-foreground mb-1 break-words">
 											{user.username}
 										</h2>
-										<p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+										<p className="text-sm text-muted-foreground mb-4">
 											{user.email}
 										</p>
 									</div>
 
 									<div className="space-y-3">
 										<div className="flex items-start gap-3 text-sm">
-											<div className="w-5 h-5 mt-0.5 text-slate-400">
+											<div className="w-5 h-5 mt-0.5 text-muted-foreground">
 												<User2 className="w-full h-full" />
 											</div>
 											<div className="flex-1">
-												<p className="text-slate-500 dark:text-slate-400 text-xs">
-													Нэр
-												</p>
-												<p className="text-slate-900 dark:text-white font-medium">
+												<p className="text-muted-foreground text-xs">Нэр</p>
+												<p className="text-foreground font-medium">
 													{user.lastname} {user.firstname}
 												</p>
 											</div>
 										</div>
 										<div className="flex items-start gap-3 text-sm">
-											<div className="w-5 h-5 mt-0.5 text-slate-400">
+											<div className="w-5 h-5 mt-0.5 text-muted-foreground">
 												<Mail className="w-full h-full" />
 											</div>
 											<div className="flex-1">
-												<p className="text-slate-500 dark:text-slate-400 text-xs">
-													Имэйл
-												</p>
-												<p className="text-slate-900 dark:text-white font-medium break-all">
+												<p className="text-muted-foreground text-xs">Имэйл</p>
+												<p className="text-foreground font-medium break-all">
 													{user.email}
 												</p>
 											</div>
 										</div>
 										{user.Phone && (
 											<div className="flex items-start gap-3 text-sm">
-												<div className="w-5 h-5 mt-0.5 text-slate-400">
+												<div className="w-5 h-5 mt-0.5 text-muted-foreground">
 													<Phone className="w-full h-full" />
 												</div>
 												<div className="flex-1">
-													<p className="text-slate-500 dark:text-slate-400 text-xs">
-														Утас
-													</p>
-													<p className="text-slate-900 dark:text-white font-medium">
+													<p className="text-muted-foreground text-xs">Утас</p>
+													<p className="text-foreground font-medium">
 														{user.Phone}
 													</p>
 												</div>
@@ -918,38 +928,50 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 										)}
 									</div>
 
-									<Button
-										type="button"
-										onClick={() => {
-											setIsEditing(!isEditing);
-											setPasswordError("");
-											setPhoneError("");
-										}}
-										className="w-full rounded-xl h-11"
-									>
-										<Edit2 className="w-4 h-4 mr-2" />
-										{isEditing ? "Буцах" : "Засах"}
-									</Button>
+									<div className="flex flex-col gap-2">
+										{isEditing && (
+											<Button
+												type="submit"
+												disabled={updateMutation.isPending}
+												className="w-full rounded-xl h-11"
+											>
+												{updateMutation.isPending ? (
+													<>
+														<Loader2 className="w-4 h-4 animate-spin" />
+														Хадгалж байна...
+													</>
+												) : (
+													<>
+														<Check className="w-4 h-4" />
+														Хадгалах
+													</>
+												)}
+											</Button>
+										)}
 
-									{isEditing && (
 										<Button
-											type="submit"
-											disabled={updateMutation.isPending}
-											className="w-full bg-linear-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-xl h-11"
+											type="button"
+											variant={isEditing ? "outline" : "default"}
+											onClick={() => {
+												setIsEditing(!isEditing);
+												setPasswordError("");
+												setPhoneError("");
+											}}
+											className="w-full rounded-xl h-11"
 										>
-											{updateMutation.isPending ? (
+											{isEditing ? (
 												<>
-													<div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-													Хадгалж байна...
+													<X className="w-4 h-4" />
+													Засахаа болих
 												</>
 											) : (
 												<>
-													<Check className="w-4 h-4 mr-2" />
-													Хадгалах
+													<Edit2 className="w-4 h-4" />
+													Мэдээлэл засах
 												</>
 											)}
 										</Button>
-									)}
+									</div>
 								</div>
 							</div>
 						</div>
@@ -959,21 +981,24 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 							{isEditing && (
 								<div className="space-y-4">
 									{/* Card 1: Утас + Нууц үг */}
-									<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-6">
+									<div className="rounded-2xl border bg-card p-4 shadow-sm sm:p-6">
+										<h3 className="mb-4 text-base font-semibold text-foreground">
+											Утас ба нууц үг
+										</h3>
 										<div className="space-y-4">
 											<div
-												className={`flex items-center p-4 rounded-xl ${phoneError ? "bg-red-50 dark:bg-red-950/20" : "bg-slate-50 dark:bg-slate-800"}`}
+												className={`flex items-center p-4 rounded-xl ${phoneError ? "bg-red-50 dark:bg-red-950/20" : "bg-muted/50"}`}
 											>
-												<div className="flex items-center gap-3 flex-1">
+												<div className="flex items-start gap-3 flex-1">
 													<Phone
-														className={`w-5 h-5 ${phoneError ? "text-red-500" : "text-cyan-500"}`}
+														className={`w-5 h-5 mt-0.5 shrink-0 ${phoneError ? "text-red-500" : "text-primary"}`}
 													/>
-													<div className="flex-1">
-														<p className="text-xs text-slate-500 dark:text-slate-400">
+													<div className="flex-1 min-w-0">
+														<p className="text-sm font-medium text-foreground">
 															Утасны дугаар{" "}
 															<span className="text-red-500">*</span>
 														</p>
-														<p className="text-xs text-slate-500 dark:text-slate-400">
+														<p className="text-sm text-muted-foreground">
 															Одоо ашиглаж байгаа утасны дугаараа оруулна уу.
 															Энэ дугаараар нууц үг сэргээх боломжтой
 														</p>
@@ -987,15 +1012,15 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 																});
 																setPhoneError("");
 															}}
-															className={`mt-1 h-8 bg-transparent border-0 border-b rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus-visible:ring-0 ${
+															className={`mt-2 h-10 bg-background text-base sm:text-sm ${
 																phoneError
 																	? "border-red-500 focus:border-red-500"
-																	: "border-slate-300 dark:border-slate-600 focus:border-blue-500"
+																	: "border-input focus:border-primary"
 															}`}
 															placeholder="Утасны дугаар"
 														/>
 														{phoneError && (
-															<p className="text-xs text-red-500 mt-1 font-medium">
+															<p className="text-sm text-red-600 dark:text-red-400 mt-1 font-medium">
 																{phoneError}
 															</p>
 														)}
@@ -1003,11 +1028,11 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												</div>
 											</div>
 
-											<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-center p-4 bg-muted/50 rounded-xl">
 												<div className="flex items-center gap-3 flex-1">
-													<Lock className="w-5 h-5 text-rose-500" />
+													<Lock className="w-5 h-5 text-primary" />
 													<div className="flex-1">
-														<p className="text-xs text-slate-500 dark:text-slate-400">
+														<p className="text-sm font-medium text-foreground">
 															Нууц үг
 														</p>
 														<Input
@@ -1021,18 +1046,18 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 																});
 																setPasswordError("");
 															}}
-															className="mt-1 h-8 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus-visible:ring-0"
+															className="mt-2 h-10 bg-background text-base sm:text-sm"
 															placeholder="Шинэ нууц үг"
 														/>
 													</div>
 												</div>
 											</div>
 
-											<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-center p-4 bg-muted/50 rounded-xl">
 												<div className="flex items-center gap-3 flex-1">
-													<Lock className="w-5 h-5 text-rose-400" />
+													<Lock className="w-5 h-5 text-primary" />
 													<div className="flex-1">
-														<p className="text-xs text-slate-500 dark:text-slate-400">
+														<p className="text-sm font-medium text-foreground">
 															Нууц үг давтах
 														</p>
 														<Input
@@ -1046,11 +1071,11 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 																});
 																setPasswordError("");
 															}}
-															className="mt-1 h-8 bg-transparent border-0 border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 rounded-none px-0 text-sm font-semibold text-slate-900 dark:text-white focus-visible:ring-0"
+															className="mt-2 h-10 bg-background text-base sm:text-sm"
 															placeholder="Нууц үг давтах"
 														/>
 														{passwordError && (
-															<p className="text-xs text-red-500 mt-1">
+															<p className="text-sm text-red-600 dark:text-red-400 mt-1 font-medium">
 																{passwordError}
 															</p>
 														)}
@@ -1061,21 +1086,22 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 									</div>
 
 									{/* Card 2: Байршил мэдээлэл */}
-									<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-6">
-										<div className="flex items-start gap-3 mb-5 p-3 rounded-xl">
-											<p className="text-xs leading-relaxed">
+									<div className="rounded-2xl border bg-card p-4 shadow-sm sm:p-6">
+										<h3 className="mb-3 text-base font-semibold text-foreground">
+											Байршил ба сургууль
+										</h3>
+										<div className="mb-5 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-amber-800 dark:text-amber-300">
+											<AlertCircle className="mt-0.5 size-4 shrink-0" />
+											<p className="text-sm leading-relaxed">
 												Та өөрийн мэдээлэлээ үнэн зөв оруулсан үед таны шалгалт
 												идэвхтэй харагдах тул{" "}
-												<span className="font-bold">заавал оруулна уу</span>
+												<span className="font-semibold">заавал оруулна уу</span>
 											</p>
 										</div>
-										<p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
-											Байршил мэдээлэл
-										</p>
 
 										{/* locationError харуулах */}
 										{locationError && (
-											<div className="mb-3 flex items-center gap-2 text-xs text-red-500 font-medium">
+											<div className="mb-3 flex items-center gap-2 text-sm text-red-600 dark:text-red-400 font-medium">
 												<AlertCircle className="w-4 h-4 shrink-0" />
 												{locationError}
 											</div>
@@ -1097,9 +1123,7 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												onValueChange={onAimag}
 												disabled={false}
 												loading={aimagLoading}
-												icon={
-													<MapPin className="w-full h-full text-emerald-500" />
-												}
+												icon={<MapPin className="w-full h-full text-primary" />}
 											/>
 											<SelectField
 												label="Сум / Дүүрэг"
@@ -1120,9 +1144,7 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												onValueChange={onDistrict}
 												disabled={!selectedAimag}
 												loading={districtLoading}
-												icon={
-													<MapPin className="w-full h-full text-cyan-500" />
-												}
+												icon={<MapPin className="w-full h-full text-primary" />}
 											/>
 											<SelectField
 												label="Сургууль"
@@ -1140,9 +1162,7 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												onValueChange={onSchool}
 												disabled={!selectedDistrict}
 												loading={schoolLoading}
-												icon={
-													<School className="w-full h-full text-indigo-500" />
-												}
+												icon={<School className="w-full h-full text-primary" />}
 											/>
 											{!isTeacher && (
 												<SelectField
@@ -1163,7 +1183,7 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 													disabled={!selectedSchool}
 													loading={classLoading}
 													icon={
-														<School className="w-full h-full text-violet-500" />
+														<School className="w-full h-full text-primary" />
 													}
 												/>
 											)}
@@ -1174,72 +1194,69 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 
 							{/* View Mode */}
 							{!isEditing && (
-								<div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-6">
-									<div className="space-y-4">
-										<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+								<div className="rounded-2xl border bg-card p-4 shadow-sm sm:p-6">
+									<h3 className="mb-4 text-base font-semibold text-foreground">
+										Хувийн мэдээлэл
+									</h3>
+									<div className="grid gap-3 sm:grid-cols-2">
+										<div className="flex items-center p-4 bg-muted/50 rounded-xl">
 											<div className="flex items-center gap-3">
-												<User2 className="w-5 h-5 text-blue-500" />
+												<User2 className="w-5 h-5 text-primary" />
 												<div>
-													<p className="text-xs text-slate-500 dark:text-slate-400">
-														Овог
-													</p>
-													<p className="text-sm font-semibold text-slate-900 dark:text-white">
+													<p className="text-sm text-muted-foreground">Овог</p>
+													<p className="text-sm font-semibold text-foreground">
 														{user.lastname}
 													</p>
 												</div>
 											</div>
 										</div>
-										<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+										<div className="flex items-center p-4 bg-muted/50 rounded-xl">
 											<div className="flex items-center gap-3">
-												<User2 className="w-5 h-5 text-indigo-500" />
+												<User2 className="w-5 h-5 text-primary" />
 												<div>
-													<p className="text-xs text-slate-500 dark:text-slate-400">
-														Нэр
-													</p>
-													<p className="text-sm font-semibold text-slate-900 dark:text-white">
+													<p className="text-sm text-muted-foreground">Нэр</p>
+													<p className="text-sm font-semibold text-foreground">
 														{user.firstname}
 													</p>
 												</div>
 											</div>
 										</div>
-										<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+										<div className="flex items-center p-4 bg-muted/50 rounded-xl">
 											<div className="flex items-center gap-3">
-												<Mail className="w-5 h-5 text-emerald-500" />
+												<Mail className="w-5 h-5 text-primary" />
 												<div>
-													<p className="text-xs text-slate-500 dark:text-slate-400">
-														Имэйл
-													</p>
-													<p className="text-sm font-semibold text-slate-900 dark:text-white break-all">
+													<p className="text-sm text-muted-foreground">Имэйл</p>
+													<p className="text-sm font-semibold text-foreground break-all">
 														{user.email}
 													</p>
 												</div>
 											</div>
 										</div>
 										{user.Phone && (
-											<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-center p-4 bg-muted/50 rounded-xl">
 												<div className="flex items-center gap-3">
-													<Phone className="w-5 h-5 text-cyan-500" />
+													<Phone className="w-5 h-5 text-primary" />
 													<div>
-														<p className="text-xs text-slate-500 dark:text-slate-400">
+														<p className="text-sm text-muted-foreground">
 															Утас
 														</p>
-														<p className="text-sm font-semibold text-slate-900 dark:text-white">
+														<p className="text-sm font-semibold text-foreground">
 															{user.Phone}
 														</p>
 													</div>
 												</div>
 											</div>
 										)}
-										<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+										<div className="flex items-center p-4 bg-muted/50 rounded-xl">
 											<div className="flex items-center gap-3">
-												<MapPin className="w-5 h-5 text-emerald-500" />
+												<MapPin className="w-5 h-5 text-primary" />
 												<div>
-													<p className="text-xs text-slate-500 dark:text-slate-400">
+													<p className="text-sm text-muted-foreground">
 														Аймаг/Нийслэл
 													</p>
-													<p className="text-sm font-semibold text-slate-900 dark:text-white">
+													<p className="text-sm font-semibold text-foreground">
 														{user.aimag_name || (
-															<span className="text-slate-400 font-normal">
+															<span className="text-muted-foreground font-normal">
 																—
 															</span>
 														)}
@@ -1247,16 +1264,16 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												</div>
 											</div>
 										</div>
-										<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+										<div className="flex items-center p-4 bg-muted/50 rounded-xl">
 											<div className="flex items-center gap-3">
-												<MapPin className="w-5 h-5 text-cyan-500" />
+												<MapPin className="w-5 h-5 text-primary" />
 												<div>
-													<p className="text-xs text-slate-500 dark:text-slate-400">
+													<p className="text-sm text-muted-foreground">
 														Сум/Дүүрэг
 													</p>
-													<p className="text-sm font-semibold text-slate-900 dark:text-white">
+													<p className="text-sm font-semibold text-foreground">
 														{user.sym_name || (
-															<span className="text-slate-400 font-normal">
+															<span className="text-muted-foreground font-normal">
 																—
 															</span>
 														)}
@@ -1264,16 +1281,16 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 												</div>
 											</div>
 										</div>
-										<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+										<div className="flex items-center p-4 bg-muted/50 rounded-xl">
 											<div className="flex items-start gap-3">
-												<School className="w-5 h-5 text-indigo-500 mt-0.5 shrink-0" />
+												<School className="w-5 h-5 text-primary mt-0.5 shrink-0" />
 												<div className="flex-1 min-w-0">
-													<p className="text-xs text-slate-500 dark:text-slate-400">
+													<p className="text-sm text-muted-foreground">
 														Сургууль
 													</p>
-													<p className="text-sm font-semibold text-slate-900 dark:text-white break-words">
+													<p className="text-sm font-semibold text-foreground break-words">
 														{user.sch_name || (
-															<span className="text-slate-400 font-normal">
+															<span className="text-muted-foreground font-normal">
 																—
 															</span>
 														)}
@@ -1282,16 +1299,16 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 											</div>
 										</div>
 										{!isTeacher && (
-											<div className="flex items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+											<div className="flex items-center p-4 bg-muted/50 rounded-xl">
 												<div className="flex items-center gap-3">
-													<School className="w-5 h-5 text-violet-500" />
+													<School className="w-5 h-5 text-primary" />
 													<div>
-														<p className="text-xs text-slate-500 dark:text-slate-400">
+														<p className="text-sm text-muted-foreground">
 															Анги
 														</p>
-														<p className="text-sm font-semibold text-slate-900 dark:text-white">
+														<p className="text-sm font-semibold text-foreground">
 															{user.studentgroupname || (
-																<span className="text-slate-400 font-normal">
+																<span className="text-muted-foreground font-normal">
 																	—
 																</span>
 															)}
@@ -1308,13 +1325,16 @@ export function ProfileContent({ user, userId }: ProfileContentProps) {
 				</form>
 
 				{updateMutation.isError && (
-					<div className="mt-6 bg-red-50 dark:bg-red-950/20 border-2 border-red-200 dark:border-red-800 rounded-2xl p-4 flex items-start gap-3">
-						<AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+					<div
+						role="alert"
+						className="mt-6 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 flex items-start gap-3"
+					>
+						<AlertCircle className="w-5 h-5 shrink-0 text-red-600 mt-0.5" />
 						<div>
-							<p className="text-sm font-bold text-red-700 dark:text-red-400">
-								Алдаа гарлаа
+							<p className="text-sm font-semibold text-red-700 dark:text-red-400">
+								Хадгалах үед алдаа гарлаа
 							</p>
-							<p className="text-xs text-red-600 dark:text-red-300 mt-1">
+							<p className="text-sm text-red-600 dark:text-red-300 mt-1">
 								{(updateMutation.error as Error).message}
 							</p>
 						</div>

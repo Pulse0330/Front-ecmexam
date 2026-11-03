@@ -1,8 +1,14 @@
 import { motion } from "framer-motion";
-import { Check, Clock, Trash2 } from "lucide-react";
+import {
+	AlertTriangle,
+	CalendarClock,
+	Check,
+	Clock,
+	Plus,
+	X,
+} from "lucide-react";
 import Image from "next/image";
 import { memo, useCallback, useMemo } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -124,21 +130,22 @@ function CourseCard({
 		<motion.div
 			onClick={handleClick}
 			className={cn(
-				"relative",
+				"relative h-full",
 				isSelectable ? "cursor-pointer" : "cursor-default",
 			)}
 		>
-			<div
+			<article
 				className={cn(
-					"relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-all duration-200",
-					isSelected &&
-						"border-blue-500 dark:border-blue-500 shadow-lg shadow-blue-500/20",
+					"flex h-full flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-shadow",
+					isSelected && "border-primary ring-1 ring-primary",
 					isSelectable &&
-						"hover:shadow-xl hover:border-blue-400 dark:hover:border-blue-600",
+						!isSelected &&
+						"hover:border-primary/40 hover:shadow-md",
+					disabled && "opacity-60",
 				)}
 			>
-				{/* ── Image ── */}
-				<div className="relative w-full aspect-4/2 overflow-hidden bg-slate-100 dark:bg-slate-900">
+				{/* ── Зураг ── */}
+				<div className="relative aspect-[2/1] w-full overflow-hidden bg-muted">
 					<Image
 						src={course.filename}
 						alt={course.title}
@@ -146,121 +153,112 @@ function CourseCard({
 						loading="lazy"
 						placeholder="blur"
 						blurDataURL={BLUR_PLACEHOLDER}
+						className={cn("object-cover", expiryInfo?.isExpired && "grayscale")}
+						sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
 					/>
 
-					{/* Purchased check */}
-					{isPurchased && (
-						<StatusBadge color="green">
-							<Check className="w-4 h-4 text-white" />
-						</StatusBadge>
-					)}
-
-					{/* Selected check */}
 					{isSelected && !isPurchased && (
-						<StatusBadge color="blue">
-							<Check className="w-4 h-4 text-white" />
-						</StatusBadge>
-					)}
-
-					{/* Max-selection overlay */}
-					{disabled && (
-						<Overlay>
-							<Badge className="bg-slate-700 text-white text-[10px]">
-								Дээд тал нь 4
-							</Badge>
-						</Overlay>
-					)}
-
-					{/* Expired overlay */}
-					{expiryInfo?.isExpired && (
-						<Overlay>
-							<Clock className="w-5 h-5 text-white mb-1" />
-							<Badge className="bg-red-600 text-white text-[10px]">
-								Дууссан
-							</Badge>
-						</Overlay>
+						<span className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-0.5 text-xs font-medium text-primary-foreground shadow-sm">
+							<Check className="size-3.5" aria-hidden />
+							Сонгосон
+						</span>
 					)}
 				</div>
 
-				{/* ── Info ── */}
-				<div className="p-2.5">
-					<h3 className="text-xs font-semibold mb-2 line-clamp-2 leading-snug min-h-8 text-slate-800 dark:text-slate-100">
+				{/* ── Мэдээлэл ── */}
+				<div className="flex flex-1 flex-col gap-3 p-4">
+					{isPurchased && expiryInfo && <ExpiryBadge info={expiryInfo} />}
+
+					<h3
+						className="line-clamp-2 text-base font-semibold leading-snug text-foreground"
+						title={course.title}
+					>
 						{course.title}
 					</h3>
 
-					{isPurchased && expiryInfo && !expiryInfo.isExpired && (
-						<div className="flex items-center gap-1 text-[10px] mb-2">
-							<Clock className="w-3 h-3 text-slate-500" />
-							<span className="font-medium text-slate-600 dark:text-slate-400">
-								{expiryInfo.diffDays} хоног үлдлээ
+					{isPurchased && expiryInfo && (
+						<p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+							<CalendarClock className="size-3.5 shrink-0" aria-hidden />
+							{expiryInfo.isExpired ? "Дууссан" : "Дуусах"}:{" "}
+							<span className="font-medium text-foreground">
+								{expiryInfo.expiryDate}
 							</span>
-						</div>
+						</p>
 					)}
 
-					<div className="flex items-center justify-between gap-2">
-						{showExtendButton ? (
+					<div className="mt-auto space-y-1.5 pt-1">
+						{/* onExtend дамжуулаагүй бол ажилладаггүй товч харуулахгүй */}
+						{showExtendButton && onExtend ? (
 							<Button
-								size="sm"
+								type="button"
 								onClick={handleExtend}
-								className="h-6 px-2 text-[10px] gap-1 bg-orange-500 hover:bg-orange-600"
+								className="h-10 w-full"
 							>
-								Сунгах
+								<CalendarClock className="size-4" aria-hidden />
+								Хугацаа сунгах
 							</Button>
 						) : isSelected ? (
 							<Button
-								size="sm"
-								variant="destructive"
+								type="button"
+								variant="outline"
 								onClick={handleDeselect}
-								className="h-6 px-2 text-[10px] gap-1"
+								className="h-10 w-full"
 							>
-								<Trash2 className="w-3 h-3" />
-								Хасах
+								<X className="size-4" aria-hidden />
+								Сонголтоос хасах
 							</Button>
 						) : !isPurchased ? (
 							<Button
-								size="sm"
-								onClick={handleClick}
-								className="h-6 px-2 text-[10px]"
+								type="button"
+								variant="outline"
+								onClick={(e) => {
+									// Картын onClick давхар ажиллахаас сэргийлнэ
+									e.stopPropagation();
+									handleClick();
+								}}
+								className="h-10 w-full"
 								disabled={disabled}
 							>
+								<Plus className="size-4" aria-hidden />
 								Сонгох
 							</Button>
 						) : null}
+						{disabled && (
+							<p className="text-center text-xs text-muted-foreground">
+								Нэг удаад дээд тал нь 4 хичээл сонгоно
+							</p>
+						)}
 					</div>
 				</div>
-			</div>
+			</article>
 		</motion.div>
 	);
 }
 
 // ─── Small internal primitives ────────────────────────────────────────────────
 
-function StatusBadge({
-	color,
-	children,
-}: {
-	color: "green" | "blue";
-	children: React.ReactNode;
-}) {
+function ExpiryBadge({ info }: { info: ExpiryInfo }) {
+	if (info.isExpired) {
+		return (
+			<span className="inline-flex w-fit items-center gap-1 rounded-full border border-red-500/30 bg-red-500/10 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:text-red-400">
+				<Clock className="size-3.5" aria-hidden />
+				Хугацаа дууссан
+			</span>
+		);
+	}
+	if (info.isExpiringSoon) {
+		return (
+			<span className="inline-flex w-fit items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+				<AlertTriangle className="size-3.5" aria-hidden />
+				{info.diffDays} хоног үлдсэн
+			</span>
+		);
+	}
 	return (
-		<div className="absolute top-1.5 right-1.5 z-20">
-			<div
-				className={cn(
-					"flex items-center justify-center w-6 h-6 rounded-full",
-					color === "green" ? "bg-green-500" : "bg-blue-500",
-				)}
-			>
-				{children}
-			</div>
-		</div>
-	);
-}
-
-function Overlay({ children }: { children: React.ReactNode }) {
-	return (
-		<div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center z-20">
-			{children}
-		</div>
+		<span className="inline-flex w-fit items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+			<Check className="size-3.5" aria-hidden />
+			Идэвхтэй · {info.diffDays} хоног үлдсэн
+		</span>
 	);
 }
 

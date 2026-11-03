@@ -1,10 +1,18 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+	ChevronLeft,
+	ChevronRight,
+	ClipboardList,
+	CreditCard,
+	Info,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import LessonFilter from "@/components/LessonFilter";
+import { PageHeader } from "@/components/page/pageHeader";
+import { EmptyState } from "@/components/page/pageStates";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -129,21 +137,26 @@ export default function Sorillists() {
 
 	return (
 		<div className="w-full">
-			<div className="mx-auto flex flex-col px-3 sm:px-8 lg:px-8 py-4 sm:py-8 lg:py-8">
-				{/* Header */}
-				<header className="mb-4 sm:mb-6">
-					<h3 className="text-lg sm:text-2xl font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-						Сорилын жагсаалт
-					</h3>
-				</header>
+			<div className="mx-auto flex w-full max-w-7xl flex-col px-4 pb-6 sm:px-6 lg:px-8">
+				<PageHeader
+					title="Сорилын жагсаалт"
+					description="Өөрийгөө шалгах сорилууд. Төлбөртэй сорилыг төлбөр төлсний дараа өгөх боломжтой."
+					icon={ClipboardList}
+				/>
 
 				{/* Tab switch */}
-				<div className="flex gap-1 p-1 bg-muted rounded-xl w-fit mb-4">
+				<div
+					role="tablist"
+					aria-label="Сорилын төрөл"
+					className="mb-4 flex w-full gap-1 rounded-xl bg-muted p-1 sm:w-fit"
+				>
 					<button
 						type="button"
+						role="tab"
+						aria-selected={activeTab === "all"}
 						onClick={() => setActiveTab("all")}
 						className={cn(
-							"px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200",
+							"h-10 flex-1 px-5 rounded-lg text-sm font-semibold transition-all duration-200 sm:flex-none",
 							activeTab === "all"
 								? "bg-background text-foreground shadow-sm"
 								: "text-muted-foreground hover:text-foreground",
@@ -163,9 +176,11 @@ export default function Sorillists() {
 					</button>
 					<button
 						type="button"
+						role="tab"
+						aria-selected={activeTab === "open"}
 						onClick={() => setActiveTab("open")}
 						className={cn(
-							"px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200",
+							"h-10 flex-1 px-5 rounded-lg text-sm font-semibold transition-all duration-200 sm:flex-none",
 							activeTab === "open"
 								? "bg-background text-foreground shadow-sm"
 								: "text-muted-foreground hover:text-foreground",
@@ -176,7 +191,7 @@ export default function Sorillists() {
 							className={cn(
 								"ml-2 px-2 py-0.5 rounded-full text-xs font-bold",
 								activeTab === "open"
-									? "bg-green-500/10 text-green-600"
+									? "bg-green-500/10 text-green-700 dark:text-green-400"
 									: "bg-muted-foreground/20 text-muted-foreground",
 							)}
 						>
@@ -193,8 +208,8 @@ export default function Sorillists() {
 
 				{/* Results Info */}
 				{selectedLessonId !== 0 && (
-					<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
-						<AlertCircle size={16} />
+					<div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+						<Info className="size-4 shrink-0" aria-hidden />
 						<span>
 							<strong>{filteredData.length}</strong> сорил —{" "}
 							<strong>
@@ -209,7 +224,7 @@ export default function Sorillists() {
 				)}
 
 				{/* Soril Grid - paginatedData ашиглав */}
-				<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4 pb-4 content-start">
+				<div className="grid grid-cols-2 content-start gap-3 pb-4 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
 					{isPending
 						? SKELETON_KEYS.map((key) => <SkeletonCard key={key} />)
 						: paginatedData.map((soril) => (
@@ -223,18 +238,22 @@ export default function Sorillists() {
 
 				{/* ✅ Pagination UI */}
 				{!isPending && totalPages > 1 && (
-					<div className="flex items-center justify-center gap-2 mt-8 mb-10">
+					<nav
+						aria-label="Хуудаслалт"
+						className="mt-8 mb-10 flex items-center justify-center gap-2"
+					>
 						<Button
 							variant="outline"
 							size="icon"
 							onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
 							disabled={currentPage === 1}
-							className="rounded-full"
+							className="size-10 shrink-0 rounded-full"
+							aria-label="Өмнөх хуудас"
 						>
 							<ChevronLeft size={18} />
 						</Button>
 
-						<div className="flex items-center gap-1">
+						<div className="flex min-w-0 flex-wrap items-center justify-center gap-1">
 							{Array.from({ length: totalPages }, (_, i) => i + 1).map(
 								(page) => (
 									<Button
@@ -242,10 +261,8 @@ export default function Sorillists() {
 										variant={currentPage === page ? "default" : "ghost"}
 										size="sm"
 										onClick={() => setCurrentPage(page)}
-										className={cn(
-											"w-9 h-9 rounded-full",
-											currentPage === page && "shadow-md",
-										)}
+										className="size-10 rounded-full"
+										aria-current={currentPage === page ? "page" : undefined}
 									>
 										{page}
 									</Button>
@@ -258,24 +275,25 @@ export default function Sorillists() {
 							size="icon"
 							onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
 							disabled={currentPage === totalPages}
-							className="rounded-full"
+							className="size-10 shrink-0 rounded-full"
+							aria-label="Дараах хуудас"
 						>
 							<ChevronRight size={18} />
 						</Button>
-					</div>
+					</nav>
 				)}
 
 				{/* Empty State */}
 				{!isPending && filteredData.length === 0 && (
-					<div className="text-center py-12 space-y-3">
-						<AlertCircle
-							className="mx-auto text-gray-400 dark:text-gray-600"
-							size={48}
-						/>
-						<p className="text-lg font-medium text-gray-700 dark:text-gray-300">
-							Сорил олдсонгүй
-						</p>
-					</div>
+					<EmptyState
+						icon={ClipboardList}
+						title="Сорил олдсонгүй"
+						description={
+							activeTab === "open"
+								? "Нээлттэй сорил алга. «Бүгд» табыг сонгож бүх сорилыг харна уу."
+								: "Одоогоор сорил алга. Өөр хичээл сонгож үзнэ үү."
+						}
+					/>
 				)}
 			</div>
 
@@ -296,16 +314,22 @@ export default function Sorillists() {
 							</div>
 						</DialogDescription>
 					</DialogHeader>
-					<div className="flex flex-row justify-end gap-2 pt-4">
+					<div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end">
 						<Button
 							type="button"
 							variant="outline"
 							onClick={handlePaymentCancel}
+							className="h-10"
 						>
-							Цуцлах
+							Болих
 						</Button>
-						<Button type="button" onClick={handlePaymentConfirm}>
-							Төлбөр төлөх
+						<Button
+							type="button"
+							onClick={handlePaymentConfirm}
+							className="h-10"
+						>
+							<CreditCard className="size-4" aria-hidden />
+							Төлбөрийн хуудас руу очих
 						</Button>
 					</div>
 				</DialogContent>
@@ -315,11 +339,13 @@ export default function Sorillists() {
 }
 
 const SkeletonCard = () => (
-	<div className="h-full w-full flex flex-col overflow-hidden rounded-lg sm:rounded-xl border border-border/40 bg-card/50 backdrop-blur-md animate-pulse">
-		<div className="w-full aspect-5/2 bg-slate-200 dark:bg-slate-800" />
-		<div className="p-2 space-y-2">
-			<div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded" />
-			<div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-800 rounded" />
+	<div className="flex h-full w-full animate-pulse flex-col overflow-hidden rounded-2xl border bg-card shadow-sm">
+		<div className="aspect-[5/2] w-full bg-muted" />
+		<div className="space-y-3 p-4">
+			<div className="h-5 w-20 rounded-full bg-muted" />
+			<div className="h-4 w-full rounded bg-muted" />
+			<div className="h-4 w-2/3 rounded bg-muted" />
+			<div className="h-10 w-full rounded-md bg-muted" />
 		</div>
 	</div>
 );

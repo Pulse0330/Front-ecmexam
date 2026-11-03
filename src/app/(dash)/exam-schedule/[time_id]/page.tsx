@@ -6,7 +6,7 @@ import { use } from "react";
 import { toast } from "sonner";
 import { ExamTimeTable } from "@/app/(dash)/exam-schedule/[time_id]/ExamTimeTable";
 import { VariantList } from "@/app/(dash)/exam-schedule/[time_id]/VariantList";
-import { IBackButton } from "@/components/iBackButton";
+import { PageHeader } from "@/components/page/pageHeader";
 import { Button } from "@/components/ui/button";
 
 import { Skeleton } from "@/components/ui/skeleton"; // Skeleton байвал ашиглах
@@ -92,55 +92,43 @@ export default function ExamTimePage({ params }: ExamTimePageProps) {
 	const hasMaterial = (materalData?.RetData?.length ?? 0) > 0;
 
 	return (
-		<div className="py-6 max-w-7xl mx-auto space-y-8">
-			<header className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b pb-6 text-foreground">
-				<div className="flex items-start gap-4 w-full">
-					<IBackButton className="mt-1" />
-					<div>
-						<div className="text-2xl font-bold tracking-tight flex items-center gap-3 ">
-							<div className="bg-primary/10 p-2 rounded-lg text-primary">
-								<CalendarRange size={26} />
-							</div>
-							{isInfoLoading ? (
-								<Skeleton className="h-8 w-64" />
-							) : (
-								<h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-									{examInfo?.name || "Шалгалтын мэдээлэл"}
-								</h1>
-							)}
-						</div>
-
-						<div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-2">
-							<span className="flex items-center gap-1.5">
-								<Clock size={14} className="text-blue-500" />
-								Үргэлжлэх хугацаа:{" "}
-								<span className="font-semibold text-foreground">
-									{examInfo?.duration || 0} минут
-								</span>
-							</span>
-						</div>
-					</div>
-				</div>
-
-				<div className="flex items-center gap-2  lg:w-auto">
+		<div className="mx-auto max-w-7xl space-y-6 pb-10">
+			<PageHeader
+				back
+				icon={CalendarRange}
+				className="border-b"
+				title={
+					isInfoLoading ? (
+						<Skeleton className="h-8 w-64" />
+					) : (
+						examInfo?.name || "Шалгалтын мэдээлэл"
+					)
+				}
+				description={
+					<span className="flex items-center gap-1.5">
+						<Clock size={14} className="text-primary" />
+						Үргэлжлэх хугацаа:{" "}
+						<span className="font-semibold text-foreground">
+							{examInfo?.duration || 0} минут
+						</span>
+					</span>
+				}
+				actions={
 					<TooltipProvider>
 						<Tooltip>
 							<TooltipTrigger asChild>
-								<span>
+								<span className="w-full sm:w-auto">
 									<Button
 										onClick={() => mutate()}
 										disabled={isPending || hasMaterial}
+										className="h-10 w-full gap-2 sm:w-auto"
 									>
-										{isPending ? (
-											<div className="flex items-center gap-2">
-												<Spinner />
-												Татаж байна...
-											</div>
-										) : (
-											<div className="flex items-center gap-2">
-												<Download /> Материал татах
-											</div>
-										)}
+										{isPending ? <Spinner /> : <Download />}
+										{isPending
+											? "Татаж байна..."
+											: hasMaterial
+												? "Материал татагдсан"
+												: "Материал татах"}
 									</Button>
 								</span>
 							</TooltipTrigger>
@@ -151,8 +139,8 @@ export default function ExamTimePage({ params }: ExamTimePageProps) {
 							)}
 						</Tooltip>
 					</TooltipProvider>
-				</div>
-			</header>
+				}
+			/>
 			<VariantList
 				data={materalData?.RetData || null}
 				isLoading={materalIsLoading}

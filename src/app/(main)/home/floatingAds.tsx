@@ -30,14 +30,23 @@ export interface FloatingAd {
 type Corner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 type Variant = "card" | "compact";
 
-const CORNERS: Corner[] = ["top-left", "top-right", "bottom-left", "bottom-right"];
+const CORNERS: Corner[] = [
+	"top-left",
+	"top-right",
+	"bottom-left",
+	"bottom-right",
+];
 
 // Desktop: 4 булангийн аль нэг. Дээд булангууд header-ийн доор (5rem)
 const DESKTOP_POSITION: Record<Corner, string> = {
-	"top-left": "fixed z-40 w-64 left-6 top-[calc(5rem+env(safe-area-inset-top))]",
-	"top-right": "fixed z-40 w-64 right-6 top-[calc(5rem+env(safe-area-inset-top))]",
-	"bottom-left": "fixed z-40 w-64 left-6 bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
-	"bottom-right": "fixed z-40 w-64 right-6 bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
+	"top-left":
+		"fixed z-40 w-64 left-6 top-[calc(5rem+env(safe-area-inset-top))]",
+	"top-right":
+		"fixed z-40 w-64 right-6 top-[calc(5rem+env(safe-area-inset-top))]",
+	"bottom-left":
+		"fixed z-40 w-64 left-6 bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
+	"bottom-right":
+		"fixed z-40 w-64 right-6 bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
 };
 
 // Утсан дээр доод талд нимгэн хэвтээ карт
@@ -131,7 +140,8 @@ export function FloatingAds({
 			/* storage хаалттай */
 		}
 		const t = setTimeout(() => {
-			if (ads[0]?.id === excludeRef.current && count > 1) setIndex(nextIndex(0));
+			if (ads[0]?.id === excludeRef.current && count > 1)
+				setIndex(nextIndex(0));
 			setCorner(pickCorner());
 			setStarted(true);
 			setVisible(true);
@@ -176,7 +186,10 @@ export function FloatingAds({
 	const isVideo = ad?.mediaType === "video";
 	useEffect(() => {
 		if (!visible || !reklamId) return;
-		const t = setTimeout(() => trackReklamView(reklamId), isVideo ? 2000 : 1000);
+		const t = setTimeout(
+			() => trackReklamView(reklamId),
+			isVideo ? 2000 : 1000,
+		);
 		return () => clearTimeout(t);
 	}, [visible, reklamId, isVideo]);
 
@@ -277,16 +290,16 @@ function CardAd({ ad, variant }: { ad: FloatingAd; variant: Variant }) {
 					</div>
 				)}
 				<div className="min-w-0 space-y-0.5">
-					<p className="line-clamp-1 text-[13px] font-semibold leading-snug">
+					<p className="line-clamp-1 text-sm font-semibold leading-snug">
 						{ad.title}
 					</p>
 					{ad.description && (
-						<p className="line-clamp-1 text-[11px] text-muted-foreground">
+						<p className="line-clamp-1 text-xs text-muted-foreground">
 							{ad.description}
 						</p>
 					)}
 					{ad.href && (
-						<span className="inline-flex items-center gap-1 text-[11px] font-medium transition-all group-hover/ad:gap-1.5">
+						<span className="inline-flex items-center gap-1 text-xs font-medium transition-all group-hover/ad:gap-1.5">
 							{ad.ctaLabel ?? "Дэлгэрэнгүй"}
 							<ArrowRight className="h-3 w-3" />
 						</span>
@@ -326,20 +339,20 @@ function CardAd({ ad, variant }: { ad: FloatingAd; variant: Variant }) {
 			)}
 			<div className="space-y-1 p-3 pr-10">
 				{ad.badge && (
-					<span className="inline-block rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
+					<span className="inline-block rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
 						{ad.badge}
 					</span>
 				)}
-				<p className="line-clamp-2 pr-5 text-[13px] font-semibold leading-snug">
+				<p className="line-clamp-2 pr-5 text-sm font-semibold leading-snug">
 					{ad.title}
 				</p>
 				{ad.description && (
-					<p className="line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
+					<p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
 						{ad.description}
 					</p>
 				)}
 				{ad.href && (
-					<span className="inline-flex items-center gap-1 pt-0.5 text-[11px] font-medium transition-all group-hover/ad:gap-1.5">
+					<span className="inline-flex items-center gap-1 pt-0.5 text-xs font-medium transition-all group-hover/ad:gap-1.5">
 						{ad.ctaLabel ?? "Дэлгэрэнгүй"}
 						<ArrowRight className="h-3 w-3" />
 					</span>

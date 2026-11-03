@@ -1,5 +1,6 @@
 "use client";
 
+import { Clock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface ExamTimerProps {
@@ -35,44 +36,33 @@ export default function ExamTimer({ onElapsedChange }: ExamTimerProps) {
 	const secs = seconds % 60;
 
 	return (
-		<div className="relative inline-block min-w-60">
-			<div className="absolute -inset-0.5 bg-slate-200 dark:bg-slate-800 rounded-2xl blur-sm opacity-50"></div>
-			<div className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
-				<div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30"></div>
+		<div className="w-full rounded-2xl border bg-card shadow-sm overflow-hidden">
+			<div className="flex items-center gap-2 px-4 py-3 border-b bg-muted/50">
+				<Clock className="w-4 h-4 text-primary" />
+				<span className="text-sm font-medium text-muted-foreground">
+					Зарцуулсан хугацаа
+				</span>
+			</div>
 
-				<div className="px-6 py-6 flex items-center justify-center bg-white dark:bg-slate-900">
-					<div className="flex items-center font-mono">
-						{hrs > 0 && (
-							<>
-								<div className="text-center group">
-									<div className="text-3xl font-bold text-slate-800 dark:text-slate-100 tabular-nums">
-										{hrs.toString().padStart(2, "0")}
-									</div>
-									<div className="text-[9px] font-bold text-slate-400 uppercase mt-1">
-										Цаг
-									</div>
-								</div>
-								<div className="text-2xl text-slate-300 dark:text-slate-700 px-2 self-start mt-1">
-									:
-								</div>
-							</>
-						)}
-
-						<div className="text-center">
-							<div className="text-3xl font-bold text-slate-800 dark:text-slate-100 tabular-nums leading-none">
-								{mins.toString().padStart(2, "0")}
+			<div className="px-4 py-5 flex items-center justify-center">
+				<div className="flex items-center font-mono">
+					{hrs > 0 && (
+						<>
+							<div className="text-3xl font-bold text-foreground tabular-nums leading-none">
+								{hrs.toString().padStart(2, "0")}
 							</div>
-						</div>
+							<div className="text-2xl text-muted-foreground px-1.5">:</div>
+						</>
+					)}
 
-						<div className="text-2xl text-slate-300 dark:text-slate-700 px-2 self-start mt-1">
-							:
-						</div>
+					<div className="text-3xl font-bold text-foreground tabular-nums leading-none">
+						{mins.toString().padStart(2, "0")}
+					</div>
 
-						<div className="text-center">
-							<div className="text-3xl font-bold text-indigo-500 dark:text-indigo-400 tabular-nums leading-none">
-								{secs.toString().padStart(2, "0")}
-							</div>
-						</div>
+					<div className="text-2xl text-muted-foreground px-1.5">:</div>
+
+					<div className="text-3xl font-bold text-primary tabular-nums leading-none">
+						{secs.toString().padStart(2, "0")}
 					</div>
 				</div>
 			</div>

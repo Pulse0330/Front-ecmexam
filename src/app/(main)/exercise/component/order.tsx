@@ -95,7 +95,7 @@ const DragAndDrop: React.FC<DragAndDropProps> = ({
 											{...providedDraggable.dragHandleProps}
 											className={cn(
 												buttonVariants({ variant: "outline", size: "default" }),
-												"w-full mb-2 justify-start transition-colors duration-200 select-none",
+												"w-full mb-2 h-auto min-h-11 py-2 justify-start transition-colors duration-200 select-none",
 												disabled ? "cursor-default" : "cursor-move",
 												snapshot.isDragging && "bg-accent ring-2 ring-ring/50",
 												isCorrect &&
@@ -107,10 +107,10 @@ const DragAndDrop: React.FC<DragAndDropProps> = ({
 											style={{ ...providedDraggable.draggableProps.style }}
 										>
 											<div className="flex items-center gap-3 w-full">
-												<span className="shrink-0 w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-bold">
+												<span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
 													{index + 1}
 												</span>
-												<div className="flex-1 text-sm text-gray-900 dark:text-gray-100">
+												<div className="flex-1 whitespace-normal text-sm text-foreground sm:text-base">
 													{item.answer_name_html
 														? parse(item.answer_name_html)
 														: ""}
@@ -258,10 +258,10 @@ const DragAndDropWrapper: React.FC<DragAndDropWrapperProps> = ({
 				</div>
 			)}
 
-			<div className="p-4 border rounded-lg shadow-sm space-y-3 bg-white dark:bg-gray-800">
-				<h3 className="font-semibold text-base sm:text-lg text-gray-900 dark:text-gray-100">
+			<div className="space-y-3">
+				<h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
 					{mode === "exam"
-						? "Зөв дараалалд оруулна уу:"
+						? "Чирж зөв дараалалд оруулна уу"
 						: "Таны өгсөн дараалал:"}
 				</h3>
 
@@ -274,7 +274,7 @@ const DragAndDropWrapper: React.FC<DragAndDropWrapperProps> = ({
 				/>
 
 				{mode === "review" && (
-					<div className="mt-4 space-y-2 text-sm bg-gray-50 dark:bg-gray-900 p-3 rounded-lg">
+					<div className="mt-4 space-y-2 rounded-lg bg-muted/50 p-3 text-sm">
 						<div className="flex items-center gap-2 text-green-700 dark:text-green-400">
 							<CheckCircle2 className="w-4 h-4 flex-shrink-0" />
 							<span>Зөв байрлалд байгаа хариулт</span>
@@ -298,12 +298,12 @@ const DragAndDropWrapper: React.FC<DragAndDropWrapperProps> = ({
 						{correctOrderedAnswers.map((answer, index) => (
 							<div
 								key={answer.answer_id}
-								className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-green-300 dark:border-green-700 transition-all hover:shadow-md"
+								className="flex items-center gap-3 rounded-lg border border-green-300 bg-card p-3 dark:border-green-700"
 							>
 								<span className="flex-shrink-0 w-8 h-8 rounded-full bg-green-600 dark:bg-green-700 text-white flex items-center justify-center font-bold text-sm shadow-sm">
 									{index + 1}
 								</span>
-								<div className="flex-1 text-sm text-gray-900 dark:text-gray-100">
+								<div className="flex-1 text-sm text-foreground">
 									{answer.answer_name_html
 										? parse(answer.answer_name_html)
 										: ""}

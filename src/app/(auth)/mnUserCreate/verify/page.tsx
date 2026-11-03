@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { LoadingState } from "@/components/page/pageStates";
 import VerifyForm, { type VerifyData } from "./verifyForm";
 
 export default function VerifyPage() {
@@ -17,8 +18,8 @@ export default function VerifyPage() {
 
 	if (!data)
 		return (
-			<div className="min-h-screen bg-gray-100 flex items-center justify-center">
-				<div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full" />
+			<div className="flex min-h-screen items-center justify-center bg-background">
+				<LoadingState label="Мэдээлэл ачааллаж байна..." />
 			</div>
 		);
 

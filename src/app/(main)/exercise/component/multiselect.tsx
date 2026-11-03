@@ -211,7 +211,7 @@ export default function MultiSelectQuestion({
 		}
 
 		return (
-			<span className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap">
+			<span className="text-[15px] leading-7 whitespace-pre-wrap sm:text-base">
 				{option.answer_name_html ? parse(option.answer_name_html) : ""}
 			</span>
 		);
@@ -230,7 +230,7 @@ export default function MultiSelectQuestion({
 			{renderQuestionContent()}
 
 			<div className="space-y-3">
-				<p className="text-sm text-gray-600 dark:text-gray-400">
+				<p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
 					Олон хариулт сонгох боломжтой
 				</p>
 				{uniqueAnswers.map((option) => {
@@ -247,18 +247,18 @@ export default function MultiSelectQuestion({
 							onClick={(e) => handleToggle(option.answer_id, e)}
 							variant="outline"
 							disabled={isReviewMode}
-							className={`flex items-center gap-3 w-full justify-start text-left p-3 border rounded-md transition-colors ${
-								hasImage ? "h-auto min-h-[100px]" : "min-h-[50px]"
+							className={`flex items-center gap-3 w-full justify-start text-left p-3 sm:p-4 border rounded-xl whitespace-normal font-normal text-foreground transition-colors ${
+								hasImage ? "h-auto min-h-[100px]" : "h-auto min-h-12"
 							} ${
 								selected
-									? "border-primary bg-primary/10"
+									? "border-primary bg-primary/5 ring-1 ring-primary"
 									: shouldHighlight
 										? "border-green-400 bg-green-50 dark:bg-green-900/20"
 										: "border-border"
 							} ${isReviewMode ? "cursor-default opacity-70" : ""}`}
 						>
 							<span
-								className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+								className={`size-5 rounded border flex items-center justify-center shrink-0 ${
 									hasImage ? "self-start mt-2" : ""
 								} ${
 									selected
@@ -301,17 +301,17 @@ export default function MultiSelectQuestion({
 
 			{/* ⭐ Show feedback below */}
 			{showAnswerFeedback && (
-				<div className="mt-4">
+				<div>
 					{allCorrect ? (
-						<div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-3 sm:p-4 rounded-lg">
+						<div className="rounded-xl border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20 sm:p-4">
 							<p className="text-green-800 dark:text-green-300 font-semibold text-sm sm:text-base flex items-center gap-2">
 								<CheckCircle2 className="w-5 h-5" />
 								Таны сонголт хадгалагдсан: {selectedAnswers.length} хариулт
 							</p>
 						</div>
 					) : (
-						<div className="bg-purple-50 dark:bg-purple-900/20 border-l-4 border-purple-500 p-3 sm:p-4 rounded-lg">
-							<p className="text-purple-800 dark:text-purple-300 font-semibold text-sm sm:text-base">
+						<div className="rounded-xl border bg-muted/50 p-3 sm:p-4">
+							<p className="text-sm font-semibold text-foreground sm:text-base">
 								Таны сонголт хадгалагдсан: {selectedAnswers.length} хариулт
 							</p>
 						</div>

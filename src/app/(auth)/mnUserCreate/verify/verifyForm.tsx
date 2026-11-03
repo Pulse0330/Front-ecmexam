@@ -1,11 +1,13 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, ChevronLeft } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
 import { toast } from "sonner";
 import type { QPayInvoiceResponse } from "@/types/Qpay/qpayinvoice";
+import { StepIndicator } from "../../stepIndicator";
+import { BackButton } from "./backButton";
 import QPayDialog from "./qpayDialog";
 import { StepPaid } from "./stepPaid";
 import { StepPreview } from "./stepPreview";
@@ -268,56 +270,33 @@ export default function VerifyForm({ data: d }: { data: VerifyData }) {
 				onPaymentSuccess={handlePaymentSuccess}
 			/>
 
-			<div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-500">
-				{/* ── HEADER ── */}
-				<div className="sticky top-0 z-30 border-b border-gray-200/50 dark:border-gray-700/50 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl">
-					<div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-						<div className="flex items-center gap-3">
-							{step !== "paid" && (
-								<button
-									type="button"
+			<div className="min-h-screen bg-background">
+				{/* ── HEADER: ← Буцах + алхмын заагч ── */}
+				<div className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
+					<div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 py-3">
+						<div className="flex min-h-9 items-center justify-between gap-3">
+							{step !== "paid" ? (
+								<BackButton
 									onClick={() => {
 										if (step === "preview") router.back();
 									}}
-									className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-								>
-									<ChevronLeft size={16} />
-									Буцах
-								</button>
+									label="Буцах"
+								/>
+							) : (
+								<span />
 							)}
-							<div className="flex items-center gap-1">
-								{STEPS.map((s, idx) => {
-									const done = idx < stepIdx;
-									const active = s === step;
-									return (
-										<div key={s} className="flex items-center">
-											<div
-												className={[
-													"w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all",
-													done
-														? "bg-primary text-primary-foreground"
-														: active
-															? "bg-primary/20 text-primary border-2 border-primary"
-															: "bg-muted text-muted-foreground",
-												].join(" ")}
-											>
-												{done ? <CheckCircle2 size={12} /> : idx + 1}
-											</div>
-											{idx < 1 && (
-												<div
-													className={`w-5 h-0.5 mx-0.5 transition-all ${done ? "bg-primary" : "bg-muted"}`}
-												/>
-											)}
-										</div>
-									);
-								})}
-							</div>
+							<span className="text-sm font-semibold text-foreground">
+								Алхам {stepIdx + 2} / 3
+							</span>
 						</div>
-						<span className="text-xs text-muted-foreground font-medium">
-							{step === "preview" &&
-								(isPaid ? "Баталгаажуулах" : "Төлбөр төлөх")}
-							{step === "paid" && "Бүртгэл амжилттай"}
-						</span>
+						<StepIndicator
+							steps={[
+								"Мэдээлэл",
+								isPaid ? "Баталгаажуулах" : "Төлбөр төлөх",
+								"Бүртгэл дууссан",
+							]}
+							current={stepIdx + 1}
+						/>
 					</div>
 				</div>
 

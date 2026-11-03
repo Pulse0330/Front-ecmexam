@@ -5,6 +5,8 @@ import { memo, useCallback, useRef } from "react";
 import QuestionImage from "@/app/exam/component/question/questionImage";
 import { MathContent } from "./matContent";
 
+const OPTION_LABELS = ["A", "B", "C", "D", "E", "F", "G", "H"];
+
 interface AnswerData {
 	answer_id: number;
 	answer_name_html: string;
@@ -61,11 +63,12 @@ function SingleSelectQuestion({
 			)}
 
 			<div className="space-y-2 sm:space-y-3">
-				<p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium">
+				<p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
 					Нэг хариулт сонгоно уу
 				</p>
 
-				{answers.map((option) => {
+				{answers.map((option, idx) => {
+					const label = OPTION_LABELS[idx] ?? String(idx + 1);
 					const isSelected = selectedAnswer === option.answer_id;
 					const isCorrect =
 						option.is_true || correctAnswerId === option.answer_id;
@@ -77,7 +80,7 @@ function SingleSelectQuestion({
 							? "border-green-500 bg-green-50 dark:bg-green-900/20"
 							: isSelected
 								? "border-red-500 bg-red-50 dark:bg-red-900/20"
-								: "border-border bg-background"
+								: "border-border bg-card"
 						: showAnswerFeedback
 							? isSelected
 								? isCorrect
@@ -85,15 +88,15 @@ function SingleSelectQuestion({
 									: "border-red-500 bg-red-50 dark:bg-red-900/20"
 								: isCorrect
 									? "border-green-400 bg-green-50/50 dark:bg-green-900/10"
-									: "border-border bg-background"
+									: "border-border bg-card"
 							: isSelected
-								? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
-								: "border-border bg-background hover:border-gray-300 dark:hover:border-gray-700 hover:bg-gray-50/50";
+								? "border-primary bg-primary/5 ring-1 ring-primary"
+								: "border-border bg-card hover:border-primary/40 hover:bg-muted/50";
 
 					return (
 						<label
 							key={option.answer_id}
-							className={`group relative flex flex-col w-full rounded-xl border-2 transition-all duration-200 text-left overflow-hidden ${colorClass} ${
+							className={`group relative flex flex-col w-full rounded-xl border transition-all duration-200 text-left overflow-hidden ${colorClass} ${
 								isReviewMode
 									? "cursor-default"
 									: "active:scale-[0.99] cursor-pointer"
@@ -111,28 +114,25 @@ function SingleSelectQuestion({
 							/>
 
 							{/* Дээд хэсэг */}
-							<div className="flex items-start gap-3 p-3 sm:p-4 w-full">
-								<div className="mt-1 shrink-0">
-									<div
-										className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-											isSelected
-												? (isReviewMode || showAnswerFeedback)
-													? isCorrect
-														? "border-green-500 bg-green-500"
-														: "border-red-500 bg-red-500"
-													: "border-primary bg-primary"
-												: "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
-										}`}
-									>
-										{isSelected && (
-											<div className="w-2 h-2 bg-white rounded-full shadow-sm" />
-										)}
-									</div>
-								</div>
+							<div className="flex items-start gap-3 p-3 sm:gap-4 sm:p-4 w-full">
+								{/* A/B/C үсэгтэй сонголтын тэмдэг */}
+								<span
+									className={`flex size-8 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition-colors ${
+										isSelected
+											? isReviewMode || showAnswerFeedback
+												? isCorrect
+													? "border-green-600 bg-green-600 text-white"
+													: "border-red-600 bg-red-600 text-white"
+												: "border-primary bg-primary text-primary-foreground"
+											: "border-border bg-background text-muted-foreground"
+									}`}
+								>
+									{label}
+								</span>
 
 								{hasContent && (
-									<div className="flex-1 text-sm sm:text-base font-medium leading-relaxed pr-8">
-										<div className="flex-1 text-sm sm:text-base font-medium leading-relaxed pr-8">
+									<div className="min-w-0 flex-1 self-center text-[15px] leading-7 text-foreground sm:text-base">
+										<div>
 											<div className="math-container block w-full">
 												{/* option.answer_id-г key болгож өгөх нь маш чухал */}
 												<MathContent
@@ -150,13 +150,18 @@ function SingleSelectQuestion({
 									<div className="shrink-0 ml-auto self-start sm:self-center">
 										{isCorrect ? (
 											<div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-												<CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 fill-current bg-white rounded-full" />
-												{!isReviewMode && (
-													<span className="hidden sm:inline text-xs font-bold uppercase"></span>
-												)}
+												<CheckCircle2 className="size-5 sm:size-6" />
+												<span className="hidden text-xs font-semibold sm:inline">
+													Зөв
+												</span>
 											</div>
 										) : isSelected ? (
-											<XCircle className="text-red-600 dark:text-red-400 w-5 h-5 sm:w-6 sm:h-6 fill-current bg-white rounded-full" />
+											<span className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
+												<XCircle className="size-5 sm:size-6" />
+												<span className="hidden text-xs font-semibold sm:inline">
+													Буруу
+												</span>
+											</span>
 										) : null}
 									</div>
 								)}
@@ -171,7 +176,7 @@ function SingleSelectQuestion({
 							)}
 
 							{!hasContent && !imageUrl && (
-								<div className="px-12 pb-4 text-xs text-gray-400 italic">
+								<div className="px-14 pb-4 text-xs italic text-muted-foreground">
 									Хоосон хариулт
 								</div>
 							)}

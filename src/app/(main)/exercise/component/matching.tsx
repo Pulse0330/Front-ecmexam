@@ -263,7 +263,7 @@ export default function MatchingByLine({
 			<Xwrapper>
 				{/* Header Section */}
 				<div className="text-center mb-8 space-y-3">
-					<h2 className="text-xl font-bold text-slate-900 dark:text-white">
+					<h2 className="text-base font-semibold text-foreground sm:text-lg">
 						{/* ✅ FIX 2: isMobile state-ийн оронд CSS class ашиглав */}
 						<span className="md:hidden">Тохирохыг сонгоно уу</span>
 						<span className="hidden md:inline">
@@ -271,7 +271,7 @@ export default function MatchingByLine({
 						</span>
 					</h2>
 					{!showResults && (
-						<div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-full text-sm font-medium">
+						<div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium">
 							<Lightbulb className="w-4 h-4" />
 							Картууд дээр дарж холболт хийнэ
 						</div>
@@ -284,7 +284,7 @@ export default function MatchingByLine({
 						<Button
 							onClick={handleCheckAnswers}
 							disabled={connections.length === 0}
-							className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-8 h-12 shadow-md transition-all active:scale-95"
+							className="h-11 px-6 font-semibold transition-all active:scale-95"
 						>
 							<CheckCircle2 className="w-5 h-5 mr-2" />
 							Шалгах ({connections.length}/{questionsOnly.length})

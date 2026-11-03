@@ -188,18 +188,21 @@ export function AdDialog({ ad, delay = 600, onFinished }: AdDialogProps) {
 					<div className="flex flex-col gap-2">
 						<div className="flex gap-2">
 							{ad.href && (
-								<Button asChild className="h-11 flex-1 rounded-xl text-sm sm:text-base">
-								<AdLink
-									href={ad.href}
-									onClick={() => {
-										trackReklamClick(reklamId);
-										handleOpenChange(false);
-									}}
+								<Button
+									asChild
+									className="h-11 flex-1 rounded-xl text-sm sm:text-base"
 								>
-									{ad.ctaLabel ?? "Дэлгэрэнгүй"}
-									<ArrowRight className="w-4 h-4" />
-								</AdLink>
-							</Button>
+									<AdLink
+										href={ad.href}
+										onClick={() => {
+											trackReklamClick(reklamId);
+											handleOpenChange(false);
+										}}
+									>
+										{ad.ctaLabel ?? "Дэлгэрэнгүй"}
+										<ArrowRight className="w-4 h-4" />
+									</AdLink>
+								</Button>
 							)}
 							<AdLikeButton
 								reklamId={reklamId}

@@ -1,7 +1,22 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowRight, Loader2 } from "lucide-react";
+import {
+	type UseQueryResult,
+	useMutation,
+	useQueries,
+	useQuery,
+} from "@tanstack/react-query";
+import {
+	ArrowRight,
+	ChevronUp,
+	Inbox,
+	LayoutGrid,
+	List,
+	Loader2,
+	PencilLine,
+	Trash2,
+	X,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
 	useCallback,
@@ -10,7 +25,8 @@ import {
 	useState,
 	useTransition,
 } from "react";
-import StyledBackButton from "@/components/backButton";
+import { PageHeader } from "@/components/page/pageHeader";
+import { EmptyState, LoadingState } from "@/components/page/pageStates";
 import { Button } from "@/components/ui/button";
 import {
 	getTestFilter,
@@ -27,7 +43,6 @@ import type {
 import {
 	CategoryCard,
 	type CategoryGroup,
-	EmptyState,
 	LessonCard,
 	SkeletonCard,
 	TestItemCard,
@@ -114,14 +129,40 @@ interface LessonDataResponse {
 	RetData: LessonDataItem[];
 }
 
+// Сонгосон тестийн нэр — сонгох үед хадгална (өөр хичээлийн өгөгдөл ачаалагдаагүй
+// үед ч доод мөрөнд "Тест #id" биш нэрээр нь харуулахын тулд)
+type SelectedTestMeta = Record<
+	number,
+	{ name: string; ulesson_name: string; coursename: string }
+>;
+
+// useQueries-ийн combine — module түвшинд тул React Query үр дүнг memoize хийнэ
+// (inline бол render бүрт шинэ массив үүсч картууд дахин зурагдана)
+const combineLessonTests = (
+	results: UseQueryResult<GetTestGroupResponse>[],
+) => ({
+	items: results.flatMap((r) => r.data?.RetData ?? []),
+	isFetching: results.some((r) => r.isFetching),
+});
+
+const toMeta = (item: TestGroupItem) => ({
+	name: item.name,
+	ulesson_name: item.ulesson_name,
+	coursename: item.coursename,
+});
+
 // ============================================
 // CONSTANTS
 // ============================================
 
 const GRID_CLASSES =
-	"grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 2xl:grid-cols-8 3xl:grid-cols-8 gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3 xl:gap-3.5";
+	"grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 gap-3";
 
-const LIST_CLASSES = "flex flex-col gap-1.5 sm:gap-2";
+const LIST_CLASSES = "flex flex-col gap-2 sm:gap-3";
+
+// Хичээлийн картуудын нэгдсэн тор
+const CARD_GRID_CLASSES =
+	"grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 list-none";
 
 const SKELETON_COUNT = 12;
 
@@ -200,7 +241,7 @@ export default function TestGroupPage() {
 	>("selectedCategory", null);
 
 	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-	const [_errorMessage, setErrorMessage] = useState<string | null>(null);
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
 	// Prevent hydration mismatch
 	useEffect(() => {
@@ -274,6 +315,7 @@ export default function TestGroupPage() {
 		onSuccess: (res) => {
 			if (res?.RetResponse?.ResponseType) {
 				localStorage.removeItem("selectedTests");
+				localStorage.removeItem("selectedTestsMeta");
 				localStorage.removeItem("selectedLesson");
 				localStorage.removeItem("selectedCategory");
 				router.push("/exercise");
@@ -358,6 +400,76 @@ export default function TestGroupPage() {
 		};
 	}, [selectedTests]);
 
+	// Сонгосон тестүүдийн нэр — доод мөрөөс шууд харж, хасах боломжтой
+	// (өмнө нь болиулахын тулд тухайн хичээл/сэдэв рүү буцаж очих шаардлагатай байсан)
+	const [selectedMeta, setSelectedMeta] =
+		useDebouncedLocalStorage<SelectedTestMeta>("selectedTestsMeta", {});
+
+	// Нэр нь мэдэгдэхгүй сонголт байвал хичээл бүрийн тестийг ачаалж нэрийг олно.
+	// queryKey нь хичээл нээх үеийнхтэй ижил тул cache хуваалцана (давхар хүсэлтгүй).
+	const hasUnnamed = useMemo(
+		() => Object.keys(selectedTests).some((id) => !selectedMeta[Number(id)]),
+		[selectedTests, selectedMeta],
+	);
+	const lessonTests = useQueries({
+		queries: lessonGroups.map((lesson) => ({
+			queryKey: ["testFiltered", userId, lesson.lesson_id],
+			queryFn: () => getTestFiltered(userId || 0, lesson.lesson_id),
+			enabled: !!userId && hasUnnamed,
+			retry: false,
+			staleTime: 5 * 60 * 1000,
+		})),
+		combine: combineLessonTests,
+	});
+
+	// Ачаалагдсан тестүүд (бүх хичээл + хичээл тус бүр + одоогийн хичээл) — ID-аар
+	const loadedTestsById = useMemo(() => {
+		const byId = new Map<number, TestGroupItem>();
+		for (const item of allLessonsData?.RetData ?? []) byId.set(item.id, item);
+		for (const item of lessonTests.items) byId.set(item.id, item);
+		for (const item of data?.RetData ?? []) byId.set(item.id, item);
+		return byId;
+	}, [allLessonsData, lessonTests.items, data]);
+
+	// Өмнө нь нэргүй хадгалагдсан сонголтуудын нэрийг өгөгдөл ачаалагдахад нөхнө
+	useEffect(() => {
+		const missing = Object.keys(selectedTests)
+			.map(Number)
+			.filter((id) => !selectedMeta[id] && loadedTestsById.has(id));
+		if (missing.length === 0) return;
+		setSelectedMeta((prev) => {
+			const next = { ...prev };
+			for (const id of missing) {
+				const item = loadedTestsById.get(id);
+				if (item) next[id] = toMeta(item);
+			}
+			return next;
+		});
+	}, [selectedTests, selectedMeta, loadedTestsById, setSelectedMeta]);
+
+	const selectedList = useMemo(
+		() =>
+			Object.entries(selectedTests).map(([id, count]) => {
+				const loaded = loadedTestsById.get(Number(id));
+				return {
+					id: Number(id),
+					count,
+					item: loaded ? toMeta(loaded) : selectedMeta[Number(id)],
+				};
+			}),
+		[selectedTests, loadedTestsById, selectedMeta],
+	);
+
+	const [showSelected, setShowSelected] = useState(false);
+	const [confirmClear, setConfirmClear] = useState(false);
+
+	const handleClearAll = useCallback(() => {
+		setSelectedTests({});
+		setSelectedMeta({});
+		setConfirmClear(false);
+		setShowSelected(false);
+	}, [setSelectedTests, setSelectedMeta]);
+
 	const handleTestChange = useCallback(
 		(id: number, count: number) => {
 			setSelectedTests((prev: Record<number, number>) => {
@@ -367,8 +479,18 @@ export default function TestGroupPage() {
 				const { [id]: _, ...rest } = prev;
 				return rest;
 			});
+			// Нэрийг хамт хадгалах / хасах
+			setSelectedMeta((prev) => {
+				if (count > 0) {
+					const item = loadedTestsById.get(id);
+					return item && !prev[id] ? { ...prev, [id]: toMeta(item) } : prev;
+				}
+				if (!prev[id]) return prev;
+				const { [id]: _, ...rest } = prev;
+				return rest;
+			});
 		},
-		[setSelectedTests],
+		[setSelectedTests, setSelectedMeta, loadedTestsById],
 	);
 
 	const handleBackToLessons = useCallback(() => {
@@ -425,63 +547,72 @@ export default function TestGroupPage() {
 
 	const renderSkeletons = useMemo(
 		() => (
-			<output
-				className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 3xl:grid-cols-10 gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3 xl:gap-3.5"
-				aria-label="Хичээлүүдийг ачааллаж байна"
-			>
+			<output className={CARD_GRID_CLASSES} aria-label="Ачааллаж байна">
 				{skeletonKeys.map((key) => (
 					<SkeletonCard key={key} />
 				))}
-				<span className="sr-only">Хичээлүүдийг ачааллаж байна...</span>
+				<span className="sr-only">Ачааллаж байна...</span>
 			</output>
 		),
 		[skeletonKeys],
 	);
 
 	const renderLessonCards = useMemo(
-		() => (
-			<ul className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 3xl:grid-cols-11 gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3 xl:gap-3.5 list-none">
-				{lessonGroups.map((lesson) => {
-					const stats = lessonStats.get(lesson.lesson_id) || DEFAULT_STATS;
+		() =>
+			lessonGroups.length === 0 ? (
+				<EmptyState
+					icon={Inbox}
+					title="Хичээл олдсонгүй"
+					description="Одоогоор дасгал ажиллах хичээл алга байна."
+				/>
+			) : (
+				<ul className={CARD_GRID_CLASSES}>
+					{lessonGroups.map((lesson) => {
+						const stats = lessonStats.get(lesson.lesson_id) || DEFAULT_STATS;
 
-					return (
-						<li key={lesson.lesson_id}>
-							<LessonCard
-								lesson={lesson}
-								selectedCount={stats.selectedCount}
-								totalQuestions={stats.totalQuestions}
-								onClick={() => handleLessonClick(lesson.lesson_id)}
-							/>
-						</li>
-					);
-				})}
-				{lessonGroups.length === 0 && <EmptyState />}
-			</ul>
-		),
+						return (
+							<li key={lesson.lesson_id}>
+								<LessonCard
+									lesson={lesson}
+									selectedCount={stats.selectedCount}
+									totalQuestions={stats.totalQuestions}
+									onClick={() => handleLessonClick(lesson.lesson_id)}
+								/>
+							</li>
+						);
+					})}
+				</ul>
+			),
 		[lessonGroups, lessonStats, handleLessonClick],
 	);
 
 	const renderCategoryCards = useMemo(
-		() => (
-			<ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-2 sm:gap-2.5 md:gap-3 lg:gap-3.5 list-none">
-				{[...groupedData.entries()].map(([key, category]) => (
-					<li key={key}>
-						<CategoryCard
-							category={category}
-							categorySelectedCount={
-								category.items.filter((i) => selectedTests[i.id]).length
-							}
-							categoryTotalQuestions={category.items.reduce(
-								(sum, i) => sum + (selectedTests[i.id] || 0),
-								0,
-							)}
-							onClick={() => handleCategoryClick(key)}
-						/>
-					</li>
-				))}
-				{groupedData.size === 0 && <EmptyState />}
-			</ul>
-		),
+		() =>
+			groupedData.size === 0 ? (
+				<EmptyState
+					icon={Inbox}
+					title="Бүлэг сэдэв олдсонгүй"
+					description="Энэ хичээлд одоогоор дасгал алга. Өөр хичээл сонгоно уу."
+				/>
+			) : (
+				<ul className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 list-none">
+					{[...groupedData.entries()].map(([key, category]) => (
+						<li key={key}>
+							<CategoryCard
+								category={category}
+								categorySelectedCount={
+									category.items.filter((i) => selectedTests[i.id]).length
+								}
+								categoryTotalQuestions={category.items.reduce(
+									(sum, i) => sum + (selectedTests[i.id] || 0),
+									0,
+								)}
+								onClick={() => handleCategoryClick(key)}
+							/>
+						</li>
+					))}
+				</ul>
+			),
 		[groupedData, selectedTests, handleCategoryClick],
 	);
 
@@ -529,98 +660,77 @@ export default function TestGroupPage() {
 	const isLoading = selectedLesson ? isLoadingDetails : isLoadingLessons;
 
 	if (!userId) {
-		return (
-			<output
-				className="h-screen flex items-center justify-center"
-				aria-label="Нэвтэрч байна"
-			>
-				<Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-				<span className="sr-only">Нэвтэрч байна...</span>
-			</output>
-		);
+		return <LoadingState className="h-screen" label="Нэвтэрч байна..." />;
 	}
+
+	// Алхам бүрийн гарчиг, тайлбар — хэрэглэгч хаана байгаагаа ойлгоно
+	const currentCategory = selectedCategory
+		? groupedData.get(selectedCategory)
+		: undefined;
+	const headerTitle = !selectedLesson
+		? "Хичээл сонгох"
+		: !selectedCategory
+			? "Бүлэг сэдэв сонгох"
+			: currentCategory?.ulesson_name || "Асуулт сонгох";
+	const headerDescription = !selectedLesson
+		? "1-р алхам: Дасгал ажиллах хичээлээ сонгоно уу."
+		: !selectedCategory
+			? "2-р алхам: Дасгал ажиллах бүлэг сэдвээ сонгоно уу."
+			: "3-р алхам: Тест бүрээс хэдэн асуулт ажиллахаа сонгоод «Дасгал эхлүүлэх» дарна уу.";
+
+	// 3-р алхамд (асуулт сонгох) "Дасгал эхлүүлэх" товч үргэлж харагдана —
+	// сонгоогүй үед идэвхгүй байж, юу хийхийг зааж өгнө (өмнө нь огт харагддаггүй байсан)
+	const hasSelection = totals.questionCount > 0;
+	const showSummary = isMounted && (hasSelection || !!selectedCategory);
 
 	return (
 		<div className="h-full">
-			<div className=" mx-auto w-full flex flex-col gap-4 px-3 sm:px-4 lg:px-6 py-4 sm:py-5">
-				<header className="mb-2 sm:mb-3 md:mb-4 backdrop-blur-md p-2 sm:p-2.5 md:p-3 lg:p-4 rounded-xl sm:rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100/50 dark:border-slate-800/50 relative overflow-hidden">
-					<div
-						className="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"
-						aria-hidden="true"
-					/>
-					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-						<div className="flex items-center gap-2">
-							{selectedLesson && (
-								<StyledBackButton
-									onClick={handleBackToLessons}
-									variant="ghost"
-									className="flex items-center gap-1 sm:gap-1.5 text-slate-500 font-bold hover:text-emerald-500 transition-colors p-1.5 sm:p-2 min-w-9 sm:min-w-10"
-									ariaLabel={
-										selectedCategory
-											? "Бүлэг сэдэв рүү буцах"
-											: "Хичээл рүү буцах"
-									}
-								/>
-							)}
-
-							<div>
-								<h1 className="flex items-center text-base sm:text-lg md:text-xl lg:text-2xl font-black">
-									{selectedLesson ? "Тест сонгох" : "Хичээл сонгох"}
-								</h1>
-							</div>
-						</div>
-
-						{/* View mode toggle - only show when category is selected */}
-						{selectedCategory && (
-							<fieldset className="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-md sm:rounded-lg gap-0.5 shrink-0 border-0">
+			<div
+				className={cn(
+					"mx-auto flex w-full flex-col gap-2 px-4 pb-6 lg:px-6",
+					showSummary && "pb-32",
+				)}
+			>
+				<PageHeader
+					title={headerTitle}
+					description={headerDescription}
+					icon={PencilLine}
+					back={selectedLesson ? handleBackToLessons : undefined}
+					actions={
+						selectedCategory && (
+							// Харагдах төрөл: тор / жагсаалт
+							<fieldset className="flex shrink-0 gap-1 rounded-lg border-0 bg-muted p-1">
 								<legend className="sr-only">Харагдах төрөл сонгох</legend>
 								<Button
 									variant="ghost"
-									size="sm"
 									onClick={() => setViewMode("grid")}
 									className={cn(
-										"rounded-md px-2 sm:px-2.5 h-7 sm:h-8 transition-all",
+										"h-10 gap-1.5 px-3 text-sm",
 										viewMode === "grid" &&
-											"bg-white dark:bg-slate-700 shadow-sm",
+											"bg-background text-foreground shadow-sm",
 									)}
-									aria-label="Торны харагдац"
 									aria-pressed={viewMode === "grid"}
 								>
-									<div
-										className="grid grid-cols-2 gap-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5"
-										aria-hidden="true"
-									>
-										<div className="bg-current rounded-sm opacity-60" />
-										<div className="bg-current rounded-sm opacity-60" />
-										<div className="bg-current rounded-sm opacity-60" />
-										<div className="bg-current rounded-sm opacity-60" />
-									</div>
+									<LayoutGrid className="size-4" aria-hidden="true" />
+									Тор
 								</Button>
 								<Button
 									variant="ghost"
-									size="sm"
 									onClick={() => setViewMode("list")}
 									className={cn(
-										"rounded-md px-2 sm:px-2.5 h-7 sm:h-8 transition-all",
+										"h-10 gap-1.5 px-3 text-sm",
 										viewMode === "list" &&
-											"bg-white dark:bg-slate-700 shadow-sm",
+											"bg-background text-foreground shadow-sm",
 									)}
-									aria-label="Жагсаалтын харагдац"
 									aria-pressed={viewMode === "list"}
 								>
-									<div
-										className="flex flex-col gap-0.5 w-3 sm:w-3.5"
-										aria-hidden="true"
-									>
-										<div className="h-0.5 sm:h-1 w-full bg-current rounded-full opacity-60" />
-										<div className="h-0.5 sm:h-1 w-full bg-current rounded-full opacity-60" />
-										<div className="h-0.5 sm:h-1 w-full bg-current rounded-full opacity-60" />
-									</div>
+									<List className="size-4" aria-hidden="true" />
+									Жагсаалт
 								</Button>
 							</fieldset>
-						)}
-					</div>
-				</header>
+						)
+					}
+				/>
 
 				<main>
 					{isLoading
@@ -633,64 +743,169 @@ export default function TestGroupPage() {
 				</main>
 			</div>
 
-			{isMounted && totals.questionCount > 0 && (
+			{showSummary && (
 				<section
-					className="fixed bottom-2 sm:bottom-3 md:bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] md:w-auto max-w-2xl z-50 px-2 sm:px-0"
-					aria-label="Тестийн хураангуй"
+					className="fixed inset-x-0 bottom-0 z-50 border-t-2 border-primary/40 bg-background px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_-12px_rgb(0_0_0/0.25)]"
+					aria-label="Сонгосон асуултын хураангуй"
 				>
-					<output className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl rounded-full px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 shadow-2xl border-2 border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between gap-2 sm:gap-3 md:gap-4">
-						<div
-							className="flex items-center gap-2 sm:gap-2.5 md:gap-3 flex-1 min-w-0"
-							aria-live="polite"
-						>
-							<div className="flex items-center gap-1 sm:gap-1.5">
-								<span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-									Асуулт:
-								</span>
-								<span className="text-xs sm:text-sm md:text-base font-bold text-slate-900 dark:text-white">
-									{totals.questionCount}
-								</span>
-							</div>
-							<div
-								className="w-px h-3 sm:h-3.5 md:h-4 bg-slate-200 dark:bg-slate-700"
-								aria-hidden="true"
-							/>
-							<div className="flex items-center gap-1 sm:gap-1.5">
-								<span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-									Бүлэг:
-								</span>
-								<span className="text-xs sm:text-sm md:text-base font-bold text-slate-900 dark:text-white">
-									{totals.groupCount}
-								</span>
-							</div>
-						</div>
-						<Button
-							onClick={handleStartTest}
-							disabled={mutation.isPending}
-							size="sm"
-							className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 rounded-full px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 md:py-2.5 font-semibold text-xs sm:text-sm md:text-base transition-all active:scale-95 shrink-0 min-w-[72px] sm:min-w-20 md:min-w-[100px]"
-							aria-label={
-								mutation.isPending
-									? "Тест ачааллаж байна"
-									: `${totals.questionCount} асуулттай тест эхлүүлэх`
-							}
-						>
-							{mutation.isPending ? (
-								<Loader2
-									className="animate-spin w-3.5 h-3.5 sm:w-4 sm:h-4"
-									aria-hidden="true"
-								/>
-							) : (
-								<div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 group cursor-pointer justify-center">
-									<span>Эхлэх</span>
-									<ArrowRight
-										className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 transition-transform duration-300 group-hover:translate-x-1"
-										aria-hidden="true"
-									/>
+					<div className="mx-auto flex max-w-3xl flex-col gap-2">
+						{errorMessage && (
+							<p
+								role="alert"
+								className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700 dark:bg-red-900/30 dark:text-red-300"
+							>
+								{errorMessage}
+							</p>
+						)}
+
+						{/* Сонгосон тестүүд — нэг бүрчлэн хасах / бүгдийг цэвэрлэх */}
+						{hasSelection && showSelected && (
+							<div className="rounded-xl border bg-card">
+								<div className="flex items-center justify-between gap-2 border-b px-3 py-2">
+									<p className="text-sm font-semibold">Сонгосон тестүүд</p>
+									{confirmClear ? (
+										<div className="flex items-center gap-1.5">
+											<span className="hidden text-xs text-muted-foreground sm:inline">
+												Бүгдийг хасах уу?
+											</span>
+											<Button
+												variant="outline"
+												size="sm"
+												className="h-9"
+												onClick={() => setConfirmClear(false)}
+											>
+												Болих
+											</Button>
+											<Button
+												size="sm"
+												className="h-9 bg-red-600 text-white hover:bg-red-700"
+												onClick={handleClearAll}
+											>
+												Тийм, цэвэрлэх
+											</Button>
+										</div>
+									) : (
+										<Button
+											variant="ghost"
+											size="sm"
+											className="h-9 gap-1.5 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30"
+											onClick={() => setConfirmClear(true)}
+										>
+											<Trash2 className="size-4" aria-hidden="true" />
+											Бүгдийг цэвэрлэх
+										</Button>
+									)}
 								</div>
-							)}
-						</Button>
-					</output>
+								<ul className="max-h-[40vh] divide-y overflow-y-auto">
+									{selectedList.map(({ id, count, item }) => (
+										<li
+											key={id}
+											className="flex items-center justify-between gap-3 px-3 py-2"
+										>
+											<div className="min-w-0">
+												<p className="truncate text-sm font-medium">
+													{/* Хэрэглэгчид ID хэрэггүй — нэр, эсвэл ачаалж буйг харуулна */}
+													{item?.name ??
+														(lessonTests.isFetching
+															? "Нэр ачаалж байна…"
+															: "Сонгосон тест")}
+												</p>
+												{item && (
+													<p className="truncate text-xs text-muted-foreground">
+														{item.coursename} · {item.ulesson_name}
+													</p>
+												)}
+											</div>
+											<div className="flex shrink-0 items-center gap-2">
+												<span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+													{count} асуулт
+												</span>
+												<Button
+													variant="ghost"
+													size="icon"
+													className="size-9 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
+													onClick={() => handleTestChange(id, 0)}
+													aria-label={`${item?.name ?? "Тест"} хасах`}
+													title="Хасах"
+												>
+													<X className="size-4" />
+												</Button>
+											</div>
+										</li>
+									))}
+								</ul>
+							</div>
+						)}
+
+						<div className="flex items-center justify-between gap-3">
+							<output
+								className="flex min-w-0 flex-col text-sm"
+								aria-live="polite"
+							>
+								{hasSelection ? (
+									<>
+										<span className="font-semibold text-foreground">
+											{totals.questionCount} асуулт сонгосон
+										</span>
+										{/* Сонголтоо харах / засах */}
+										<button
+											type="button"
+											onClick={() => {
+												setShowSelected((v) => !v);
+												setConfirmClear(false);
+											}}
+											className="inline-flex w-fit items-center gap-1 text-xs font-semibold text-primary hover:underline"
+											aria-expanded={showSelected}
+										>
+											{totals.groupCount} бүлэг тест ·{" "}
+											{showSelected ? "Нуух" : "Харах / хасах"}
+											<ChevronUp
+												className={cn(
+													"size-3.5 transition-transform",
+													!showSelected && "rotate-180",
+												)}
+												aria-hidden="true"
+											/>
+										</button>
+									</>
+								) : (
+									<>
+										<span className="font-semibold text-foreground">
+											Асуулт сонгоогүй байна
+										</span>
+										<span className="text-xs text-muted-foreground">
+											Доорх тестүүдээс «+» товчоор асуултын тоогоо сонгоно уу
+										</span>
+									</>
+								)}
+							</output>
+							<Button
+								onClick={handleStartTest}
+								disabled={mutation.isPending || !hasSelection}
+								className="h-11 shrink-0 gap-2 px-5 text-base font-semibold"
+								aria-label={
+									mutation.isPending
+										? "Дасгал ачааллаж байна"
+										: `${totals.questionCount} асуулттай дасгал эхлүүлэх`
+								}
+							>
+								{mutation.isPending ? (
+									<>
+										<Loader2
+											className="size-4 animate-spin"
+											aria-hidden="true"
+										/>
+										Түр хүлээнэ үү...
+									</>
+								) : (
+									<>
+										Дасгал эхлүүлэх
+										<ArrowRight className="size-4" aria-hidden="true" />
+									</>
+								)}
+							</Button>
+						</div>
+					</div>
 				</section>
 			)}
 		</div>

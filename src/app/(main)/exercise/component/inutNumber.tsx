@@ -99,9 +99,13 @@ const NumberInputQuestion: React.FC<NumberInputQuestionProps> = ({
 		if (!userValue && userValue !== 0) return null;
 
 		return isCorrect(answer) ? (
-			<div className="shrink-0 text-xs text-gray-600 dark:text-gray-400">✓</div>
+			<div className="shrink-0 text-sm font-bold text-green-600 dark:text-green-400">
+				✓
+			</div>
 		) : (
-			<div className="shrink-0 text-xs text-gray-600 dark:text-gray-400">✗</div>
+			<div className="shrink-0 text-sm font-bold text-red-600 dark:text-red-400">
+				✗
+			</div>
 		);
 	};
 
@@ -111,24 +115,22 @@ const NumberInputQuestion: React.FC<NumberInputQuestionProps> = ({
 				{answers.map((answer) => (
 					<div
 						key={answer.answer_id}
-						className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
+						className="flex flex-wrap items-center gap-3 rounded-xl border bg-muted/40 p-3"
 					>
 						{/* Variable Label */}
 						<div className="shrink-0">
-							<div className="w-10 h-10 rounded bg-gray-700 dark:bg-gray-600 flex items-center justify-center">
-								<span className="text-white font-semibold text-base">
+							<div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
+								<span className="text-base font-semibold text-primary">
 									{answer.answer_name || "?"}
 								</span>
 							</div>
 						</div>
 
 						{/* Equals sign */}
-						<div className="shrink-0 text-gray-400 dark:text-gray-500 font-medium">
-							=
-						</div>
+						<div className="shrink-0 font-medium text-muted-foreground">=</div>
 
 						{/* Input field */}
-						<div className="flex-1">
+						<div className="min-w-0 flex-1">
 							<input
 								id={`input-${answer.answer_id}`}
 								type="text"
@@ -139,10 +141,10 @@ const NumberInputQuestion: React.FC<NumberInputQuestionProps> = ({
 								}
 								placeholder="..."
 								disabled={showResults}
-								className={`w-full px-3 py-2 text-sm border rounded
-									focus:outline-none focus:ring-1 focus:ring-orange-500
-									bg-white dark:bg-gray-900 text-gray-900 dark:text-white
-									placeholder-gray-400
+								className={`h-11 w-full px-3 text-base border rounded-md
+									focus:outline-none focus:ring-2 focus:ring-primary
+									bg-background text-foreground
+									placeholder:text-muted-foreground
 									disabled:opacity-60 disabled:cursor-not-allowed
 									${getInputBorderClass(answer)}`}
 							/>
@@ -155,7 +157,7 @@ const NumberInputQuestion: React.FC<NumberInputQuestionProps> = ({
 						{showResults &&
 							userAnswers[answer.answer_id] &&
 							!isCorrect(answer) && (
-								<div className="shrink-0 text-xs text-gray-600 dark:text-gray-400 font-medium">
+								<div className="shrink-0 text-sm font-medium text-green-700 dark:text-green-400">
 									→ {answer.answer_name_html}
 								</div>
 							)}
@@ -165,13 +167,17 @@ const NumberInputQuestion: React.FC<NumberInputQuestionProps> = ({
 
 			{/* Show all correct answers when results are displayed */}
 
-			<div className="flex items-center justify-between gap-4">
-				<div className="text-xs text-gray-500 dark:text-gray-400">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<div className="text-xs text-muted-foreground">
 					Бүх хувьсагчдын утгыг оруулна уу. Бутархай тоо бол цэг (.) ашиглана.
 				</div>
 
 				{showResults && onRestart ? (
-					<Button onClick={handleRestart} className="text-xs font-medium">
+					<Button
+						onClick={handleRestart}
+						variant="outline"
+						className="h-10 font-medium"
+					>
 						Дахин оролдох
 					</Button>
 				) : (
@@ -179,7 +185,11 @@ const NumberInputQuestion: React.FC<NumberInputQuestionProps> = ({
 					Object.keys(userAnswers).some(
 						(key) => userAnswers[Number(key)] !== "",
 					) && (
-						<Button onClick={handleReset} className="text-xs  font-medium">
+						<Button
+							onClick={handleReset}
+							variant="outline"
+							className="h-10 font-medium"
+						>
 							Арилгах
 						</Button>
 					)

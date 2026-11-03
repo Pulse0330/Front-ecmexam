@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Download } from "lucide-react";
 import { toast } from "sonner";
 import { ExamTable } from "@/app/(dash)/exam-schedule/ExamTable";
+import { PageHeader } from "@/components/page/pageHeader";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { getExam, getExamSave } from "@/lib/dash.api";
@@ -27,42 +28,25 @@ export default function ExamMaterialsPage() {
 	});
 
 	return (
-		<div className="max-w-7xl mx-auto py-6">
-			<header className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b pb-6 text-foreground">
-				<div className="flex items-center gap-3">
-					<div>
-						<h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
-							<div className="bg-primary/10 p-2 rounded-lg text-primary">
-								<BookOpen className="text-primary" />
-							</div>
-							Шалгалтын хуваарь
-						</h1>
-						<p className="text-sm text-muted-foreground mt-1">
-							Та хуваарь татах дээр дарж шалгалтыг шинэчлэх боломжтой. | Нийт{" "}
-							{data?.RetData?.length || 0} шалгалт байна.
-						</p>
-					</div>
-				</div>
-				{userId === 303866 && (
-					<Button
-						onClick={() => examSave()}
-						disabled={isPending}
-						className="w-full md:w-auto"
-					>
-						{isPending ? (
-							<div className="flex items-center gap-2">
-								<Spinner />
-								Татаж байна...
-							</div>
-						) : (
-							<div className="flex items-center gap-2">
-								<Download size={14} />
-								Хуваарь татах
-							</div>
-						)}
-					</Button>
-				)}
-			</header>
+		<div className="mx-auto max-w-7xl pb-10">
+			<PageHeader
+				title="Шалгалтын хуваарь"
+				description={`Нийт ${data?.RetData?.length || 0} шалгалт. Шалгалт дээр дарж цагийн хуваарийг нээнэ үү.`}
+				icon={BookOpen}
+				className="mb-2 border-b"
+				actions={
+					userId === 303866 && (
+						<Button
+							onClick={() => examSave()}
+							disabled={isPending}
+							className="h-10 w-full gap-2 md:w-auto"
+						>
+							{isPending ? <Spinner /> : <Download size={16} />}
+							{isPending ? "Татаж байна..." : "Хуваарь татах"}
+						</Button>
+					)
+				}
+			/>
 
 			<ExamTable
 				data={data?.RetData || []}

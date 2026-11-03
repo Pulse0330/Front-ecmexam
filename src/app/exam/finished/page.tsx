@@ -7,14 +7,18 @@ import { CheckCircle2 } from "lucide-react";
 
 export default function IntegrationExamFinishedPage() {
 	return (
-		<div className="min-h-screen flex items-center justify-center p-4">
-			<div className="text-center p-8 rounded-xl border bg-card max-w-md shadow-sm">
-				<CheckCircle2 className="w-14 h-14 mx-auto mb-4 text-green-500" />
-				<p className="text-xl font-semibold mb-2">Шалгалтын цонхноос гарлаа</p>
-				<p className="text-sm text-muted-foreground">
+		<main className="flex min-h-screen items-center justify-center bg-background p-4">
+			<div className="w-full max-w-md rounded-2xl border bg-card p-6 text-center shadow-sm sm:p-8">
+				<span className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-green-500/10 text-green-600 dark:text-green-400">
+					<CheckCircle2 className="size-9" />
+				</span>
+				<h1 className="mb-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+					Шалгалтын цонхноос гарлаа
+				</h1>
+				<p className="text-base text-muted-foreground">
 					Та энэ цонхыг хааж, өөрийн систем рүүгээ буцна уу.
 				</p>
 			</div>
-		</div>
+		</main>
 	);
 }

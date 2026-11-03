@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
+	ArrowLeft,
 	Award,
 	CheckCircle,
 	Clock,
@@ -183,9 +184,9 @@ const FinishExamResultDialog = forwardRef<
 				return (
 					<Dialog open={open} onOpenChange={setOpen}>
 						<DialogTrigger asChild>
-							<Button className="w-full sm:w-auto px-6 py-4 font-bold text-lg shadow-lg hover:shadow-xl transition-all flex justify-center items-center gap-2">
-								<span>Сорил дуусгах</span>
-								<Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+							<Button className="w-full h-11 gap-2 font-semibold text-base bg-green-600 text-white shadow-sm hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700">
+								<Send className="w-4 h-4" />
+								Сорил дуусгах
 							</Button>
 						</DialogTrigger>
 
@@ -360,9 +361,10 @@ const FinishExamResultDialog = forwardRef<
 		return (
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogTrigger asChild>
-					<Button className="w-full sm:w-auto px-6 py-4 font-bold text-lg shadow-lg hover:shadow-xl transition-all flex justify-center items-center gap-2">
-						<span>{isDadlaga ? "Сорил дуусгах" : "Сорил дуусгах"}</span>
-						<Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+					{/* Гол үйлдэл — тод ногоон, бүтэн өргөнтэй, бүтэн нэртэй */}
+					<Button className="w-full h-11 gap-2 font-semibold text-base bg-green-600 text-white shadow-sm hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700">
+						<Send className="w-4 h-4" />
+						Сорил дуусгах
 					</Button>
 				</DialogTrigger>
 
@@ -479,18 +481,20 @@ const FinishExamResultDialog = forwardRef<
 					</div>
 
 					<DialogFooter className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+						{/* Буцах — ✕-ыг хайлгүйгээр сорил руугаа буцна */}
 						<Button
 							variant="outline"
 							onClick={() => setOpen(false)}
 							disabled={finishMutation.isPending}
-							className="flex-1 font-semibold h-12"
+							className="w-full sm:flex-1 h-11 sm:h-12 gap-2 font-semibold order-2 sm:order-1"
 						>
-							Үгүй, буцах
+							<ArrowLeft className="h-4 w-4" />
+							Сорил руу буцах
 						</Button>
 						<Button
 							onClick={handleFinish}
 							disabled={finishMutation.isPending}
-							className="flex-1 font-semibold h-12 bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all"
+							className="w-full sm:flex-1 font-semibold h-11 sm:h-12 bg-green-600 text-white hover:bg-green-700 shadow-sm order-1 sm:order-2"
 						>
 							{finishMutation.isPending ? (
 								<>

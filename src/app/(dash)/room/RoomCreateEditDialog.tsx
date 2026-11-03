@@ -273,11 +273,15 @@ export function RoomCreateEditDialog({
 
 					<DialogFooter className="mt-6">
 						<DialogClose asChild>
-							<Button type="button" variant="ghost">
+							<Button type="button" variant="outline" className="h-10">
 								Цуцлах
 							</Button>
 						</DialogClose>
-						<Button type="submit" disabled={mutation.isPending}>
+						<Button
+							type="submit"
+							disabled={mutation.isPending}
+							className="h-10"
+						>
 							{mutation.isPending ? (
 								<Loader2 className="h-4 w-4 animate-spin" />
 							) : (

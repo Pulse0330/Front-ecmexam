@@ -7,11 +7,11 @@ import {
 	ChevronRight,
 	Clock,
 	Download,
-	Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
+import { EmptyState, LoadingState } from "@/components/page/pageStates";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -53,7 +53,7 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 	}, [data]);
 
 	return (
-		<div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden flex flex-col h-full">
+		<div className="rounded-2xl border bg-card shadow-sm overflow-hidden flex flex-col h-full">
 			<div className="relative flex-1 overflow-hidden flex flex-col">
 				<ScrollArea className="h-full">
 					<Table>
@@ -81,36 +81,28 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 
 						<TableBody className="border-0">
 							{isLoading ? (
-								<TableRow>
-									<TableCell colSpan={6} className="h-60 text-center">
-										<div className="flex flex-col items-center justify-center gap-3">
-											<Loader2 className="h-7 w-7 animate-spin text-primary" />
-											<p className="text-xs font-medium text-muted-foreground">
-												Ачаалж байна...
-											</p>
-										</div>
+								<TableRow className="hover:bg-transparent">
+									<TableCell colSpan={6}>
+										<LoadingState label="Шалгалтууд ачааллаж байна..." />
 									</TableCell>
 								</TableRow>
 							) : data.length === 0 ? (
-								<TableRow>
-									<TableCell colSpan={6} className="h-60 text-center">
-										<div className="flex flex-col items-center justify-center gap-4 py-10">
-											<div className="rounded-full bg-primary/5 p-6 mb-4 ring-8 ring-primary/2">
-												<Download className="h-8 w-8 text-muted-foreground/40" />
-											</div>
-											<div className="space-y-1">
-												<h3 className="text-xl font-bold tracking-tight">
-													Жагсаалт хоосон байна
-												</h3>
+								<TableRow className="hover:bg-transparent">
+									<TableCell colSpan={6} className="p-4 whitespace-normal">
+										<EmptyState
+											icon={Download}
+											title="Шалгалтын хуваарь хоосон байна"
+											description="Шинэ хуваарь татаж жагсаалтаа шинэчилнэ үү."
+											action={
 												<Button
 													onClick={onFetchData}
 													variant="outline"
-													className="mt-6 gap-2 rounded-full px-6 shadow-sm"
+													className="h-10 gap-2"
 												>
-													<Download size={14} /> Хуваарь татах
+													<Download size={16} /> Хуваарь татах
 												</Button>
-											</div>
-										</div>
+											}
+										/>
 									</TableCell>
 								</TableRow>
 							) : (
@@ -136,13 +128,13 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 													)}
 												</div>
 											</TableCell>
-											<TableCell className="font-bold text-[13px] text-foreground py-3">
+											<TableCell className="font-bold text-sm text-foreground py-3">
 												{exam.name}
 											</TableCell>
 											<TableCell className="text-center py-3">
 												<Badge
 													variant="outline"
-													className="font-bold bg-background text-[10px] py-0 h-7 px-2 border-border/60 border"
+													className="font-bold bg-background text-xs py-0 h-7 px-2 border-border/60 border"
 												>
 													<Clock size={10} className="mr-1 text-primary" />
 													{exam.duration} мин
@@ -150,13 +142,13 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 											</TableCell>
 											<TableCell className="py-3 flex gap-2 items-center">
 												<div className="flex flex-col">
-													<span className="font-semibold text-foreground text-[12px]">
+													<span className="font-semibold text-foreground text-sm">
 														{format(
 															new Date(exam.register_start_date),
 															"yyyy.MM.dd",
 														)}
 													</span>
-													<span className="text-[10px] text-muted-foreground uppercase leading-none">
+													<span className="text-xs text-muted-foreground leading-none">
 														{format(
 															new Date(exam.register_start_date),
 															"HH:mm",
@@ -165,13 +157,13 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 												</div>
 												-
 												<div className="flex flex-col">
-													<span className="font-semibold text-foreground text-[12px]">
+													<span className="font-semibold text-foreground text-sm">
 														{format(
 															new Date(exam.register_end_date),
 															"yyyy.MM.dd",
 														)}
 													</span>
-													<span className="text-[10px] text-muted-foreground uppercase leading-none">
+													<span className="text-xs text-muted-foreground leading-none">
 														{format(new Date(exam.register_end_date), "HH:mm")}
 													</span>
 												</div>
@@ -179,13 +171,13 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 
 											<TableCell className="py-3">
 												<div className="flex flex-col">
-													<span className="font-semibold text-foreground text-[12px]">
+													<span className="font-semibold text-foreground text-sm">
 														{format(
 															new Date(exam.item_open_date),
 															"yyyy.MM.dd",
 														)}
 													</span>
-													<span className="text-[10px] text-muted-foreground uppercase leading-none">
+													<span className="text-xs text-muted-foreground leading-none">
 														{format(new Date(exam.item_open_date), "HH:mm")}
 													</span>
 												</div>
@@ -193,7 +185,7 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 											<TableCell className="text-right py-3 pr-6">
 												<Badge
 													variant="secondary"
-													className="px-2 py-0 h-5 text-[10px] font-bold bg-primary/10 text-primary border-none"
+													className="px-2 py-0 h-5 text-xs font-bold bg-primary/10 text-primary border-none"
 												>
 													{exam.exam_dates.length} хуваарь
 												</Badge>
@@ -209,7 +201,7 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 																size={14}
 																className="text-primary"
 															/>
-															<h4 className="text-[11px] font-black text-foreground uppercase tracking-wider">
+															<h4 className="text-sm font-semibold text-foreground">
 																Шалгалтын цагийн хуваарь
 															</h4>
 														</div>
@@ -217,13 +209,13 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 															<Table>
 																<TableHeader className="bg-muted/30">
 																	<TableRow className="h-8 hover:bg-transparent border-b border-border/50">
-																		<TableHead className="text-[9px] font-bold uppercase  h-8 pl-4 ">
+																		<TableHead className="text-xs font-semibold h-9 pl-4 ">
 																			Эхлэх цаг
 																		</TableHead>
-																		<TableHead className="text-[9px] font-bold uppercase  h-8 px-4">
+																		<TableHead className="text-xs font-semibold h-9 px-4">
 																			Дуусах цаг
 																		</TableHead>
-																		<TableHead className="text-[9px] font-bold uppercase  h-8 text-right">
+																		<TableHead className="text-xs font-semibold h-9 text-right">
 																			Үйлдэл
 																		</TableHead>
 																	</TableRow>
@@ -241,13 +233,13 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 																		>
 																			<TableCell className="py-1 pl-4">
 																				<div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-lg bg-background border border-border/60">
-																					<span className="text-[11px] font-medium">
+																					<span className="text-xs font-medium">
 																						{format(
 																							new Date(date.start_date),
 																							"yyyy.MM.dd",
 																						)}
 																					</span>
-																					<span className="text-[11px] font-bold text-primary border-l pl-2 border-border/60">
+																					<span className="text-xs font-bold text-primary border-l pl-2 border-border/60">
 																						{format(
 																							new Date(date.start_date),
 																							"HH:mm",
@@ -257,13 +249,13 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 																			</TableCell>
 																			<TableCell className="py-1 ">
 																				<div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-lg  bg-background border border-border/60">
-																					<span className="text-[11px] font-medium">
+																					<span className="text-xs font-medium">
 																						{format(
 																							new Date(date.end_date),
 																							"yyyy.MM.dd",
 																						)}
 																					</span>
-																					<span className="text-[11px] font-bold ml-1">
+																					<span className="text-xs font-bold ml-1">
 																						{format(
 																							new Date(date.end_date),
 																							"HH:mm",
@@ -275,7 +267,7 @@ export function ExamTable({ data, isLoading, onFetchData }: ExamTableProps) {
 																				<div className="flex justify-end ">
 																					<Button
 																						asChild
-																						size={"xs"}
+																						size={"sm"}
 																						variant={"outline"}
 																					>
 																						<Link

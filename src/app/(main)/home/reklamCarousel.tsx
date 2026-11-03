@@ -39,7 +39,10 @@ export function ReklamCarousel({
 
 	const active = count ? index % count : 0;
 	const ad = ads[active];
-	const duration = ((ad?.durationSec ?? 0) > 0 ? (ad?.durationSec ?? DEFAULT_SEC) : DEFAULT_SEC) * 1000;
+	const duration =
+		((ad?.durationSec ?? 0) > 0
+			? (ad?.durationSec ?? DEFAULT_SEC)
+			: DEFAULT_SEC) * 1000;
 	const paused = hovered || !inView || externalPaused;
 
 	const resetTimer = useCallback(() => {
@@ -59,7 +62,9 @@ export function ReklamCarousel({
 	const goTo = useCallback(
 		(target: number) => {
 			resetTimer();
-			setSlide(([i]) => (i === target ? [i, 0] : [target, target > i ? 1 : -1]));
+			setSlide(([i]) =>
+				i === target ? [i, 0] : [target, target > i ? 1 : -1],
+			);
 		},
 		[resetTimer],
 	);
@@ -74,9 +79,12 @@ export function ReklamCarousel({
 	useEffect(() => {
 		const el = rootRef.current;
 		if (!el) return;
-		const io = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), {
-			threshold: 0.5,
-		});
+		const io = new IntersectionObserver(
+			([entry]) => setInView(entry.isIntersecting),
+			{
+				threshold: 0.5,
+			},
+		);
 		io.observe(el);
 		return () => io.disconnect();
 	}, []);
@@ -117,8 +125,10 @@ export function ReklamCarousel({
 	};
 
 	const handleDragEnd = (_: unknown, info: PanInfo) => {
-		if (info.offset.x < -SWIPE_OFFSET || info.velocity.x < -SWIPE_VELOCITY) paginate(1);
-		else if (info.offset.x > SWIPE_OFFSET || info.velocity.x > SWIPE_VELOCITY) paginate(-1);
+		if (info.offset.x < -SWIPE_OFFSET || info.velocity.x < -SWIPE_VELOCITY)
+			paginate(1);
+		else if (info.offset.x > SWIPE_OFFSET || info.velocity.x > SWIPE_VELOCITY)
+			paginate(-1);
 	};
 
 	return (
@@ -157,12 +167,26 @@ export function ReklamCarousel({
 				>
 					{ad.image &&
 						(ad.mediaType === "video" ? (
-							<AdMedia src={ad.image} type="video" sizes="100vw" fit="contain" />
+							<AdMedia
+								src={ad.image}
+								type="video"
+								sizes="100vw"
+								fit="contain"
+							/>
 						) : (
 							<>
 								{/* Бүдгэрүүлсэн дэвсгэр + бүтэн зураг: зарын бичвэр тайрагдахгүй */}
-								<AdMedia src={ad.image} sizes="100vw" className="scale-110 opacity-50 blur-2xl" />
-								<AdMedia src={ad.image} sizes="100vw" fit="contain" priority={active === 0} />
+								<AdMedia
+									src={ad.image}
+									sizes="100vw"
+									className="scale-110 opacity-50 blur-2xl"
+								/>
+								<AdMedia
+									src={ad.image}
+									sizes="100vw"
+									fit="contain"
+									priority={active === 0}
+								/>
 							</>
 						))}
 
@@ -170,12 +194,16 @@ export function ReklamCarousel({
 
 					<div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4 pb-7 sm:p-5 sm:pb-8">
 						<div className="min-w-0 text-white">
-							<span className="mb-1.5 inline-block rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider backdrop-blur-sm">
+							<span className="mb-1.5 inline-block rounded bg-white/20 px-1.5 py-0.5 text-xs font-medium uppercase tracking-wider backdrop-blur-sm">
 								Сурталчилгаа
 							</span>
-							<p className="truncate text-sm font-semibold sm:text-base">{ad.title}</p>
+							<p className="truncate text-sm font-semibold sm:text-base">
+								{ad.title}
+							</p>
 							{ad.description && (
-								<p className="hidden truncate text-xs text-white/75 sm:block">{ad.description}</p>
+								<p className="hidden truncate text-xs text-white/75 sm:block">
+									{ad.description}
+								</p>
 							)}
 						</div>
 						{ad.href && (

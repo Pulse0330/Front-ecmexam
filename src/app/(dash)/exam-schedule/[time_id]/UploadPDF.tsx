@@ -89,17 +89,17 @@ export function UploadPDFDialog({
 				{!file ? (
 					<div
 						{...getRootProps()}
-						className={`border-2 border-dashed rounded-lg p-10 text-center cursor-pointer transition-colors py-6 ${isDragActive ? "border-primary bg-primary/10" : "border-slate-300 hover:border-primary"}`}
+						className={`border-2 border-dashed rounded-lg p-10 text-center cursor-pointer transition-colors py-6 ${isDragActive ? "border-primary bg-primary/10" : "border-border hover:border-primary"}`}
 					>
 						<input {...getInputProps()} />
-						<UploadCloud className="mx-auto h-10 w-10 text-slate-400 mb-2" />
-						<p className="text-sm text-slate-600">
-							PDF файлаа энд чирч оруулна уу
+						<UploadCloud className="mx-auto mb-2 h-10 w-10 text-muted-foreground" />
+						<p className="text-sm text-muted-foreground">
+							PDF файлаа энд чирч оруулах эсвэл дарж сонгоно уу
 						</p>
 					</div>
 				) : (
 					<div className="space-y-4">
-						<div className="flex items-center justify-between p-3 border rounded-lg bg-slate-50">
+						<div className="flex items-center justify-between p-3 border rounded-lg bg-muted/40">
 							<div className="flex items-center gap-2 overflow-hidden">
 								<FileText className="h-8 w-8 text-red-500 shrink-0" />
 								<span className="text-sm truncate">{file.name}</span>
@@ -109,6 +109,7 @@ export function UploadPDFDialog({
 									variant="ghost"
 									size="icon"
 									onClick={() => setFile(null)}
+									aria-label="Файл хасах"
 								>
 									<X className="h-4 w-4" />
 								</Button>
@@ -134,14 +135,18 @@ export function UploadPDFDialog({
 					>
 						Цуцлах
 					</Button>
-					<Button onClick={handleUpload} disabled={!file || isUploading}>
+					<Button
+						onClick={handleUpload}
+						disabled={!file || isUploading}
+						className="h-10"
+					>
 						{isUploading ? (
 							<>
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 								Илгээж байна...
 							</>
 						) : (
-							"Илгээх"
+							"PDF илгээх"
 						)}
 					</Button>
 				</DialogFooter>

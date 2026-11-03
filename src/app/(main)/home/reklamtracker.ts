@@ -13,7 +13,10 @@ const SEEN_KEY = "reklam-seen"; // { [reklamId]: сүүлд үзсэн цаг }
 // Хэрэглэгч аль зарыг хэзээ үзсэн — хараагүй зарыг түрүүлж харуулахад ашиглана
 export function getReklamSeenMap(): Record<string, number> {
 	try {
-		return JSON.parse(localStorage.getItem(SEEN_KEY) ?? "{}") as Record<string, number>;
+		return JSON.parse(localStorage.getItem(SEEN_KEY) ?? "{}") as Record<
+			string,
+			number
+		>;
 	} catch {
 		return {};
 	}

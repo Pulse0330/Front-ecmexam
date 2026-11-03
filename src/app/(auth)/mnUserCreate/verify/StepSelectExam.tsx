@@ -68,14 +68,14 @@ export function StepSelectExam({
 									<p className="text-sm font-semibold">
 										{examinee.last_name} {examinee.first_name}
 									</p>
-									<p className="text-[11px] text-muted-foreground font-mono">
+									<p className="text-sm text-muted-foreground font-mono">
 										Шалгуулагч №{examinee.examinee_number}
 									</p>
 								</div>
 							</div>
 							<Badge
 								variant="outline"
-								className={`text-[10px] ${
+								className={`text-xs ${
 									examinee.flag === 1
 										? "border-green-500/40 text-green-600 bg-green-500/5"
 										: "border-amber-500/40 text-amber-600 bg-amber-500/5"
@@ -148,7 +148,7 @@ export function StepSelectExam({
 			{/* ── Actions ── */}
 			<div className="space-y-2 pt-1">
 				{needsDate && (!selectedExamDateId || !selectedRoomId) && (
-					<p className="text-[11px] text-center text-amber-600 dark:text-amber-400 font-medium">
+					<p className="text-sm text-center text-amber-600 dark:text-amber-400 font-medium">
 						⚠{" "}
 						{!selectedExamDateId
 							? "Шалгалт өгөх цагаа сонгоно уу"

@@ -1,5 +1,6 @@
 "use client";
 
+import { CheckCircle2, Lightbulb } from "lucide-react";
 import { memo, useCallback } from "react";
 import MathContent from "@/app/exam/component/examUtils/MathContent";
 import { SourceBlock } from "@/app/exam/component/examUtils/sourceCard";
@@ -14,40 +15,14 @@ import SingleSelectQuestion from "./singleselect";
 
 type QuestionType = 1 | 2 | 3 | 4 | 5 | 6;
 
-const QUESTION_TYPE_CONFIG: Record<
-	QuestionType,
-	{ name: string; color: string }
-> = {
-	1: {
-		name: "Нэг сонголттой",
-		color:
-			"bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800",
-	},
-	2: {
-		name: "Олон сонголттой",
-		color:
-			"bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800",
-	},
-	3: {
-		name: "Тоо оруулах",
-		color:
-			"bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800",
-	},
-	4: {
-		name: "Нөхөх",
-		color:
-			"bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800",
-	},
-	5: {
-		name: "Дараалал",
-		color:
-			"bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800",
-	},
-	6: {
-		name: "Хослуулах",
-		color:
-			"bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 border-pink-200 dark:border-pink-800",
-	},
+// Асуултын төрөл — хэрэглэгчид хэрхэн хариулахыг товч зааж өгнө
+const QUESTION_TYPE_CONFIG: Record<QuestionType, { name: string }> = {
+	1: { name: "Нэг сонголттой" },
+	2: { name: "Олон сонголттой" },
+	3: { name: "Тоо оруулах" },
+	4: { name: "Нөхөх" },
+	5: { name: "Дараалал" },
+	6: { name: "Хослуулах" },
 };
 
 export interface ConvertedAnswer {
@@ -91,6 +66,8 @@ interface QuestionData {
 interface QuestionItemProps {
 	question: QuestionData;
 	index: number;
+	/** Нийт асуултын тоо — "Асуулт N / M" харуулахад */
+	totalCount?: number;
 	questionAnswers: ConvertedAnswer[];
 	selected: SelectedAnswer | undefined;
 	bodolt: BodoltAnswer | undefined;
@@ -110,6 +87,7 @@ interface QuestionItemProps {
 const QuestionItem = memo(function QuestionItem({
 	question,
 	index,
+	totalCount,
 	questionAnswers,
 	selected,
 	bodolt,
@@ -126,9 +104,6 @@ const QuestionItem = memo(function QuestionItem({
 
 	const typeConfig = QUESTION_TYPE_CONFIG[questionType];
 	const typeName = typeConfig?.name || `Тодорхойгүй (${questionType})`;
-	const typeColor =
-		typeConfig?.color ||
-		"bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800";
 
 	const showAnswerFeedback =
 		((questionType === 1 || questionType === 2 || questionType === 4) &&
@@ -173,45 +148,61 @@ const QuestionItem = memo(function QuestionItem({
 
 	const Bodolt =
 		showAnswerFeedback && bodolt ? (
-			<div className="mt-4">
-				<div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-lg">
-					<p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-						📝 Бодолт:
-					</p>
-					<div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 p-3 rounded-lg">
-						<MathContent html={bodolt.descr} />
-					</div>
+			<div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+				<p className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary">
+					<Lightbulb className="size-4" aria-hidden="true" />
+					Бодолт
+				</p>
+				<div className="rounded-lg bg-card p-3 text-sm leading-7 text-foreground sm:text-base">
+					<MathContent html={bodolt.descr} />
 				</div>
 			</div>
 		) : null;
 
 	const SubmittedBodolt =
 		isSubmitted && bodolt ? (
-			<div className="mt-4">
-				<div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-lg">
-					<p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-						📝 Бодолт:
-					</p>
-					<div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 p-3 rounded-lg">
-						<MathContent html={bodolt.descr} />
-					</div>
+			<div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+				<p className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary">
+					<Lightbulb className="size-4" aria-hidden="true" />
+					Бодолт
+				</p>
+				<div className="rounded-lg bg-card p-3 text-sm leading-7 text-foreground sm:text-base">
+					<MathContent html={bodolt.descr} />
 				</div>
 			</div>
 		) : null;
 
 	return (
-		<div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 border-2 border-gray-100 dark:border-gray-700">
-			{/* Question Header */}
-			<div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
-				<div className="w-8 h-8 sm:w-10 sm:h-10 bg-linear-to-br from-blue-600 to-purple-600 text-white rounded-full flex items-center justify-center shrink-0 font-bold text-sm sm:text-lg shadow-lg">
+		<article className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+			{/* Толгой: дугаар, оноо, төрөл */}
+			<div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b bg-muted/40 px-4 py-3 sm:px-6">
+				<span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
 					{index + 1}
+				</span>
+				<span className="text-sm text-muted-foreground">
+					Асуулт {index + 1}
+					{totalCount ? ` / ${totalCount}` : ""}
+				</span>
+				<div className="ml-auto flex flex-wrap items-center gap-2">
+					{question.que_onoo > 0 && (
+						<span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+							{question.que_onoo} оноо
+						</span>
+					)}
+					<span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+						{typeName}
+					</span>
 				</div>
-				<div className="flex-1 min-w-0">
-					<div className="text-base w-full min-w-0">
+			</div>
+
+			<div className="space-y-6 px-4 py-5 sm:px-6 sm:py-6">
+				{/* Асуултын текст */}
+				<div className="space-y-4">
+					<div className="w-full min-w-0 text-base leading-7 text-foreground sm:text-[17px] sm:leading-8">
 						<MathContent html={question.question_name} />
 					</div>
 					{question.question_img && (
-						<div className="w-full max-w-3xl mx-auto h-40 sm:h-50">
+						<div className="mx-auto h-40 w-full max-w-3xl sm:h-50">
 							<QuestionImage src={question.question_img} alt="Асуултын зураг" />
 						</div>
 					)}
@@ -221,158 +212,151 @@ const QuestionItem = memo(function QuestionItem({
 						sourceImg={question.source_img}
 						srcAudio={question.src_audio}
 					/>
-					<div className="flex flex-wrap items-center gap-2 sm:gap-3">
-						<span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
-							Оноо: {question.que_onoo}
-						</span>
-						<span
-							className={`text-xs sm:text-sm px-3 py-1 rounded-full border ${typeColor}`}
-						>
-							{typeName}
-						</span>
-					</div>
 				</div>
-			</div>
 
-			{/* Question Content */}
-			<div className="col-span-4 space-y-5">
-				{/* Type 1: Single Select */}
-				{questionType === 1 && (
-					<>
-						<SingleSelectQuestion
-							questionId={question.question_id}
-							questionText={question.question_name}
-							answers={questionAnswers}
-							mode="exam"
-							selectedAnswer={selected?.answerIds[0] || null}
-							onAnswerChange={onSingleSelect}
-						/>
-						{showAnswerFeedback && selected && Bodolt}
-					</>
-				)}
+				{/* Question Content */}
+				<div className="space-y-5">
+					{/* Type 1: Single Select */}
+					{questionType === 1 && (
+						<>
+							<SingleSelectQuestion
+								questionId={question.question_id}
+								questionText={question.question_name}
+								answers={questionAnswers}
+								mode="exam"
+								selectedAnswer={selected?.answerIds[0] || null}
+								onAnswerChange={onSingleSelect}
+							/>
+							{showAnswerFeedback && selected && Bodolt}
+						</>
+					)}
 
-				{/* Type 2: Multi Select */}
-				{questionType === 2 && (
-					<>
-						<MultiSelectQuestion
-							questionId={question.question_id}
-							questionText={question.question_name}
-							answers={questionAnswers}
-							mode="exam"
-							selectedAnswers={selected?.answerIds || []}
-							onAnswerChange={onMultiSelect}
-						/>
-						{showAnswerFeedback && selected && Bodolt}
-					</>
-				)}
+					{/* Type 2: Multi Select */}
+					{questionType === 2 && (
+						<>
+							<MultiSelectQuestion
+								questionId={question.question_id}
+								questionText={question.question_name}
+								answers={questionAnswers}
+								mode="exam"
+								selectedAnswers={selected?.answerIds || []}
+								onAnswerChange={onMultiSelect}
+							/>
+							{showAnswerFeedback && selected && Bodolt}
+						</>
+					)}
 
-				{/* Type 3: Number Input */}
-				{questionType === 3 && (
-					<>
-						<NumberInputQuestion
-							questionId={question.question_id}
-							answers={questionAnswers}
-							userAnswers={
-								(selected?.matches || {}) as Record<number, number | string>
-							}
-							onAnswerChange={handleNumberInputChange}
-							showResults={isSubmitted}
-							onRestart={handleRestartClick}
-						/>
-						{!isSubmitted &&
-							selected?.matches &&
-							Object.keys(selected.matches).length > 0 && (
-								<div className="mt-4">
+					{/* Type 3: Number Input */}
+					{questionType === 3 && (
+						<>
+							<NumberInputQuestion
+								questionId={question.question_id}
+								answers={questionAnswers}
+								userAnswers={
+									(selected?.matches || {}) as Record<number, number | string>
+								}
+								onAnswerChange={handleNumberInputChange}
+								showResults={isSubmitted}
+								onRestart={handleRestartClick}
+							/>
+							{!isSubmitted &&
+								selected?.matches &&
+								Object.keys(selected.matches).length > 0 && (
+									<div>
+										<Button
+											onClick={handleSubmitClick}
+											className="h-11 w-full gap-2 px-5 font-semibold sm:w-auto"
+										>
+											<CheckCircle2 className="size-4" aria-hidden="true" />
+											Хариултаа шалгах
+										</Button>
+									</div>
+								)}
+							{SubmittedBodolt}
+						</>
+					)}
+
+					{/* Type 4: Fill in Blank */}
+					{questionType === 4 && (
+						<>
+							<FillInTheBlankQuestion
+								questionId={question.question_id}
+								questionText={question.question_name}
+								value={selected?.textAnswer || ""}
+								mode="exam"
+								onAnswerChange={onFillInBlank}
+							/>
+							{showAnswerFeedback && selected && Bodolt}
+						</>
+					)}
+
+					{/* Type 5: Ordering */}
+					{questionType === 5 && (
+						<>
+							<DragAndDropWrapper
+								questionId={question.question_id}
+								answers={questionAnswers.map((a) => ({
+									answer_id: a.answer_id,
+									answer_name_html: a.answer_name_html || a.answer_name,
+								}))}
+								mode={isSubmitted ? "review" : "exam"}
+								userAnswers={selected?.order || []}
+								correctAnswers={correctAnswers}
+								onOrderChange={handleOrderChange}
+							/>
+							{!isSubmitted && selected?.order && selected.order.length > 0 && (
+								<div>
 									<Button
 										onClick={handleSubmitClick}
-										className="w-full sm:w-auto font-semibold shadow-lg"
+										className="h-11 w-full gap-2 px-5 font-semibold sm:w-auto"
 									>
+										<CheckCircle2 className="size-4" aria-hidden="true" />
 										Хариултаа шалгах
 									</Button>
 								</div>
 							)}
-						{SubmittedBodolt}
-					</>
-				)}
+							{SubmittedBodolt}
+						</>
+					)}
 
-				{/* Type 4: Fill in Blank */}
-				{questionType === 4 && (
-					<>
-						<FillInTheBlankQuestion
-							questionId={question.question_id}
-							questionText={question.question_name}
-							value={selected?.textAnswer || ""}
-							mode="exam"
-							onAnswerChange={onFillInBlank}
-						/>
-						{showAnswerFeedback && selected && Bodolt}
-					</>
-				)}
-
-				{/* Type 5: Ordering */}
-				{questionType === 5 && (
-					<>
-						<DragAndDropWrapper
-							questionId={question.question_id}
-							answers={questionAnswers.map((a) => ({
-								answer_id: a.answer_id,
-								answer_name_html: a.answer_name_html || a.answer_name,
-							}))}
-							mode={isSubmitted ? "review" : "exam"}
-							userAnswers={selected?.order || []}
-							correctAnswers={correctAnswers}
-							onOrderChange={handleOrderChange}
-						/>
-						{!isSubmitted && selected?.order && selected.order.length > 0 && (
-							<div className="mt-4">
-								<Button
-									onClick={handleSubmitClick}
-									className="w-full sm:w-auto bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-								>
-									Хариултаа илгээх
-								</Button>
-							</div>
-						)}
-						{SubmittedBodolt}
-					</>
-				)}
-
-				{/* Type 6: Matching */}
-				{questionType === 6 && (
-					<>
-						<MatchingByLine
-							answers={questionAnswers.map((a) => ({
-								refid: a.refid,
-								answer_id: a.answer_id,
-								question_id: a.question_id,
-								answer_name_html: a.answer_name_html,
-								answer_descr: a.answer_descr,
-								answer_img: a.answer_img || null,
-								ref_child_id: a.ref_child_id || null,
-								is_true: a.is_true,
-							}))}
-							onMatchChange={handleMatchChange}
-							userAnswers={
-								(selected?.matches || {}) as Record<number, number | number[]>
-							}
-						/>
-						{!isSubmitted &&
-							selected?.matches &&
-							Object.keys(selected.matches).length > 0 && (
-								<div className="mt-4">
-									<Button
-										onClick={handleSubmitClick}
-										className="w-full sm:w-auto bg-linear-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700"
-									>
-										Хариултаа илгээх
-									</Button>
-								</div>
-							)}
-						{SubmittedBodolt}
-					</>
-				)}
+					{/* Type 6: Matching */}
+					{questionType === 6 && (
+						<>
+							<MatchingByLine
+								answers={questionAnswers.map((a) => ({
+									refid: a.refid,
+									answer_id: a.answer_id,
+									question_id: a.question_id,
+									answer_name_html: a.answer_name_html,
+									answer_descr: a.answer_descr,
+									answer_img: a.answer_img || null,
+									ref_child_id: a.ref_child_id || null,
+									is_true: a.is_true,
+								}))}
+								onMatchChange={handleMatchChange}
+								userAnswers={
+									(selected?.matches || {}) as Record<number, number | number[]>
+								}
+							/>
+							{!isSubmitted &&
+								selected?.matches &&
+								Object.keys(selected.matches).length > 0 && (
+									<div>
+										<Button
+											onClick={handleSubmitClick}
+											className="h-11 w-full gap-2 px-5 font-semibold sm:w-auto"
+										>
+											<CheckCircle2 className="size-4" aria-hidden="true" />
+											Хариултаа шалгах
+										</Button>
+									</div>
+								)}
+							{SubmittedBodolt}
+						</>
+					)}
+				</div>
 			</div>
-		</div>
+		</article>
 	);
 });
 

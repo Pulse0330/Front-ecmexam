@@ -1,10 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle } from "lucide-react";
+import { ClipboardList, CreditCard, Info } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useMemo, useState } from "react";
 import LessonFilter from "@/components/LessonFilter";
+import { PageHeader } from "@/components/page/pageHeader";
+import { EmptyState } from "@/components/page/pageStates";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -140,13 +142,12 @@ export default function MnSorilLits() {
 
 	return (
 		<div className="w-full">
-			<div className=" mx-auto  flex flex-col px-3 sm:px-8 lg:px-8 py-4 sm:py-8 lg:py-8">
-				{/* Header */}
-				<header className="mb-4 sm:mb-6">
-					<h3 className="text-lg sm:text-2xl font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent ">
-						Сорилын жагсаалт
-					</h3>
-				</header>
+			<div className="mx-auto flex w-full max-w-7xl flex-col px-4 pb-6 sm:px-6 lg:px-8">
+				<PageHeader
+					title="Сорилын жагсаалт"
+					description="Өөрийгөө шалгах сорилууд. Төлбөртэй сорилыг төлбөр төлсний дараа өгөх боломжтой."
+					icon={ClipboardList}
+				/>
 
 				{selectedLessonId !== null && (
 					<LessonFilter
@@ -158,8 +159,8 @@ export default function MnSorilLits() {
 
 				{/* Results Info */}
 				{(searchTerm || selectedLessonId !== 0) && (
-					<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
-						<AlertCircle size={16} />
+					<div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+						<Info className="size-4 shrink-0" aria-hidden />
 						<span>
 							<strong>{filteredData.length}</strong> сорил олдлоо
 							{searchTerm && (
@@ -199,22 +200,17 @@ export default function MnSorilLits() {
 
 				{/* Empty State */}
 				{!isPending && filteredData.length === 0 && (
-					<div className="text-center py-12 space-y-3">
-						<AlertCircle
-							className="mx-auto text-gray-400 dark:text-gray-600"
-							size={48}
-						/>
-						<p className="text-lg font-medium text-gray-700 dark:text-gray-300">
-							Сорил олдсонгүй
-						</p>
-						<p className="text-sm text-gray-500 dark:text-gray-400">
-							{searchTerm
+					<EmptyState
+						icon={ClipboardList}
+						title="Сорил олдсонгүй"
+						description={
+							searchTerm
 								? `"${searchTerm}" хайлтад тохирох сорил олдсонгүй.`
 								: selectedLessonId === 0
 									? "Танд одоогоор сорил байхгүй байна."
-									: `${lessons.find((l) => l.lesson_id === selectedLessonId)?.lesson_name || "Энэ хичээл"}-д сорил байхгүй байна.`}
-						</p>
-					</div>
+									: `${lessons.find((l) => l.lesson_id === selectedLessonId)?.lesson_name || "Энэ хичээл"}-д сорил байхгүй байна.`
+						}
+					/>
 				)}
 			</div>
 
@@ -234,21 +230,22 @@ export default function MnSorilLits() {
 							</div>
 						</DialogDescription>
 					</DialogHeader>
-					<DialogFooter className="flex-row gap-2 sm:gap-0">
+					<DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
 						<Button
 							type="button"
 							variant="outline"
 							onClick={handlePaymentCancel}
-							className="flex-1 sm:flex-none"
+							className="h-10"
 						>
-							Цуцлах
+							Болих
 						</Button>
 						<Button
 							type="button"
 							onClick={handlePaymentConfirm}
-							className="flex-1 sm:flex-none"
+							className="h-10"
 						>
-							Төлбөр төлөх
+							<CreditCard className="size-4" aria-hidden />
+							Төлбөрийн хуудас руу очих
 						</Button>
 					</DialogFooter>
 				</DialogContent>
@@ -259,27 +256,13 @@ export default function MnSorilLits() {
 
 // Skeleton Card Component
 const SkeletonCard = () => (
-	<div className="h-full w-full flex flex-col overflow-hidden rounded-lg sm:rounded-xl border border-border/40 bg-card/50 backdrop-blur-md animate-pulse">
-		<div className="w-full aspect-5/2 bg-slate-200 dark:bg-slate-800 relative">
-			<div className="absolute top-2 left-2 flex flex-col gap-2">
-				<div className="h-5 w-16 bg-slate-300 dark:bg-slate-700 rounded-full" />
-			</div>
-			<div className="absolute bottom-2 left-2">
-				<div className="h-4 w-20 bg-slate-300 dark:bg-slate-700 rounded" />
-			</div>
-		</div>
-		<div className="flex flex-col grow p-2 gap-2">
-			<div className="space-y-2">
-				<div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded" />
-				<div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-800 rounded" />
-			</div>
-			<div className="mt-auto pt-2 border-t border-border/50 flex items-center justify-between">
-				<div className="flex gap-2">
-					<div className="h-3 w-10 bg-slate-200 dark:bg-slate-800 rounded" />
-					<div className="h-3 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
-				</div>
-				<div className="h-6 w-6 rounded-full bg-slate-200 dark:bg-slate-800" />
-			</div>
+	<div className="flex h-full w-full animate-pulse flex-col overflow-hidden rounded-2xl border bg-card shadow-sm">
+		<div className="aspect-[5/2] w-full bg-muted" />
+		<div className="space-y-3 p-4">
+			<div className="h-5 w-20 rounded-full bg-muted" />
+			<div className="h-4 w-full rounded bg-muted" />
+			<div className="h-4 w-2/3 rounded bg-muted" />
+			<div className="h-10 w-full rounded-md bg-muted" />
 		</div>
 	</div>
 );

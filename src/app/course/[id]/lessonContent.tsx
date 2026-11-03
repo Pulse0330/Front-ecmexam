@@ -1,9 +1,7 @@
 "use client";
 
 import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ContentView } from "@/types/course/contentView";
 import { SafeHtmlContent } from "./safeHtmlContent";
 
@@ -32,72 +30,78 @@ export function LessonContent({
 	const isFirstLesson = lessonIndex === 0;
 
 	return (
-		<Card>
-			<CardHeader>
-				<div className="flex items-start justify-between gap-4">
-					<div className="space-y-2">
-						<div className="flex items-center gap-2">
-							<Badge variant="secondary">{lesson.elesson_type}</Badge>
-							{isCompleted && (
-								<Badge className="bg-green-600">
-									<CheckCircle2 className="h-3 w-3 mr-1" />
-									Дууссан
-								</Badge>
-							)}
-						</div>
-						<CardTitle className="text-xl">
-							Хичээл {lessonIndex + 1}: {lesson.content_name}
-						</CardTitle>
-					</div>
+		<article className="rounded-2xl border bg-card shadow-sm">
+			<header className="space-y-2 border-b p-4 sm:p-6">
+				<div className="flex flex-wrap items-center gap-2">
+					<span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+						Хичээл {lessonIndex + 1} / {totalLessons}
+					</span>
+					{lesson.elesson_type && (
+						<span className="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
+							{lesson.elesson_type}
+						</span>
+					)}
+					{isCompleted && (
+						<span className="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:text-green-400">
+							<CheckCircle2 className="size-3" />
+							Үзсэн
+						</span>
+					)}
 				</div>
-			</CardHeader>
-			<CardContent className="space-y-4">
+				<h2 className="text-lg font-bold leading-snug text-foreground sm:text-xl">
+					{lesson.content_name}
+				</h2>
+			</header>
+			<div className="space-y-4 p-4 sm:p-6">
 				<SafeHtmlContent
 					html={lesson.url || ""}
 					contentType={lesson.l_content_type || 0}
 				/>
 
-				{/* Navigation Buttons */}
-				<div className="flex items-center justify-between pt-4 border-t">
+				{/* Navigation Buttons — нэг үндсэн үйлдэл */}
+				<div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
 					<Button
 						variant="outline"
 						onClick={onPrevious}
 						disabled={isFirstLesson}
+						className="h-11"
 					>
-						<ArrowLeft className="mr-2 h-4 w-4" />
+						<ArrowLeft className="size-4" />
 						Өмнөх
 					</Button>
 
-					<div className="flex gap-2">
-						{!isCompleted && (
-							<Button
-								onClick={onMarkComplete}
-								className="bg-green-600 hover:bg-green-700"
-							>
-								<CheckCircle2 className="mr-2 h-4 w-4" />
-								Дууссан
-							</Button>
-						)}
-
+					<div className="flex flex-col-reverse gap-2 sm:flex-row">
 						{!isLastLesson && (
-							<Button onClick={onNext}>
+							<Button
+								onClick={onNext}
+								variant={isCompleted ? "default" : "outline"}
+								className="h-11"
+							>
 								Дараах
-								<ArrowRight className="ml-2 h-4 w-4" />
+								<ArrowRight className="size-4" />
 							</Button>
 						)}
 
 						{isLastLesson && (
 							<Button
 								onClick={onFinish}
-								className="bg-blue-600 hover:bg-blue-700"
+								variant={isCompleted ? "default" : "outline"}
+								className="h-11"
 							>
+								<BookOpen className="size-4" />
 								Бусад хичээл
-								<BookOpen className="ml-2 h-4 w-4" />
+							</Button>
+						)}
+
+						{!isCompleted && (
+							<Button onClick={onMarkComplete} className="h-11">
+								<CheckCircle2 className="size-4" />
+								Үзэж дууслаа
 							</Button>
 						)}
 					</div>
 				</div>
-			</CardContent>
-		</Card>
+			</div>
+		</article>
 	);
 }

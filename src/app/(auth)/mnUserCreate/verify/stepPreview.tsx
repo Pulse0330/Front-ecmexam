@@ -65,10 +65,10 @@ export function StepPreview({
 						<CardTitle className="text-base font-bold">
 							{d.lastname} {d.firstname}
 						</CardTitle>
-						<p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+						<p className="text-sm text-muted-foreground font-mono mt-0.5">
 							{d.reg_number}
 						</p>
-						<Badge variant="secondary" className="text-[10px] mt-1 gap-1">
+						<Badge variant="secondary" className="mt-1 gap-1 text-xs">
 							<span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
 							{d.gender_code === "M" ? "Эрэгтэй" : "Эмэгтэй"}
 						</Badge>
@@ -83,10 +83,10 @@ export function StepPreview({
 							<CreditCard size={14} className="text-primary" />
 						</div>
 						<div>
-							<p className="text-xs font-bold text-foreground">
+							<p className="text-sm font-semibold text-foreground">
 								Шалгалтын хураамж
 							</p>
-							<p className="text-[10px] text-muted-foreground">
+							<p className="text-xs text-muted-foreground">
 								QPay-ээр шууд төлбөр төлөх
 							</p>
 						</div>
@@ -94,13 +94,13 @@ export function StepPreview({
 							20,000₮
 						</span>
 					</div>
-					<div className="bg-white/40 dark:bg-gray-900/40 px-4 py-3 space-y-3">
+					<div className="bg-card px-4 py-3 space-y-3">
 						{isPaid ? (
 							<div className="space-y-3">
 								<Button
 									onClick={onSendAndProceed}
 									disabled={isLoading}
-									className="w-full h-11 font-bold shadow-md gap-2 text-sm"
+									className="h-11 w-full gap-2 text-base font-semibold"
 								>
 									{isLoading ? (
 										<>
@@ -122,13 +122,13 @@ export function StepPreview({
 											size={13}
 											className="text-destructive shrink-0"
 										/>
-										<p className="text-[11px] text-destructive">{qpayError}</p>
+										<p className="text-sm text-destructive">{qpayError}</p>
 									</div>
 								)}
 								<Button
 									onClick={onQPay}
 									disabled={isLoading}
-									className="w-full h-11 font-bold shadow-md gap-2 text-sm"
+									className="h-11 w-full gap-2 text-base font-semibold"
 								>
 									{isLoading ? (
 										<>
@@ -160,7 +160,7 @@ export function StepPreview({
 
 				{!isPaid && (
 					<div className="space-y-1.5">
-						<p className="text-[11px] text-center font-medium">
+						<p className="text-sm text-center text-muted-foreground">
 							Төлбөр төлөгдсөнөөр таны бүртгэл баталгаажна.
 						</p>
 					</div>
