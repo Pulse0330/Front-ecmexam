@@ -5,7 +5,6 @@ import crypto from "crypto";
 import {
 	AlertTriangle,
 	ArrowRight,
-	ChevronLeft,
 	Globe,
 	ImagePlus,
 	Lock,
@@ -38,6 +37,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { uploadImage } from "@/utils/upload";
+import { BackButton } from "../verify/backButton";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface StudentExamData {
@@ -182,8 +182,7 @@ function calcAge(dob: string | null | undefined): string {
 	return String(a);
 }
 
-const CARD_CLS =
-	"bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50";
+const CARD_CLS = "rounded-2xl border bg-card shadow-sm";
 
 const PW_DIGIT_KEYS = ["pw0", "pw1", "pw2", "pw3", "pw4", "pw5"] as const;
 const CPW_DIGIT_KEYS = [
@@ -251,12 +250,12 @@ function Field({
 }) {
 	return (
 		<div className="space-y-1.5">
-			<Label className="text-[11px] text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+			<Label className="text-sm font-medium text-foreground flex items-center gap-1">
 				{label}
 				{required && <span className="text-destructive font-bold">*</span>}
 			</Label>
 			{children}
-			{hint && <p className="text-[10px] text-muted-foreground/60">{hint}</p>}
+			{hint && <p className="text-xs text-muted-foreground">{hint}</p>}
 		</div>
 	);
 }
@@ -270,7 +269,7 @@ function ReadOnlyInput({ value, icon }: { value: string; icon?: ReactNode }) {
 				</span>
 			)}
 			<div
-				className={`flex h-8 w-full rounded-md border border-input bg-muted/30 text-xs text-muted-foreground items-center cursor-not-allowed select-none ${icon ? "pl-8 pr-3" : "px-3"}`}
+				className={`flex min-h-10 w-full rounded-md border border-input bg-muted/40 py-2 text-sm text-muted-foreground items-center cursor-not-allowed select-none ${icon ? "pl-8 pr-3" : "px-3"}`}
 			>
 				{value || "—"}
 			</div>
@@ -304,7 +303,7 @@ function TextInput({
 				onChange={(e) => onChange(e.target.value)}
 				placeholder={placeholder}
 				disabled={disabled}
-				className={`flex h-8 w-full rounded-md border border-input bg-background py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring disabled:bg-muted/30 disabled:cursor-not-allowed disabled:text-muted-foreground ${icon ? "pl-8 pr-3" : "px-3"}`}
+				className={`flex h-10 w-full rounded-md border border-input bg-background py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:bg-muted/30 disabled:cursor-not-allowed disabled:text-muted-foreground ${icon ? "pl-8 pr-3" : "px-3"}`}
 			/>
 		</div>
 	);
@@ -325,7 +324,7 @@ function GenderSelect({
 					type="button"
 					onClick={() => onChange(g)}
 					className={[
-						"flex-1 h-8 rounded-md border text-xs font-medium transition-colors",
+						"flex-1 h-10 rounded-md border text-sm font-medium transition-colors",
 						value === g
 							? "border-primary bg-primary text-primary-foreground"
 							: "border-input bg-background text-foreground hover:bg-muted/40",
@@ -390,12 +389,12 @@ function NoticeModal({
 							key={item.id}
 							className="flex items-start gap-3 px-3.5 py-2.5 rounded-xl border bg-muted/30 hover:bg-muted/50 transition-colors"
 						>
-							<span className="w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+							<span className="w-5 h-5 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
 								{idx + 1}
 							</span>
 							<div className="flex items-start gap-1.5 flex-1 min-w-0">
 								{item.icon}
-								<p className="text-[11px] leading-relaxed text-muted-foreground">
+								<p className="text-sm leading-relaxed text-muted-foreground">
 									{item.text}
 								</p>
 							</div>
@@ -779,7 +778,7 @@ export default function EditFormMNPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-500">
+		<div className="min-h-screen bg-background transition-colors duration-500">
 			<NoticeModal open={noticeOpen} onClose={() => setNoticeOpen(false)} />
 			<ConfirmDialog
 				open={confirmOpen}
@@ -796,40 +795,35 @@ export default function EditFormMNPage() {
 				onCancel={handleCropCancel}
 			/>
 
-			{/* ACTION BAR */}
-			<div className="sticky top-1 z-40 mx-1 border rounded-2xl bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border-gray-200/50 dark:border-gray-700/50 shadow-sm">
-				<div className="container mx-auto px-4 lg:px-8 h-12 flex items-center justify-between">
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => router.back()}
-						className="gap-1.5 text-muted-foreground h-8 text-xs"
-					>
-						<ChevronLeft size={14} /> Буцах
-					</Button>
-					<span className="text-xs font-semibold">Мэдээлэл засварлах</span>
+			{/* ACTION BAR: ← Буцах | гарчиг | Санамж + Үргэлжлүүлэх */}
+			<div className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
+				<div className="container mx-auto flex items-center justify-between gap-2 px-4 py-3 lg:px-8">
+					<div className="flex min-w-0 items-center gap-3">
+						<BackButton onClick={() => router.back()} label="Буцах" />
+						<span className="hidden truncate text-base font-semibold text-foreground sm:inline">
+							Мэдээлэл засварлах
+						</span>
+					</div>
 					<div className="flex items-center gap-2">
 						<Button
 							variant="outline"
-							size="sm"
 							onClick={() => setNoticeOpen(true)}
-							className="gap-1.5 h-8 text-xs border-amber-500/40 text-amber-600 hover:bg-amber-500/10 hover:text-amber-600"
+							className="h-10 gap-1.5 border-amber-500/40 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400"
 						>
-							<AlertTriangle size={13} /> Санамж
+							<AlertTriangle size={16} /> Санамж
 						</Button>
 						<Button
-							size="sm"
 							onClick={() => setConfirmOpen(true)}
 							disabled={isSaving || isUploadingImage}
-							className="gap-1.5 h-8 text-xs"
+							className="h-10 gap-1.5 font-semibold"
 						>
 							{isSaving ? (
 								<>
-									<Spinner className="w-3.5 h-3.5" /> Хадгалж байна...
+									<Spinner className="w-4 h-4" /> Хадгалж байна...
 								</>
 							) : (
 								<>
-									Үргэлжлүүлэх <ArrowRight size={13} />
+									Үргэлжлүүлэх <ArrowRight size={16} />
 								</>
 							)}
 						</Button>
@@ -844,7 +838,7 @@ export default function EditFormMNPage() {
 						<div className="lg:col-span-5 space-y-3">
 							<Card className={CARD_CLS}>
 								<CardHeader className="pb-0 pt-3 px-4">
-									<CardTitle className="text-[11px] text-muted-foreground">
+									<CardTitle className="text-base font-semibold text-foreground">
 										Хувийн мэдээлэл
 									</CardTitle>
 								</CardHeader>
@@ -894,7 +888,7 @@ export default function EditFormMNPage() {
 												{isUploadingImage ? (
 													<div className="flex flex-col items-center gap-1">
 														<Spinner className="w-6 h-6 text-primary" />
-														<span className="text-[9px] text-muted-foreground font-semibold text-center px-1">
+														<span className="text-xs text-muted-foreground font-semibold text-center px-1">
 															Upload...
 														</span>
 													</div>
@@ -908,13 +902,13 @@ export default function EditFormMNPage() {
 														/>
 														<div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-1 z-10">
 															<Upload size={16} className="text-white" />
-															<span className="text-[9px] text-white font-bold uppercase tracking-wider">
+															<span className="text-xs text-white font-bold uppercase tracking-wider">
 																Солих
 															</span>
 														</div>
 														{uploadedImgUrl && (
 															<div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center z-20 shadow">
-																<span className="text-white text-[9px] font-bold">
+																<span className="text-white text-xs font-bold">
 																	✓
 																</span>
 															</div>
@@ -928,14 +922,14 @@ export default function EditFormMNPage() {
 																className="text-destructive"
 															/>
 														</div>
-														<span className="text-[9px] text-destructive font-semibold text-center px-1 leading-tight">
+														<span className="text-xs text-destructive font-semibold text-center px-1 leading-tight">
 															Зураг оруулах
 														</span>
 													</>
 												)}
 											</button>
 											{!profileImg && !isUploadingImage && (
-												<span className="text-[9px] text-destructive font-semibold">
+												<span className="text-xs text-destructive font-semibold">
 													* Заавал
 												</span>
 											)}
@@ -945,7 +939,7 @@ export default function EditFormMNPage() {
 													variant="ghost"
 													size="sm"
 													onClick={clearImage}
-													className="h-auto py-0.5 px-2 text-[9px] text-muted-foreground hover:text-destructive gap-1"
+													className="h-auto py-0.5 px-2 text-xs text-muted-foreground hover:text-destructive gap-1"
 												>
 													<X size={9} /> Устгах
 												</Button>
@@ -1075,7 +1069,7 @@ export default function EditFormMNPage() {
 							{/* Нууц үг */}
 							<Card className={CARD_CLS}>
 								<CardHeader className="pb-0 pt-3 px-4">
-									<CardTitle className="text-[11px] text-muted-foreground">
+									<CardTitle className="text-base font-semibold text-foreground">
 										Нэвтрэх нууц үг
 									</CardTitle>
 								</CardHeader>
@@ -1086,7 +1080,7 @@ export default function EditFormMNPage() {
 											size={12}
 											className="text-amber-500 shrink-0 mt-0.5"
 										/>
-										<p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+										<p className="text-sm text-amber-700 dark:text-amber-400 leading-relaxed">
 											Та өмнөх нууц үгээ ашиглаж байгаа бол одоо өөрчлөхгүй байж
 											болно. Таны хуучин нууц үгээр үргэлжилнэ.
 										</p>
@@ -1094,7 +1088,7 @@ export default function EditFormMNPage() {
 
 									{/* Нууц үг */}
 									<div className="space-y-2">
-										<p className="text-[11px] text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+										<p className="text-sm text-muted-foreground flex items-center gap-1">
 											<Lock size={11} /> Шинэ нууц үг{" "}
 											<span className="text-muted-foreground/50 font-normal normal-case tracking-normal">
 												(заавал биш)
@@ -1160,7 +1154,7 @@ export default function EditFormMNPage() {
 
 									{/* Нууц үг давтах */}
 									<div className="space-y-2">
-										<p className="text-[11px] text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+										<p className="text-sm text-muted-foreground flex items-center gap-1">
 											<Lock size={11} /> Нууц үг давтах{" "}
 											<span className="text-muted-foreground/50 font-normal normal-case tracking-normal">
 												(заавал биш)

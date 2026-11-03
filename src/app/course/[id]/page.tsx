@@ -1,12 +1,17 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { BookOpen, CheckCircle2, List, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import StyledBackButton from "@/components/backButton";
+import { PageHeader } from "@/components/page/pageHeader";
+import {
+	EmptyState,
+	ErrorState,
+	LoadingState,
+} from "@/components/page/pageStates";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { getContentView } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { ContentViewResponse } from "@/types/course/contentView";
@@ -16,52 +21,40 @@ import { LessonSidebar } from "./lessonSidebar";
 
 // Loading component мемоизлох
 const LoadingSpinner = memo(() => (
-	<div className="flex items-center justify-center min-h-screen px-4">
-		<div className="text-center space-y-4">
-			<Loader2 className="h-10 w-10 md:h-12 md:w-12 animate-spin text-primary mx-auto" />
-			<p className="text-sm md:text-base text-muted-foreground">
-				Ачааллаж байна...
-			</p>
-		</div>
+	<div className="flex min-h-[60vh] items-center justify-center px-4">
+		<LoadingState label="Хичээл ачааллаж байна..." />
 	</div>
 ));
 LoadingSpinner.displayName = "LoadingSpinner";
 
 // Error component мемоизлох
 const ErrorMessage = memo(({ message }: { message: string }) => (
-	<div className="flex items-center justify-center min-h-screen px-4">
-		<Card className="max-w-md w-full">
-			<CardContent className="pt-6 space-y-4">
-				<div className="text-center">
-					<p className="text-base md:text-lg font-semibold mb-2 text-destructive">
-						Алдаа гарлаа
-					</p>
-					<p className="text-xs md:text-sm text-muted-foreground">{message}</p>
-				</div>
-				<StyledBackButton />
-			</CardContent>
-		</Card>
+	<div className="mx-auto flex min-h-[60vh] w-full max-w-md flex-col items-center justify-center gap-4 px-4">
+		<ErrorState
+			title="Хичээл нээж чадсангүй"
+			description={message}
+			className="w-full"
+		/>
+		<StyledBackButton />
 	</div>
 ));
 ErrorMessage.displayName = "ErrorMessage";
 
 // Completion message мемоизлох
 const CompletionMessage = memo(() => (
-	<Card className="mt-4 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
-		<CardContent className="p-3 md:p-4">
-			<div className="flex items-center gap-2 md:gap-3">
-				<CheckCircle2 className="h-5 w-5 md:h-6 md:w-6 text-green-600 dark:text-green-400 shrink-0" />
-				<div>
-					<p className="text-sm md:text-base font-semibold text-green-900 dark:text-green-100">
-						Амжилттай дүүргэлээ!
-					</p>
-					<p className="text-xs md:text-sm text-green-700 dark:text-green-300">
-						Та энэ хичээлийг бүрэн судаллаа
-					</p>
-				</div>
+	<div className="mt-4 rounded-2xl border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950/20">
+		<div className="flex items-center gap-3">
+			<CheckCircle2 className="size-6 shrink-0 text-green-600 dark:text-green-400" />
+			<div>
+				<p className="text-base font-semibold text-green-900 dark:text-green-100">
+					Амжилттай дүүргэлээ!
+				</p>
+				<p className="text-sm text-green-700 dark:text-green-300">
+					Та энэ хичээлийг бүрэн судаллаа
+				</p>
 			</div>
-		</CardContent>
-	</Card>
+		</div>
+	</div>
 ));
 CompletionMessage.displayName = "CompletionMessage";
 
@@ -226,48 +219,41 @@ export default function CoursePage() {
 	return (
 		<div className="min-h-screen bg-background">
 			{/* Header */}
-			<div className="border-b bg-card sticky top-0 z-10">
-				<div className="px-3 md:px-4 py-2.5 md:py-3">
-					<div className="flex items-center gap-2 mb-2 md:mb-3">
-						<StyledBackButton
-							onClick={() => router.push("/Lists/courseList")}
-						/>
-						<span className="text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300">
-							Буцах
-						</span>
-					</div>
-					<div className="flex items-center justify-between">
-						<h1 className="text-base md:text-xl font-bold truncate flex-1 mr-2">
-							{contents[0]?.content_name || "Хичээлийн агуулга"}
-						</h1>
-						{/* Mobile menu toggle */}
-						<Button
-							onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-							className="lg:hidden p-2 rounded-md hover:bg-accent"
-							aria-label="Toggle lesson list"
-						>
-							<svg
-								className="w-5 h-5"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
-								<title>Menu</title>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth={2}
-									d="M4 6h16M4 12h16M4 18h16"
-								/>
-							</svg>
-						</Button>
-					</div>
+			<div className="sticky top-0 z-10 border-b bg-card">
+				<div className="mx-auto w-full max-w-7xl px-4">
+					<PageHeader
+						className="py-3 sm:py-3"
+						back={() => router.push("/Lists/courseList")}
+						icon={BookOpen}
+						title={
+							<span className="line-clamp-2 sm:line-clamp-1">
+								{contents[0]?.content_name || "Хичээлийн агуулга"}
+							</span>
+						}
+						description={
+							contents.length > 0
+								? `Хичээл ${currentLessonIndex + 1} / ${contents.length}`
+								: undefined
+						}
+						actions={
+							contents.length > 0 && (
+								<Button
+									variant="outline"
+									onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+									className="h-10 lg:hidden"
+								>
+									<List className="size-4" />
+									Хичээлүүд
+								</Button>
+							)
+						}
+					/>
 				</div>
 			</div>
 
 			{/* Main Content */}
-			<div className="px-3 md:px-4 py-3 md:py-4">
-				<div className="grid grid-cols-1 lg:grid-cols-4 gap-3 md:gap-4">
+			<div className="mx-auto w-full max-w-7xl px-4 py-4">
+				<div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
 					{/* Sidebar - Lesson List */}
 					<div
 						className={`
@@ -277,27 +263,15 @@ export default function CoursePage() {
 						`}
 					>
 						{isSidebarOpen && (
-							<div className="lg:hidden p-3 border-b flex items-center justify-between sticky top-0 bg-background">
-								<h2 className="font-semibold">Хичээлийн жагсаалт</h2>
+							<div className="sticky top-0 flex items-center justify-between border-b bg-background p-3 lg:hidden">
+								<h2 className="text-base font-semibold">Хичээлийн жагсаалт</h2>
 								<Button
+									variant="outline"
 									onClick={() => setIsSidebarOpen(false)}
-									className="p-2 rounded-md hover:bg-accent"
-									aria-label="Close lesson list"
+									className="h-10"
 								>
-									<svg
-										className="w-5 h-5"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<title>Close</title>
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											strokeWidth={2}
-											d="M6 18L18 6M6 6l12 12"
-										/>
-									</svg>
+									<X className="size-4" />
+									Хаах
 								</Button>
 							</div>
 						)}
@@ -310,7 +284,7 @@ export default function CoursePage() {
 								contents={contents}
 								currentLessonIndex={currentLessonIndex}
 								onLessonSelect={handleLessonSelect}
-								showBackButton={contents.length > 1}
+								showBackButton={false}
 							/>
 						</div>
 					</div>
@@ -319,9 +293,24 @@ export default function CoursePage() {
 					<div className="lg:col-span-3">
 						<div
 							id={`lesson-${currentLessonIndex}`}
-							className="max-h-[calc(100vh-180px)] md:max-h-[calc(100vh-200px)] lg:max-h-[calc(100vh-250px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+							className="max-h-[calc(100vh-180px)] overflow-y-auto scrollbar-thin md:max-h-[calc(100vh-200px)] lg:max-h-[calc(100vh-200px)]"
 						>
-							{isHomework ? (
+							{!currentLesson ? (
+								<EmptyState
+									icon={BookOpen}
+									title="Хичээл олдсонгүй"
+									description="Энэ сургалтад одоогоор хичээл нэмэгдээгүй байна."
+									action={
+										<Button
+											variant="outline"
+											onClick={handleFinish}
+											className="h-11"
+										>
+											Бусад сургалт үзэх
+										</Button>
+									}
+								/>
+							) : isHomework ? (
 								<Homework
 									content={currentLesson}
 									onStartExam={handleStartExam}

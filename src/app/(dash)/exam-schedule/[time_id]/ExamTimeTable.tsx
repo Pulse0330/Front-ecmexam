@@ -18,6 +18,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import ExamPrintService from "@/app/(dash)/exam-schedule/[time_id]/ExamPrintService";
 import { UploadPDFDialog } from "@/app/(dash)/exam-schedule/[time_id]/UploadPDF";
+import { EmptyState, LoadingState } from "@/components/page/pageStates";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -63,7 +64,12 @@ interface ExamRoomTableProps {
 	timeId: number;
 }
 
-export function ExamTimeTable({ data, timeId, exam_id }: ExamRoomTableProps) {
+export function ExamTimeTable({
+	data,
+	isLoading,
+	timeId,
+	exam_id,
+}: ExamRoomTableProps) {
 	const { userId } = useAuthStore();
 	const queryClient = useQueryClient();
 	const [selectedRoomId, setSelectedRoomId] = useState<string>("");
@@ -170,12 +176,12 @@ export function ExamTimeTable({ data, timeId, exam_id }: ExamRoomTableProps) {
 	// 	: 0;
 
 	return (
-		<div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden flex flex-col h-full">
+		<div className="rounded-2xl border bg-card shadow-sm overflow-hidden flex flex-col h-full">
 			{/* ── Header ── */}
-			<div className="px-5 py-3.5 border-b flex items-center justify-between bg-muted/30 gap-4 flex-wrap">
-				<div className="flex items-center gap-3">
+			<div className="px-4 py-3 sm:px-5 border-b flex items-center justify-between bg-muted/30 gap-3 flex-wrap">
+				<div className="flex w-full items-center gap-3 sm:w-auto">
 					<Select value={selectedRoomId} onValueChange={setSelectedRoomId}>
-						<SelectTrigger className="w-64 h-9 text-sm">
+						<SelectTrigger className="h-10 w-full text-sm sm:w-64">
 							<SelectValue placeholder="Өрөөгөө сонгоно уу..." />
 						</SelectTrigger>
 						<SelectContent>
@@ -198,15 +204,15 @@ export function ExamTimeTable({ data, timeId, exam_id }: ExamRoomTableProps) {
 				</div>
 
 				{selectedRoom && (
-					<div className="flex items-center gap-2">
+					<div className="flex flex-wrap items-center gap-2">
 						<Button
 							onClick={() => mutate({ room_id: selectedRoom.exam_room_id })}
 							disabled={isPending}
-							size="sm"
+							className="h-10"
 						>
 							{isPending ? (
 								<>
-									<Spinner /> 'Түр хүлээнэ үү...'
+									<Spinner /> Түр хүлээнэ үү...
 								</>
 							) : (
 								<>
@@ -220,11 +226,12 @@ export function ExamTimeTable({ data, timeId, exam_id }: ExamRoomTableProps) {
 								variantMunate({ room_id: selectedRoom.exam_room_id })
 							}
 							disabled={variantIsPending}
-							size="sm"
+							variant="outline"
+							className="h-10"
 						>
 							{variantIsPending ? (
 								<>
-									<Spinner /> 'Түр хүлээнэ үү...'
+									<Spinner /> Түр хүлээнэ үү...
 								</>
 							) : (
 								<>
@@ -248,7 +255,7 @@ export function ExamTimeTable({ data, timeId, exam_id }: ExamRoomTableProps) {
 			{/* ── Body ── */}
 			<ScrollArea className="flex-1">
 				{selectedRoom ? (
-					<div className="p-5 space-y-5">
+					<div className="p-4 sm:p-5 space-y-5">
 						{/* Stat cards */}
 						<div className="grid grid-cols-3 gap-3">
 							<StatCard
@@ -377,7 +384,7 @@ export function ExamTimeTable({ data, timeId, exam_id }: ExamRoomTableProps) {
 																{hasUploaded ? (
 																	<Badge
 																		variant="secondary"
-																		className="gap-1 h-7 px-3 text-green-500"
+																		className="h-8 gap-1 px-3 text-green-700 dark:text-green-400"
 																	>
 																		<Check size={12} />
 																		Илгээгдсэн
@@ -406,20 +413,23 @@ export function ExamTimeTable({ data, timeId, exam_id }: ExamRoomTableProps) {
 							</div>
 						</div>
 					</div>
+				) : isLoading ? (
+					<LoadingState label="Өрөөнүүд ачааллаж байна..." />
 				) : (
-					/* Empty state */
-					<div className="h-64 flex flex-col items-center justify-center gap-3 text-muted-foreground select-none">
-						<div className="p-4 rounded-2xl bg-muted/40">
-							<Database size={36} className="opacity-40" />
-						</div>
-						<div className="text-center space-y-0.5">
-							<p className="text-sm font-medium text-foreground/60">
-								Өрөө сонгогдоогүй байна
-							</p>
-							<p className="text-xs text-muted-foreground">
-								Үргэлжлүүлэхийн тулд дээрээс өрөө сонгоно уу.
-							</p>
-						</div>
+					<div className="p-4 sm:p-5">
+						<EmptyState
+							icon={Database}
+							title={
+								filteredRooms.length === 0
+									? "Сурагч бүртгэгдсэн өрөө алга"
+									: "Өрөө сонгогдоогүй байна"
+							}
+							description={
+								filteredRooms.length === 0
+									? "Энэ хуваарьт сурагч бүртгэгдээгүй байна."
+									: "Үргэлжлүүлэхийн тулд дээрээс өрөө сонгоно уу."
+							}
+						/>
 					</div>
 				)}
 			</ScrollArea>

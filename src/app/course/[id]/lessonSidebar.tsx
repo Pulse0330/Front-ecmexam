@@ -2,8 +2,6 @@
 
 import { CheckCircle2 } from "lucide-react";
 import StyledBackButton from "@/components/backButton";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ContentView } from "@/types/course/contentView";
 
 interface LessonSidebarProps {
@@ -19,76 +17,92 @@ export function LessonSidebar({
 	onLessonSelect,
 	showBackButton = true,
 }: LessonSidebarProps) {
-	return (
-		<Card>
-			<CardHeader className="pb-3 px-4 pt-4">
-				<div className="flex items-center gap-3">
-					{showBackButton && <StyledBackButton />}
-					<CardTitle className="text-lg">Хичээлүүд</CardTitle>
-				</div>
-			</CardHeader>
-			<CardContent className="p-0">
-				<div className="max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-					{contents.map((item, index) => {
-						const isActive = index === currentLessonIndex;
-						const isCompleted = item.stu_worked === 1;
+	const doneCount = contents.filter((c) => c.stu_worked === 1).length;
 
-						return (
-							<button
-								key={item.content_id}
-								onClick={() => onLessonSelect(index)}
-								type="button"
-								className={`
-									w-full text-left py-3 border-b last:border-b-0 transition-all
-									${isActive ? "pl-3.5 pr-4 border-l-4 border-l-blue-600 bg-blue-50/30" : "px-4"}
-									${isActive ? "bg-blue-50/30" : "hover:bg-blue-50/30"}
-								`}
-							>
-								<div className="flex items-start gap-3">
-									<div className="shrink-0 mt-1">
-										{isCompleted ? (
-											<CheckCircle2 className="h-5 w-5 text-green-600" />
-										) : (
-											<div className="h-5 w-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
-												<span className="text-xs font-medium">{index + 1}</span>
-											</div>
+	return (
+		<div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+			<div className="flex items-center gap-3 border-b px-4 py-3">
+				{showBackButton && <StyledBackButton />}
+				<div className="min-w-0">
+					<h2 className="text-base font-semibold text-foreground">Хичээлүүд</h2>
+					{contents.length > 0 && (
+						<p className="text-xs text-muted-foreground">
+							{doneCount} / {contents.length} үзсэн
+						</p>
+					)}
+				</div>
+			</div>
+			<div className="max-h-[600px] overflow-y-auto scrollbar-thin">
+				{contents.length === 0 && (
+					<p className="px-4 py-6 text-center text-sm text-muted-foreground">
+						Хичээл алга байна
+					</p>
+				)}
+				{contents.map((item, index) => {
+					const isActive = index === currentLessonIndex;
+					const isCompleted = item.stu_worked === 1;
+
+					return (
+						<button
+							key={item.content_id}
+							onClick={() => onLessonSelect(index)}
+							type="button"
+							aria-current={isActive ? "step" : undefined}
+							className={`w-full border-b py-3 text-left transition-colors last:border-b-0 ${
+								isActive
+									? "border-l-4 border-l-primary bg-primary/10 pr-4 pl-3"
+									: "px-4 hover:bg-muted/60"
+							}`}
+						>
+							<div className="flex items-start gap-3">
+								<div className="mt-0.5 shrink-0">
+									{isCompleted ? (
+										<CheckCircle2 className="size-6 text-green-600 dark:text-green-400" />
+									) : (
+										<span
+											className={`flex size-6 items-center justify-center rounded-full border-2 text-xs font-semibold ${
+												isActive
+													? "border-primary text-primary"
+													: "border-border text-muted-foreground"
+											}`}
+										>
+											{index + 1}
+										</span>
+									)}
+								</div>
+								<div className="min-w-0 flex-1 space-y-1.5">
+									<p
+										className={`line-clamp-2 text-sm leading-snug ${
+											isActive
+												? "font-semibold text-primary"
+												: "font-medium text-foreground"
+										}`}
+									>
+										{item.content_name}
+									</p>
+									<div className="flex flex-wrap items-center gap-1.5">
+										{item.elesson_type && (
+											<span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+												{item.elesson_type}
+											</span>
+										)}
+										{item.exam_id && (
+											<span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+												Даалгавар
+											</span>
+										)}
+										{isCompleted && (
+											<span className="rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-700 dark:text-green-400">
+												Үзсэн
+											</span>
 										)}
 									</div>
-									<div className="flex-1 min-w-0 space-y-1.5">
-										<p className="text-sm font-medium line-clamp-2 leading-tight">
-											{item.content_name}
-										</p>
-										<div className="flex items-center gap-2 flex-wrap">
-											<Badge
-												variant="secondary"
-												className="text-xs px-2 py-0.5"
-											>
-												{item.elesson_type}
-											</Badge>
-											{item.exam_id && (
-												<Badge
-													variant="outline"
-													className="text-xs px-2 py-0.5 border-orange-300 bg-orange-50"
-												>
-													Даалгавар
-												</Badge>
-											)}
-											{isCompleted && (
-												<Badge
-													variant="outline"
-													className="text-xs px-2 py-0.5 border-green-300 bg-green-50 text-green-700"
-												>
-													Үзсэн
-												</Badge>
-											)}
-										</div>
-									</div>
 								</div>
-							</button>
-						);
-					})}
-				</div>
-			</CardContent>
-		</Card>
+							</div>
+						</button>
+					);
+				})}
+			</div>
+		</div>
 	);
 }

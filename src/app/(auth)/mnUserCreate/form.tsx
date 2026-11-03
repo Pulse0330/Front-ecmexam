@@ -5,7 +5,6 @@ import crypto from "crypto";
 import {
 	AlertTriangle,
 	ArrowRight,
-	ChevronLeft,
 	Globe,
 	ImagePlus,
 	Lock,
@@ -38,6 +37,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
 import { uploadImage } from "@/utils/upload";
+import { StepIndicator } from "../stepIndicator";
+import { BackButton } from "./verify/backButton";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export interface StudentExamData {
@@ -219,8 +220,7 @@ function calcAge(dob: string): number | string {
 	return a;
 }
 
-const CARD_CLS =
-	"bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50";
+const CARD_CLS = "rounded-2xl border bg-card shadow-sm";
 
 const NOTICE_ITEMS = [
 	{
@@ -252,12 +252,12 @@ function InfoRow({
 }) {
 	return (
 		<>
-			<div className="flex justify-between items-center gap-3 px-4 py-2 hover:bg-muted/30 transition-colors">
-				<span className="text-xs text-muted-foreground whitespace-nowrap">
+			<div className="flex justify-between items-center gap-3 px-4 py-2.5">
+				<span className="text-sm text-muted-foreground whitespace-nowrap">
 					{label}
 				</span>
 				<span
-					className={`text-xs font-medium text-right break-all ${mono ? "font-mono text-foreground/60" : "text-foreground"}`}
+					className={`text-sm font-medium text-right break-all ${mono ? "font-mono text-foreground/60" : "text-foreground"}`}
 				>
 					{value !== "" && value !== null && value !== undefined
 						? String(value)
@@ -284,7 +284,7 @@ function Field({
 		<div className="space-y-2">
 			<Label
 				htmlFor={htmlFor}
-				className="text-[11px] text-muted-foreground uppercase tracking-widest flex items-center gap-1"
+				className="text-sm font-medium text-foreground flex items-center gap-1"
 			>
 				{label}
 				{required && <span className="text-destructive font-bold">*</span>}
@@ -303,7 +303,7 @@ function ReadOnlyInput({ value, icon }: { value: string; icon?: ReactNode }) {
 				</span>
 			)}
 			<div
-				className={`flex h-8 w-full rounded-md border border-input bg-muted/30 text-xs text-muted-foreground items-center cursor-not-allowed select-none ${icon ? "pl-8 pr-3" : "px-3"}`}
+				className={`flex min-h-10 w-full rounded-md border border-input bg-muted/40 py-2 text-sm text-muted-foreground items-center cursor-not-allowed select-none ${icon ? "pl-8 pr-3" : "px-3"}`}
 			>
 				{value || "—"}
 			</div>
@@ -327,8 +327,8 @@ function NoticeModal({
 						<div className="w-8 h-8 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
 							<AlertTriangle size={15} className="text-amber-500" />
 						</div>
-						<DialogTitle className="text-sm font-bold text-foreground">
-							Санамж &amp; Зөвлөгөө
+						<DialogTitle className="text-base font-semibold text-foreground">
+							Санамж ба зөвлөгөө
 						</DialogTitle>
 					</div>
 				</DialogHeader>
@@ -339,14 +339,14 @@ function NoticeModal({
 					{NOTICE_ITEMS.map((item, idx) => (
 						<div
 							key={item.id}
-							className="flex items-start gap-3 px-3.5 py-2.5 rounded-xl border bg-muted/30 hover:bg-muted/50 transition-colors"
+							className="flex items-start gap-3 px-3.5 py-3 rounded-xl border bg-muted/30"
 						>
-							<span className="w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+							<span className="w-5 h-5 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
 								{idx + 1}
 							</span>
 							<div className="flex items-start gap-1.5 flex-1 min-w-0">
 								{item.icon}
-								<p className="text-[11px] leading-relaxed text-muted-foreground">
+								<p className="text-sm leading-relaxed text-foreground">
 									{item.text}
 								</p>
 							</div>
@@ -355,10 +355,7 @@ function NoticeModal({
 				</div>
 
 				<div className="px-5 pb-5">
-					<Button
-						onClick={onClose}
-						className="w-full h-9 text-xs font-semibold rounded-xl"
-					>
+					<Button onClick={onClose} className="h-10 w-full font-semibold">
 						Ойлголоо
 					</Button>
 				</div>
@@ -653,7 +650,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 	const _displayAcademicLevel = examData?.academic_level ?? d.academic_level;
 
 	return (
-		<div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-500 overflow-hidden">
+		<div className="min-h-screen overflow-hidden bg-background">
 			<NoticeModal open={noticeOpen} onClose={() => setNoticeOpen(false)} />
 
 			{/* ── Crop Modal ── */}
@@ -664,75 +661,74 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 				onCancel={handleCropCancel}
 			/>
 
-			{/* ── ACTION BAR ── */}
-			<div className="sticky top-1 left-10 right-10 z-40 border rounded-2xl bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border-gray-200/50 dark:border-gray-700/50 shadow-sm">
-				<div className="container mx-auto px-4 lg:px-8 h-12 flex items-center justify-between">
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => router.back()}
-						className="gap-1.5 text-muted-foreground h-8 text-xs"
-					>
-						<ChevronLeft size={14} /> Буцах
-					</Button>
+			{/* ── ACTION BAR: ← Буцах | алхам | Санамж + Үргэлжлүүлэх ── */}
+			<div className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
+				<div className="container mx-auto flex flex-col gap-3 px-4 py-3 lg:px-8">
+					<div className="flex items-center justify-between gap-2">
+						<BackButton onClick={() => router.back()} label="Буцах" />
 
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => setNoticeOpen(true)}
-						className="gap-1.5 h-8 text-xs border-amber-500/40 text-amber-600 hover:bg-amber-500/10 hover:text-amber-600"
-					>
-						<AlertTriangle size={13} />
-						Санамж
-					</Button>
+						<div className="flex items-center gap-2">
+							<Button
+								variant="outline"
+								onClick={() => setNoticeOpen(true)}
+								className="h-10 gap-1.5 border-amber-500/40 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400"
+							>
+								<AlertTriangle size={16} />
+								Санамж
+							</Button>
 
-					<Button
-						size="sm"
-						onClick={handleContinue}
-						disabled={isSaving || isUploadingImage || examDataLoading}
-						className="gap-1.5 h-8 text-xs"
-					>
-						{isSaving ? (
-							<>
-								<svg
-									className="animate-spin w-3.5 h-3.5"
-									viewBox="0 0 24 24"
-									fill="none"
-								>
-									<title>loading</title>
-									<circle
-										className="opacity-25"
-										cx="12"
-										cy="12"
-										r="10"
-										stroke="currentColor"
-										strokeWidth="4"
-									/>
-									<path
-										className="opacity-75"
-										fill="currentColor"
-										d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-									/>
-								</svg>
-								Хадгалж байна...
-							</>
-						) : (
-							<>
-								Үргэлжлүүлэх <ArrowRight size={13} />
-							</>
-						)}
-					</Button>
+							<Button
+								onClick={handleContinue}
+								disabled={isSaving || isUploadingImage || examDataLoading}
+								className="h-10 gap-1.5 font-semibold"
+							>
+								{isSaving ? (
+									<>
+										<svg
+											className="animate-spin w-3.5 h-3.5"
+											viewBox="0 0 24 24"
+											fill="none"
+										>
+											<title>loading</title>
+											<circle
+												className="opacity-25"
+												cx="12"
+												cy="12"
+												r="10"
+												stroke="currentColor"
+												strokeWidth="4"
+											/>
+											<path
+												className="opacity-75"
+												fill="currentColor"
+												d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+											/>
+										</svg>
+										Хадгалж байна...
+									</>
+								) : (
+									<>
+										Үргэлжлүүлэх <ArrowRight size={16} />
+									</>
+								)}
+							</Button>
+						</div>
+					</div>
+					<StepIndicator
+						steps={["Мэдээлэл", "Төлбөр төлөх", "Бүртгэл дууссан"]}
+						current={0}
+					/>
 				</div>
 			</div>
 
-			<div className="pt-16 p-3 lg:p-3">
+			<div className="p-3 pt-4 lg:p-4">
 				<div className="container mx-auto flex flex-col gap-3">
 					<div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
 						{/* LEFT */}
 						<div className="lg:col-span-5 space-y-2">
 							<Card className={CARD_CLS}>
 								<CardHeader className="pb-0 pt-3 px-4">
-									<CardTitle className="text-[11px] text-muted-foreground">
+									<CardTitle className="text-base font-semibold text-foreground">
 										Хувийн мэдээлэл
 									</CardTitle>
 								</CardHeader>
@@ -822,7 +818,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 																d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
 															/>
 														</svg>
-														<span className="text-[9px] text-muted-foreground font-semibold text-center px-1">
+														<span className="text-xs text-muted-foreground font-semibold text-center px-1">
 															Upload...
 														</span>
 													</div>
@@ -836,13 +832,13 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 														/>
 														<div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-1 z-10">
 															<Upload size={16} className="text-white" />
-															<span className="text-[9px] text-white font-bold uppercase tracking-wider">
+															<span className="text-xs text-white font-bold uppercase tracking-wider">
 																Солих
 															</span>
 														</div>
 														{uploadedImgUrl && (
 															<div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center z-20 shadow">
-																<span className="text-white text-[9px] font-bold">
+																<span className="text-white text-xs font-bold">
 																	✓
 																</span>
 															</div>
@@ -856,14 +852,14 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 																className="text-destructive"
 															/>
 														</div>
-														<span className="text-[9px] text-destructive font-semibold text-center px-1 leading-tight">
+														<span className="text-xs text-destructive font-semibold text-center px-1 leading-tight">
 															Зураг оруулах
 														</span>
 													</>
 												)}
 											</button>
 											{!profileImg && !isUploadingImage && !examDataLoading && (
-												<span className="text-[9px] text-destructive font-semibold">
+												<span className="text-xs text-destructive font-semibold">
 													* Заавал оруулна уу
 												</span>
 											)}
@@ -873,7 +869,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 													variant="ghost"
 													size="sm"
 													onClick={clearImage}
-													className="h-auto py-0.5 px-2 text-[9px] text-muted-foreground hover:text-destructive gap-1"
+													className="h-auto py-0.5 px-2 text-xs text-muted-foreground hover:text-destructive gap-1"
 												>
 													<X size={9} /> Устгах
 												</Button>
@@ -889,7 +885,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 									</div>
 								</CardContent>
 								<CardContent className="p-4 pt-3 space-y-2">
-									<div className="grid grid-cols-2 gap-3">
+									<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 										<Field label="Овог">
 											<ReadOnlyInput value={displayLastname} />
 										</Field>
@@ -897,7 +893,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 											<ReadOnlyInput value={displayFirstname} />
 										</Field>
 									</div>
-									<div className="grid grid-cols-3 gap-3">
+									<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
 										<Field label="Хүйс">
 											<ReadOnlyInput
 												value={
@@ -929,7 +925,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 											icon={<Globe size={13} />}
 										/>
 									</Field>
-									<div className="grid grid-cols-2 gap-3">
+									<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 										<Field label="И-мэйл">
 											<ReadOnlyInput
 												value={displayEmail}
@@ -945,7 +941,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 													type="text"
 													value={displayPhone}
 													onChange={(e) => setDisplayPhone(e.target.value)}
-													className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs pl-8 focus:outline-none focus:ring-1 focus:ring-ring"
+													className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm pl-8 focus:outline-none focus:ring-2 focus:ring-ring"
 												/>
 											</div>
 										</Field>
@@ -959,7 +955,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 													value={displayPhone1}
 													onChange={(e) => setDisplayPhone1(e.target.value)}
 													placeholder="Нэмэлт дугаар"
-													className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs pl-8 focus:outline-none focus:ring-1 focus:ring-ring"
+													className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm pl-8 focus:outline-none focus:ring-2 focus:ring-ring"
 												/>
 											</div>
 										</Field>
@@ -978,7 +974,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 						<div className="lg:col-span-7 space-y-3">
 							<Card className={CARD_CLS}>
 								<CardHeader className="pb-0 pt-3 px-4">
-									<CardTitle className="text-[11px] text-muted-foreground">
+									<CardTitle className="text-base font-semibold text-foreground">
 										Сургуулийн мэдээлэл
 									</CardTitle>
 								</CardHeader>
@@ -994,7 +990,7 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 									<div className="flex flex-col items-center gap-2 py-2">
 										<div className="flex items-center gap-2 text-muted-foreground">
 											<Lock size={13} />
-											<span className="text-[11px] uppercase tracking-widest font-semibold">
+											<span className="text-sm font-semibold">
 												Нэвтрэх нууц үг
 											</span>
 										</div>
@@ -1003,8 +999,8 @@ export default function StudentForm({ data: d }: { data: StudentExamData }) {
 												{displayPassword}
 											</span>
 										</div>
-										<p className="text-lg text-green-600 dark:text-green-500 text-center flex items-center gap-1.5">
-											<Lock size={10} />
+										<p className="text-sm text-green-700 dark:text-green-400 text-center flex items-center gap-1.5">
+											<Lock size={14} className="shrink-0" />
 											{examData?.passwordauto
 												? "Таны нууц үг. Нэвтрэх нууц үгээ цээжлээрэй."
 												: "Системээс автоматаар үүсгэгдсэн 6 оронтой нууц үг. Нэвтрэх нууц үгээ цээжлээрэй."}

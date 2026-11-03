@@ -11,13 +11,14 @@ import {
 	LayoutGrid,
 	List,
 	Loader2,
-	Menu,
+	LogOut,
 	Save,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ExamHeader } from "@/app/exam/component/examUtils/examInfo";
 import MathContent from "@/app/exam/component/examUtils/MathContent";
+import SavingDots from "@/app/exam/component/examUtils/savingDots";
 import { SourceBlock } from "@/app/exam/component/examUtils/sourceCard";
 import ExamMinimap from "@/app/exam/component/minimap";
 import FillInTheBlankQuestion from "@/app/exam/component/question/fillblank";
@@ -26,8 +27,22 @@ import MultiSelectQuestion from "@/app/exam/component/question/multiselect";
 import NumberInputQuestion from "@/app/exam/component/question/numberinput";
 import DragAndDropQuestion from "@/app/exam/component/question/order";
 import SingleSelectQuestion from "@/app/exam/component/question/singleSelect";
-import StyledBackButton from "@/components/backButton";
 import FixedScrollButton from "@/components/FixedScrollButton";
+import {
+	EmptyState,
+	ErrorState,
+	LoadingState,
+} from "@/components/page/pageStates";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { deleteExamAnswer, getExamById, saveExamAnswer } from "@/lib/api";
@@ -77,6 +92,7 @@ export default function SorilPage() {
 	const router = useRouter();
 	const AUTO_SAVE_DELAY = 1000;
 	const [_isNavigating, setIsNavigating] = useState(false);
+	const [showExitConfirm, setShowExitConfirm] = useState(false);
 	const {
 		data: examData,
 		isLoading,
@@ -822,12 +838,15 @@ export default function SorilPage() {
 			const isBookmarked = bookmarkedQuestions.has(questionId);
 			const isTypingNow = typingQuestions.has(questionId);
 
-			if (isTypingNow) return "border-2 border-blue-400 shadow-lg";
+			// border-2 биш ring ашиглана — хариулахад карт "үсрэхгүй"
+			if (isTypingNow)
+				return "border-blue-400 ring-2 ring-blue-400/40 shadow-md";
 			if (isAnswered && isBookmarked)
-				return "border-2 border-amber-500 shadow-sm";
-			if (isAnswered) return "border-2 border-blue-600 shadow-sm";
-			if (isBookmarked) return "border-2 border-amber-400 shadow-sm";
-			return "border border-gray-200";
+				return "border-amber-400 ring-1 ring-amber-400 shadow-sm";
+			if (isAnswered)
+				return "border-blue-500/70 ring-1 ring-blue-500/70 shadow-sm";
+			if (isBookmarked) return "border-amber-300 ring-1 ring-amber-300";
+			return "border-border";
 		},
 		[selectedAnswers, bookmarkedQuestions, typingQuestions],
 	);
@@ -955,46 +974,125 @@ export default function SorilPage() {
 
 	if (isLoading) {
 		return (
-			<div className="flex justify-center items-center h-screen">
-				<div className="text-center p-8">
-					<Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-blue-600" />
-					<p className="text-lg font-medium">Шалгалт ачааллаж байна...</p>
-				</div>
+			<div className="flex min-h-screen items-center justify-center bg-background">
+				<LoadingState label="Сорил ачааллаж байна..." />
 			</div>
 		);
 	}
 
 	if (error || !examData) {
 		return (
-			<div className="flex justify-center items-center h-screen">
-				<div className="text-center p-8 bg-red-50 rounded-xl border border-red-200 max-w-md">
-					<p className="text-xl font-medium text-red-600 mb-2">Алдаа гарлаа</p>
-					<p className="text-sm text-red-500">
-						{error?.message || "Шалгалт олдсонгүй"}
-					</p>
-					<Button
-						onClick={() => window.location.reload()}
-						className="mt-4"
-						variant="outline"
-					>
-						Дахин оролдох
-					</Button>
-				</div>
+			<div className="flex min-h-screen items-center justify-center bg-background px-4">
+				<ErrorState
+					description={error?.message || "Сорил олдсонгүй"}
+					onRetry={() => window.location.reload()}
+				/>
 			</div>
 		);
 	}
 
 	if (allQuestions.length === 0) {
 		return (
-			<div className="flex justify-center items-center h-screen">
-				<div className="text-center p-8 bg-yellow-50 rounded-xl border border-yellow-200">
-					<p className="text-xl font-medium">Энэ шалгалтад асуулт байхгүй</p>
-				</div>
+			<div className="flex min-h-screen items-center justify-center bg-background px-4">
+				<EmptyState
+					title="Энэ сорилд асуулт байхгүй"
+					action={
+						<Button variant="outline" onClick={() => router.back()}>
+							<ArrowLeft className="w-4 h-4" />
+							Буцах
+						</Button>
+					}
+				/>
 			</div>
 		);
 	}
 
 	const currentQuestion = allQuestions[currentQuestionIndex];
+
+	// Асуултын карт — дугаар, "Асуулт N / M", оноо, тэмдэглэх
+	const renderQuestionCard = (
+		q: (typeof allQuestions)[0],
+		index: number,
+		compact = false,
+	) => {
+		const isBookmarked = bookmarkedQuestions.has(q.question_id);
+		return (
+			<Card
+				className={`${getCardBorderClass(q.question_id)} gap-0 py-0 rounded-2xl overflow-hidden transition-shadow`}
+			>
+				<div
+					className={`flex items-center justify-between border-b bg-muted/50 ${
+						compact ? "gap-2 px-4 py-2.5" : "gap-3 px-6 py-3"
+					}`}
+				>
+					<div
+						className={`flex items-center min-w-0 ${compact ? "gap-2" : "gap-3"}`}
+					>
+						<span
+							className={`shrink-0 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center ${
+								compact ? "w-7 h-7 text-xs" : "w-8 h-8 text-sm"
+							}`}
+						>
+							{index + 1}
+						</span>
+						<span
+							className={`text-muted-foreground ${compact ? "text-xs" : "text-sm"}`}
+						>
+							Асуулт {index + 1} / {totalCount}
+						</span>
+						{q.que_onoo > 0 && (
+							<span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+								{q.que_onoo} оноо
+							</span>
+						)}
+					</div>
+					<div className="flex items-center gap-1 shrink-0">
+						{compact && typingQuestions.has(q.question_id) && (
+							<SavingDots className="h-7 px-2.5 shadow-none" />
+						)}
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => toggleBookmark(q.question_id)}
+							className="shrink-0 h-9 gap-1.5 text-muted-foreground hover:text-foreground"
+							title={
+								isBookmarked
+									? "Тэмдэглэгээ хасах"
+									: "Дараа эргэж харахаар тэмдэглэх"
+							}
+							aria-label={isBookmarked ? "Тэмдэглэгээ хасах" : "Тэмдэглэх"}
+						>
+							{isBookmarked ? (
+								<BookmarkCheck className="w-4 h-4 text-amber-500 fill-amber-500" />
+							) : (
+								<Bookmark className="w-4 h-4" />
+							)}
+							<span
+								className={compact ? "hidden sm:inline text-xs" : "text-xs"}
+							>
+								{isBookmarked ? "Тэмдэглэсэн" : "Тэмдэглэх"}
+							</span>
+						</Button>
+					</div>
+				</div>
+
+				<CardContent
+					className={compact ? "px-4 py-5 space-y-5" : "px-6 py-6 space-y-6"}
+				>
+					<div
+						className={
+							compact
+								? "text-base leading-7 text-foreground"
+								: "text-[17px] leading-8 text-foreground max-w-none"
+						}
+					>
+						<MathContent html={q.question_name} />
+					</div>
+					<div className="min-w-0">{renderQuestion(q)}</div>
+				</CardContent>
+			</Card>
+		);
+	};
 
 	return (
 		<div className="min-h-screen">
@@ -1005,51 +1103,46 @@ export default function SorilPage() {
 			)}
 
 			{/* Desktop Layout */}
-			<div className="hidden lg:block">
+			<div className="hidden lg:block min-h-screen bg-muted/40">
 				{examData?.ExamInfo?.[0] && (
-					<ExamHeader examInfo={examData.ExamInfo[0]} />
+					<div className="max-w-[1440px] mx-auto pt-4 px-2">
+						<ExamHeader examInfo={examData.ExamInfo[0]} />
+					</div>
 				)}
-				<div className=" fixed flex flex-1 top-6 pl-4">
-					<StyledBackButton
-						showConfirm={true}
-						confirmMessage="Та гарахдаа итгэлтэй байна уу?"
-					/>
-				</div>
 
-				<div className="grid grid-cols-6 gap-6 max-w-[1800px] mx-auto p-6 xl:p-8">
-					<aside className="col-span-1">
+				{/* Голын багана уншихад тохиромжтой өргөнтэй — хажуугийн самбар тогтмол */}
+				<div className="grid grid-cols-[200px_minmax(0,1fr)_200px] xl:grid-cols-[260px_minmax(0,1fr)_260px] gap-6 xl:gap-8 max-w-[1440px] mx-auto px-6 py-6">
+					<aside>
 						<div className="sticky top-6 space-y-4">
-							{/* Горим сэлгэгч */}
-							<div className="flex justify-end">
-								<div className="flex border border-border rounded-lg overflow-hidden">
-									<button
-										type="button"
-										onClick={() => setViewMode("scroll")}
-										className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
-											viewMode === "scroll"
-												? "bg-primary text-primary-foreground"
-												: "bg-background text-muted-foreground hover:bg-accent"
-										}`}
-									>
-										<List className="w-4 h-4" />
-										Жагсаалт
-									</button>
-									<button
-										type="button"
-										onClick={() => {
-											setViewMode("card");
-											window.scrollTo({ top: 0, behavior: "smooth" });
-										}}
-										className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
-											viewMode === "card"
-												? "bg-primary text-primary-foreground"
-												: "bg-background text-muted-foreground hover:bg-accent"
-										}`}
-									>
-										<LayoutGrid className="w-4 h-4" />
-										Карт
-									</button>
-								</div>
+							{/* Харагдах байдал: бүх асуулт / нэг нэгээр */}
+							<div className="grid grid-cols-2 rounded-lg border bg-card p-1">
+								<button
+									type="button"
+									onClick={() => setViewMode("scroll")}
+									className={`flex h-9 items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-colors ${
+										viewMode === "scroll"
+											? "bg-primary/10 text-primary"
+											: "text-muted-foreground hover:bg-muted"
+									}`}
+								>
+									<List className="w-4 h-4" />
+									Жагсаалт
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setViewMode("card");
+										window.scrollTo({ top: 0, behavior: "smooth" });
+									}}
+									className={`flex h-9 items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-colors ${
+										viewMode === "card"
+											? "bg-primary/10 text-primary"
+											: "text-muted-foreground hover:bg-muted"
+									}`}
+								>
+									<LayoutGrid className="w-4 h-4" />
+									Нэг нэгээр
+								</button>
 							</div>
 							<ExamMinimap
 								totalCount={totalCount}
@@ -1062,7 +1155,7 @@ export default function SorilPage() {
 							/>
 
 							{examData?.ExamInfo?.[0] && !isTimeUp && (
-								<div className="pt-6 flex justify-center">
+								<div className="pt-6 flex flex-col items-center gap-2">
 									<FinishExamResultDialog
 										ref={finishDialogRef}
 										examId={examData.ExamInfo[0].id}
@@ -1077,188 +1170,125 @@ export default function SorilPage() {
 						</div>
 					</aside>
 
-					<main className="col-span-4 space-y-5">
+					<main className="min-w-0 max-w-3xl w-full mx-auto space-y-6">
 						{viewMode === "scroll" ? (
-							// Жагсаалт горим — одоогийн код ямаршгүй
 							allQuestions.map((q, index) => (
 								<div key={q.question_id} id={`question-${index}`}>
-									<Card className={getCardBorderClass(q.question_id)}>
-										<CardContent className="p-6">
-											<div className="flex gap-4">
-												<div className="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center font-semibold">
-													{index + 1}
-												</div>
-												<div className="flex-1 min-w-0">
-													<div className="flex items-start justify-between gap-2 mb-4">
-														<div className="font-semibold text-lg flex-1 leading-relaxed prose prose-sm max-w-none">
-															<MathContent html={q.question_name} />
-														</div>
-														<div className="flex items-center gap-2 shrink-0">
-															<Button
-																variant="ghost"
-																size="icon"
-																onClick={() => toggleBookmark(q.question_id)}
-																className="hover:bg-gray-100"
-																title={
-																	bookmarkedQuestions.has(q.question_id)
-																		? "Тэмдэглэгээ хасах"
-																		: "Тэмдэглэх"
-																}
-															>
-																{bookmarkedQuestions.has(q.question_id) ? (
-																	<BookmarkCheck className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-																) : (
-																	<Bookmark className="w-5 h-5 text-gray-400" />
-																)}
-															</Button>
-														</div>
-													</div>
-													{renderQuestion(q)}
-												</div>
-											</div>
-										</CardContent>
-									</Card>
+									{renderQuestionCard(q, index)}
 								</div>
 							))
 						) : (
-							// Карт горим — нэг нэгээр
+							// Нэг нэгээр горим
 							<div className="space-y-4">
-								<Card
-									className={getCardBorderClass(currentQuestion.question_id)}
-								>
-									<CardContent className="p-6">
-										<div className="flex gap-4">
-											<div className="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center font-semibold">
-												{currentQuestionIndex + 1}
-											</div>
-											<div className="flex-1 min-w-0">
-												<div className="flex items-start justify-between gap-2 mb-4">
-													<div className="font-semibold text-lg flex-1 leading-relaxed prose prose-sm max-w-none">
-														<MathContent html={currentQuestion.question_name} />
-													</div>
-													<div className="flex items-center gap-2 shrink-0">
-														<Button
-															variant="ghost"
-															size="icon"
-															onClick={() =>
-																toggleBookmark(currentQuestion.question_id)
-															}
-															className="hover:bg-gray-100"
-															title={
-																bookmarkedQuestions.has(
-																	currentQuestion.question_id,
-																)
-																	? "Тэмдэглэгээ хасах"
-																	: "Тэмдэглэх"
-															}
-														>
-															{bookmarkedQuestions.has(
-																currentQuestion.question_id,
-															) ? (
-																<BookmarkCheck className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-															) : (
-																<Bookmark className="w-5 h-5 text-gray-400" />
-															)}
-														</Button>
-													</div>
-												</div>
-												{renderQuestion(currentQuestion)}
-											</div>
-										</div>
-									</CardContent>
-								</Card>
+								{renderQuestionCard(currentQuestion, currentQuestionIndex)}
 
-								<div className="sticky bottom-4 flex items-center justify-between bg-background/95 backdrop-blur border border-border rounded-xl p-3 shadow-lg">
+								<div className="sticky bottom-4 flex items-center justify-between gap-3 rounded-2xl border bg-card/95 backdrop-blur p-3 shadow-lg">
 									<Button
 										variant="outline"
 										onClick={goToPreviousQuestion}
 										disabled={currentQuestionIndex === 0}
+										className="h-10 gap-1 font-semibold"
 									>
-										<ChevronLeft className="w-4 h-4 mr-1" />
+										<ChevronLeft className="w-4 h-4" />
 										Өмнөх
 									</Button>
 									<span className="text-sm text-muted-foreground font-medium">
-										{currentQuestionIndex + 1} / {totalCount}
+										Асуулт {currentQuestionIndex + 1} / {totalCount}
 									</span>
 									<Button
-										variant="outline"
 										onClick={goToNextQuestion}
 										disabled={currentQuestionIndex === totalCount - 1}
+										className="h-10 gap-1 font-semibold"
 									>
 										Дараах
-										<ChevronRight className="w-4 h-4 ml-1" />
+										<ChevronRight className="w-4 h-4" />
 									</Button>
 								</div>
 							</div>
 						)}
 					</main>
-					<aside className="col-span-1">
+
+					<aside>
 						<div className="sticky top-6 space-y-4">
 							{examData?.ExamInfo?.[0]?.starteddate && (
 								<ExamTimer onElapsedChange={handleElapsedTimeChange} />
 							)}
+							<Button
+								variant="outline"
+								onClick={() => setShowExitConfirm(true)}
+								className="w-full font-semibold border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/20"
+							>
+								<LogOut className="w-4 h-4 mr-2" />
+								Сорилоос гарах
+							</Button>
 						</div>
 					</aside>
 				</div>
 			</div>
 
 			{/* Mobile Layout */}
-			<div className="lg:hidden min-h-screen flex flex-col">
-				{examData?.ExamInfo?.[0] && (
-					<ExamHeader examInfo={examData.ExamInfo[0]} />
-				)}
-				<div className="sticky top-0 z-20 bg-white dark:bg-slate-900 shadow-sm border-b border-slate-200 dark:border-slate-700">
-					<button
-						type="button"
-						onClick={() => router.back()}
-						className="group flex items-center gap-3 pl-2 pr-5 py-6 duration-300 cursor-pointer bg-transparent border-none"
-					>
-						<div className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 transition-colors duration-300">
-							<ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:-translate-x-0.5 transition-all duration-300" />
-						</div>
-					</button>
+			<div className="lg:hidden min-h-screen flex flex-col bg-muted/40">
+				<div className="sticky top-0 z-20 bg-card shadow-sm border-b">
 					<div className="px-3 py-2">
 						{examData?.ExamInfo?.[0] && (
+							<ExamHeader examInfo={examData.ExamInfo[0]} />
+						)}
+
+						{examData?.ExamInfo?.[0] && (
 							<div className="flex items-center justify-between mb-2">
-								{/* ✅ НЭМЭХ: Timer icon болон elapsed time */}
 								<div className="flex items-center gap-2">
-									<div className="w-7 h-7 rounded-md bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
-										<Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+									<div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+										<Clock className="w-4 h-4 text-primary" />
 									</div>
-									<span className="text-lg font-bold text-blue-600 dark:text-blue-400 font-mono">
-										{(() => {
-											const h = Math.floor(elapsedExamTime / 3600);
-											const m = Math.floor((elapsedExamTime % 3600) / 60);
-											const s = elapsedExamTime % 60;
-											if (h > 0)
-												return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-											return `${m}:${s.toString().padStart(2, "0")}`;
-										})()}
-									</span>
+									<div>
+										<div className="text-lg font-bold text-primary font-mono leading-none tabular-nums">
+											{(() => {
+												const h = Math.floor(elapsedExamTime / 3600);
+												const m = Math.floor((elapsedExamTime % 3600) / 60);
+												const s = elapsedExamTime % 60;
+												if (h > 0)
+													return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+												return `${m}:${s.toString().padStart(2, "0")}`;
+											})()}
+										</div>
+										<div className="text-xs text-muted-foreground">
+											Зарцуулсан хугацаа
+										</div>
+									</div>
 								</div>
 
-								<Button
-									onClick={() => setShowMobileMinimapOverlay(true)}
-									className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/40 rounded-lg border border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition"
-								>
-									<Menu className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-									<span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
-										Асуулт
-									</span>
-								</Button>
+								<div className="flex items-center gap-1.5">
+									<Button
+										variant="outline"
+										onClick={() => setShowMobileMinimapOverlay(true)}
+										className="h-9 gap-1.5 px-3 border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
+									>
+										<LayoutGrid className="w-4 h-4" />
+										<span className="text-xs font-semibold">Бүх асуулт</span>
+									</Button>
+									{/* Гарах — дуусгах товчноос хол, дээд талд (санамсаргүй дарахгүй) */}
+									<Button
+										variant="ghost"
+										onClick={() => setShowExitConfirm(true)}
+										className="h-9 gap-1 px-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30"
+									>
+										<LogOut className="w-4 h-4" />
+										Гарах
+									</Button>
+								</div>
 							</div>
 						)}
 
-						{/* Progress bar */}
+						{/* Явц */}
 						<div className="flex items-center gap-2">
-							<div className="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+							<div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
 								<div
-									className="h-full bg-linear-to-r from-green-500 to-emerald-600 transition-all"
+									className="h-full bg-green-500 transition-all"
 									style={{ width: `${(answeredCount / totalCount) * 100}%` }}
 								/>
 							</div>
-							<div className="flex items-center gap-1 text-[11px] font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">
-								<CheckCircle2 className="w-3 h-3 text-green-600 dark:text-green-400" />
+							<div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground whitespace-nowrap">
+								<CheckCircle2 className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
 								{answeredCount}/{totalCount}
 							</div>
 						</div>
@@ -1266,81 +1296,31 @@ export default function SorilPage() {
 				</div>
 
 				<div className="flex-1 overflow-y-auto px-3 py-3">
-					{currentQuestion && (
-						<Card
-							className={`${getCardBorderClass(currentQuestion.question_id)} shadow-sm`}
-						>
-							<CardContent className="p-4">
-								<div className="flex items-start gap-3 mb-4">
-									<div className="shrink-0 w-9 h-9 rounded-lg bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-md">
-										{currentQuestionIndex + 1}
-									</div>
-									<div className="flex-1 min-w-0">
-										<div className="">
-											<MathContent html={currentQuestion.question_name} />
-										</div>
-									</div>
-									<div className="flex items-center gap-2 shrink-0">
-										{typingQuestions.has(currentQuestion.question_id) && (
-											<div className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/40 rounded-md">
-												<div className="flex gap-0.5">
-													<span
-														className="w-1.5 h-1.5 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce"
-														style={{ animationDelay: "0ms" }}
-													/>
-													<span
-														className="w-1.5 h-1.5 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce"
-														style={{ animationDelay: "150ms" }}
-													/>
-													<span
-														className="w-1.5 h-1.5 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce"
-														style={{ animationDelay: "300ms" }}
-													/>
-												</div>
-											</div>
-										)}
-										<Button
-											variant="ghost"
-											size="icon"
-											onClick={() =>
-												toggleBookmark(currentQuestion.question_id)
-											}
-											className="shrink-0 h-9 w-9"
-										>
-											{bookmarkedQuestions.has(currentQuestion.question_id) ? (
-												<BookmarkCheck className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-											) : (
-												<Bookmark className="w-5 h-5 text-slate-400" />
-											)}
-										</Button>
-									</div>
-								</div>
-								<div className="mt-4">{renderQuestion(currentQuestion)}</div>
-							</CardContent>
-						</Card>
-					)}
+					{currentQuestion &&
+						renderQuestionCard(currentQuestion, currentQuestionIndex, true)}
 				</div>
 
-				<div className="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 shadow-lg">
-					<div className="px-3 py-2 space-y-2">
+				<div className="sticky bottom-0 bg-card border-t shadow-lg">
+					{/* iPhone-ийн доод зурвас (home indicator)-т дарагдахгүй */}
+					<div className="px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] space-y-2">
 						<div className="flex gap-2">
 							<Button
 								onClick={goToPreviousQuestion}
 								disabled={currentQuestionIndex === 0}
 								variant="outline"
-								className="flex-1 h-10 font-semibold text-sm"
+								className="flex-1 h-11 gap-1 font-semibold text-sm"
 							>
-								<ChevronLeft className="w-4 h-4 mr-1" />
+								<ChevronLeft className="w-5 h-5" />
 								Өмнөх
 							</Button>
+							{/* Дараах — гол чиглэл тул тод */}
 							<Button
 								onClick={goToNextQuestion}
 								disabled={currentQuestionIndex === totalCount - 1}
-								variant="outline"
-								className="flex-1 h-10 font-semibold text-sm"
+								className="flex-1 h-11 gap-1 font-semibold text-sm"
 							>
 								Дараах
-								<ChevronRight className="w-4 h-4 ml-1" />
+								<ChevronRight className="w-5 h-5" />
 							</Button>
 						</div>
 
@@ -1349,32 +1329,34 @@ export default function SorilPage() {
 								<Button
 									onClick={handleManualSave}
 									disabled={isSaving}
-									variant="default"
-									className="flex-1 h-10 bg-green-600 hover:bg-green-700 text-sm font-semibold"
+									variant="outline"
+									className="h-11 shrink-0 gap-1.5 font-semibold text-sm"
 								>
 									{isSaving ? (
 										<>
-											<Loader2 className="w-4 h-4 mr-2 animate-spin" />
+											<Loader2 className="w-4 h-4 animate-spin" />
 											Хадгалж байна
 										</>
 									) : (
 										<>
-											<Save className="w-4 h-4 mr-2" />
+											<Save className="w-4 h-4" />
 											Хадгалах ({pendingAnswers.current.size})
 										</>
 									)}
 								</Button>
 							)}
 							{examData?.ExamInfo?.[0] && !isTimeUp && (
-								<FinishExamResultDialog
-									ref={finishDialogRef}
-									examId={examData.ExamInfo[0].id}
-									examType={examData.ExamInfo[0].exam_type}
-									startEid={examData.ExamInfo[0].start_eid}
-									elapsedSeconds={elapsedExamTime}
-									answeredCount={answeredCount}
-									totalCount={totalCount}
-								/>
+								<div className="flex-1 min-w-0">
+									<FinishExamResultDialog
+										ref={finishDialogRef}
+										examId={examData.ExamInfo[0].id}
+										examType={examData.ExamInfo[0].exam_type}
+										startEid={examData.ExamInfo[0].start_eid}
+										elapsedSeconds={elapsedExamTime}
+										answeredCount={answeredCount}
+										totalCount={totalCount}
+									/>
+								</div>
 							)}
 						</div>
 					</div>
@@ -1395,23 +1377,47 @@ export default function SorilPage() {
 				)}
 			</div>
 
-			{/* Save button - Desktop */}
+			{/* Гарах баталгаажуулалт — desktop, mobile хоёуланд */}
+			<AlertDialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Сорилоос гарах уу?</AlertDialogTitle>
+						<AlertDialogDescription>
+							Сорилоо дуусгаагүй байна. Гарахдаа итгэлтэй байна уу?
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter className="gap-2">
+						<AlertDialogCancel className="h-11 gap-2 font-semibold border-0 bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:bg-primary dark:hover:bg-primary/90">
+							<ArrowLeft className="w-4 h-4" />
+							Сорилоо үргэлжлүүлэх
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={() => router.back()}
+							className="h-11 gap-2 font-semibold border border-red-300 bg-white text-red-600 hover:bg-red-50 dark:border-red-700 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-950/30"
+						>
+							<LogOut className="w-4 h-4" />
+							Гарах
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			{/* Хадгалах товч - Desktop */}
 			{pendingAnswers.current.size > 0 && !isTimeUp && (
 				<div className="fixed bottom-6 right-6 z-50 lg:block hidden">
 					<Button
 						onClick={handleManualSave}
 						disabled={isSaving}
-						className="shadow-lg"
-						size="lg"
+						className="h-11 gap-2 shadow-lg"
 					>
 						{isSaving ? (
 							<>
-								<Loader2 className="w-4 h-4 mr-2 animate-spin" />
+								<Loader2 className="w-4 h-4 animate-spin" />
 								Хадгалж байна...
 							</>
 						) : (
 							<>
-								<Save className="w-4 h-4 mr-2" />
+								<Save className="w-4 h-4" />
 								Хадгалах ({pendingAnswers.current.size})
 							</>
 						)}

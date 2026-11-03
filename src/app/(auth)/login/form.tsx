@@ -37,6 +37,7 @@ import { Input } from "@/components/ui/input";
 import { createSessionRequest, loginToken, loginTokenRequest } from "@/lib/api";
 import { setCookie } from "@/lib/cookie";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { authCardClass } from "../authShell";
 import { UserCheckForm } from "./mnUserchek";
 
 const formSchema = z.object({
@@ -293,12 +294,14 @@ export function LoginForm() {
 					</div>
 				</DialogContent>
 			</Dialog> */}
-			<Card className="w-full max-w-sm bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50">
+			<Card className={authCardClass}>
 				<CardHeader className="space-y-1">
 					<CardTitle className="text-2xl font-semibold">
 						Тавтай морилно уу
 					</CardTitle>
-					<CardDescription>Өөрийн бүртгэлээр нэвтэрч орно уу</CardDescription>
+					<CardDescription>
+						Нэвтрэх нэр, нууц үгээ оруулаад "Нэвтрэх" товчийг дарна уу.
+					</CardDescription>
 				</CardHeader>
 
 				<Form {...form}>
@@ -321,11 +324,13 @@ export function LoginForm() {
 										<FormLabel>Нэвтрэх нэр</FormLabel>
 										<FormControl>
 											<Input
-												placeholder="Нэвтрэх нэр"
+												placeholder="Нэвтрэх нэрээ оруулна уу"
 												type="text"
 												autoComplete="username"
 												disabled={isPending || tokenIsLoading}
-												className={hasRootError ? "border-destructive/50 " : ""}
+												className={
+													hasRootError ? "h-11 border-destructive/50" : "h-11"
+												}
 												{...field}
 											/>
 										</FormControl>
@@ -348,8 +353,8 @@ export function LoginForm() {
 												disabled={isPending || tokenIsLoading}
 												className={
 													hasRootError
-														? "border-destructive/50 animate-shake"
-														: ""
+														? "h-11 border-destructive/50 animate-shake"
+														: "h-11"
 												}
 												{...field}
 											/>
@@ -360,22 +365,22 @@ export function LoginForm() {
 							/>
 
 							<Button
+								asChild
+								variant="link"
+								className="-mt-2 ml-auto h-auto p-0 text-sm"
+							>
+								<Link href="/forgot">Нууц үгээ мартсан уу?</Link>
+							</Button>
+
+							<Button
 								type="submit"
-								className="w-full"
+								className="h-11 w-full text-base"
 								disabled={isPending || tokenIsLoading}
 							>
 								{(isPending || tokenIsLoading) && (
 									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 								)}
 								{isPending || tokenIsLoading ? "Нэвтэрч байна..." : "Нэвтрэх"}
-							</Button>
-
-							<Button
-								asChild
-								variant="link"
-								className="ml-auto p-0 h-auto text-sm"
-							>
-								<Link href="/forgot">Нууц үг мартсан?</Link>
 							</Button>
 						</CardContent>
 					</form>
@@ -426,22 +431,22 @@ export function LoginForm() {
 
 					<p className="text-sm text-center text-muted-foreground">
 						Бүртгэл байхгүй юу?{" "}
-						<Button asChild variant="link" className="p-0 h-auto">
+						<Button asChild variant="link" className="h-auto p-0 font-semibold">
 							<Link href="/sign">Бүртгүүлэх</Link>
 						</Button>
 					</p>
 					<Button
 						type="button"
 						variant="outline"
-						className="w-full text-sm"
+						className="h-10 w-full text-sm"
 						onClick={() => setGuideOpen(true)}
 					>
-						Заавар үзэх
+						Шалгалт өгөх заавар үзэх
 					</Button>
 				</CardFooter>
 			</Card>
 			<Dialog open={open} onOpenChange={setOpen}>
-				<DialogContent className="sm:max-w-md flex flex-col bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 max-h-screen sm:max-h-[85vh] p-0 overflow-hidden">
+				<DialogContent className="sm:max-w-md flex flex-col bg-card border max-h-screen sm:max-h-[85vh] p-0 overflow-hidden">
 					<DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
 						<DialogTitle className="text-xl font-bold">
 							Монгол хэл , бичгийн шалгалт
@@ -465,7 +470,7 @@ export function LoginForm() {
 						<button
 							type="button"
 							onClick={() => window.open("/guide.pdf", "_blank")}
-							className="text-xs text-blue-600 underline mr-8"
+							className="mr-8 text-sm font-medium text-primary underline-offset-4 hover:underline"
 						>
 							Шинэ табд нээх ↗
 						</button>
@@ -476,14 +481,14 @@ export function LoginForm() {
 						type="application/pdf"
 						className="w-full h-[75vh]"
 					>
-						<div className="flex flex-col items-center justify-center h-[75vh] gap-4 text-sm text-slate-500">
+						<div className="flex flex-col items-center justify-center h-[75vh] gap-4 text-sm text-muted-foreground">
 							<p>PDF харуулах боломжгүй байна.</p>
 
 							<a
 								href="/guide.pdf"
 								target="_blank"
 								rel="noreferrer"
-								className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm"
+								className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
 							>
 								PDF нээх
 							</a>

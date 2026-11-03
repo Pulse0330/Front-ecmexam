@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Building, DoorOpen, Monitor } from "lucide-react";
 import Link from "next/link";
+import { EmptyState } from "@/components/page/pageStates";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -76,10 +77,12 @@ export function RoomSelector({
 					))}
 				</div>
 			) : rooms === null || rooms.length === 0 ? (
-				<div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
-					<DoorOpen size={32} className="mb-2 opacity-20" />
-					<p className="text-sm italic">Өрөө олдсонгүй</p>
-				</div>
+				<EmptyState
+					icon={DoorOpen}
+					title="Өрөө олдсонгүй"
+					description="«Өрөө бүртгэх» товчоор шинэ өрөө нэмнэ үү."
+					className="py-10"
+				/>
 			) : (
 				<RadioGroup
 					value={selectedId || ""}
@@ -125,13 +128,13 @@ export function RoomSelector({
 														{room.room_number}-р өрөө
 													</span>
 													{room.branchname && (
-														<span className="text-[10px] font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded truncate">
+														<span className="text-xs font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded truncate">
 															{room.branchname}
 														</span>
 													)}
 												</div>
 												{room.name && (
-													<div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+													<div className="flex items-center gap-2 text-xs text-muted-foreground">
 														<Building size={12} />
 														<span className="truncate">{room.name}</span>
 													</div>
@@ -142,7 +145,7 @@ export function RoomSelector({
 
 									<div className="mt-2 flex items-center justify-between border-t border-border/50 pt-2 w-full">
 										<div
-											className={`flex items-center gap-1.5 text-[11px] text-muted-foreground ${isDisabled ? "opacity-60" : ""}`}
+											className={`flex items-center gap-1.5 text-xs text-muted-foreground ${isDisabled ? "opacity-60" : ""}`}
 										>
 											<Monitor size={14} className="text-muted-foreground" />
 											<span>{room.pccnt ?? 0} суудал</span>
@@ -151,7 +154,7 @@ export function RoomSelector({
 										{room.flag === 1 ? (
 											<Badge
 												variant={"secondary"}
-												className="text-[9px] h-4 bg-green-500/10 text-red-600 border-none px-1"
+												className="h-5 border-none bg-red-500/10 px-1.5 text-xs text-red-600 dark:text-red-400"
 											>
 												Түр хаагдсан
 											</Badge>
@@ -160,19 +163,19 @@ export function RoomSelector({
 												<Button
 													size="sm"
 													variant="outline"
-													className="h-7 text-[10px] gap-1 text-blue-600 border-blue-200 hover:text-blue-700 hover:bg-blue-50 relative z-10"
+													className="relative z-10 h-8 gap-1 text-xs"
 													asChild
 												>
 													<Link href={`room/${room.id}`}>
 														Ширээний зохион байгуулалт
-														<ArrowRight size={10} />
+														<ArrowRight size={12} />
 													</Link>
 												</Button>
 											)
 										) : (
 											<Badge
 												variant="secondary"
-												className="text-[9px] h-4 bg-green-500/10 text-green-600 border-none px-1"
+												className="h-5 border-none bg-green-500/10 px-1.5 text-xs text-green-700 dark:text-green-400"
 											>
 												Төхөөрөмжтэй
 											</Badge>

@@ -50,10 +50,10 @@ export default function FillInTheBlankQuestion({
 
 	const inputClassName = isReviewMode
 		? isCorrect === true
-			? "border-green-500 bg-green-50"
+			? "border-green-500 bg-green-50 dark:bg-green-900/20"
 			: isCorrect === false
-				? "border-red-500 bg-red-50"
-				: "border-gray-300 bg-gray-50"
+				? "border-red-500 bg-red-50 dark:bg-red-900/20"
+				: "border-border bg-muted"
 		: "border-primary/50 focus-visible:ring-primary";
 
 	return (
@@ -61,7 +61,7 @@ export default function FillInTheBlankQuestion({
 			<div className="grid w-full items-center gap-2">
 				<Label
 					htmlFor={`input-${questionId}`}
-					className="text-sm font-medium text-gray-700"
+					className="text-sm font-medium text-foreground"
 				>
 					{isReviewMode ? "Таны хариулт:" : "Хариултаа бичнэ үү:"}
 				</Label>
@@ -75,7 +75,7 @@ export default function FillInTheBlankQuestion({
 						onChange={handleChange}
 						readOnly={readOnly}
 						disabled={readOnly}
-						className={`w-full transition-colors ${inputClassName} ${
+						className={`h-11 w-full text-base transition-colors ${inputClassName} ${
 							readOnly ? "cursor-not-allowed" : ""
 						}`}
 					/>
@@ -92,8 +92,8 @@ export default function FillInTheBlankQuestion({
 				</div>
 
 				{isReviewMode && isCorrect === false && correctAnswer && (
-					<div className="p-3 bg-green-50 border border-green-200 rounded-md">
-						<p className="text-sm text-green-800">
+					<div className="rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20">
+						<p className="text-sm text-green-800 dark:text-green-300">
 							<span className="font-semibold">Зөв хариулт:</span>{" "}
 							{correctAnswer}
 						</p>
@@ -101,8 +101,10 @@ export default function FillInTheBlankQuestion({
 				)}
 
 				{isReviewMode && isCorrect === true && (
-					<div className="p-3 bg-green-50 border border-green-200 rounded-md">
-						<p className="text-sm text-green-800 font-medium">✓ Зөв хариулт!</p>
+					<div className="rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20">
+						<p className="text-sm font-medium text-green-800 dark:text-green-300">
+							✓ Зөв хариулт!
+						</p>
 					</div>
 				)}
 			</div>

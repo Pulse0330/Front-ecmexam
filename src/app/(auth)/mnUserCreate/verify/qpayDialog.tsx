@@ -144,9 +144,9 @@ export default function QPayDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0 gap-0 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-2xl">
+			<DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0 gap-0 rounded-2xl border bg-card shadow-xl">
 				{/* ── Header ── */}
-				<div className="px-6 pt-6 pb-4 border-b border-gray-100/60 dark:border-gray-800/60">
+				<div className="px-6 pt-6 pb-4 border-b">
 					<DialogHeader>
 						<DialogTitle className="text-lg font-bold flex items-center gap-2.5">
 							<div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
@@ -242,8 +242,8 @@ export default function QPayDialog({
 						</AnimatePresence>
 
 						{/* ── QR Code ── */}
-						<div className="flex flex-col items-center justify-center gap-3 p-5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/60 dark:border-slate-700/40">
-							<p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+						<div className="flex flex-col items-center justify-center gap-3 p-5 bg-muted/40 rounded-2xl border">
+							<p className="text-sm font-semibold text-muted-foreground">
 								QR код уншуулах
 							</p>
 							<div className="bg-white p-3 rounded-xl shadow-md border border-slate-100 dark:border-slate-700">
@@ -257,8 +257,8 @@ export default function QPayDialog({
 										unoptimized
 									/>
 								) : (
-									<div className="w-200px h-200px flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
-										<p className="text-xs text-gray-500">QR код байхгүй</p>
+									<div className="w-200px h-200px flex items-center justify-center bg-muted rounded-lg">
+										<p className="text-xs text-muted-foreground">QR код байхгүй</p>
 									</div>
 								)} */}
 							</div>
@@ -291,7 +291,7 @@ export default function QPayDialog({
 									"Төлбөр шалгах"
 								)}
 							</Button>
-							<p className="text-[10px] text-center text-muted-foreground mt-2">
+							<p className="text-xs text-center text-muted-foreground mt-2">
 								Банкны аппаар төлсний дараа дээрх товчийг дарна уу
 							</p>
 						</div>

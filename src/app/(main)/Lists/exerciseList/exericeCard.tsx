@@ -7,6 +7,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 import type { TestGroupItem } from "@/types/exercise/testGroup";
 
@@ -25,39 +26,22 @@ export interface CategoryGroup {
 
 // --- Components ---
 
+// Сонгосон асуултын тоог харуулах ногоон чип
+const SelectedChip = ({ count }: { count: number }) => (
+	<span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-300">
+		<CheckCircle2 className="size-3.5 shrink-0" aria-hidden="true" />
+		{count} асуулт сонгосон
+	</span>
+);
+
 export const SkeletonCard = memo(() => (
-	<div className="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 border border-slate-200 dark:border-slate-700 animate-pulse">
-		<div className="h-4 sm:h-5 md:h-6 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2 sm:mb-3" />
-		<div className="h-3 sm:h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2 mb-1.5 sm:mb-2" />
-		<div className="h-3 sm:h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3" />
+	<div className="rounded-2xl border bg-card p-4 shadow-sm animate-pulse">
+		<div className="mb-3 h-5 w-3/4 rounded bg-muted" />
+		<div className="mb-2 h-4 w-1/2 rounded bg-muted" />
+		<div className="h-4 w-1/3 rounded bg-muted" />
 	</div>
 ));
 SkeletonCard.displayName = "SkeletonCard";
-
-export const EmptyState = memo(() => (
-	<div className="col-span-full flex flex-col items-center justify-center py-12 sm:py-16 md:py-20">
-		<div className="w-16 h-16 sm:w-20 sm:h-20 mb-4 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-			<svg
-				className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-				aria-hidden="true"
-			>
-				<path
-					strokeLinecap="round"
-					strokeLinejoin="round"
-					strokeWidth={2}
-					d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-				/>
-			</svg>
-		</div>
-		<p className="text-slate-500 dark:text-slate-400 text-sm">
-			Өгөгдөл олдсонгүй
-		</p>
-	</div>
-));
-EmptyState.displayName = "EmptyState";
 
 export const LessonCard = memo(
 	({
@@ -77,39 +61,25 @@ export const LessonCard = memo(
 			<button
 				type="button"
 				onClick={onClick}
-				className="group bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 transition-colors duration-200 text-left relative overflow-hidden w-full"
+				className={cn(
+					"group flex h-full min-h-32 w-full cursor-pointer flex-col justify-between gap-3 rounded-2xl border bg-card p-4 text-left shadow-sm transition-colors hover:border-primary/60 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+					hasSelection && "border-primary ring-1 ring-primary",
+				)}
 				aria-label={`${lesson.lesson_name}${hasSelection ? `, ${totalQuestions} асуулт сонгосон` : ""}`}
 			>
-				<div className="absolute inset-0 bg-emerald-50 dark:bg-emerald-950/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-				<div className="relative flex flex-col h-full min-h-[50px] sm:min-h-[60px]">
-					<div className="flex-1">
-						<div className="mb-2 sm:mb-3">
-							{hasSelection && (
-								<div className="flex items-center justify-end gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-emerald-500 dark:bg-emerald-600 rounded-md sm:rounded-lg mb-2">
-									<span className="text-[8px] sm:text-[10px] font-bold text-white uppercase tracking-wider">
-										Сонгосон
-									</span>
-								</div>
-							)}
-							<h3 className="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors leading-tight line-clamp-2 text-center">
-								{lesson.lesson_name}
-							</h3>
-						</div>
-					</div>
-					{hasSelection && (
-						<div className="mt-2 sm:mt-3 md:mt-4 pt-2 sm:pt-3 md:pt-4 border-t border-slate-200 dark:border-slate-700 flex gap-1.5 sm:gap-2">
-							<div className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-emerald-50 dark:bg-emerald-900/40 rounded-md border border-emerald-200 dark:border-emerald-800">
-								<CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-								<span className="text-[9px] sm:text-[10px] md:text-xs font-bold text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
-									{totalQuestions} асуулт
-								</span>
-							</div>
-						</div>
-					)}
-					<div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-						<ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-emerald-500 dark:text-emerald-400" />
-					</div>
+				<div className="space-y-2">
+					<h3 className="line-clamp-2 text-base font-semibold leading-snug text-foreground">
+						{lesson.lesson_name}
+					</h3>
+					{hasSelection && <SelectedChip count={totalQuestions} />}
 				</div>
+				<span className="inline-flex items-center gap-1 text-sm font-semibold text-primary">
+					Сонгох
+					<ArrowRight
+						className="size-4 transition-transform group-hover:translate-x-0.5"
+						aria-hidden="true"
+					/>
+				</span>
 			</button>
 		);
 	},
@@ -134,48 +104,33 @@ export const CategoryCard = memo(
 			<button
 				type="button"
 				onClick={onClick}
-				className="group bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 transition-colors duration-200 text-left relative overflow-hidden w-full"
+				className={cn(
+					"group flex h-full min-h-36 w-full cursor-pointer flex-col justify-between gap-3 rounded-2xl border bg-card p-4 text-left shadow-sm transition-colors hover:border-primary/60 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-5",
+					hasSelection && "border-primary ring-1 ring-primary",
+				)}
 				aria-label={`${category.ulesson_name}, ${category.items.length} бүлэг тест${hasSelection ? `, ${categoryTotalQuestions} асуулт сонгосон` : ""}`}
 			>
-				<div className="absolute inset-0 bg-emerald-50 dark:bg-emerald-950/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-				<div className="relative flex flex-col h-full min-h-[140px] sm:min-h-40">
-					<div className="flex-1">
-						<div className="flex items-center justify-center mb-2 sm:mb-3 gap-2">
-							<h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors flex-1 leading-tight line-clamp-2">
-								{category.ulesson_name}
-							</h3>
-							{hasSelection && (
-								<div className="flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-emerald-500 dark:bg-emerald-600 rounded-md sm:rounded-lg shrink-0">
-									<span className="text-[8px] sm:text-[10px] font-bold text-white uppercase tracking-wider">
-										Сонгосон
-									</span>
-								</div>
-							)}
-						</div>
-						<div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-							<p className="flex items-center gap-1.5 sm:gap-2">
-								<span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-emerald-500 dark:bg-emerald-400 rounded-full shrink-0" />
-								<span className="truncate">{category.coursename}</span>
-							</p>
-							<p className="font-semibold text-slate-700 dark:text-slate-300">
-								{category.items.length} бүлэг тест
-							</p>
-						</div>
-					</div>
-					{hasSelection && (
-						<div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-slate-200 dark:border-slate-700 flex gap-1.5 sm:gap-2">
-							<div className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-emerald-50 dark:bg-emerald-900/40 rounded-md border border-emerald-200 dark:border-emerald-800">
-								<CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-								<span className="text-[9px] sm:text-[10px] md:text-xs font-bold text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
-									{categoryTotalQuestions} асуулт
-								</span>
-							</div>
-						</div>
-					)}
-					<div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-						<ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-emerald-500 dark:text-emerald-400" />
+				<div className="space-y-2">
+					<h3 className="line-clamp-2 text-base font-semibold leading-snug text-foreground sm:text-lg">
+						{category.ulesson_name}
+					</h3>
+					<p className="truncate text-sm text-muted-foreground">
+						{category.coursename}
+					</p>
+					<div className="flex flex-wrap items-center gap-2">
+						<span className="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+							{category.items.length} бүлэг тест
+						</span>
+						{hasSelection && <SelectedChip count={categoryTotalQuestions} />}
 					</div>
 				</div>
+				<span className="inline-flex items-center gap-1 text-sm font-semibold text-primary">
+					Асуулт сонгох
+					<ArrowRight
+						className="size-4 transition-transform group-hover:translate-x-0.5"
+						aria-hidden="true"
+					/>
+				</span>
 			</button>
 		);
 	},
@@ -244,35 +199,44 @@ export const TestItemCard = memo(
 		const isAtMax = selectedCount >= item.cnt;
 
 		return (
-			<div className="group relative bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700 transition-colors duration-200 w-full space-y-3 sm:space-y-4 flex flex-col justify-between">
-				<TooltipProvider>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<h4 className="text-xs sm:text-sm leading-tight font-semibold text-slate-800 dark:text-slate-100 line-clamp-2 min-h-8 sm:min-h-9">
-								{item.name}
-							</h4>
-						</TooltipTrigger>
-						<TooltipContent>
-							<p className="max-w-xs">{item.name}</p>
-						</TooltipContent>
-					</Tooltip>
-				</TooltipProvider>
+			<div
+				className={cn(
+					"flex h-full w-full flex-col justify-between gap-3 rounded-2xl border bg-card p-3 shadow-sm transition-colors sm:p-4",
+					!isAtMin && "border-primary ring-1 ring-primary",
+				)}
+			>
+				<div className="space-y-1">
+					<TooltipProvider>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<h4 className="line-clamp-2 min-h-10 text-sm font-semibold leading-snug text-foreground">
+									{item.name}
+								</h4>
+							</TooltipTrigger>
+							<TooltipContent>
+								<p className="max-w-xs">{item.name}</p>
+							</TooltipContent>
+						</Tooltip>
+					</TooltipProvider>
+					<p className="text-xs text-muted-foreground">
+						Нийт {item.cnt} асуулт
+					</p>
+				</div>
 
-				<fieldset className="flex justify-center border-0 p-0 m-0">
+				<fieldset className="m-0 flex justify-center border-0 p-0">
 					<legend className="sr-only">{item.name} асуултын тоо сонгох</legend>
 					<div className="flex w-full items-stretch">
 						<Button
 							variant="outline"
-							size="sm"
 							onClick={handleDecrease}
 							disabled={isAtMin}
-							className="h-8 lg:h-9 w-8 lg:w-9 p-0 shrink-0 rounded-r-none border-r-0"
+							className="size-10 shrink-0 rounded-r-none border-r-0 p-0"
 							aria-label="Багасгах"
 						>
-							<Minus className="w-3 h-3 lg:w-4 lg:h-4" />
+							<Minus className="size-4" />
 						</Button>
 
-						<div className="flex-1 min-w-0 relative border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+						<div className="relative min-w-0 flex-1 border bg-background">
 							<input
 								ref={inputRef}
 								type="number"
@@ -281,18 +245,13 @@ export const TestItemCard = memo(
 								value={isAtMin ? "" : selectedCount}
 								onChange={handleInputChange}
 								placeholder="0"
-								className="w-full h-full text-center bg-transparent outline-none border-none tabular-nums pr-8 text-slate-900 dark:text-slate-100"
+								className="h-full w-full border-none bg-transparent px-1 pr-9 text-center text-sm font-semibold tabular-nums text-foreground outline-none"
 								inputMode="numeric"
 								pattern="[0-9]*"
 								aria-label="Асуултын тоо"
-								style={{
-									fontSize: "13px",
-									padding: "0 4px",
-								}}
 							/>
 							<span
-								className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500 dark:text-slate-400 whitespace-nowrap select-none"
-								style={{ fontSize: "10px" }}
+								className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 select-none whitespace-nowrap text-xs text-muted-foreground"
 								aria-hidden="true"
 							>
 								/{item.cnt}
@@ -301,25 +260,24 @@ export const TestItemCard = memo(
 
 						<Button
 							variant="outline"
-							size="sm"
 							onClick={handleIncrease}
 							disabled={isAtMax}
-							className="h-8 lg:h-9 w-8 lg:w-9 p-0 shrink-0 rounded-l-none border-l-0"
+							className="size-10 shrink-0 rounded-l-none border-l-0 p-0"
 							aria-label="Нэмэгдүүлэх"
 						>
-							<Plus className="w-3 h-3 lg:w-4 lg:h-4" />
+							<Plus className="size-4" />
 						</Button>
 					</div>
 				</fieldset>
 
-				<div className="px-0.5 sm:px-1">
+				<div className="px-0.5">
 					<input
 						type="range"
 						min="0"
 						max={item.cnt}
 						value={selectedCount}
 						onChange={handleRangeChange}
-						className="w-full h-1.5 lg:h-2 rounded-lg appearance-none cursor-pointer accent-emerald-500 dark:accent-emerald-400 bg-slate-200 dark:bg-slate-700"
+						className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-muted accent-primary"
 						aria-label="Асуултын тоо сонгох"
 					/>
 				</div>
@@ -351,44 +309,48 @@ export const TestListItem = memo(
 		const isAtMax = selectedCount >= item.cnt;
 
 		return (
-			<div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700 transition-colors">
-				<div className="flex-1 w-full sm:w-auto text-center sm:text-left">
-					<h4 className="font-bold text-sm sm:text-base text-slate-800 dark:text-slate-100">
+			<div
+				className={cn(
+					"flex items-center gap-3 rounded-2xl border bg-card p-3 shadow-sm transition-colors sm:gap-4 sm:p-4",
+					!isAtMin && "border-primary ring-1 ring-primary",
+				)}
+			>
+				<div className="min-w-0 flex-1">
+					<h4 className="line-clamp-2 text-sm font-semibold text-foreground sm:text-base">
 						{item.name}
 					</h4>
-					<p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">
-						Нийт: {item.cnt} асуулт
+					<p className="text-xs text-muted-foreground">
+						Нийт {item.cnt} асуулт
 					</p>
 				</div>
 
-				<fieldset className="flex items-center gap-2 sm:gap-3 border-0 p-0 m-0">
+				<fieldset className="m-0 flex shrink-0 items-center gap-1.5 border-0 p-0 sm:gap-2">
 					<legend className="sr-only">{item.name} асуултын тоо</legend>
 					<Button
-						size="sm"
 						variant="outline"
 						onClick={handleDecrease}
 						disabled={isAtMin}
-						className="rounded-lg h-7 w-7 sm:h-8 sm:w-8 p-0"
+						className="size-10 p-0"
 						aria-label="Багасгах"
 					>
-						<Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+						<Minus className="size-4" />
 					</Button>
 
 					<output
-						className="w-10 sm:w-12 text-center font-bold text-base sm:text-lg text-slate-900 dark:text-slate-100"
+						className="w-9 text-center text-base font-bold tabular-nums text-foreground sm:w-12 sm:text-lg"
 						aria-live="polite"
 					>
 						{selectedCount}
 					</output>
 
 					<Button
-						size="sm"
+						variant="outline"
 						onClick={handleIncrease}
 						disabled={isAtMax}
-						className="rounded-lg h-7 w-7 sm:h-8 sm:w-8 p-0"
+						className="size-10 p-0"
 						aria-label="Нэмэгдүүлэх"
 					>
-						<Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+						<Plus className="size-4" />
 					</Button>
 				</fieldset>
 			</div>

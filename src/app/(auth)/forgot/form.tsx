@@ -37,6 +37,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Forgotpassword } from "@/lib/api";
+import { authCardClass } from "../authShell";
+import { StepIndicator } from "../stepIndicator";
 
 const formSchema = z
 	.object({
@@ -233,7 +235,7 @@ export default function ForgotForm() {
 
 	if (isSubmitted) {
 		return (
-			<Card className="w-full max-w-sm bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50">
+			<Card className={authCardClass}>
 				<CardHeader className="space-y-1 text-center">
 					<div className="mx-auto w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-4">
 						<svg
@@ -262,7 +264,7 @@ export default function ForgotForm() {
 				</CardHeader>
 
 				<CardFooter className="flex flex-col gap-4">
-					<Button asChild className="w-full">
+					<Button asChild className="h-11 w-full">
 						<Link href="/login">
 							<ArrowLeft className="mr-2 h-4 w-4" />
 							Нэвтрэх хуудас руу буцах
@@ -274,12 +276,22 @@ export default function ForgotForm() {
 	}
 
 	return (
-		<Card className="w-full max-w-sm bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50">
-			<CardHeader className="space-y-1">
-				<CardTitle className="text-2xl font-semibold">
-					Нууц үг сэргээх
-				</CardTitle>
-				<CardDescription>Бүртгэлтэй утасны дугаараа оруулна уу</CardDescription>
+		<Card className={authCardClass}>
+			<CardHeader className="space-y-3">
+				<div className="space-y-1">
+					<CardTitle className="text-2xl font-semibold">
+						Нууц үг сэргээх
+					</CardTitle>
+					<CardDescription>
+						{isVerified
+							? "Шинэ нууц үгээ хоёр удаа оруулна уу."
+							: "Бүртгэлтэй утасны дугаараа оруулж баталгаажуулна уу."}
+					</CardDescription>
+				</div>
+				<StepIndicator
+					steps={["Утас баталгаажуулах", "Шинэ нууц үг"]}
+					current={isVerified ? 1 : 0}
+				/>
 			</CardHeader>
 
 			<Form {...form}>
@@ -299,7 +311,7 @@ export default function ForgotForm() {
 											{...field}
 											disabled={isPending || isVerified}
 											maxLength={8}
-											className="text-lg"
+											className="h-11 text-lg tracking-wider"
 											onChange={(e) => {
 												const value = e.target.value.replace(/\D/g, "");
 												field.onChange(value);
@@ -317,7 +329,7 @@ export default function ForgotForm() {
 								<Button
 									type="button"
 									variant="outline"
-									className="w-full"
+									className="h-11 w-full"
 									onClick={handleRequestCode}
 									disabled={isChecking || isWaitingForSMS}
 								>
@@ -335,17 +347,17 @@ export default function ForgotForm() {
 								</Button>
 
 								{isWaitingForSMS && verificationCode && (
-									<Alert className="bg-blue-50/50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 shadow-sm">
+									<Alert className="border-primary/30 bg-primary/5">
 										<AlertDescription className="py-2">
 											<div className="space-y-4">
 												{/* Зааварчилгаа */}
 												<div className="flex gap-3">
-													<div className="shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+													<div className="shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
 														1
 													</div>
-													<p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+													<p className="text-sm text-foreground leading-relaxed">
 														Доорх кодыг{" "}
-														<span className="font-bold text-blue-700 dark:text-blue-400">
+														<span className="font-bold text-primary">
 															142076
 														</span>{" "}
 														дугаарт мессежээр илгээнэ үү.
@@ -354,8 +366,8 @@ export default function ForgotForm() {
 
 												{/* Код харуулах */}
 												<div className="relative group">
-													<div className="bg-white dark:bg-slate-900 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all group-hover:border-blue-400">
-														<span className="text-3xl font-black tracking-widest text-blue-600 dark:text-blue-400 select-all">
+													<div className="bg-card border-2 border-dashed border-primary/40 rounded-xl p-4 flex flex-col items-center justify-center gap-2">
+														<span className="text-3xl font-bold tracking-widest text-primary select-all">
 															{verificationCode}
 														</span>
 													</div>
@@ -363,17 +375,17 @@ export default function ForgotForm() {
 
 												{/* Шалгах алхам */}
 												<div className="flex gap-3 pt-2">
-													<div className="shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+													<div className="shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
 														2
 													</div>
 													<div className="flex-1 space-y-3">
-														<p className="text-sm text-slate-700 dark:text-slate-300">
+														<p className="text-sm text-foreground">
 															Мессеж илгээсний дараа доорх товчийг дарж
 															баталгаажуулна уу.
 														</p>
 														<Button
 															type="button"
-															className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-200 dark:shadow-none transition-all active:scale-[0.98]"
+															className="h-11 w-full font-semibold"
 															onClick={handleCheckVerification}
 															disabled={isChecking}
 														>
@@ -422,7 +434,7 @@ export default function ForgotForm() {
 														type={showPassword ? "text" : "password"}
 														{...field}
 														disabled={isPending}
-														className="pr-10"
+														className="h-11 pr-10"
 													/>
 													<Button
 														type="button"
@@ -432,11 +444,14 @@ export default function ForgotForm() {
 														onClick={() => setShowPassword(!showPassword)}
 														disabled={isPending}
 														tabIndex={-1}
+														aria-label={
+															showPassword ? "Нууц үг нуух" : "Нууц үг харах"
+														}
 													>
 														{showPassword ? (
-															<EyeOff className="h-4 w-4 text-gray-400" />
+															<EyeOff className="h-4 w-4 text-muted-foreground" />
 														) : (
-															<Eye className="h-4 w-4 text-gray-400" />
+															<Eye className="h-4 w-4 text-muted-foreground" />
 														)}
 													</Button>
 												</div>
@@ -460,7 +475,7 @@ export default function ForgotForm() {
 														type={showConfirmPassword ? "text" : "password"}
 														{...field}
 														disabled={isPending}
-														className="pr-10"
+														className="h-11 pr-10"
 													/>
 													<Button
 														type="button"
@@ -472,11 +487,16 @@ export default function ForgotForm() {
 														}
 														disabled={isPending}
 														tabIndex={-1}
+														aria-label={
+															showConfirmPassword
+																? "Нууц үг нуух"
+																: "Нууц үг харах"
+														}
 													>
 														{showConfirmPassword ? (
-															<EyeOff className="h-4 w-4 text-gray-400" />
+															<EyeOff className="h-4 w-4 text-muted-foreground" />
 														) : (
-															<Eye className="h-4 w-4 text-gray-400" />
+															<Eye className="h-4 w-4 text-muted-foreground" />
 														)}
 													</Button>
 												</div>
@@ -487,7 +507,11 @@ export default function ForgotForm() {
 								/>
 
 								{/* Submit Button */}
-								<Button type="submit" className="w-full" disabled={isPending}>
+								<Button
+									type="submit"
+									className="h-11 w-full text-base"
+									disabled={isPending}
+								>
 									{isPending && (
 										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 									)}
@@ -509,7 +533,7 @@ export default function ForgotForm() {
 					</div>
 				</div>
 
-				<Button asChild variant="link" className="w-full">
+				<Button asChild variant="ghost" className="h-10 w-full">
 					<Link href="/login">
 						<ArrowLeft className="mr-2 h-4 w-4" />
 						Нэвтрэх хуудас руу буцах

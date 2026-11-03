@@ -1,9 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { Inbox, LogIn, PencilLine } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import StyledBackButton from "@/components/backButton";
+import { PageHeader } from "@/components/page/pageHeader";
+import { EmptyState, LoadingState } from "@/components/page/pageStates";
 import { Button } from "@/components/ui/button";
 import { gettTestFill } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -158,94 +161,105 @@ export default function ExercisePage() {
 
 	if (!userId) {
 		return (
-			<div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-				<div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-					<h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-						Нэвтрэх шаардлагатай
-					</h2>
-					<p className="text-gray-600 dark:text-gray-400">
-						Энэ хуудсыг үзэхийн тулд эхлээд нэвтэрнэ үү.
-					</p>
-				</div>
+			<div className="flex min-h-screen items-center justify-center bg-background p-4">
+				<EmptyState
+					icon={LogIn}
+					title="Нэвтрэх шаардлагатай"
+					description="Энэ хуудсыг үзэхийн тулд эхлээд нэвтэрнэ үү."
+					className="w-full max-w-md"
+				/>
 			</div>
 		);
 	}
 
 	if (isLoading) {
 		return (
-			<div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-				<div className="text-center">
-					<div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mb-4" />
-					<p className="text-lg font-medium text-gray-700 dark:text-gray-300">
-						Дасгал ачааллаж байна...
-					</p>
-				</div>
-			</div>
+			<LoadingState className="min-h-screen" label="Дасгал ачааллаж байна..." />
 		);
 	}
 
 	if (!examInfo || questions.length === 0) {
 		return (
-			<div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-				<div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-12 max-w-md w-full text-center">
-					<h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-						Дасгал олдсонгүй
-					</h3>
-					<p className="text-gray-600 dark:text-gray-400 mb-6">
-						Эхлээд тестийн бүлгээс тест сонгоно уу.
-					</p>
-					<Button
-						onClick={() => router.push("/Lists/testGroup")}
-						className="bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-					>
-						Тест сонгох
-					</Button>
-				</div>
+			<div className="flex min-h-screen items-center justify-center bg-background p-4">
+				<EmptyState
+					icon={Inbox}
+					title="Дасгал олдсонгүй"
+					description="Эхлээд тестийн бүлгээс тест сонгоно уу."
+					className="w-full max-w-md"
+					action={
+						<Button
+							onClick={() => router.push("/Lists/testGroup")}
+							className="h-11 px-5 font-semibold"
+						>
+							Тест сонгох
+						</Button>
+					}
+				/>
 			</div>
 		);
 	}
 
-	return (
-		<div className="min-h-screen py-4 sm:py-8 px-4 sm:px-6 lg:px-8">
-			<div className="fixed">
-				<StyledBackButton
-					variant="default"
-					showIcon={true}
-					showConfirm={true}
-					confirmTitle="Дасгалаас гарах уу?"
-					confirmMessage="Таны өгсөн хариултууд хадгалагдахгүй байж болно. Та итгэлтэй байна уу?"
-					ariaLabel="Дасгалын жагсаалт руу буцах"
-				/>
-			</div>
+	const progressPercent = Math.round((answeredCount / questions.length) * 100);
 
-			<div className="max-w-5xl mx-auto">
-				{/* Header */}
-				<div className="pb-4 mb-2">
-					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-3">
-						<h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-							{examInfo.title}
-						</h1>
-					</div>
-					<div className="flex flex-wrap items-center gap-2 sm:gap-4">
-						<span className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-medium text-xs sm:text-sm border border-blue-200 dark:border-blue-800">
-							{examInfo.exam_type_name}
-						</span>
-						<span className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-							{questions.length} асуулт
-						</span>
-						<span className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-							• {answeredCount} хариулт өгсөн
-						</span>
+	return (
+		<div className="min-h-screen px-4">
+			{/* Дээд мөр: буцах + явц */}
+			<div className="pt-4">
+				<div className="mx-auto flex max-w-3xl items-center gap-3 rounded-2xl border bg-card px-4 py-3 shadow-sm">
+					<StyledBackButton
+						variant="default"
+						showIcon={true}
+						showConfirm={true}
+						confirmTitle="Дасгалаас гарах уу?"
+						confirmMessage="Таны өгсөн хариултууд хадгалагдахгүй байж болно. Та итгэлтэй байна уу?"
+						ariaLabel="Дасгалын жагсаалт руу буцах"
+					/>
+					<div className="min-w-0 flex-1">
+						<div className="flex items-center justify-between gap-2 text-sm">
+							<span className="font-medium text-foreground">
+								{answeredCount} / {questions.length} хариулсан
+							</span>
+							<span className="text-xs text-muted-foreground">
+								{progressPercent}%
+							</span>
+						</div>
+						<div
+							className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-muted"
+							aria-hidden="true"
+						>
+							<div
+								className="h-full rounded-full bg-green-500 transition-all"
+								style={{ width: `${progressPercent}%` }}
+							/>
+						</div>
 					</div>
 				</div>
+			</div>
+
+			<div className="mx-auto max-w-3xl pb-10">
+				<PageHeader
+					title={examInfo.title}
+					description={
+						<span className="flex flex-wrap items-center gap-2">
+							<span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+								{examInfo.exam_type_name}
+							</span>
+							<span>{questions.length} асуулт</span>
+							<span aria-hidden="true">•</span>
+							<span>Хариулсны дараа зөв эсэх, бодолт нь харагдана</span>
+						</span>
+					}
+					icon={PencilLine}
+				/>
 
 				{/* Questions */}
-				<div className="space-y-4 sm:space-y-6 md:space-y-8">
+				<div className="space-y-6">
 					{questions.map((question, index) => (
 						<QuestionItem
 							key={question.question_id}
 							question={question}
 							index={index}
+							totalCount={questions.length}
 							questionAnswers={getQuestionAnswers(question.question_id)}
 							selected={selectedAnswers.find(
 								(a) => a.questionId === question.question_id,

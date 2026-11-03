@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { BookOpen, CalendarClock, Clock } from "lucide-react";
+import { EmptyState } from "@/components/page/pageStates";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -66,19 +67,21 @@ export function ExamSelector({
 					))}
 				</div>
 			) : exams.length === 0 ? (
-				<div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
-					<BookOpen size={32} className="mb-2 opacity-20" />
-					<p className="text-sm italic">Шалгалт олдсонгүй</p>
-				</div>
+				<EmptyState
+					icon={BookOpen}
+					title="Шалгалт олдсонгүй"
+					description="Шалгалтын хуваарь хуудаснаас хуваарь шинэчилнэ үү."
+					className="py-10"
+				/>
 			) : (
 				<div className="space-y-6">
 					{exams.map((exam: Exam) => (
 						<div key={exam.id} className="space-y-3">
 							<div className="flex items-center gap-2 px-1">
-								<h3 className="font-bold text-[13px] uppercase tracking-tight text-foreground/80">
+								<h3 className="font-semibold text-sm text-foreground">
 									{exam.name}
 								</h3>
-								<Badge variant="outline" className="text-[10px] ml-auto h-5">
+								<Badge variant="outline" className="text-xs ml-auto h-5">
 									{exam.duration} мин
 								</Badge>
 							</div>
@@ -108,7 +111,7 @@ export function ExamSelector({
 													<CalendarClock size={13} className="text-primary" />
 													{format(new Date(date.start_date), "yyyy.MM.dd")}
 												</div>
-												<div className="flex items-center gap-2 text-[11px] text-muted-foreground font-medium">
+												<div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
 													<Clock size={12} />
 													<span>
 														{format(new Date(date.start_date), "HH:mm")} -{" "}
@@ -118,7 +121,7 @@ export function ExamSelector({
 											</div>
 										</div>
 										{selectedExamDateId === String(date.id) && (
-											<Badge className="bg-primary text-[9px] h-4 px-1.5 uppercase font-black">
+											<Badge className="h-5 px-2 text-xs font-semibold">
 												Сонгосон
 											</Badge>
 										)}

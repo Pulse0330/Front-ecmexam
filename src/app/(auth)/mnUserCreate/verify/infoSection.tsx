@@ -34,7 +34,7 @@ export function InfoSection({
 		<div>
 			<div className="flex items-center gap-1.5 mb-1.5">
 				<span className="text-primary/60">{icon}</span>
-				<span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+				<span className="text-xs font-semibold text-muted-foreground">
 					{title}
 				</span>
 			</div>

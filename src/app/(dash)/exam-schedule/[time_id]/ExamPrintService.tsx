@@ -122,7 +122,6 @@ export default function ExamPrintService({
 						<div className="inline-block">
 							<Button
 								variant="outline"
-								size="sm"
 								onClick={handleDownloadPDF}
 								disabled={
 									isGenerating ||
@@ -131,12 +130,12 @@ export default function ExamPrintService({
 									isLoading ||
 									!allReady
 								}
-								className="gap-2"
+								className="h-10 gap-2"
 							>
 								{isGenerating || isLoading ? (
 									<Loader2 className="h-4 w-4 animate-spin" />
 								) : (
-									<FileDown className="h-4 w-4 text-blue-600" />
+									<FileDown className="h-4 w-4 text-primary" />
 								)}
 								{isGenerating
 									? `Боловсруулж байна... ${progress}%`
@@ -188,7 +187,7 @@ export default function ExamPrintService({
 									<div className="flex justify-between border-b-4 border-black pb-4 shrink-0 gap-4">
 										<div className="flex flex-col gap-1 w-full">
 											<span className="text-xs">Хуудас (1/2)</span>
-											<h1 className="text-2xl font-black uppercase m-0 leading-none">
+											<h1 className="text-2xl font-bold uppercase m-0 leading-none">
 												{item?.name}
 											</h1>
 											<p className="text-sm">
@@ -203,7 +202,7 @@ export default function ExamPrintService({
 										</div>
 										<div className="text-center">
 											<QRCodeSVG value={item.qrcode} size={100} level="H" />
-											<p className="text-[10px] font-bold mt-1 tracking-widest">
+											<p className="text-xs font-bold mt-1 tracking-widest">
 												{item.examinee_number}
 											</p>
 										</div>

@@ -271,7 +271,7 @@ export function SplashAd({ ad, onFinished }: SplashAdProps) {
 
 							{/* Дээд мөр: шошго + алгасах */}
 							<div className="absolute inset-x-0 top-0 flex items-center justify-between gap-3 bg-linear-to-b from-black/60 to-transparent p-3 sm:p-4">
-								<span className="rounded-full bg-black/40 px-2.5 py-1 text-[11px] font-medium tabular-nums text-white backdrop-blur-sm">
+								<span className="rounded-full bg-black/40 px-2.5 py-1 text-xs font-medium tabular-nums text-white backdrop-blur-sm">
 									Сурталчилгаа · {remaining}
 								</span>
 								{skippable ? (
@@ -307,9 +307,13 @@ export function SplashAd({ ad, onFinished }: SplashAdProps) {
 						<div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
 							<div className="min-w-0">
 								{ad.title && (
-									<p className="truncate text-base font-semibold text-white">{ad.title}</p>
+									<p className="truncate text-base font-semibold text-white">
+										{ad.title}
+									</p>
 								)}
-								<p className="text-xs text-white/50">Хоёр товшиж таалагдсанаа илэрхийлээрэй</p>
+								<p className="text-xs text-white/50">
+									Хоёр товшиж таалагдсанаа илэрхийлээрэй
+								</p>
 							</div>
 							<div className="flex shrink-0 items-center gap-2">
 								<motion.button
@@ -330,7 +334,9 @@ export function SplashAd({ ad, onFinished }: SplashAdProps) {
 										transition={{ type: "spring", stiffness: 500, damping: 14 }}
 										className="inline-flex"
 									>
-										<Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} />
+										<Heart
+											className={`h-4 w-4 ${liked ? "fill-current" : ""}`}
+										/>
 									</motion.span>
 									{liked ? "Таалагдсан" : "Таалагдлаа"}
 								</motion.button>
@@ -341,7 +347,11 @@ export function SplashAd({ ad, onFinished }: SplashAdProps) {
 										aria-label={muted ? "Дуу нээх" : "Дуу хаах"}
 										className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
 									>
-										{muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+										{muted ? (
+											<VolumeX className="h-4 w-4" />
+										) : (
+											<Volume2 className="h-4 w-4" />
+										)}
 									</button>
 								)}
 								{ad.href && (

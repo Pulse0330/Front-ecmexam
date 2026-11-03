@@ -1,3 +1,5 @@
+import { FileText } from "lucide-react";
+import { EmptyState } from "@/components/page/pageStates";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,7 +14,7 @@ export function VariantList({ data, isLoading }: Props) {
 	// 1️⃣ Loading
 	if (isLoading) {
 		return (
-			<Card>
+			<Card className="rounded-2xl shadow-sm">
 				<CardHeader>
 					<Skeleton className="h-6 w-48" />
 				</CardHeader>
@@ -33,12 +35,12 @@ export function VariantList({ data, isLoading }: Props) {
 	// 2️⃣ Data байхгүй
 	if (!data || data.length === 0) {
 		return (
-			<Card>
-				<CardContent className="py-10 text-center text-muted-foreground text-sm">
-					Шалгалтын материал вариантууд татагдаагүй байна. | Шалгалт эхлэхээс 1
-					цагийн өмнө татна.
-				</CardContent>
-			</Card>
+			<EmptyState
+				icon={FileText}
+				title="Материалын хувилбар татагдаагүй байна"
+				description="Шалгалт эхлэхээс 1 цагийн өмнө «Материал татах» товчоор татна уу."
+				className="py-10"
+			/>
 		);
 	}
 
@@ -46,9 +48,11 @@ export function VariantList({ data, isLoading }: Props) {
 	const lesson = data[0];
 
 	return (
-		<Card className="gap-2">
+		<Card className="gap-2 rounded-2xl shadow-sm">
 			<CardHeader>
-				<CardTitle>{lesson.lesson_name}</CardTitle>
+				<CardTitle className="text-base font-semibold">
+					{lesson.lesson_name}
+				</CardTitle>
 			</CardHeader>
 
 			<CardContent className="space-y-4">
@@ -57,7 +61,7 @@ export function VariantList({ data, isLoading }: Props) {
 						<Badge
 							key={`${v.variantId}-${i}`}
 							variant="secondary"
-							className="h-10 px-3"
+							className="h-9 rounded-full px-3 text-sm"
 						>
 							Хувилбар: {v.variant_number}
 						</Badge>

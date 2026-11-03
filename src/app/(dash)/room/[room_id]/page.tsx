@@ -1,12 +1,13 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Minus, Plus, Save } from "lucide-react";
+import { LayoutGrid, Minus, Plus, Save } from "lucide-react";
 import { use, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Desk } from "@/app/(dash)/room/[room_id]/desk";
 import { LayoutPicker } from "@/app/(dash)/room/[room_id]/mini-room";
-import { IBackButton } from "@/components/iBackButton";
+import { PageHeader } from "@/components/page/pageHeader";
+import { LoadingState } from "@/components/page/pageStates";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -233,74 +234,59 @@ export default function RoomPage({ params }: RoomPageProps) {
 
 	if (isDataLoading || isRoomDetailLoading) {
 		return (
-			<div className="h-screen w-full flex items-center justify-center">
-				<Spinner />
-			</div>
+			<LoadingState
+				label="Өрөөний мэдээлэл ачааллаж байна..."
+				className="min-h-[60vh]"
+			/>
 		);
 	}
 
 	return (
-		<div className="py-6 max-w-7xl mx-auto space-y-6 select-none text-foreground">
+		<div className="mx-auto max-w-7xl space-y-6 pb-10 select-none text-foreground">
 			{/* TOOLBAR */}
 
-			<header className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 border-b pb-6 text-foreground">
-				<div className="flex items-center gap-3">
-					<IBackButton />
-					<div>
-						<h1 className="text-2xl font-bold tracking-tight items-center flex gap-2">
-							Ширээний зохион байгуулалт{" "}
-							<span className="text-muted-foreground">
-								| {roomDetail?.room_number || "—"}-р өрөө
-							</span>
-						</h1>
-						<p className="text-xs text-muted-foreground mt-1">
-							{tableCount} Ширээ | {roomDetail?.branchname}
-						</p>
-					</div>
-				</div>
-				<AlertDialog>
-					{/* Хэрэв бүртгэгдсэн бол товчийг идэвхгүй болгоно */}
-					<AlertDialogTrigger asChild>
-						<Button className={`w-full md:w-auto `}>
-							{isPending ? (
-								<div className="flex items-center gap-2">
-									<Spinner /> Хадгалж байна...
-								</div>
-							) : (
-								<div className="flex items-center gap-2">
-									<Save size={16} />
-									{"Хадгалах"}
-								</div>
-							)}
-						</Button>
-					</AlertDialogTrigger>
+			<PageHeader
+				back
+				icon={LayoutGrid}
+				className="border-b"
+				title={`Ширээний зохион байгуулалт · ${roomDetail?.room_number || "—"}-р өрөө`}
+				description={`${tableCount} ширээ${roomDetail?.branchname ? ` · ${roomDetail.branchname}` : ""}. Ширээг чирж байрлуулаад «Хадгалах» товчийг дарна уу.`}
+				actions={
+					<AlertDialog>
+						<AlertDialogTrigger asChild>
+							<Button className="h-10 w-full gap-2 md:w-auto">
+								{isPending ? <Spinner /> : <Save size={16} />}
+								{isPending ? "Хадгалж байна..." : "Хадгалах"}
+							</Button>
+						</AlertDialogTrigger>
 
-					<AlertDialogContent>
-						<AlertDialogHeader>
-							<AlertDialogTitle>
-								{isAlreadyRegistered
-									? "Бүртгэлтэй байна"
-									: "Та итгэлтэй байна уу?"}
-							</AlertDialogTitle>
-							<AlertDialogDescription>
-								{isAlreadyRegistered
-									? "Энэ өрөөний байршил аль хэдийн бүртгэгдсэн байна. Та дахин бүртгэх боломжгүй."
-									: "Та ширээний байршлыг хадгалах гэж байна. Энэ үйлдлийг хийхэд бэлэн үү?"}
-							</AlertDialogDescription>
-						</AlertDialogHeader>
-						<AlertDialogFooter>
-							<AlertDialogCancel>
-								{isAlreadyRegistered ? "Хаах" : "Болих"}
-							</AlertDialogCancel>
-							{
-								<AlertDialogAction onClick={handleSave}>
-									Тийм, хадгалах
-								</AlertDialogAction>
-							}
-						</AlertDialogFooter>
-					</AlertDialogContent>
-				</AlertDialog>
-			</header>
+						<AlertDialogContent>
+							<AlertDialogHeader>
+								<AlertDialogTitle>
+									{isAlreadyRegistered
+										? "Бүртгэлтэй байна"
+										: "Та итгэлтэй байна уу?"}
+								</AlertDialogTitle>
+								<AlertDialogDescription>
+									{isAlreadyRegistered
+										? "Энэ өрөөний байршил аль хэдийн бүртгэгдсэн байна. Та дахин бүртгэх боломжгүй."
+										: "Та ширээний байршлыг хадгалах гэж байна. Энэ үйлдлийг хийхэд бэлэн үү?"}
+								</AlertDialogDescription>
+							</AlertDialogHeader>
+							<AlertDialogFooter>
+								<AlertDialogCancel>
+									{isAlreadyRegistered ? "Хаах" : "Үгүй, болих"}
+								</AlertDialogCancel>
+								{
+									<AlertDialogAction onClick={handleSave}>
+										Тийм, хадгалах
+									</AlertDialogAction>
+								}
+							</AlertDialogFooter>
+						</AlertDialogContent>
+					</AlertDialog>
+				}
+			/>
 
 			<div className="flex flex-col lg:flex-row gap-6 items-start">
 				{/* ROOM CONTAINER */}
@@ -347,7 +333,7 @@ export default function RoomPage({ params }: RoomPageProps) {
 					{/* CONTROL BUTTONS (BOTTOM RIGHT) */}
 					<div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2 scale-90 md:scale-100 origin-bottom-right">
 						{/* <div className="flex items-center gap-2 px-3 py-1 bg-card rounded-lg border border-border shadow-lg">
-							<span className="text-[10px] font-bold text-muted-foreground uppercase">
+							<span className="text-xs font-bold text-muted-foreground uppercase">
 								Too
 							</span>
 							<Input
@@ -362,18 +348,20 @@ export default function RoomPage({ params }: RoomPageProps) {
 							<Button
 								variant="ghost"
 								size="icon"
-								className="h-8 w-8"
+								className="h-9 w-9"
+								aria-label="Ширээ жижигрүүлэх"
 								onClick={() => setSizeMultiplier((m) => Math.max(m - 5, 20))}
 							>
 								<Minus size={16} />
 							</Button>
-							<div className="px-2 flex items-center text-[10px] font-bold text-muted-foreground">
+							<div className="px-2 flex items-center text-xs font-bold text-muted-foreground">
 								Хэмжээ
 							</div>
 							<Button
 								variant="ghost"
 								size="icon"
-								className="h-8 w-8"
+								className="h-9 w-9"
+								aria-label="Ширээ томруулах"
 								onClick={() => setSizeMultiplier((m) => Math.min(m + 5, 100))}
 							>
 								<Plus size={16} />
@@ -398,7 +386,7 @@ export default function RoomPage({ params }: RoomPageProps) {
 
 				<aside className="w-full lg:w-48  flex flex-col gap-4">
 					<div className="flex flex-col gap-2 px-1">
-						<span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">
+						<span className="text-sm font-semibold text-foreground">
 							Бэлэн загварууд
 						</span>
 						<div className="h-px bg-border w-10" />
@@ -411,7 +399,7 @@ export default function RoomPage({ params }: RoomPageProps) {
 					</div>
 				</aside>
 			</div>
-			<div className="flex gap-6">
+			<div className="flex flex-wrap gap-x-6 gap-y-3 text-sm">
 				<div className="flex items-center gap-3">
 					<div className="bg-indigo-500/10 border-indigo-500/30 hover:border-indigo-500 text-indigo-600 dark:text-indigo-400 dark:bg-indigo-500/40  size-10 rounded-md flex items-center justify-center border-2 transition-all shadow-md p-0.5"></div>{" "}
 					Бүртгэдсэн ширээ

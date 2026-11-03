@@ -7,6 +7,7 @@ import {
 	BookOpen,
 	Calendar,
 	Check,
+	CreditCard,
 	Loader2,
 	ShoppingCart,
 	Tag,
@@ -15,7 +16,12 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useMemo, useReducer, useRef, useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/page/pageHeader";
+import {
+	EmptyState,
+	ErrorState,
+	LoadingState,
+} from "@/components/page/pageStates";
 import { Button } from "@/components/ui/button";
 import { getPaymentCourseList } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -51,7 +57,7 @@ const FAB_VARIANTS = {
 } as const;
 
 const GRID_CLASS =
-	"grid grid-cols-2 xs:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-7 gap-3 sm:gap-4 pb-4 auto-rows-fr";
+	"grid grid-cols-1 gap-3 pb-4 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-4";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -151,45 +157,39 @@ function PlanButton({
 		<button
 			type="button"
 			onClick={() => onToggle(key)}
+			aria-pressed={isSelected}
 			className={cn(
-				"relative w-full p-4 rounded-xl border-2 transition-all duration-200 text-left overflow-hidden",
+				"relative w-full overflow-hidden rounded-2xl border bg-card p-4 text-left shadow-sm transition-colors",
 				isSelected
-					? "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
-					: "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800",
+					? "border-primary bg-primary/5 ring-1 ring-primary"
+					: "hover:border-primary/40",
 			)}
 		>
 			{isDiscounted && (
-				<Badge
-					className={cn(
-						"absolute top-3 right-3 text-xs font-bold",
-						isSelected ? "bg-blue-600 text-white" : "bg-green-500 text-white",
-					)}
-				>
-					<TrendingDown className="w-3 h-3 mr-1" />
+				<span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+					<TrendingDown className="size-3.5" aria-hidden />
 					Хөнгөлөлттэй
-				</Badge>
+				</span>
 			)}
 
-			<div className="mb-3 pr-20">
-				<p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-					{plan.descr}
-				</p>
-				<p className="text-2xl font-black text-slate-900 dark:text-white">
+			<div className="mb-2 pr-28">
+				<p className="mb-1 text-xs text-muted-foreground">{plan.descr}</p>
+				<p className="text-2xl font-bold text-foreground">
 					₮{plan.amount.toLocaleString()}
 				</p>
 			</div>
 
-			<div className="flex items-center gap-2 mb-2">
-				<Calendar className="w-3.5 h-3.5 text-slate-400" />
-				<span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+			<div className="flex items-center gap-2">
+				<Calendar className="size-4 text-muted-foreground" aria-hidden />
+				<span className="text-sm font-medium text-muted-foreground">
 					{plan.month} сарын хугацаа
 				</span>
 			</div>
 
 			{isSelected && (
-				<div className="absolute bottom-3 right-3 w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
-					<Check className="w-4 h-4 text-white" />
-				</div>
+				<span className="absolute right-3 bottom-3 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
+					<Check className="size-4" aria-hidden />
+				</span>
 			)}
 		</button>
 	);
@@ -222,65 +222,74 @@ function SidebarContent({
 	onTogglePlan,
 	onCheckout,
 }: SidebarContentProps) {
+	// Сонгосон багцын үнэ (товчны текстэд харуулах)
+	const selectedPlanInfo = availablePlans.find(
+		(p) => `${p.planid}-${p.month}` === selectedPlan,
+	);
+
 	return (
-		<div className="p-6 space-y-6">
-			<div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-700">
+		<div className="space-y-6 p-6">
+			<div className="flex items-center justify-between gap-3 border-b pb-4">
 				<div>
-					<h3 className="text-lg font-bold text-slate-900 dark:text-white">
-						Төлбөр төлөх
-					</h3>
-					<p className="text-sm text-slate-600 dark:text-slate-400">
-						{selectedIds.length} хичээл сонгосон
+					<h3 className="text-lg font-bold text-foreground">Төлбөр төлөх</h3>
+					<p className="text-sm text-muted-foreground">
+						1. Хичээлээ шалгах · 2. Хугацаа сонгох · 3. QPay-ээр төлөх
 					</p>
 				</div>
 				<Button
-					variant="ghost"
-					size="icon"
+					variant="outline"
+					size="sm"
 					onClick={onClearAll}
-					className="h-9 w-9 rounded-lg"
+					className="h-10 shrink-0"
 				>
-					<X className="w-5 h-5" />
+					Цэвэрлэх
 				</Button>
 			</div>
 
-			<div className="space-y-2 max-h-64 overflow-y-auto pr-2">
-				{selectedIds.map((id) => {
-					const course = courseMap.get(id);
-					if (!course) return null;
-					return (
-						<div
-							key={id}
-							className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-						>
-							<Image
-								src={course.filename}
-								alt={course.title}
-								width={56}
-								height={56}
-								className="rounded-lg object-cover"
-							/>
-							<p className="flex-1 text-sm font-semibold text-slate-900 dark:text-white truncate">
-								{course.title}
-							</p>
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={() => onRemoveCourse(id)}
-								className="h-8 w-8 shrink-0"
+			<div className="space-y-2">
+				<p className="text-sm font-semibold text-foreground">
+					Сонгосон хичээл ({selectedIds.length}/{MAX_SELECTED})
+				</p>
+				<div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+					{selectedIds.map((id) => {
+						const course = courseMap.get(id);
+						if (!course) return null;
+						return (
+							<div
+								key={id}
+								className="flex items-center gap-3 rounded-xl border bg-muted/50 p-2.5"
 							>
-								<X className="w-4 h-4" />
-							</Button>
-						</div>
-					);
-				})}
+								<Image
+									src={course.filename}
+									alt={course.title}
+									width={56}
+									height={56}
+									className="size-14 rounded-lg object-cover"
+								/>
+								<p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+									{course.title}
+								</p>
+								<Button
+									variant="ghost"
+									size="icon"
+									onClick={() => onRemoveCourse(id)}
+									className="size-10 shrink-0"
+									aria-label={`${course.title} хичээлийг хасах`}
+								>
+									<X className="size-4" />
+								</Button>
+							</div>
+						);
+					})}
+				</div>
 			</div>
 
 			{availablePlans.length > 0 && (
 				<div className="space-y-4">
 					<div className="flex items-center gap-2">
-						<Tag className="w-4 h-4 text-blue-600" />
-						<p className="text-sm font-bold text-slate-900 dark:text-white">
-							Төлбөрийн сонголт
+						<Tag className="size-4 text-primary" aria-hidden />
+						<p className="text-sm font-semibold text-foreground">
+							Хугацаа ба төлбөр сонгох
 						</p>
 					</div>
 
@@ -303,17 +312,20 @@ function SidebarContent({
 						<Button
 							onClick={onCheckout}
 							disabled={isProcessingPayment}
-							className="w-full h-12 text-base font-bold bg-green-600 hover:bg-green-700"
+							className="h-12 w-full text-base font-semibold"
 						>
 							{isProcessingPayment ? (
 								<>
-									<Loader2 className="w-5 h-5 mr-2 animate-spin" />
-									Уншиж байна...
+									<Loader2 className="size-5 animate-spin" />
+									QR код үүсгэж байна...
 								</>
 							) : (
 								<>
-									<Check className="w-5 h-5 mr-2" />
-									QPay төлбөр төлөх
+									<CreditCard className="size-5" />
+									QPay-ээр төлөх
+									{selectedPlanInfo
+										? ` · ₮${selectedPlanInfo.amount.toLocaleString()}`
+										: ""}
 								</>
 							)}
 						</Button>
@@ -321,7 +333,7 @@ function SidebarContent({
 				</div>
 			)}
 
-			<p className="pt-4 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400 text-center">
+			<p className="border-t pt-4 text-center text-xs text-muted-foreground">
 				{selectedIds.length === 1
 					? "Хичээлийн хугацаа ба төлбөрөө сонгоно уу"
 					: "Та өөрийн хүссэн хичээлүүдээ сонгон, суралцаж хугацаа болон төлбөрийн хамгийн ашигтай хувилбарыг сонгоорой"}
@@ -491,16 +503,35 @@ export default function PaymentCoursesPage() {
 	// ── Render ─────────────────────────────────────────────────────────────────
 
 	return (
-		<div className="mx-auto w-full flex flex-col gap-4 sm:gap-7 px-3 sm:px-7 lg:px-8 py-4 sm:py-7 lg:py-8">
+		<div
+			className={cn(
+				"mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-24 sm:px-6 lg:px-8 lg:pb-8",
+				// Desktop дээр баруун талын төлбөрийн самбар картуудыг халхлахгүй
+				hasSelection && "lg:max-w-none lg:pr-[25rem]",
+			)}
+		>
+			<PageHeader
+				title="Хичээл худалдан авах"
+				description={`Хичээлээ сонгоод (нэг удаад ${MAX_SELECTED} хүртэл), хугацаагаа сонгож QPay-ээр төлнө.`}
+				icon={ShoppingCart}
+				className="pb-0 sm:pb-0"
+			/>
+
+			{/* Ачаалж байна */}
+			{!!userId && !isSuccess && !isError && (
+				<LoadingState label="Хичээлүүд ачааллаж байна..." />
+			)}
+
 			{/* ── Purchased courses ── */}
 			{purchasedCourses.length > 0 && (
-				<section className="mb-8 sm:mb-12">
-					<div className="mb-4 sm:mb-6">
-						<h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-1">
+				<section>
+					<div className="mb-4">
+						<h2 className="text-lg font-semibold text-foreground sm:text-xl">
 							Миний хичээлүүд
-						</h3>
-						<p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-							{purchasedCourses.length} Хичээл
+						</h2>
+						<p className="text-sm text-muted-foreground">
+							{purchasedCourses.length} хичээл · үлдсэн хугацааг карт бүр дээр
+							харна уу
 						</p>
 					</div>
 
@@ -524,48 +555,31 @@ export default function PaymentCoursesPage() {
 
 			{/* ── Available courses ── */}
 			<section>
-				<div className="mb-8">
-					<div className="flex items-center justify-between mb-6 sm:mb-8">
-						<div>
-							<h2 className="text-lg sm:text-2xl font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+				<div>
+					{isSuccess && (
+						<div className="mb-4">
+							<h2 className="text-lg font-semibold text-foreground sm:text-xl">
 								{purchasedCourses.length > 0
 									? "Бусад хичээлүүд"
 									: "Бүх хичээлүүд"}
 							</h2>
-							<p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+							<p className="text-sm text-muted-foreground">
 								{availableCourses.length} хичээл байна
 								{hasSelection && (
-									<span className="ml-2 text-blue-600 dark:text-blue-400 font-medium">
+									<span className="ml-2 font-medium text-primary">
 										• {selectedIds.size}/{MAX_SELECTED} сонгосон
 									</span>
 								)}
 							</p>
 						</div>
-					</div>
+					)}
 
 					{/* Error */}
 					{isError && (
-						<motion.div
-							initial={{ opacity: 0, scale: 0.95 }}
-							animate={{ opacity: 1, scale: 1 }}
-							className="max-w-md mx-auto text-center py-12 sm:py-20"
-						>
-							<div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-red-100 dark:bg-red-950/30 flex items-center justify-center mx-auto mb-4 sm:mb-6">
-								<X className="w-8 h-8 sm:w-10 sm:h-10 text-red-600 dark:text-red-400" />
-							</div>
-							<h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-2 sm:mb-3">
-								Алдаа гарлаа
-							</h3>
-							<p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-4 sm:mb-6">
-								{error.message}
-							</p>
-							<Button
-								onClick={() => window.location.reload()}
-								className="bg-blue-600 hover:bg-blue-700"
-							>
-								Дахин оролдох
-							</Button>
-						</motion.div>
+						<ErrorState
+							description={error.message}
+							onRetry={() => window.location.reload()}
+						/>
 					)}
 
 					{/* Course grid */}
@@ -598,21 +612,11 @@ export default function PaymentCoursesPage() {
 
 					{/* Empty state */}
 					{isSuccess && availableCourses.length === 0 && (
-						<motion.div
-							initial={{ opacity: 0, scale: 0.95 }}
-							animate={{ opacity: 1, scale: 1 }}
-							className="max-w-md mx-auto text-center py-12 sm:py-20"
-						>
-							<div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4 sm:mb-6">
-								<BookOpen className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400" />
-							</div>
-							<h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-2 sm:mb-3">
-								Хичээл олдсонгүй
-							</h3>
-							<p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
-								Бүх хичээлийг аль хэдийн худалдаж авсан байна
-							</p>
-						</motion.div>
+						<EmptyState
+							icon={BookOpen}
+							title="Худалдан авах хичээл алга"
+							description="Бүх хичээлийг аль хэдийн худалдаж авсан байна."
+						/>
 					)}
 				</div>
 			</section>
@@ -627,7 +631,7 @@ export default function PaymentCoursesPage() {
 						exit="hidden"
 						transition={SPRING_TRANSITION}
 						aria-label="Төлбөрийн мэдээлэл"
-						className="hidden lg:block fixed right-0 top-0 bottom-0 z-50 w-96 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 shadow-2xl overflow-y-auto"
+						className="fixed top-0 right-0 bottom-0 z-50 hidden w-96 overflow-y-auto border-l bg-background shadow-xl lg:block"
 					>
 						<SidebarContent {...sidebarProps} />
 					</motion.aside>
@@ -653,23 +657,24 @@ export default function PaymentCoursesPage() {
 							exit="hidden"
 							transition={SPRING_TRANSITION}
 							aria-label="Миний сагс"
-							className="lg:hidden fixed right-0 top-0 bottom-0 w-full sm:w-96 bg-white dark:bg-slate-900 shadow-2xl z-50 overflow-y-auto border-l border-slate-200 dark:border-slate-700"
+							className="fixed top-0 right-0 bottom-0 z-50 w-full overflow-y-auto border-l bg-background shadow-xl sm:w-96 lg:hidden"
 						>
-							<div className="flex items-center justify-between p-6 pb-0">
+							<div className="flex items-center justify-between gap-3 p-6 pb-0">
 								<div>
-									<h3 className="text-lg font-bold text-slate-900 dark:text-white">
+									<h3 className="text-lg font-bold text-foreground">
 										Миний сагс
 									</h3>
-									<p className="text-sm text-slate-600 dark:text-slate-400">
+									<p className="text-sm text-muted-foreground">
 										{selectedIds.size} хичээл
 									</p>
 								</div>
 								<Button
-									variant="ghost"
-									size="icon"
+									variant="outline"
 									onClick={() => dispatchUi({ type: "CLOSE_CART" })}
+									className="h-10"
 								>
-									<X className="w-5 h-5" />
+									<X className="size-4" />
+									Хаах
 								</Button>
 							</div>
 							<SidebarContent {...sidebarProps} />
@@ -678,27 +683,25 @@ export default function PaymentCoursesPage() {
 				)}
 			</AnimatePresence>
 
-			{/* ── Mobile FAB ── */}
+			{/* ── Mobile доод самбар: сагс нээх ── */}
 			<AnimatePresence>
 				{hasSelection && !ui.showCart && (
-					<motion.button
+					<motion.div
 						variants={FAB_VARIANTS}
 						initial="hidden"
 						animate="visible"
 						exit="hidden"
-						type="button"
-						aria-label={`Сагс нээх — ${selectedIds.size} хичээл`}
-						onClick={() => dispatchUi({ type: "OPEN_CART" })}
-						className="lg:hidden fixed bottom-6 right-6 w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center z-30"
+						className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-lg backdrop-blur lg:hidden"
 					>
-						<ShoppingCart className="w-6 h-6" />
-						<span
-							aria-hidden
-							className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold"
+						<Button
+							type="button"
+							onClick={() => dispatchUi({ type: "OPEN_CART" })}
+							className="h-11 w-full text-base"
 						>
-							{selectedIds.size}
-						</span>
-					</motion.button>
+							<ShoppingCart className="size-5" />
+							Төлбөр төлөх · {selectedIds.size} хичээл
+						</Button>
+					</motion.div>
 				)}
 			</AnimatePresence>
 

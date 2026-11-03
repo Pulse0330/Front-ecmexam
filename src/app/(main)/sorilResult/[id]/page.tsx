@@ -2,14 +2,26 @@
 
 import { useQuery } from "@tanstack/react-query";
 import parse from "html-react-parser";
-import { AlertCircle, CheckCircle, MinusCircle, XCircle } from "lucide-react";
+import { AlertCircle, ClipboardCheck, FileQuestion } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import UseAnimations from "react-useanimations";
-import loading2 from "react-useanimations/lib/loading2";
-import StyledBackButton from "@/components/backButton";
-import { Badge } from "@/components/ui/badge";
+import {
+	AnswerFilterTabs,
+	AnswerTag,
+	answerRowClass,
+	OptionLetter,
+	QuestionCardHeader,
+	QuestionStatusBadge,
+	ResultSummary,
+	type RowTone,
+} from "@/app/(main)/examResult/[id]/resultUi";
+import { PageHeader } from "@/components/page/pageHeader";
+import {
+	EmptyState,
+	ErrorState,
+	LoadingState,
+} from "@/components/page/pageStates";
 import { Button } from "@/components/ui/button";
 import { getExamDun, getExamResultMore } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -335,79 +347,56 @@ function ExamResultDetailPage() {
 
 	if (!userId) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-background to-muted/20 p-4">
-				<div className="text-center space-y-4 p-8 rounded-2xl bg-card/80 backdrop-blur-sm border border-border shadow-2xl max-w-md">
-					<div className="w-20 h-20 mx-auto bg-linear-to-br from-orange-500/20 to-red-500/20 rounded-full flex items-center justify-center">
-						<AlertCircle className="w-10 h-10 text-orange-500" />
-					</div>
-					<div>
-						<h3 className="text-2xl font-bold mb-2">
-							Хэрэглэгч нэвтрээгүй байна
-						</h3>
-						<p className="text-muted-foreground">
-							Та эхлээд системд нэвтэрнэ үү
-						</p>
-					</div>
-				</div>
+			<div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
+				<EmptyState
+					icon={AlertCircle}
+					title="Хэрэглэгч нэвтрээгүй байна"
+					description="Та эхлээд системд нэвтэрнэ үү."
+				/>
 			</div>
 		);
 	}
 
 	if (isLoading) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-background to-muted/20">
-				<div className="flex flex-col items-center space-y-6">
-					<div className="relative">
-						<div className="absolute inset-0 bg-linear-to-r from-primary/30 to-primary/10 blur-3xl rounded-full animate-pulse" />
-						<UseAnimations
-							animation={loading2}
-							size={80}
-							strokeColor="hsl(var(--primary))"
-							loop
-						/>
-					</div>
-					<div className="space-y-2 text-center">
-						<p className="text-xl font-bold animate-pulse">Ачааллаж байна...</p>
-						<p className="text-sm text-muted-foreground">
-							Шалгалтын дэлгэрэнгүй мэдээллийг уншиж байна
-						</p>
-					</div>
-				</div>
+			<div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
+				<LoadingState
+					label="Сорилын үр дүнг ачааллаж байна..."
+					className="min-h-[60vh]"
+				/>
 			</div>
 		);
 	}
 
 	if (isError) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-background to-muted/20 p-4">
-				<div className="max-w-md w-full bg-card rounded-2xl p-8 shadow-2xl text-center space-y-4">
-					<div className="w-20 h-20 mx-auto bg-linear-to-br from-destructive/20 to-red-500/20 rounded-full flex items-center justify-center">
-						<AlertCircle className="w-10 h-10 text-destructive" />
-					</div>
-					<h3 className="text-2xl font-bold text-destructive">Алдаа гарлаа</h3>
-					<p className="text-sm text-destructive/80">
-						{(error as Error).message}
-					</p>
-					<Button onClick={() => router.back()}>Буцах</Button>
-				</div>
+			<div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
+				<PageHeader title="Сорилын үр дүн" back />
+				<ErrorState description={(error as Error).message} />
 			</div>
 		);
 	}
 
 	if (!data?.RetResponse?.ResponseType || !data?.RetDataSecond) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-background to-muted/20 p-4">
-				<div className="text-center space-y-6 p-8 rounded-2xl bg-card/80 backdrop-blur-sm border shadow-2xl max-w-md">
-					<div className="w-20 h-20 mx-auto bg-linear-to-br from-orange-500/20 to-amber-500/20 rounded-full flex items-center justify-center">
-						<AlertCircle className="w-10 h-10 text-orange-500" />
-					</div>
-					<h3 className="text-2xl font-bold">Мэдээлэл олдсонгүй</h3>
-					<p className="text-muted-foreground">
-						{data?.RetResponse?.ResponseMessage ||
-							"Шалгалтын дэлгэрэнгүй мэдээлэл олдсонгүй"}
-					</p>
-					<Button onClick={() => router.back()}>Буцах</Button>
-				</div>
+			<div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
+				<EmptyState
+					icon={FileQuestion}
+					title="Мэдээлэл олдсонгүй"
+					description={
+						data?.RetResponse?.ResponseMessage ||
+						"Сорилын дэлгэрэнгүй мэдээлэл олдсонгүй"
+					}
+					action={
+						<Button
+							variant="outline"
+							className="h-10"
+							onClick={() => router.back()}
+						>
+							← Буцах
+						</Button>
+					}
+				/>
 			</div>
 		);
 	}
@@ -419,316 +408,35 @@ function ExamResultDetailPage() {
 
 	const dunInfo = dunData?.RetData?.[0];
 	return (
-		<div className=" mx-auto w-full  py-8 px-4">
-			<div className="fixed ">
-				<StyledBackButton
-					variant="default"
-					showIcon={true}
-					showConfirm={true}
-					confirmTitle="Та итгэлтэй байна уу?"
-					confirmMessage=""
-					ariaLabel=""
-				/>
-			</div>
-			<div className="max-w-6xl mx-auto space-y-6">
+		<div className="mx-auto w-full max-w-5xl px-4 pb-10 sm:px-6">
+			<PageHeader
+				title="Сорилын үр дүн"
+				description="Таны оноо болон асуулт тус бүрийн хариулт"
+				icon={ClipboardCheck}
+				back
+				backConfirmMessage="Үр дүнгийн хуудаснаас гарч өмнөх хуудас руу буцах уу?"
+			/>
+			<div className="space-y-5">
 				{examSummary && (
-					<div className="bg-linear-to-br from-card to-card/50 border border-border/50 rounded-3xl p-8 shadow-xl backdrop-blur-sm">
-						{/* Толгой хэсэг */}
-
-						<div className="mb-6 pb-6 border-b border-border/50">
-							<div className="flex items-center gap-3">
-								<div className="w-12 h-12 bg-linear-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center shadow-lg">
-									<svg
-										className="w-6 h-6 text-primary-foreground"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<title>asd</title>
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											strokeWidth={2}
-											d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-										/>
-									</svg>
-								</div>
-								<h2 className="text-3xl font-bold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-									{examSummary.lesson_name}
-								</h2>
-							</div>
-						</div>
-
-						{/* Статистик */}
-						<div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-							{/* Нийт асуулт */}
-							<div className="group relative p-6 bg-linear-to-br from-primary/10 to-primary/5 rounded-2xl border border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
-								<div className="flex items-center justify-between mb-2">
-									<p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-										Нийт асуулт
-									</p>
-									<div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-										<svg
-											className="w-4 h-4 text-primary"
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24"
-										>
-											<title>asd</title>
-											<path
-												strokeLinecap="round"
-												strokeLinejoin="round"
-												strokeWidth={2}
-												d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-											/>
-										</svg>
-									</div>
-								</div>
-								<p className="text-4xl font-bold text-primary">
-									{examSummary.test_ttl}
-								</p>
-								<div className="flex justify-start mt-4">
-									{dunInfo && (
-										<p className="text-right text-xl font-bold wrap-break-word ">
-											{dunInfo.title}
-										</p>
-									)}
-								</div>
-							</div>
-
-							{/* Оноо харьцуулалт */}
-							<div className="group relative p-6 bg-linear-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 rounded-2xl border border-yellow-200/50 dark:border-yellow-900/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
-								<div className="space-y-4">
-									{/* Авах оноо */}
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-2">
-											<div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
-											<p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-												Авах оноо
-											</p>
-										</div>
-										<p className="text-2xl font-bold text-yellow-600 dark:text-yellow-500">
-											{examSummary.ttl_point}
-										</p>
-									</div>
-
-									{/* Progress bar */}
-									<div className="relative h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-										<div
-											className="absolute inset-y-0 left-0 bg-linear-to-r from-yellow-900 via-amber-500 to-yellow-600 rounded-full transition-all duration-700 ease-out"
-											style={{
-												width: `${Math.min((examSummary.point / examSummary.ttl_point) * 100, 100)}%`,
-											}}
-										>
-											<div className="absolute inset-0 bg-white/20 animate-pulse" />
-										</div>
-									</div>
-
-									{/* Авсан оноо */}
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-2">
-											<div className="w-2 h-2 bg-primary rounded-full" />
-											<p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-												Авсан оноо
-											</p>
-										</div>
-										<p className="text-2xl font-bold text-primary">
-											{examSummary.point}
-										</p>
-									</div>
-								</div>
-							</div>
-
-							{/* Хариултын статистик - 3 in 1 */}
-							<div className="group relative p-6 bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900/50 dark:to-slate-900/50 rounded-2xl border border-slate-200/50 dark:border-slate-700/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
-								<div className="space-y-4">
-									{/* Зөв хариулт */}
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-2">
-											<div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-												<svg
-													className="w-4 h-4 text-emerald-600"
-													fill="none"
-													stroke="currentColor"
-													viewBox="0 0 24 24"
-												>
-													<title>Зөв</title>
-													<path
-														strokeLinecap="round"
-														strokeLinejoin="round"
-														strokeWidth={2}
-														d="M5 13l4 4L19 7"
-													/>
-												</svg>
-											</div>
-											<p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-												Зөв
-											</p>
-										</div>
-										<p className="text-2xl font-bold text-emerald-600">
-											{examSummary.correct_ttl}
-										</p>
-									</div>
-
-									{/* Буруу хариулт */}
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-2">
-											<div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center">
-												<svg
-													className="w-4 h-4 text-red-600"
-													fill="none"
-													stroke="currentColor"
-													viewBox="0 0 24 24"
-												>
-													<title>Буруу</title>
-													<path
-														strokeLinecap="round"
-														strokeLinejoin="round"
-														strokeWidth={2}
-														d="M6 18L18 6M6 6l12 12"
-													/>
-												</svg>
-											</div>
-											<p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-												Буруу
-											</p>
-										</div>
-										<p className="text-2xl font-bold text-red-600">
-											{examSummary.wrong_ttl}
-										</p>
-									</div>
-									{/* Хариулаагүй */}
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-2">
-											<div className="w-8 h-8 bg-gray-500/20 rounded-lg flex items-center justify-center">
-												<svg
-													className="w-4 h-4 text-gray-600"
-													fill="none"
-													stroke="currentColor"
-													viewBox="0 0 24 24"
-												>
-													<title>Хариулаагүй</title>
-													<path
-														strokeLinecap="round"
-														strokeLinejoin="round"
-														strokeWidth={2}
-														d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-													/>
-												</svg>
-											</div>
-											<p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-												Хариулаагүй
-											</p>
-										</div>
-										<p className="text-2xl font-bold text-gray-600">
-											{examSummary.not_answer}
-										</p>
-									</div>
-								</div>
-							</div>
-
-							{/* Шалгалтын хувь */}
-							<div className="group relative p-6 bg-linear-to-br from-blue-500/10 to-blue-500/5 rounded-2xl border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
-								<div className="flex items-center justify-between mb-2">
-									<p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-										Шалгалтын хувь
-									</p>
-									<div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-										<svg
-											className="w-4 h-4 text-blue-600"
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24"
-										>
-											<title>asd</title>
-											<path
-												strokeLinecap="round"
-												strokeLinejoin="round"
-												strokeWidth={2}
-												d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-											/>
-										</svg>
-									</div>
-								</div>
-								<div className="flex items-end gap-2">
-									{/* 🔥 ТҮВШИН ЭХЭНД */}
-
-									{/* 🔥 ХУВЬ ДАРАА НЬ */}
-									<p className="text-4xl font-bold text-blue-600">
-										{examSummary.point_perc.toFixed(1)}
-									</p>
-									<p className="text-xl font-bold text-blue-600/60 mb-1">%</p>
-									{dunInfo && (
-										<span className="text-3xl font-bold text-gray-700 mb-1">
-											({dunInfo.tuval})
-										</span>
-									)}
-								</div>
-								{/* Хувийн визуал индикатор */}
-								<div className="mt-3 flex gap-1">
-									{Array.from({ length: 10 }).map((_, i) => (
-										<div
-											key={`percent-indicator-${examSummary.test_id}-${i}`}
-											className={`h-1 flex-1 rounded-full transition-all duration-500 ${
-												i < Math.floor(examSummary.point_perc / 10)
-													? "bg-blue-500"
-													: "bg-blue-500/20"
-											}`}
-											style={{ transitionDelay: `${i * 50}ms` }}
-										/>
-									))}
-								</div>
-							</div>
-						</div>
-					</div>
+					<ResultSummary
+						title={examSummary.lesson_name}
+						subtitle={examSummary.test_title}
+						dunTitle={dunInfo?.title}
+						tuval={dunInfo?.tuval}
+						point={examSummary.point}
+						ttlPoint={examSummary.ttl_point}
+						perc={examSummary.point_perc}
+						total={examSummary.test_ttl}
+						correct={examSummary.correct_ttl}
+						wrong={examSummary.wrong_ttl}
+						notAnswer={examSummary.not_answer}
+						testTime={examSummary.test_time}
+					/>
 				)}
-
-				{/* Filter buttons - Global for all questions */}
-				<div className="bg-card border rounded-2xl p-4 shadow-lg">
-					<div className="flex items-center gap-4 flex-wrap">
-						<span className="text-sm font-semibold text-muted-foreground">
-							Асуултууд:
-						</span>
-						<div className="flex gap-2 flex-wrap">
-							<Button
-								onClick={() => setAnswerFilter("all")}
-								className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all ${
-									answerFilter === "all"
-										? "bg-primary text-primary-foreground shadow-lg"
-										: "bg-muted text-muted-foreground hover:bg-muted/80"
-								}`}
-							>
-								Бүх асуулт
-							</Button>
-							<Button
-								onClick={() => setAnswerFilter("correct")}
-								className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all ${
-									answerFilter === "correct"
-										? "bg-emerald-500 text-white shadow-lg"
-										: "bg-muted text-muted-foreground hover:bg-muted/80"
-								}`}
-							>
-								Зөв хариулсан
-							</Button>
-							<Button
-								onClick={() => setAnswerFilter("wrong")}
-								className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all ${
-									answerFilter === "wrong"
-										? "bg-red-500 text-white shadow-lg"
-										: "bg-muted text-muted-foreground hover:bg-muted/80"
-								}`}
-							>
-								Буруу хариулсан
-							</Button>
-						</div>
-					</div>
-				</div>
-
-				<div className="space-y-6">
+				<AnswerFilterTabs value={answerFilter} onChange={setAnswerFilter} />
+				<div className="space-y-5">
 					{!questions || questions.length === 0 ? (
-						<div className="text-center p-8 bg-card/50 rounded-xl border">
-							<p className="text-muted-foreground">Асуулт олдсонгүй</p>
-						</div>
+						<EmptyState icon={FileQuestion} title="Асуулт олдсонгүй" />
 					) : (
 						questions
 							.map((question, index) => {
@@ -864,79 +572,26 @@ function ExamResultDetailPage() {
 									return (
 										<div
 											key={question.exam_que_id}
-											className="border border-border bg-card rounded-2xl p-6 shadow-lg"
+											className="overflow-hidden rounded-2xl border bg-card shadow-sm"
 										>
-											<div className="flex items-start gap-4 mb-6">
-												<Button size={"icon-lg"} variant={"outline"} disabled>
-													{index + 1}
-												</Button>
-												<div className="flex-1">
-													<div className="flex items-center gap-3 mb-2 flex-wrap justify-between">
-														<div>
-															<Badge
-																variant={"secondary"}
-																className="px-3 h-10 mr-2 border border-border rounded-md text-md"
-															>
-																{getQuestionTypeLabel(question.que_type_id)}
-															</Badge>
-
-															<span className="text-muted-foreground">
-																Нийт: {question.que_onoo} оноо
-															</span>
-														</div>
-														<Button size={"lg"} variant={"outline"}>
-															{answerStatus === "unanswered" ? (
-																<>
-																	{/* Задгай даалгавар багш үнэлээгүй эсэхийг шалгах */}
-																	{question.que_type_id === 4 &&
-																	question.unelsen === 0 ? (
-																		<>
-																			<MinusCircle className="w-5 h-5 text-amber-500" />
-																			<span>
-																				Багшийн үнэлгээ хүлээгдэж байна
-																			</span>
-																			<div className="ml-2 px-2 py-1 bg-white/20 rounded-lg">
-																				-/{question.que_onoo}
-																			</div>
-																		</>
-																	) : (
-																		<>
-																			<AlertCircle className="w-5 h-5" />
-																			<span>Хариулаагүй</span>
-																			<div className="ml-2 px-2 py-1 bg-white/20 rounded-lg">
-																				0/{question.que_onoo}
-																			</div>
-																		</>
-																	)}
-																</>
-															) : answerStatus === "correct" ? (
-																<>
-																	<CheckCircle className="w-5 h-5" />
-																	<span>Зөв хариулсан</span>
-																	<div className="ml-2 px-2 py-1 bg-white/20 rounded-lg">
-																		{earnedPoints}/{question.que_onoo}
-																	</div>
-																</>
-															) : answerStatus === "partial" ? (
-																<>
-																	<MinusCircle className="w-5 h-5" />
-																	<span>Дутуу хариулсан</span>
-																	<div className="ml-2 px-2 py-1 bg-white/20 rounded-lg">
-																		{earnedPoints}/{question.que_onoo}
-																	</div>
-																</>
-															) : (
-																<>
-																	<XCircle className="w-5 h-5" />
-																	<span>Буруу хариулсан</span>
-																	<div className="ml-2 px-2 py-1 bg-white/20 rounded-lg">
-																		0/{question.que_onoo}
-																	</div>
-																</>
-															)}
-														</Button>
-													</div>
-													<div className="text-lg font-medium">
+											<QuestionCardHeader
+												index={index}
+												total={questions.length}
+												typeLabel={getQuestionTypeLabel(question.que_type_id)}
+												points={question.que_onoo}
+											>
+												<QuestionStatusBadge
+													status={answerStatus}
+													pendingReview={
+														question.que_type_id === 4 && question.unelsen === 0
+													}
+													earnedPoints={earnedPoints}
+													total={question.que_onoo}
+												/>
+											</QuestionCardHeader>
+											<div className="px-4 pt-5 sm:px-6">
+												<div>
+													<div className="text-base leading-7 text-foreground sm:text-[17px] sm:leading-8">
 														{/* 1. Асуултын үндсэн текст */}
 														{question.question_name &&
 															question.question_name.trim() !== "" && (
@@ -954,7 +609,7 @@ function ExamResultDetailPage() {
 																		alt="Question Image"
 																		width={500}
 																		height={350}
-																		className="rounded-xl shadow-md"
+																		className="h-auto max-w-full rounded-xl border"
 																		onError={(e) => {
 																			e.currentTarget.style.display = "none";
 																		}}
@@ -967,10 +622,10 @@ function ExamResultDetailPage() {
 														{question.is_src > 0 &&
 															question.source_html &&
 															question.source_html.trim() !== "" && (
-																<div className="mt-4 p-4 ">
+																<div className="mt-4">
 																	<div className="flex items-start gap-3 mb-2">
 																		<div className="flex-1">
-																			<div className="text-base leading-relaxed text-foreground  p-3 rounded-lg">
+																			<div className="rounded-xl border bg-muted/40 p-3 text-base leading-7 text-foreground sm:p-4">
 																				{safeParse(question.source_html)}
 																			</div>
 																		</div>
@@ -987,7 +642,7 @@ function ExamResultDetailPage() {
 																		alt="Source Image"
 																		width={500}
 																		height={350}
-																		className="rounded-xl shadow-md"
+																		className="h-auto max-w-full rounded-xl border"
 																	/>
 																</div>
 															)}
@@ -1005,7 +660,7 @@ function ExamResultDetailPage() {
 													</div>
 												</div>
 											</div>
-											<div className="space-y-4 pl-14">
+											<div className="space-y-4 px-4 pb-5 pt-4 sm:px-6 sm:pb-6">
 												{question.que_type_id === 1 ? (
 													// ========== НЭГ СОНГОЛТТОЙ АСУУЛТ ==========
 													questionAnswers.length === 0 ? (
@@ -1016,7 +671,7 @@ function ExamResultDetailPage() {
 														<div className="space-y-4">
 															{/* Бүх хариултууд */}
 															<div className="space-y-3">
-																{questionAnswers.map((answer, _idx) => {
+																{questionAnswers.map((answer, idx) => {
 																	const isCorrect = answer.is_true === 1;
 																	const isUserSelected =
 																		userSelectedAnswers.some(
@@ -1024,6 +679,14 @@ function ExamResultDetailPage() {
 																		);
 																	const isWrongSelection =
 																		isUserSelected && !isCorrect;
+																	const rowTone: RowTone = isWrongSelection
+																		? "wrong"
+																		: isUserSelected
+																			? "correct"
+																			: isCorrect &&
+																					examSummary?.show_true_ans === 1
+																				? "key"
+																				: "neutral";
 
 																	const hasImage =
 																		answer.answer_img &&
@@ -1037,23 +700,21 @@ function ExamResultDetailPage() {
 																	return (
 																		<div
 																			key={answer.answer_id}
-																			className={`relative flex items-center gap-4 p-5 rounded-2xl border border-border bg-input/30 transition-all duration-300 ${
-																				isWrongSelection
-																					? "border-red-900 bg-red-50 dark:bg-red-950/10"
-																					: isUserSelected
-																						? "border-emerald-900 bg-emerald-50 dark:bg-emerald-950/20"
-																						: "border-border bg-card/50"
-																			}`}
+																			className={answerRowClass(rowTone)}
 																		>
-																			<div className="flex-1 min-w-0">
-																				<div className="text-base leading-relaxed font-medium">
+																			<div className="flex min-w-0 flex-1 items-start gap-3">
+																				<OptionLetter
+																					index={idx}
+																					tone={rowTone}
+																				/>
+																				<div className="min-w-0 flex-1 self-center text-base leading-7">
 																					{hasImage && (
 																						<Image
 																							src={answer.answer_img}
 																							alt="Answer"
 																							width={300}
 																							height={200}
-																							className="rounded-xl shadow-md mt-2"
+																							className="mt-2 h-auto max-w-full rounded-xl border"
 																						/>
 																					)}
 
@@ -1077,21 +738,20 @@ function ExamResultDetailPage() {
 
 																			<div className="shrink-0">
 																				{isUserSelected && isCorrect && (
-																					<div className="px-4 py-2 bg-emerald-500 text-white rounded-xl shadow-lg font-bold text-sm">
-																						✓ Зөв
-																					</div>
+																					<AnswerTag kind="your-correct" />
 																				)}
 																				{isWrongSelection && (
-																					<div className="px-4 py-1 bg-red-700 text-white rounded-md font-bold text-sm">
-																						✗ Буруу
-																					</div>
+																					<AnswerTag kind="your-wrong" />
 																				)}
 																				{isUserSelected &&
 																					!isCorrect &&
 																					!isWrongSelection && (
-																						<div className="px-4 py-2 bg-blue-500 text-white rounded-xl shadow-lg font-bold text-sm">
-																							✓ Та сонгосон
-																						</div>
+																						<AnswerTag kind="your-pick" />
+																					)}
+																				{!isUserSelected &&
+																					isCorrect &&
+																					examSummary?.show_true_ans === 1 && (
+																						<AnswerTag kind="correct" />
 																					)}
 																			</div>
 																		</div>
@@ -1100,63 +760,6 @@ function ExamResultDetailPage() {
 															</div>
 
 															{/* Зөв хариулт */}
-															{examSummary?.show_true_ans === 1 && (
-																<div className="mt-4 p-4 border border-emerald-900 rounded-2xl shadow-sm">
-																	<p className="text-base font-semibold mb-4">
-																		Зөв хариулт:
-																	</p>
-																	{questionAnswers
-																		.filter((answer) => answer.is_true === 1)
-																		.map((answer) => {
-																			const hasImage =
-																				answer.answer_img &&
-																				answer.answer_img.trim() !== "";
-																			const hasText =
-																				(answer.answer_name_html &&
-																					answer.answer_name_html.trim() !==
-																						"") ||
-																				(answer.answer_name &&
-																					answer.answer_name.trim() !== "");
-
-																			return (
-																				<div
-																					key={answer.answer_id}
-																					className="flex items-start gap-4 mb-2 p-3 border dark:border-emerald-900 rounded-lg bg-white dark:bg-emerald-900/5"
-																				>
-																					<div className="text-base leading-relaxed">
-																						{hasImage && (
-																							<Image
-																								src={answer.answer_img}
-																								alt="Correct Answer"
-																								width={300}
-																								height={200}
-																								className="rounded-xl shadow-md mt-2"
-																							/>
-																						)}
-
-																						{hasText && (
-																							<div>
-																								{answer.answer_name_html &&
-																								answer.answer_name_html.trim() !==
-																									""
-																									? safeParse(
-																											answer.answer_name_html,
-																										)
-																									: safeParse(
-																											answer.answer_name,
-																										)}
-																							</div>
-																						)}
-
-																						{!hasImage &&
-																							!hasText &&
-																							"Хариулт байхгүй"}
-																					</div>
-																				</div>
-																			);
-																		})}
-																</div>
-															)}
 														</div>
 													)
 												) : question.que_type_id === 2 ? (
@@ -1169,7 +772,7 @@ function ExamResultDetailPage() {
 															{/* 🔥 АНХААРУУЛГА: Хэтэрхий олон хариулт сонгосон бол */}
 															{userSelectedAnswers.length >
 																question.truecnt && (
-																<div className="p-4 bg-red-50 dark:bg-red-950/20 border-2 border-red-500 rounded-xl flex items-start gap-3">
+																<div className="flex items-start gap-3 rounded-xl border border-red-500/60 bg-red-50 p-3 sm:p-4 dark:bg-red-950/20">
 																	<div className="shrink-0">
 																		<svg
 																			className="w-6 h-6 text-red-600"
@@ -1199,7 +802,7 @@ function ExamResultDetailPage() {
 
 															{/* Бүх хариултууд */}
 															<div className="space-y-3">
-																{questionAnswers.map((answer, _idx) => {
+																{questionAnswers.map((answer, idx) => {
 																	const isCorrect = answer.is_true === 1;
 																	const isUserSelected =
 																		userSelectedAnswers.some(
@@ -1207,6 +810,14 @@ function ExamResultDetailPage() {
 																		);
 																	const isWrongSelection =
 																		isUserSelected && !isCorrect;
+																	const rowTone: RowTone = isWrongSelection
+																		? "wrong"
+																		: isUserSelected
+																			? "correct"
+																			: isCorrect &&
+																					examSummary?.show_true_ans === 1
+																				? "key"
+																				: "neutral";
 
 																	const hasImage =
 																		answer.answer_img &&
@@ -1220,23 +831,21 @@ function ExamResultDetailPage() {
 																	return (
 																		<div
 																			key={answer.answer_id}
-																			className={`relative flex items-center gap-4 p-5 rounded-2xl border border-border bg-input/30 transition-all duration-300 ${
-																				isWrongSelection
-																					? "border-red-900 bg-red-50 dark:bg-red-950/10"
-																					: isUserSelected
-																						? "border-emerald-900 bg-emerald-50 dark:bg-emerald-950/20"
-																						: "border-border bg-card/50"
-																			}`}
+																			className={answerRowClass(rowTone)}
 																		>
-																			<div className="flex-1 min-w-0">
-																				<div className="text-base leading-relaxed font-medium">
+																			<div className="flex min-w-0 flex-1 items-start gap-3">
+																				<OptionLetter
+																					index={idx}
+																					tone={rowTone}
+																				/>
+																				<div className="min-w-0 flex-1 self-center text-base leading-7">
 																					{hasImage && (
 																						<Image
 																							src={answer.answer_img}
 																							alt="Answer"
 																							width={300}
 																							height={200}
-																							className="rounded-xl shadow-md mt-2"
+																							className="mt-2 h-auto max-w-full rounded-xl border"
 																						/>
 																					)}
 
@@ -1260,86 +869,26 @@ function ExamResultDetailPage() {
 
 																			<div className="shrink-0">
 																				{isUserSelected && isCorrect && (
-																					<div className="px-4 py-2 bg-emerald-500 text-white rounded-xl shadow-lg font-bold text-sm">
-																						✓ Зөв
-																					</div>
+																					<AnswerTag kind="your-correct" />
 																				)}
 																				{isWrongSelection && (
-																					<div className="px-4 py-1 bg-red-700 text-white rounded-md font-bold text-sm">
-																						✗ Буруу
-																					</div>
+																					<AnswerTag kind="your-wrong" />
 																				)}
 																				{isUserSelected &&
 																					!isCorrect &&
 																					!isWrongSelection && (
-																						<div className="px-4 py-2 bg-blue-500 text-white rounded-xl shadow-lg font-bold text-sm">
-																							✓ Та сонгосон
-																						</div>
+																						<AnswerTag kind="your-pick" />
+																					)}
+																				{!isUserSelected &&
+																					isCorrect &&
+																					examSummary?.show_true_ans === 1 && (
+																						<AnswerTag kind="correct" />
 																					)}
 																			</div>
 																		</div>
 																	);
 																})}
 															</div>
-
-															{/* Зөв хариултууд */}
-															{examSummary?.show_true_ans === 1 && (
-																<div className="mt-4 p-4 border border-emerald-900 rounded-2xl shadow-sm">
-																	<p className="text-base font-semibold mb-2">
-																		Зөв хариултууд ({question.truecnt}):
-																	</p>
-																	{questionAnswers
-																		.filter((answer) => answer.is_true === 1)
-																		.map((answer) => {
-																			const hasImage =
-																				answer.answer_img &&
-																				answer.answer_img.trim() !== "";
-																			const hasText =
-																				(answer.answer_name_html &&
-																					answer.answer_name_html.trim() !==
-																						"") ||
-																				(answer.answer_name &&
-																					answer.answer_name.trim() !== "");
-
-																			return (
-																				<div
-																					key={answer.answer_id}
-																					className="flex items-start gap-4 mb-2 p-3 border dark:border-emerald-900 rounded-lg bg-white dark:bg-emerald-900/5"
-																				>
-																					<div className="text-base leading-relaxed">
-																						{hasImage && (
-																							<Image
-																								src={answer.answer_img}
-																								alt="Correct Answer"
-																								width={300}
-																								height={200}
-																								className="rounded-xl shadow-md mt-2"
-																							/>
-																						)}
-
-																						{hasText && (
-																							<div>
-																								{answer.answer_name_html &&
-																								answer.answer_name_html.trim() !==
-																									""
-																									? safeParse(
-																											answer.answer_name_html,
-																										)
-																									: safeParse(
-																											answer.answer_name,
-																										)}
-																							</div>
-																						)}
-
-																						{!hasImage &&
-																							!hasText &&
-																							"Хариулт байхгүй"}
-																					</div>
-																				</div>
-																			);
-																		})}
-																</div>
-															)}
 														</div>
 													)
 												) : question.que_type_id === 3 ? (
@@ -1357,17 +906,17 @@ function ExamResultDetailPage() {
 																return (
 																	<div
 																		key={answer.answer_id}
-																		className={`relative flex items-center gap-4 p-6 rounded-2xl  border transition-all duration-300 ${
+																		className={answerRowClass(
 																			userInput
 																				? isCorrect
-																					? "border-emerald-900 bg-emerald-50 dark:bg-emerald-950/10 shadow-lg"
-																					: "border-red-900 bg-red-50 dark:bg-red-950/10 shadow-lg"
-																				: "border-orange-900 bg-orange-50 dark:bg-orange-950/10"
-																		}`}
+																					? "correct"
+																					: "wrong"
+																				: "missing",
+																		)}
 																	>
 																		{/* Асуултын label ба зураг */}
 																		<div className="flex-1 min-w-0">
-																			<div className="flex items-center gap-4">
+																			<div className="flex flex-wrap items-center gap-x-4 gap-y-1">
 																				{/* answer_name (a, b, c label) */}
 																				{answer.answer_name &&
 																					answer.answer_name.trim() !== "" && (
@@ -1393,7 +942,7 @@ function ExamResultDetailPage() {
 																						</span>
 																					</div>
 																				) : (
-																					<span className="text-orange-600 font-medium">
+																					<span className="font-medium text-amber-700 dark:text-amber-300">
 																						Хариулаагүй
 																					</span>
 																				)}
@@ -1403,14 +952,10 @@ function ExamResultDetailPage() {
 																		{/* Status Badge */}
 																		<div className="shrink-0">
 																			{userInput && isCorrect && (
-																				<div className="px-4 py-2 bg-emerald-500 text-white rounded-xl shadow-lg font-bold text-sm">
-																					✓ Зөв
-																				</div>
+																				<AnswerTag kind="your-correct" />
 																			)}
 																			{userInput && !isCorrect && (
-																				<div className="px-4 py-2 bg-red-500 text-white rounded-xl shadow-lg font-bold text-sm">
-																					✗ Буруу
-																				</div>
+																				<AnswerTag kind="your-wrong" />
 																			)}
 																		</div>
 																	</div>
@@ -1420,9 +965,9 @@ function ExamResultDetailPage() {
 
 														{/* Зөв хариултууд */}
 														{examSummary?.show_true_ans === 1 && (
-															<div className="mt-4 p-5 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-900 dark:border-emerald-600 rounded-2xl shadow-sm">
-																<p className="text-base font-bold text-emerald-700 dark:text-emerald-300 mb-4">
-																	★ Зөв хариултууд:
+															<div className="rounded-xl border border-emerald-500/50 bg-emerald-50/60 p-4 dark:bg-emerald-950/15">
+																<p className="mb-3 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+																	✓ Зөв хариултууд
 																</p>
 																<div className="space-y-3">
 																	{questionAnswers.map((answer) => {
@@ -1457,11 +1002,11 @@ function ExamResultDetailPage() {
 													/* ЗАДГАЙ ДААЛГАВАР */
 													<div className="space-y-4">
 														{/* Хэрэглэгчийн бичсэн хариулт */}
-														<div className="p-6 rounded-2xl border border-blue-900 bg-blue-50 dark:bg-blue-950/20 shadow-lg">
+														<div className="rounded-xl border bg-muted/40 p-4">
 															<div className="flex items-start gap-4">
 																{/* Icon */}
 																<div className="shrink-0">
-																	<div className="w-10 h-10 rounded-lg bg-blue-500 text-white flex items-center justify-center">
+																	<div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
 																		<svg
 																			className="w-6 h-6"
 																			fill="none"
@@ -1481,19 +1026,19 @@ function ExamResultDetailPage() {
 
 																{/* Хариултын агуулга */}
 																<div className="flex-1 min-w-0">
-																	<p className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-3">
+																	<p className="mb-2 text-sm font-medium text-muted-foreground">
 																		Таны бичсэн хариулт:
 																	</p>
 																	{userSelectedAnswers.length > 0 &&
 																	userSelectedAnswers[0]?.answer ? (
-																		<div className="p-4 bg-white dark:bg-gray-900 rounded-xl border border-blue-200 dark:border-blue-900">
+																		<div className="rounded-lg border bg-card p-3 sm:p-4">
 																			<p className="text-base text-foreground whitespace-pre-wrap leading-relaxed">
 																				{userSelectedAnswers[0].answer}
 																			</p>
 																		</div>
 																	) : (
-																		<div className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-xl border border-orange-300 dark:border-orange-700">
-																			<p className="text-orange-600 dark:text-orange-400 font-medium">
+																		<div className="rounded-lg border border-amber-500/50 bg-amber-50 p-3 sm:p-4 dark:bg-amber-950/20">
+																			<p className="font-medium text-amber-700 dark:text-amber-300">
 																				Хариулт бичээгүй байна
 																			</p>
 																		</div>
@@ -1506,10 +1051,10 @@ function ExamResultDetailPage() {
 														{question.unelsen === 1 ? (
 															// ✅ БАГШ ҮНЭЛСЭН ТОХИОЛДОЛ
 															<div
-																className={`p-5 rounded-2xl shadow-sm border ${
+																className={`rounded-xl border p-4 ${
 																	question.zad_onoo > 0
-																		? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-900 dark:border-emerald-600"
-																		: "bg-red-50 dark:bg-red-950/20 border-red-900 dark:border-red-600"
+																		? "border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/20"
+																		: "border-red-500/50 bg-red-50 dark:bg-red-950/20"
 																}`}
 															>
 																<div className="flex items-start gap-3">
@@ -1562,7 +1107,7 @@ function ExamResultDetailPage() {
 																					: "text-red-700 dark:text-red-300"
 																			}`}
 																		>
-																			✓ Багш үнэлгээ өгсөн
+																			Багш үнэлсэн
 																		</p>
 
 																		{/* Авсан оноо */}
@@ -1588,7 +1133,7 @@ function ExamResultDetailPage() {
 																		{question.zad_descr &&
 																			question.zad_descr.trim() !== "" &&
 																			question.zad_descr !== "." && (
-																				<div className="mt-3 p-3 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+																				<div className="mt-3 rounded-lg border bg-card p-3">
 																					<p className="text-xs font-semibold text-muted-foreground mb-1">
 																						Багшийн тайлбар:
 																					</p>
@@ -1602,7 +1147,7 @@ function ExamResultDetailPage() {
 															</div>
 														) : (
 															// ❌ БАГШ ҮНЭЛЭЭГҮЙ ТОХИОЛДОЛ
-															<div className="p-5 bg-amber-50 dark:bg-amber-950/20 border border-amber-900 dark:border-amber-600 rounded-2xl shadow-sm">
+															<div className="rounded-xl border border-amber-500/50 bg-amber-50 p-4 dark:bg-amber-950/20">
 																<div className="flex items-start gap-3">
 																	<div className="shrink-0">
 																		<div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center">
@@ -1624,9 +1169,9 @@ function ExamResultDetailPage() {
 																	</div>
 																	<div className="flex-1">
 																		<p className="text-sm font-bold text-amber-700 dark:text-amber-300 mb-2">
-																			⏳ Багшийн үнэлгээ хүлээгдэж байна
+																			Багшийн үнэлгээ хүлээгдэж байна
 																		</p>
-																		<p className="text-sm text-amber-600 dark:text-amber-400">
+																		<p className="text-sm text-amber-700 dark:text-amber-300">
 																			Задгай даалгавар нь багш шууд үнэлдэг тул
 																			оноо хараахан тооцогдоогүй байна. Багш
 																			үнэлсний дараа оноо харагдах болно.
@@ -1640,7 +1185,7 @@ function ExamResultDetailPage() {
 													<div className="space-y-4">
 														{/* Хэрэглэгчийн оруулсан дараалал */}
 														<div className="space-y-3">
-															<p className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-3">
+															<p className="mb-2 text-sm font-medium text-muted-foreground">
 																Таны оруулсан дараалал:
 															</p>
 
@@ -1677,13 +1222,13 @@ function ExamResultDetailPage() {
 																	return (
 																		<div
 																			key={answer.answer_id}
-																			className={`flex items-center gap-4 p-5 rounded-2xl  border transition-all duration-300 ${
+																			className={answerRowClass(
 																				!userInput
-																					? "border-orange-900 bg-orange-50 dark:bg-orange-950/10"
+																					? "missing"
 																					: isCorrect
-																						? "border-emerald-900 bg-emerald-50 dark:bg-emerald-950/10 shadow-lg"
-																						: "border-red-900 bg-red-50 dark:bg-red-950/10 shadow-lg"
-																			}`}
+																						? "correct"
+																						: "wrong",
+																			)}
 																		>
 																			{/* Хариултын текст */}
 																			<div className="flex-1 min-w-0">
@@ -1697,19 +1242,13 @@ function ExamResultDetailPage() {
 																			{/* Status badge */}
 																			<div className="shrink-0">
 																				{userInput && isCorrect && (
-																					<div className="px-4 py-2 bg-emerald-500 text-white rounded-xl shadow-lg font-bold text-sm">
-																						✓ Зөв
-																					</div>
+																					<AnswerTag kind="your-correct" />
 																				)}
 																				{userInput && !isCorrect && (
-																					<div className="px-4 py-2 bg-red-500 text-white rounded-xl shadow-lg font-bold text-sm">
-																						✗ Буруу
-																					</div>
+																					<AnswerTag kind="your-wrong" />
 																				)}
 																				{!userInput && (
-																					<div className="px-4 py-2 bg-orange-500 text-white rounded-xl shadow-lg font-bold text-sm">
-																						! Хариулаагүй
-																					</div>
+																					<AnswerTag kind="unanswered" />
 																				)}
 																			</div>
 																		</div>
@@ -1719,9 +1258,9 @@ function ExamResultDetailPage() {
 
 														{/* Зөв дараалал */}
 														{examSummary?.show_true_ans === 1 && (
-															<div className="mt-4 p-5 border border-emerald-900 dark:border-emerald-900 rounded-2xl">
-																<p className="text-base font-bold mb-4">
-																	Зөв дараалал:
+															<div className="rounded-xl border border-emerald-500/50 bg-emerald-50/60 p-4 dark:bg-emerald-950/15">
+																<p className="mb-3 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+																	✓ Зөв дараалал
 																</p>
 																<div className="space-y-3">
 																	{questionAnswers
@@ -1729,7 +1268,7 @@ function ExamResultDetailPage() {
 																		.map((answer) => (
 																			<div
 																				key={answer.answer_id}
-																				className="flex items-center gap-4 p-3 border border-emerald-300 dark:border-emerald-900 rounded-lg bg-white dark:bg-emerald-900/5"
+																				className="flex items-center gap-3 rounded-lg border border-emerald-500/30 bg-card p-3"
 																			>
 																				<div className="text-base font-medium text-foreground">
 																					{answer.answer_name_html ||
@@ -1758,7 +1297,7 @@ function ExamResultDetailPage() {
 																<>
 																	{/* Хэрэглэгчийн харгалзуулсан хариултууд */}
 																	<div className="space-y-3">
-																		<p className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-3">
+																		<p className="mb-2 text-sm font-medium text-muted-foreground">
 																			Таны харгалзуулсан хариултууд:
 																		</p>
 
@@ -1798,13 +1337,13 @@ function ExamResultDetailPage() {
 																			return (
 																				<div
 																					key={questionItem.answer_id}
-																					className={`flex items-center gap-4 p-5 rounded-2xl  border transition-all duration-300 ${
+																					className={answerRowClass(
 																						!userMatch
-																							? "border-orange-900 bg-orange-50 dark:bg-orange-950/10"
+																							? "missing"
 																							: isCorrect
-																								? "border-emerald-900 bg-emerald-50 dark:bg-emerald-950/20 shadow-lg"
-																								: "border-red-900 bg-red-50 dark:bg-red-950/10 shadow-lg"
-																					}`}
+																								? "correct"
+																								: "wrong",
+																					)}
 																				>
 																					{/* Right side - Answer (а column) */}
 																					<div className="flex items-center gap-3 flex-1">
@@ -1816,7 +1355,7 @@ function ExamResultDetailPage() {
 																								alt="Answer"
 																								width={120}
 																								height={90}
-																								className="rounded-lg shadow-md object-contain"
+																								className="h-auto max-w-full rounded-lg border object-contain"
 																							/>
 																						) : (
 																							<div className="text-base font-medium">
@@ -1828,8 +1367,14 @@ function ExamResultDetailPage() {
 																					</div>
 
 																					{/* Arrow */}
-																					<div className="text-2xl text-muted-foreground shrink-0">
-																						→
+																					<div
+																						className="shrink-0 text-xl text-muted-foreground"
+																						aria-hidden="true"
+																					>
+																						<span className="sm:hidden">↓</span>
+																						<span className="hidden sm:inline">
+																							→
+																						</span>
 																					</div>
 
 																					{/* Left side - Question (б column) - User's selection */}
@@ -1845,7 +1390,7 @@ function ExamResultDetailPage() {
 																									alt="Selected Question"
 																									width={120}
 																									height={90}
-																									className="rounded-lg shadow-md object-contain"
+																									className="h-auto max-w-full rounded-lg border object-contain"
 																								/>
 																							) : (
 																								<div className="text-base font-medium">
@@ -1854,7 +1399,7 @@ function ExamResultDetailPage() {
 																								</div>
 																							)
 																						) : (
-																							<span className="text-orange-600 font-medium">
+																							<span className="font-medium text-amber-700 dark:text-amber-300">
 																								Харгалзуулаагүй
 																							</span>
 																						)}
@@ -1863,19 +1408,13 @@ function ExamResultDetailPage() {
 																					{/* Status badge */}
 																					<div className="shrink-0">
 																						{userMatch && isCorrect && (
-																							<div className="px-4 py-2 bg-emerald-500 text-white rounded-xl shadow-lg font-bold text-sm">
-																								✓ Зөв
-																							</div>
+																							<AnswerTag kind="your-correct" />
 																						)}
 																						{userMatch && !isCorrect && (
-																							<div className="px-4 py-2 bg-red-500 text-white rounded-xl shadow-lg font-bold text-sm">
-																								✗ Буруу
-																							</div>
+																							<AnswerTag kind="your-wrong" />
 																						)}
 																						{!userMatch && (
-																							<div className="px-4 py-2 bg-orange-500 text-white rounded-xl shadow-lg font-bold text-sm">
-																								! Хариулаагүй
-																							</div>
+																							<AnswerTag kind="unanswered" />
 																						)}
 																					</div>
 																				</div>
@@ -1883,9 +1422,9 @@ function ExamResultDetailPage() {
 																		})}
 																	</div>
 																	{examSummary?.show_true_ans === 1 && (
-																		<div className="mt-4 p-5 bg-emerald-50 dark:bg-emerald-950/20  border border-emerald-900 dark:border-emerald-600 rounded-2xl shadow-sm">
-																			<p className="text-base font-bold text-emerald-700 dark:text-emerald-300 mb-4">
-																				★ Зөв харгалзуулалт:
+																		<div className="rounded-xl border border-emerald-500/50 bg-emerald-50/60 p-4 dark:bg-emerald-950/15">
+																			<p className="mb-3 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+																				✓ Зөв харгалзуулалт
 																			</p>
 																			<div className="space-y-3">
 																				{/* ЗАСВАР: 
@@ -1902,7 +1441,7 @@ function ExamResultDetailPage() {
 																					return (
 																						<div
 																							key={answerItem.answer_id}
-																							className="flex items-center gap-4 p-3  border border-emerald-300 dark:border-emerald-700 rounded-lg bg-white dark:bg-emerald-900/10"
+																							className="flex items-center gap-3 rounded-lg border border-emerald-500/30 bg-card p-3"
 																						>
 																							{/* Answer (а column) - Зүүн тал */}
 																							<div className="flex items-center gap-3 flex-1">
@@ -1914,7 +1453,7 @@ function ExamResultDetailPage() {
 																										alt="Answer"
 																										width={120}
 																										height={90}
-																										className="rounded-lg shadow-md object-contain"
+																										className="h-auto max-w-full rounded-lg border object-contain"
 																									/>
 																								) : (
 																									<div className="text-base font-medium">
@@ -1926,7 +1465,10 @@ function ExamResultDetailPage() {
 																							</div>
 
 																							{/* Arrow */}
-																							<div className="text-2xl text-emerald-600 shrink-0">
+																							<div
+																								className="shrink-0 text-xl text-emerald-600"
+																								aria-hidden="true"
+																							>
 																								→
 																							</div>
 
@@ -1942,7 +1484,7 @@ function ExamResultDetailPage() {
 																										alt="Question"
 																										width={120}
 																										height={90}
-																										className="rounded-lg shadow-md object-contain"
+																										className="h-auto max-w-full rounded-lg border object-contain"
 																									/>
 																								) : (
 																									<div className="text-base font-medium">

@@ -25,5 +25,4 @@ export function fmtDateTime(iso: string): string {
 
 export const API_BASE = "https://backend.skuul.mn";
 
-export const CARD_CLS =
-	"bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50";
+export const CARD_CLS = "rounded-2xl border bg-card shadow-sm";

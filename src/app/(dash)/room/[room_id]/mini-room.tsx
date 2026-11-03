@@ -134,7 +134,7 @@ export function LayoutPicker({ currentLayout, onSelect }: LayoutPickerProps) {
 						{/* Текст болон Төлөв */}
 						<div className="flex items-center justify-between w-full px-1">
 							<span
-								className={`text-[10px] font-black uppercase tracking-widest truncate ${
+								className={`text-xs font-semibold truncate ${
 									isActive
 										? "text-primary"
 										: "text-muted-foreground group-hover:text-foreground"

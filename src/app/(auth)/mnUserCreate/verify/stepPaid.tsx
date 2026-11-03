@@ -183,8 +183,8 @@ export function StepPaid({
 						<CheckCircle2 size={28} className="text-green-500" />
 					</div>
 					<div>
-						<h2 className="text-lg font-bold">Бүртгэл амжилттай!</h2>
-						<p className="text-xs text-muted-foreground mt-1">
+						<h2 className="text-xl font-bold">Бүртгэл амжилттай!</h2>
+						<p className="text-sm text-muted-foreground mt-1">
 							Шалгуулагч №{" "}
 							<span className="font-mono font-bold text-foreground">
 								{examineeNumber ?? "—"}
@@ -211,7 +211,7 @@ export function StepPaid({
 						].map((row) => (
 							<div
 								key={row.label}
-								className="flex justify-between text-xs gap-2"
+								className="flex justify-between text-sm gap-2"
 							>
 								<span className="text-muted-foreground shrink-0">
 									{row.label}
@@ -227,7 +227,7 @@ export function StepPaid({
 				</div>
 
 				{/* ── Нэвтрэх мэдээлэл ── */}
-				<div className="rounded-2xl border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 p-4 space-y-3 text-sm">
+				<div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 space-y-3 text-sm">
 					<p className="text-muted-foreground leading-relaxed">
 						Таны бүртгэл амжилттай үүслээ. Та{" "}
 						<span className="font-semibold text-foreground">3 сарын 9-өөс</span>{" "}
@@ -238,20 +238,20 @@ export function StepPaid({
 						болон шалгалтын хуваариа сонгоорой.
 					</p>
 
-					<div className="rounded-xl border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-900 divide-y divide-blue-100 dark:divide-blue-800">
+					<div className="rounded-xl border bg-card divide-y">
 						<div className="flex items-center justify-between px-4 py-3 gap-3">
-							<span className="text-muted-foreground text-xs shrink-0">
+							<span className="text-muted-foreground text-sm shrink-0">
 								Нэвтрэх нэр
 							</span>
-							<span className="font-mono font-bold text-sm tracking-wide text-foreground">
+							<span className="font-mono font-bold text-base tracking-wide text-foreground">
 								{d.login_name ?? "—"}
 							</span>
 						</div>
 						<div className="flex items-center justify-between px-4 py-3 gap-3">
-							<span className="text-muted-foreground text-xs shrink-0">
+							<span className="text-muted-foreground text-sm shrink-0">
 								Нууц үг
 							</span>
-							<span className="font-mono font-bold text-sm tracking-wide text-foreground">
+							<span className="font-mono font-bold text-base tracking-wide text-foreground">
 								{d.password ?? "—"}
 							</span>
 						</div>
@@ -259,14 +259,13 @@ export function StepPaid({
 				</div>
 
 				<Button
-					variant="outline"
 					onClick={onFinish}
-					className="w-full h-11 gap-2"
+					className="h-11 w-full gap-2 text-base font-semibold"
 				>
 					Дуусгах
 				</Button>
 
-				<BackButton onClick={onBack} label="Шалгалт сонгох руу буцах" />
+				<BackButton onClick={onBack} label="Буцах" />
 			</div>
 
 			{/* ── Printable certificate ── */}

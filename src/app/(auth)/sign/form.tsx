@@ -31,6 +31,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { registerSysUserRequest } from "@/lib/api";
+import { authCardClass } from "../authShell";
+import { StepIndicator } from "../stepIndicator";
 
 const formSchema = z
 	.object({
@@ -217,10 +219,20 @@ export function SignForm() {
 	};
 
 	return (
-		<Card className="w-full max-w-md bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 shadow-xl">
-			<CardHeader className="space-y-1">
-				<CardTitle className="text-2xl font-semibold">Бүртгүүлэх</CardTitle>
-				<CardDescription>Шинэ бүртгэл үүсгэх</CardDescription>
+		<Card className={authCardClass}>
+			<CardHeader className="space-y-3">
+				<div className="space-y-1">
+					<CardTitle className="text-2xl font-semibold">Бүртгүүлэх</CardTitle>
+					<CardDescription>
+						{isVerified
+							? 'Өөрийн мэдээллээ бөглөөд "Бүртгүүлэх" товчийг дарна уу.'
+							: "Эхлээд утасны дугаараа баталгаажуулна уу."}
+					</CardDescription>
+				</div>
+				<StepIndicator
+					steps={["Утас баталгаажуулах", "Мэдээлэл бөглөх"]}
+					current={isVerified ? 1 : 0}
+				/>
 			</CardHeader>
 
 			<Form {...form}>
@@ -240,7 +252,7 @@ export function SignForm() {
 											{...field}
 											disabled={isPending || isVerified}
 											maxLength={8}
-											className="text-lg"
+											className="h-11 text-lg tracking-wider"
 										/>
 									</FormControl>
 									<FormMessage />
@@ -254,7 +266,7 @@ export function SignForm() {
 								<Button
 									type="button"
 									variant="outline"
-									className="w-full"
+									className="h-11 w-full"
 									onClick={handleRequestCode}
 									disabled={isChecking || isWaitingForSMS}
 								>
@@ -272,17 +284,17 @@ export function SignForm() {
 								</Button>
 
 								{isWaitingForSMS && verificationCode && (
-									<Alert className="bg-blue-50/50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 shadow-sm">
+									<Alert className="border-primary/30 bg-primary/5">
 										<AlertDescription className="py-2">
 											<div className="space-y-4">
 												{/* Зааварчилгаа */}
 												<div className="flex gap-3">
-													<div className="shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+													<div className="shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
 														1
 													</div>
-													<p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+													<p className="text-sm text-foreground leading-relaxed">
 														Доорх кодыг{" "}
-														<span className="font-bold text-blue-700 dark:text-blue-400">
+														<span className="font-bold text-primary">
 															142076
 														</span>{" "}
 														дугаарт мессежээр илгээнэ үү.
@@ -291,8 +303,8 @@ export function SignForm() {
 
 												{/* Код харуулах болон Хуулах хэсэг */}
 												<div className="relative group">
-													<div className="bg-white dark:bg-slate-900 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all group-hover:border-blue-400">
-														<span className="text-3xl font-black tracking-widest text-blue-600 dark:text-blue-400 select-all">
+													<div className="bg-card border-2 border-dashed border-primary/40 rounded-xl p-4 flex flex-col items-center justify-center gap-2">
+														<span className="text-3xl font-bold tracking-widest text-primary select-all">
 															{verificationCode}
 														</span>
 													</div>
@@ -300,17 +312,17 @@ export function SignForm() {
 
 												{/* Шалгах алхам */}
 												<div className="flex gap-3 pt-2">
-													<div className="shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+													<div className="shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
 														2
 													</div>
 													<div className="flex-1 space-y-3">
-														<p className="text-sm text-slate-700 dark:text-slate-300">
+														<p className="text-sm text-foreground">
 															Мессеж илгээсний дараа доорх товчийг дарж
 															баталгаажуулна уу.
 														</p>
 														<Button
 															type="button"
-															className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-200 dark:shadow-none transition-all active:scale-[0.98]"
+															className="h-11 w-full font-semibold"
 															onClick={handleCheckVerification}
 															disabled={isChecking}
 														>
@@ -399,18 +411,18 @@ export function SignForm() {
 										</FormItem>
 									)}
 								/>
-								<div className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+								<div className="flex items-center gap-3 rounded-lg border p-3">
 									<input
 										type="checkbox"
 										id="isTeacher"
 										checked={isTeacher}
 										onChange={(e) => setIsTeacher(e.target.checked)}
 										disabled={isPending}
-										className="h-4 w-4 rounded border-gray-300 accent-blue-600 cursor-pointer"
+										className="size-5 rounded cursor-pointer accent-primary"
 									/>
 									<label
 										htmlFor="isTeacher"
-										className="text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none"
+										className="text-sm text-foreground cursor-pointer select-none"
 									>
 										Багшаар бүртгүүлэх
 									</label>

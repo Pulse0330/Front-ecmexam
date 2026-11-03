@@ -2,9 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { AlertCircle } from "lucide-react";
+import { FileText, RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
 import LessonFilter from "@/components/LessonFilter";
+import { PageHeader } from "@/components/page/pageHeader";
+import { EmptyState, LoadingState } from "@/components/page/pageStates";
+import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useServerTime } from "@/hooks/useServerTime";
 import { getexamfiltertlists, getTestFilter } from "@/lib/api";
@@ -118,26 +121,18 @@ export default function ExamListPage() {
 	};
 
 	if (isTimeLoading) {
-		return (
-			<div className="min-h-screen flex items-center justify-center">
-				<div className="text-center space-y-2">
-					<div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-					<p className="text-gray-600 dark:text-gray-400">Уншиж байна...</p>
-				</div>
-			</div>
-		);
+		return <LoadingState label="Уншиж байна..." className="min-h-[60vh]" />;
 	}
 
 	return (
 		<TooltipProvider>
 			<div className="h-full">
-				<div className=" mx-auto w-full flex flex-col px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-					{/* Header */}
-					<header className="mb-4 sm:mb-6">
-						<h3 className="text-lg sm:text-2xl font-extrabold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-							Шалгалтын жагсаалт
-						</h3>
-					</header>
+				<div className="mx-auto flex w-full max-w-7xl flex-col px-4 pb-6 sm:px-6 lg:px-8">
+					<PageHeader
+						title="Шалгалтын жагсаалт"
+						description="Танд өгөх боломжтой шалгалтууд. Идэвхтэй шалгалтыг «Эхлүүлэх» товчоор эхлүүлнэ."
+						icon={FileText}
+					/>
 
 					<LessonFilter
 						lessons={lessons}
@@ -167,18 +162,21 @@ export default function ExamListPage() {
 
 					{/* Empty State */}
 					{!isPending && filteredData.length === 0 && (
-						<div className="text-center py-12 space-y-3">
-							<AlertCircle
-								className="mx-auto text-gray-400 dark:text-gray-600"
-								size={48}
-							/>
-							<p className="text-lg font-medium text-gray-700 dark:text-gray-300">
-								Шалгалт олдсонгүй
-							</p>
-							<p className="text-sm text-gray-500 dark:text-gray-400">
-								Хуудсаа ахин ажлуулаад үзээрэй
-							</p>
-						</div>
+						<EmptyState
+							icon={FileText}
+							title="Шалгалт олдсонгүй"
+							description="Одоогоор өгөх шалгалт алга. Өөр хичээл сонгох эсвэл дахин ачаалж үзнэ үү."
+							action={
+								<Button
+									variant="outline"
+									className="h-10"
+									onClick={() => refetch()}
+								>
+									<RefreshCw className="size-4" />
+									Дахин ачаалах
+								</Button>
+							}
+						/>
 					)}
 				</div>
 			</div>
@@ -195,35 +193,19 @@ export default function ExamListPage() {
 }
 
 const SkeletonCard = () => (
-	<div className="w-full flex flex-col overflow-hidden rounded-xl border border-border/40 bg-card/50 backdrop-blur-md animate-pulse">
-		<div className="h-20 w-full bg-slate-200 dark:bg-slate-800 relative shrink-0">
-			<div className="absolute top-1.5 left-1.5 flex flex-col gap-1">
-				<div className="h-4 w-16 bg-slate-300 dark:bg-slate-700 rounded-full" />
-				<div className="h-4 w-20 bg-slate-300 dark:bg-slate-700 rounded-full" />
-			</div>
+	<div className="flex h-full animate-pulse flex-col gap-3 rounded-2xl border bg-card p-4 shadow-sm">
+		<div className="flex gap-2">
+			<div className="h-5 w-20 rounded-full bg-muted" />
+			<div className="h-5 w-16 rounded-full bg-muted" />
 		</div>
-
-		<div className="flex flex-col flex-1 p-3 gap-3">
-			<div className="space-y-2 flex-1">
-				<div className="flex justify-between items-center">
-					<div className="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
-					<div className="h-3 w-3 bg-slate-200 dark:bg-slate-800 rounded-full" />
-				</div>
-				<div className="space-y-1.5">
-					<div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded" />
-					<div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-800 rounded" />
-				</div>
-			</div>
-
-			<div className="mt-auto pt-2 border-t border-border/50 flex items-center justify-between">
-				<div className="flex gap-3">
-					<div className="h-3 w-10 bg-slate-200 dark:bg-slate-800 rounded" />
-					<div className="h-3 w-10 bg-slate-200 dark:bg-slate-800 rounded" />
-					<div className="h-3 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
-				</div>
-			</div>
-
-			<div className="h-7 w-full bg-slate-200 dark:bg-slate-800 rounded-lg" />
+		<div className="space-y-2">
+			<div className="h-4 w-full rounded bg-muted" />
+			<div className="h-4 w-2/3 rounded bg-muted" />
 		</div>
+		<div className="flex gap-1.5">
+			<div className="h-6 w-16 rounded-full bg-muted" />
+			<div className="h-6 w-20 rounded-full bg-muted" />
+		</div>
+		<div className="h-10 w-full rounded-md bg-muted" />
 	</div>
 );
