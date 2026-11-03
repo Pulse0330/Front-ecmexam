@@ -253,6 +253,11 @@ input[type="number"] {
 	overflow: visible;
 }
 
+/* Сүүлийн догол мөрийн доод зай — хариултын хайрцаг, асуултын доор хоосон зай үлдээдэг байсан */
+.math-content p:last-child {
+	margin-bottom: 0;
+}
+
 @media (width <= 768px) {
 	.math-content ol li,
 	.math-content ul li {

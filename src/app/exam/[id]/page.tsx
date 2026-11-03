@@ -2,15 +2,16 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
+	ArrowLeft,
 	Bookmark,
 	BookmarkCheck,
 	CheckCircle2,
 	ChevronLeft,
 	ChevronRight,
 	Clock,
+	LayoutGrid,
 	Loader2,
 	LogOut,
-	Menu,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -1114,6 +1115,7 @@ export default function ExamPage() {
 										examType={examData.ExamInfo[0].exam_type}
 										startEid={examData.ExamInfo[0].start_eid}
 										examTime={examData.ExamInfo[0].minut}
+										startedDate={examData.ExamInfo[0].starteddate}
 										answeredCount={answeredCount}
 										totalCount={totalCount}
 									/>
@@ -1211,28 +1213,34 @@ export default function ExamPage() {
 								<AlertDialogContent>
 									<AlertDialogHeader>
 										<AlertDialogTitle>Шалгалтаас гарах уу?</AlertDialogTitle>
-										<AlertDialogDescription>
-											<span className="block mb-2">
-												Та шалгалтаас гарахдаа итгэлтэй байна уу?
-											</span>
-
-											<span className="text-red-500 font-bold">
-												Шалгалтыг нэг эхлүүлсэн тохиолдолд системийн хугацаа
-												үргэлжлэн тоологдох бөгөөд шалгалтаас гарах эсвэл цонх
-												хаасан ч хугацаа зогсохгүйг анхаарна уу.
-											</span>
+										<AlertDialogDescription asChild>
+											<div className="space-y-3">
+												<p>
+													Гарсан ч шалгалт дуусахгүй — дахин орж үргэлжлүүлэх
+													боломжтой.
+												</p>
+												<p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm font-medium text-amber-800 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
+													⏱ Шалгалтын хугацаа зогсохгүй. Гарсан эсвэл цонх
+													хаасан ч цаг үргэлжлэн тоологдоно.
+												</p>
+											</div>
 										</AlertDialogDescription>
 									</AlertDialogHeader>
-									<AlertDialogFooter>
-										<AlertDialogCancel>Болих</AlertDialogCancel>
+									<AlertDialogFooter className="gap-2">
+										<AlertDialogCancel className="h-11 gap-2 font-semibold border-0 bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:bg-primary dark:hover:bg-primary/90">
+											<ArrowLeft className="w-4 h-4" />
+											Шалгалтаа үргэлжлүүлэх
+										</AlertDialogCancel>
 										<AlertDialogAction
 											onClick={() =>
 												integration
 													? leaveIntegrationExam(integration)
 													: router.push("/Lists/examList")
 											}
+											className="h-11 gap-2 font-semibold border border-red-300 bg-white text-red-600 hover:bg-red-50 dark:border-red-700 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-950/30"
 										>
-											Тийм, гарах
+											<LogOut className="w-4 h-4" />
+											Гарах
 										</AlertDialogAction>
 									</AlertDialogFooter>
 								</AlertDialogContent>
@@ -1272,15 +1280,26 @@ export default function ExamPage() {
 									</div>
 								</div>
 
-								<Button
-									onClick={() => setShowMobileMinimapOverlay(true)}
-									className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/40 rounded-lg border border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition"
-								>
-									<Menu className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-									<span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
-										Асуулт
-									</span>
-								</Button>
+								<div className="flex items-center gap-1.5">
+									<Button
+										onClick={() => setShowMobileMinimapOverlay(true)}
+										className="h-9 gap-1.5 px-3 bg-blue-50 dark:bg-blue-900/40 rounded-lg border border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition"
+									>
+										<LayoutGrid className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+										<span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+											Бүх асуулт
+										</span>
+									</Button>
+									{/* Гарах — дуусгах товчноос хол, дээд талд (санамсаргүй дарахгүй) */}
+									<Button
+										variant="ghost"
+										onClick={() => setShowExitConfirm(true)}
+										className="h-9 gap-1 px-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30"
+									>
+										<LogOut className="w-4 h-4" />
+										Гарах
+									</Button>
+								</div>
 							</div>
 						)}
 
@@ -1351,49 +1370,41 @@ export default function ExamPage() {
 				</div>
 
 				<div className="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 shadow-lg">
-					<div className="px-3 py-2 space-y-2">
+					{/* iPhone-ийн доод зурвас (home indicator)-т дарагдахгүй */}
+					<div className="px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] space-y-2">
 						<div className="flex gap-2">
 							<Button
 								onClick={goToPreviousQuestion}
 								disabled={currentQuestionIndex === 0}
 								variant="outline"
-								className="flex-1 h-10 font-semibold text-sm"
+								className="flex-1 h-11 gap-1 font-semibold text-sm"
 							>
-								<ChevronLeft className="w-4 h-4 mr-1" />
+								<ChevronLeft className="w-5 h-5" />
 								Өмнөх
 							</Button>
+							{/* Дараах — гол чиглэл тул тод */}
 							<Button
 								onClick={goToNextQuestion}
 								disabled={currentQuestionIndex === totalCount - 1}
-								variant="outline"
-								className="flex-1 h-10 font-semibold text-sm"
+								className="flex-1 h-11 gap-1 font-semibold text-sm"
 							>
 								Дараах
-								<ChevronRight className="w-4 h-4 ml-1" />
+								<ChevronRight className="w-5 h-5" />
 							</Button>
 						</div>
 
-						<div className="flex gap-2">
-							{examData?.ExamInfo?.[0] && !isTimeUp && (
-								<FinishExamResultDialog
-									ref={finishDialogRef}
-									examId={examData.ExamInfo[0].id}
-									examType={examData.ExamInfo[0].exam_type}
-									startEid={examData.ExamInfo[0].start_eid}
-									examTime={examData.ExamInfo[0].minut}
-									answeredCount={answeredCount}
-									totalCount={totalCount}
-								/>
-							)}
-						</div>
-						<Button
-							variant="outline"
-							onClick={() => setShowExitConfirm(true)}
-							className="w-full font-semibold border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/20"
-						>
-							<LogOut className="w-4 h-4 mr-2" />
-							Шалгалтаас гарах
-						</Button>
+						{examData?.ExamInfo?.[0] && !isTimeUp && (
+							<FinishExamResultDialog
+								ref={finishDialogRef}
+								examId={examData.ExamInfo[0].id}
+								examType={examData.ExamInfo[0].exam_type}
+								startEid={examData.ExamInfo[0].start_eid}
+								examTime={examData.ExamInfo[0].minut}
+								startedDate={examData.ExamInfo[0].starteddate}
+								answeredCount={answeredCount}
+								totalCount={totalCount}
+							/>
+						)}
 					</div>
 				</div>
 

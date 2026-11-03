@@ -27,6 +27,8 @@ interface StyledBackButtonProps {
 	showIcon?: boolean;
 	/** Aria label */
 	ariaLabel?: string;
+	/** Товчны бичиг — зөвхөн сум биш "Буцах" гэж харагдана */
+	label?: string;
 }
 
 export default function StyledBackButton({
@@ -38,6 +40,7 @@ export default function StyledBackButton({
 	variant = "default",
 	showIcon = true,
 	ariaLabel = "Буцах",
+	label = "Буцах",
 }: StyledBackButtonProps): ReactElement {
 	const router = useRouter();
 	const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
@@ -60,43 +63,28 @@ export default function StyledBackButton({
 		}
 	};
 
-	// Variant-ээс хамааран default style
-	const defaultStyles =
-		variant === "ghost"
-			? "bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800"
-			: "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700";
-
+	// "← Буцах" — сум + бичигтэй, дарахад хялбар (36px) товч
 	return (
 		<>
 			<button
 				type="button"
 				onClick={handleClick}
 				className={cn(
-					"group inline-flex items-center gap-2 p-0 duration-300 cursor-pointer border-none focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 rounded-full transition-all",
-					variant === "default" && defaultStyles,
+					"group inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-semibold transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400",
+					variant === "ghost"
+						? "bg-transparent text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+						: "border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700",
 					className,
 				)}
 				aria-label={ariaLabel}
 			>
-				{variant === "default" ? (
-					<div
-						className={cn(
-							"flex items-center justify-center w-8 h-8 rounded-full group-active:scale-95 transition-all duration-300",
-							defaultStyles,
-						)}
-					>
-						{showIcon && (
-							<ArrowLeft className="w-4 h-4 text-slate-600 dark:text-slate-400 group-hover:-translate-x-0.5 transition-all duration-300" />
-						)}
-					</div>
-				) : (
-					showIcon && (
-						<ArrowLeft
-							className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5"
-							aria-hidden="true"
-						/>
-					)
+				{showIcon && (
+					<ArrowLeft
+						className="h-4 w-4 transition-transform group-hover:-translate-x-0.5"
+						aria-hidden="true"
+					/>
 				)}
+				<span>{label}</span>
 			</button>
 
 			<AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -105,9 +93,17 @@ export default function StyledBackButton({
 						<AlertDialogTitle>{confirmTitle}</AlertDialogTitle>
 						<AlertDialogDescription>{confirmMessage}</AlertDialogDescription>
 					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>Болих</AlertDialogCancel>
-						<AlertDialogAction onClick={handleConfirm}>Тийм</AlertDialogAction>
+					<AlertDialogFooter className="gap-2">
+						<AlertDialogCancel className="h-11 font-semibold">
+							Үлдэх
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleConfirm}
+							className="h-11 gap-2 font-semibold"
+						>
+							<ArrowLeft className="h-4 w-4" />
+							Тийм, буцах
+						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>

@@ -117,7 +117,15 @@ export function IDashboardHeader() {
 									{
 										<Link
 											href={item.href || "#"}
-											className={navigationMenuTriggerStyle()}
+											className={cn(
+												navigationMenuTriggerStyle(),
+												// Одоо байгаа хуудсыг тод ялгана
+												isActive(item.href || "") &&
+													"bg-primary/10 text-primary font-semibold",
+											)}
+											aria-current={
+												isActive(item.href || "") ? "page" : undefined
+											}
 										>
 											{item.title}
 										</Link>
@@ -190,8 +198,13 @@ export function IDashboardHeader() {
 						<div className="lg:hidden">
 							<Sheet open={open} onOpenChange={setOpen}>
 								<SheetTrigger asChild>
-									<Button variant="outline" size="icon" className="h-10 w-10">
+									<Button
+										variant="outline"
+										className="h-10 gap-1.5 px-3 font-semibold"
+										aria-label="Цэс нээх"
+									>
 										<Menu className="h-5 w-5" />
+										<span>Цэс</span>
 									</Button>
 								</SheetTrigger>
 								<SheetContent side="left" className="w-[300px] sm:w-[350px]">
@@ -216,10 +229,13 @@ export function IDashboardHeader() {
 													href={item.href || "#"}
 													onClick={() => setOpen(false)}
 													className={cn(
-														"flex py-3 text-sm font-medium border-b hover:text-primary transition-colors",
+														"flex px-3 py-3 text-sm font-medium rounded-lg hover:bg-accent transition-colors",
 														isActive(item.href || "") &&
-															"text-primary font-bold",
+															"bg-primary/10 text-primary font-semibold",
 													)}
+													aria-current={
+														isActive(item.href || "") ? "page" : undefined
+													}
 												>
 													{item.title}
 												</Link>

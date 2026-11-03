@@ -21,7 +21,7 @@ const formatTime = (sec: number): string => {
 	return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 };
 
-const parseLocalDate = (dateStr: string): Date => {
+export const parseLocalDate = (dateStr: string): Date => {
 	if (dateStr.includes("T") || dateStr.endsWith("Z")) {
 		return new Date(dateStr);
 	}

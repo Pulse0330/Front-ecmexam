@@ -3,6 +3,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
+	ArrowLeft,
 	Award,
 	CheckCircle,
 	Clock,
@@ -34,13 +35,15 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { getExamResults } from "@/lib/api";
+import { getExamResults, getServerDate } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import {
+	formatElapsedExamTime,
 	getExamApi,
 	leaveIntegrationExam,
 	useExamIntegration,
 } from "./examUtils/integration";
+import { parseLocalDate } from "./Itime";
 
 interface FinishExamRequest {
 	exam_id: number;
@@ -92,6 +95,8 @@ interface FinishExamResultDialogProps {
 	examTime: number;
 	answeredCount: number;
 	totalCount: number;
+	/** ExamInfo.starteddate — integration-д зарцуулсан хугацааг тооцоолно */
+	startedDate?: string;
 }
 
 export interface FinishExamDialogHandle {
@@ -103,7 +108,15 @@ const FinishExamResultDialog = forwardRef<
 	FinishExamResultDialogProps
 >(
 	(
-		{ examId, examType, startEid, examTime, answeredCount, totalCount },
+		{
+			examId,
+			examType,
+			startEid,
+			examTime,
+			answeredCount,
+			totalCount,
+			startedDate,
+		},
 		ref,
 	) => {
 		const { userId: authUserId } = useAuthStore();
@@ -111,9 +124,21 @@ const FinishExamResultDialog = forwardRef<
 		const integration = useExamIntegration();
 		const userId = integration?.userId ?? authUserId;
 		const { finishExam } = useMemo(
-			() => getExamApi(integration?.dbname),
-			[integration?.dbname],
+			() => getExamApi(integration?.dbname, integration?.classroomId),
+			[integration?.dbname, integration?.classroomId],
 		);
+		// Таймертай ижил серверийн цаг — ["serverTime"] cache-ээс уншина
+		// (useServerTime шиг секунд тутам re-render үүсгэхгүй)
+		const { data: serverDate, dataUpdatedAt } = useQuery<string>({
+			queryKey: ["serverTime"],
+			queryFn: getServerDate,
+			enabled: !!integration,
+		});
+		const getServerNow = () => {
+			const serverMs = serverDate ? new Date(serverDate).getTime() : Number.NaN;
+			if (Number.isNaN(serverMs) || !dataUpdatedAt) return new Date();
+			return new Date(serverMs + (Date.now() - dataUpdatedAt));
+		};
 		const router = useRouter();
 		const [open, setOpen] = useState(false);
 		const [finishedTestId, setFinishedTestId] = useState<number | null>(null);
@@ -233,7 +258,15 @@ const FinishExamResultDialog = forwardRef<
 				exam_id: examId,
 				exam_type: examType,
 				start_eid: startEid,
-				exam_time: format(examTime, "HH:mm:ss"),
+				// Integration: зарцуулсан хугацаа "мм:сс". Системийн шалгалт — хуучнаараа
+				exam_time:
+					integration && startedDate
+						? formatElapsedExamTime(
+								parseLocalDate(startedDate),
+								getServerNow(),
+								examTime,
+							)
+						: format(examTime, "HH:mm:ss"),
 				user_id: userId,
 			});
 		};
@@ -514,15 +547,10 @@ const FinishExamResultDialog = forwardRef<
 		return (
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogTrigger asChild>
-					<Button
-						variant="outline"
-						className="w-full sm:w-auto px-4 sm:px-6 py-3 sm:py-4 font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all flex justify-center items-center gap-2 border-green-500 text-green-600 hover:bg-green-50 dark:border-green-500 dark:text-green-400 dark:hover:bg-green-950/20"
-					>
-						<span className="hidden sm:inline">
-							{isDadlaga ? "Шалгалт дуусгах" : "Шалгалт дуусгах"}
-						</span>
-						<span className="sm:hidden">Дуусгах</span>
-						<Send className="w-4 h-4 sm:w-5 sm:h-5" />
+					{/* Гол үйлдэл — тод ногоон, бүтэн өргөнтэй, бүтэн нэртэй */}
+					<Button className="w-full h-11 gap-2 font-semibold text-base bg-green-600 text-white shadow-sm hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700">
+						<Send className="w-4 h-4" />
+						Шалгалт дуусгах
 					</Button>
 				</DialogTrigger>
 
@@ -532,7 +560,7 @@ const FinishExamResultDialog = forwardRef<
 							<Flag className="w-7 h-7 sm:w-8 sm:h-8 text-blue-600 dark:text-blue-400" />
 						</div>
 						<DialogTitle className="text-xl sm:text-2xl font-bold px-2">
-							{isDadlaga ? "Шалгалт дуусгах уу?" : "Шалгалт дуусгах уу?"}
+							Шалгалт дуусгах уу?
 						</DialogTitle>
 						<DialogDescription className="text-sm px-2">
 							{isDadlaga
@@ -611,10 +639,20 @@ const FinishExamResultDialog = forwardRef<
 					</div>
 
 					<DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
+						{/* Буцах — ✕-ыг хайлгүйгээр шалгалт руугаа буцна */}
+						<Button
+							variant="outline"
+							onClick={() => setOpen(false)}
+							disabled={finishMutation.isPending}
+							className="w-full sm:flex-1 h-11 sm:h-12 gap-2 font-semibold order-2 sm:order-1"
+						>
+							<ArrowLeft className="h-4 w-4" />
+							Шалгалт руу буцах
+						</Button>
 						<Button
 							onClick={handleFinish}
 							disabled={finishMutation.isPending}
-							className="w-full font-semibold h-11 sm:h-12 bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all order-1 sm:order-2"
+							className="w-full sm:flex-1 font-semibold h-11 sm:h-12 bg-green-600 text-white hover:bg-green-700 shadow-sm order-1 sm:order-2"
 						>
 							{finishMutation.isPending ? (
 								<>
