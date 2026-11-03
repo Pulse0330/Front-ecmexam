@@ -66,13 +66,15 @@ function DialogContent({
 				{...props}
 			>
 				{children}
+				{/* Хаах — утсан дээр дарахад хялбар 36px товч */}
 				{showCloseButton && (
 					<DialogPrimitive.Close
 						data-slot="dialog-close"
-						className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+						title="Хаах"
+						className="ring-offset-background focus:ring-ring text-muted-foreground absolute top-3 right-3 flex size-9 items-center justify-center rounded-full bg-muted/70 transition-colors hover:bg-muted hover:text-foreground focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5"
 					>
 						<XIcon />
-						<span className="sr-only">Close</span>
+						<span className="sr-only">Хаах</span>
 					</DialogPrimitive.Close>
 				)}
 			</DialogPrimitive.Content>

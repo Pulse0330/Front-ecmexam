@@ -8,9 +8,11 @@ import {
 	ClipboardList,
 	CreditCard,
 	FileText,
+	Home,
 	LogOut,
 	type LucideIcon,
 	Menu,
+	PencilLine,
 	School,
 	TrendingUp,
 	User,
@@ -52,10 +54,13 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/useAuthStore";
 import ServerDate from "./serverDate";
 
+// Одоо байгаа хуудсыг цэсэнд тод ялгана (хэрэглэгч хаана байгаагаа шууд мэднэ)
+const ACTIVE_LINK = "bg-primary/10 text-primary font-semibold";
+
 // Navigation links configuration
-const NAV_LINKS = [
-	{ href: "/home", label: "Үндсэн хуудас" },
-	{ href: "/Lists/exerciseList", label: "Дасгал ажил" },
+const NAV_LINKS: Array<{ href: string; label: string; icon: LucideIcon }> = [
+	{ href: "/home", label: "Үндсэн хуудас", icon: Home },
+	{ href: "/Lists/exerciseList", label: "Дасгал ажил", icon: PencilLine },
 ];
 
 const EXAM_LINKS: Array<{ href: string; label: string; icon: LucideIcon }> = [
@@ -203,7 +208,7 @@ const DesktopDropdown: React.FC<{
 				className={cn(
 					"flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg transition-all",
 					"hover:bg-accent hover:text-accent-foreground",
-					isActive && "bg-accent text-accent-foreground",
+					isActive && ACTIVE_LINK,
 				)}
 				aria-expanded={isOpen}
 				aria-haspopup="true"
@@ -232,8 +237,9 @@ const DesktopDropdown: React.FC<{
 									className={cn(
 										"flex items-center gap-3 px-3 py-2 rounded-lg transition-all",
 										"hover:bg-accent hover:text-accent-foreground",
-										isItemActive && "bg-accent/50",
+										isItemActive && ACTIVE_LINK,
 									)}
+									aria-current={isItemActive ? "page" : undefined}
 									onClick={() => setIsOpen(false)}
 								>
 									<Icon className="w-4 h-4" />
@@ -281,12 +287,18 @@ const MobileMenu: React.FC<{
 		};
 	}, [isOpen]);
 
-	// Reset expanded section when menu closes
+	// Нээгдэхэд одоо байгаа хуудасны бүлгийг дэлгэж харуулна, хаагдахад хураана
 	React.useEffect(() => {
 		if (!isOpen) {
 			setExpandedSection(null);
+			return;
 		}
-	}, [isOpen]);
+		const isIn = (links: Array<{ href: string }>) =>
+			links.some((l) => l.href === pathname);
+		if (isIn(EXAM_LINKS)) setExpandedSection("exam");
+		else if (isIn(SORIL_LINKS)) setExpandedSection("soril");
+		else if (isIn(COURSE_LINKS)) setExpandedSection("course");
+	}, [isOpen, pathname]);
 
 	const toggleSection = (section: string) => {
 		setExpandedSection((prev) => (prev === section ? null : section));
@@ -345,20 +357,25 @@ const MobileMenu: React.FC<{
 					{/* Menu Items - Scrollable with Accordions */}
 					<div className="flex-1 overflow-y-auto p-4 space-y-2">
 						{/* Main Links */}
-						{NAV_LINKS.map((link) => (
-							<Link
-								key={link.href}
-								href={link.href}
-								onClick={onClose}
-								className={cn(
-									"block px-4 py-3 rounded-lg font-medium transition-all",
-									"hover:bg-accent hover:text-accent-foreground",
-									pathname === link.href && "bg-accent text-accent-foreground",
-								)}
-							>
-								{link.label}
-							</Link>
-						))}
+						{NAV_LINKS.map((link) => {
+							const Icon = link.icon;
+							return (
+								<Link
+									key={link.href}
+									href={link.href}
+									onClick={onClose}
+									className={cn(
+										"flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all",
+										"hover:bg-accent hover:text-accent-foreground",
+										pathname === link.href && ACTIVE_LINK,
+									)}
+									aria-current={pathname === link.href ? "page" : undefined}
+								>
+									<Icon className="w-5 h-5" />
+									{link.label}
+								</Link>
+							);
+						})}
 
 						{/* Exam Accordion */}
 						<div className="space-y-1">
@@ -371,7 +388,10 @@ const MobileMenu: React.FC<{
 									expandedSection === "exam" && "bg-accent/50",
 								)}
 							>
-								<span>Шалгалт</span>
+								<span className="flex items-center gap-3">
+									<FileText className="w-5 h-5" />
+									Шалгалт
+								</span>
 								<ChevronDown
 									className={cn(
 										"w-4 h-4 transition-transform duration-200",
@@ -392,8 +412,7 @@ const MobileMenu: React.FC<{
 												className={cn(
 													"flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm",
 													"hover:bg-accent hover:text-accent-foreground",
-													pathname === item.href &&
-														"bg-accent text-accent-foreground",
+													pathname === item.href && ACTIVE_LINK,
 												)}
 											>
 												<Icon className="w-4 h-4" />
@@ -416,7 +435,10 @@ const MobileMenu: React.FC<{
 									expandedSection === "soril" && "bg-accent/50",
 								)}
 							>
-								<span>Сорил</span>
+								<span className="flex items-center gap-3">
+									<ClipboardList className="w-5 h-5" />
+									Сорил
+								</span>
 								<ChevronDown
 									className={cn(
 										"w-4 h-4 transition-transform duration-200",
@@ -437,8 +459,7 @@ const MobileMenu: React.FC<{
 												className={cn(
 													"flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm",
 													"hover:bg-accent hover:text-accent-foreground",
-													pathname === item.href &&
-														"bg-accent text-accent-foreground",
+													pathname === item.href && ACTIVE_LINK,
 												)}
 											>
 												<Icon className="w-4 h-4" />
@@ -461,7 +482,10 @@ const MobileMenu: React.FC<{
 									expandedSection === "course" && "bg-accent/50",
 								)}
 							>
-								<span>Цахим сургалт</span>
+								<span className="flex items-center gap-3">
+									<School className="w-5 h-5" />
+									Цахим сургалт
+								</span>
 								<ChevronDown
 									className={cn(
 										"w-4 h-4 transition-transform duration-200",
@@ -482,8 +506,7 @@ const MobileMenu: React.FC<{
 												className={cn(
 													"flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm",
 													"hover:bg-accent hover:text-accent-foreground",
-													pathname === item.href &&
-														"bg-accent text-accent-foreground",
+													pathname === item.href && ACTIVE_LINK,
 												)}
 											>
 												<Icon className="w-4 h-4" />
@@ -580,8 +603,9 @@ export const Navbar01: React.FC = () => {
 								className={cn(
 									"px-4 py-2 text-sm font-medium rounded-lg transition-all",
 									"hover:bg-accent hover:text-accent-foreground",
-									pathname === link.href && "bg-accent text-accent-foreground",
+									pathname === link.href && ACTIVE_LINK,
 								)}
+								aria-current={pathname === link.href ? "page" : undefined}
 							>
 								{link.label}
 							</Link>
@@ -613,14 +637,16 @@ export const Navbar01: React.FC = () => {
 						<LetterInbox />
 
 						{/* Mobile Menu Button */}
+						{/* Зөвхөн ☰ биш "Цэс" гэж бичигтэй */}
 						<button
 							type="button"
 							onClick={() => setMobileMenuOpen(true)}
-							className="lg:hidden p-2 hover:bg-accent rounded-lg transition-colors"
-							aria-label="Open navigation menu"
+							className="lg:hidden flex items-center gap-1.5 h-10 px-3 border rounded-lg text-sm font-semibold hover:bg-accent transition-colors"
+							aria-label="Цэс нээх"
 							aria-expanded={mobileMenuOpen}
 						>
 							<Menu className="w-5 h-5" />
+							<span>Цэс</span>
 						</button>
 
 						{/* User Profile Pop-over */}

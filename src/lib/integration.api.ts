@@ -145,9 +145,11 @@ export const deleteIntegrationExamAnswer = async (
 
 // ===== Integration exam finish =====
 // Амжилтгүй (status !== "10") үед алдаа шидэхгүй — finish.tsx RetResponse-оор шалгана
+// classroomId — URL-ын classroom_id (байхгүй бол 0)
 export const finishIntegrationExam = async (
 	dbname: string,
 	payload: FinishExamRequest,
+	classroomId: number | null,
 ): Promise<FinishExamResponse> => {
 	const { data } = await integrationApi.post<IntegrationFinishResponse>(
 		"/IntegrationExamFinish",
@@ -155,6 +157,7 @@ export const finishIntegrationExam = async (
 			...withDb(dbname),
 			user_id: payload.user_id,
 			exam_id: payload.exam_id,
+			classroom_id: classroomId ?? 0,
 			exam_type: payload.exam_type,
 			start_eid: payload.start_eid,
 			exam_time: payload.exam_time,
